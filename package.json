@@ -17,7 +17,7 @@
     "fastify-static": "^3.3.0",
     "fastify-websocket": "^2.0.11",
     "jsdom": "^16.4.0",
-    "meow": "^6.1.1",
+    "meow": "^9.0.0",
     "mhtml2html": "^3.0.0",
     "mitt": "^2.1.0",
     "puppeteer": "^5.5.0",
@@ -64,7 +64,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:SEUH/puth.git"
+    "url": "https://github.com/SEUH/puth"
   },
   "bin": {
     "puth": "./bin/puth.js"
