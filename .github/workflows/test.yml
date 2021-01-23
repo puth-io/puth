@@ -1,9 +1,11 @@
 name: Tests
 on:
   push:
-    branches: [ $default-branch ]
+    branches:
+      - develop
   pull_request:
-    branches: [ $default-branch ]
+    branches: 
+      - master
   workflow_dispatch:
 
 jobs:
