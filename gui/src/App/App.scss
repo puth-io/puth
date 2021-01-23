@@ -1,0 +1,28 @@
+@import '../../node_modules/bootstrap/scss/bootstrap';
+
+.status {
+  &[data-connected="true"] {
+    color: $success;
+  }
+
+  &[data-connected="false"] {
+    color: $danger;
+  }
+}
+
+button {
+  margin-right: 0.5rem;
+}
+
+#snapshotFrame {
+  flex: 1;
+}
+
+.bg-striped {
+  background-image: linear-gradient(135deg, #c4c4c4 25%, #969696 25%, #969696 50%, #c4c4c4 50%, #c4c4c4 75%, #969696 75%, #969696 100%);
+  background-size: 5px 5px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}

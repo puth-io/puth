@@ -1,0 +1,48 @@
+[
+  "--test-type",
+  "--start-maximized",
+  "--no-default-browser-check",
+  "--no-first-run",
+
+  "--disable-popup-blocking",
+  "--disable-password-generation",
+  "--disable-save-password-bubble",
+  "--disable-single-click-autofill",
+  "--disable-prompt-on-repos",
+  "--disable-background-timer-throttling",
+  "--disable-renderer-backgrounding",
+  "--disable-renderer-throttling",
+  "--disable-restore-session-state",
+  "--disable-translate",
+  "--disable-new-profile-management",
+  "--disable-new-avatar-menu",
+  "--disable-device-discovery-notifications",
+  "--disable-infobars",
+
+  "--autoplay-policy=no-user-gesture-required",
+
+  "--disable-site-isolation-trials",
+
+  "--metrics-recording-only",
+  "--disable-prompt-on-repost",
+  "--disable-hang-monitor",
+  "--disable-sync",
+
+  "--disable-web-resources",
+  "--disable-component-update",
+  "--disable-default-apps",
+
+  "--use-fake-ui-for-media-stream",
+  "--use-fake-device-for-media-stream",
+
+  "--disable-ipc-flooding-protection",
+
+  "--disable-backgrounding-occluded-window",
+  "--disable-breakpad",
+  "--password-store=basic",
+  "--use-mock-keychain",
+
+  "--incognito",
+
+  "--window-size=1280,720"
+]

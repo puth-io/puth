@@ -1,0 +1,73 @@
+{
+  "name": "puth",
+  "version": "0.0.4",
+  "author": {
+    "name": "Sebastian Uehlin",
+    "email": "uehlinse@gmail.com"
+  },
+  "description": "Puth (Puppet-Theater) is a versatile browser test framework that builds on puppeteer.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "chalk": "^3.0.0",
+    "chokidar": "^3.3.1",
+    "fastify": "^3.8.0",
+    "fastify-http-proxy": "^4.0.4",
+    "fastify-static": "^3.3.0",
+    "fastify-websocket": "^2.0.11",
+    "jsdom": "^16.4.0",
+    "meow": "^6.1.0",
+    "mhtml2html": "^3.0.0",
+    "mitt": "^2.1.0",
+    "puppeteer": "^5.5.0",
+    "tmp-promise": "^2.0.2",
+    "uuid": "^8.3.1"
+  },
+  "devDependencies": {
+    "@types/assert": "^1.5.2",
+    "@types/axios": "^0.14.0",
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.9",
+    "@types/puppeteer": "^5.4.0",
+    "@types/uuid": "^8.3.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^8.2.1",
+    "prettier": "^2.2.1",
+    "ts-mocha": "^8.0.0",
+    "ts-node": "^9.1.1",
+    "ts-node-dev": "^1.1.1",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.1.3"
+  },
+  "files": [
+    "bin/**/*",
+    "browser/**/*",
+    "lib/**/*"
+  ],
+  "scripts": {
+    "build": "rm -rf lib/ && tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "tslint -p tsconfig.json",
+    "test": "mocha --exit -r ts-node/register 'test/**/*.ts'",
+    "test:watch": "mocha -r ts-node/register --recursive -w --watch-files src,test 'test/**/*.ts'",
+    "daemon": "node src/server/daemon/daemon.js",
+    "dev:client": "ts-node-dev --respawn --transpile-only src/dev/client.ts",
+    "dev:server": "ts-node-dev --respawn --transpile-only src/scripts/local.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SEUH/puth.git"
+  },
+  "bin": {
+    "puth": "./bin/puth.js"
+  },
+  "license": "UNLICENSED"
+}
