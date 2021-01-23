@@ -27,4 +27,8 @@ puth daemon
 
 ## Client
 
-For client instruction, have a look on [Puth Javascript Client](https://puth.dev/docs/javascript)
+For client instruction, look at [Puth Javascript Client](https://puth.dev/docs/javascript)
+
+## More information
+
+For more information, visit [Puth Docs](https://puth.dev/docs/)
