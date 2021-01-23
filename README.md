@@ -1,4 +1,4 @@
-# PUTH
+# Puth
 
 Puth is a nice browser testing framework with focus on stability, performance and extensive feedback.
 
