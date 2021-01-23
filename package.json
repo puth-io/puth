@@ -1,6 +1,6 @@
 {
   "name": "puth",
-  "version": "0.3.0",
+  "version": "0.2.0",
   "author": {
     "name": "Sebastian Uehlin",
     "email": "uehlinse@gmail.com"
@@ -59,7 +59,8 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
-    "version": "npm run format && git add -A src"
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
