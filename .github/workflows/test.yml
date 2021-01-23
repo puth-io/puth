@@ -1,0 +1,38 @@
+name: Tests
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches: 
+      - master
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 'Node.js v${{ matrix.node }}'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version:
+          - 10
+          - 12
+          - 14
+          - 15
+    steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '${{ matrix.node-version }}'
+      - uses: actions/checkout@v2
+      - name: 'Cache node_modules'
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-v${{ matrix.node }}-
+      - name: Install Dependencies
+        run: npm ci
+      - run: npm run build
+      - name: Run All Node.js Tests
+        run: npm test
