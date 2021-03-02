@@ -19,12 +19,16 @@ function scrollIntoView(element: Element | null) {
   }
 }
 
-function resolveElement(el: any, root: Document) {
-  el = el.map((item: any) => Array.isArray(item) ? `${item[0]}:nth-of-type(${item[1] + 1})` : item);
+export function resolveElement(el: any, root: Document) {
+  el = el.map((item: any) => (Array.isArray(item) ? `${item[0]}:nth-of-type(${item[1] + 1})` : item));
   return root.querySelector(el.join(' > '));
 }
 
-export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameElement>, command: ICommand | undefined, snapshotState: 'before' | 'after') {
+export function loadHighlights(
+  iframe: React.MutableRefObject<null | HTMLIFrameElement>,
+  command: ICommand | undefined,
+  snapshotState: 'before' | 'after',
+) {
   if (!iframe?.current?.contentWindow || !command || command.errors.length > 0) {
     return;
   }
@@ -40,7 +44,7 @@ export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameE
 
   // path is always an array because the user can perform the same function on multiple elements
   // this is a precaution for future functions or other plugins
-  path.forEach(el => {
+  path.forEach((el) => {
     let root: any = frame.body;
 
     // only if el is a path then change root to this element
@@ -56,7 +60,6 @@ export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameE
     // console.log('loadHighlights', root, args);
 
     if (func === '$') {
-
       let selectedElement = root.querySelector(args[0]);
 
       scrollIntoView(selectedElement);
@@ -85,19 +88,21 @@ export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameE
       height: element.scrollHeight > element.offsetHeight ? element.scrollHeight : element.offsetHeight,
     };
 
-    let overlay = <div
-      style={{
-        zIndex: 999999,
-        border: root ? '2px dashed orange' : '2px dashed rgb(49 109 220)',
-        borderStyle: 'dashed',
-        position: 'absolute',
-        top: position.top + 'px',
-        left: position.left + 'px',
-        width: highlightSize.width + 'px',
-        height: highlightSize.height + 'px',
-        pointerEvents: 'none',
-      }}
-    />;
+    let overlay = (
+      <div
+        style={{
+          zIndex: 999999,
+          border: root ? '2px dashed orange' : '2px dashed rgb(49 109 220)',
+          borderStyle: 'dashed',
+          position: 'absolute',
+          top: position.top + 'px',
+          left: position.left + 'px',
+          width: highlightSize.width + 'px',
+          height: highlightSize.height + 'px',
+          pointerEvents: 'none',
+        }}
+      />
+    );
 
     // let overlay = document.createElement('div');
     // overlay.style.zIndex = '999999';
