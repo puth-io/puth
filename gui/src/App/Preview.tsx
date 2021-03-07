@@ -206,7 +206,8 @@ export const Preview = observer(() => {
   if (snapshot && snapshot.version === 1) {
     html = snapshot?.html;
   } else if (snapshot && snapshot.version === 2) {
-    html = snapshot?.html?.src;
+    // TODO fix replace. Also, replace on server side?
+    html = snapshot?.html?.src.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/, '');
   }
 
   if (html) {

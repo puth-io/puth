@@ -56,9 +56,6 @@ export function loadHighlights(
       return;
     }
 
-    // console.log('highlight', el);
-    // console.log('loadHighlights', root, args);
-
     if (func === '$') {
       let selectedElement = root.querySelector(args[0]);
 
@@ -73,6 +70,9 @@ export function loadHighlights(
       if (snapshotState === 'after') {
         root.value = args[0];
       }
+    } else if (func === 'type' && snapshotState === 'before') {
+      scrollIntoView(root);
+      highlight(root, frame);
     }
   });
 
