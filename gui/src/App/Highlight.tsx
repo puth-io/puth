@@ -56,19 +56,16 @@ export function loadHighlights(
       return;
     }
 
-    if (func === '$') {
-      let selectedElement = root.querySelector(args[0]);
-
-      scrollIntoView(selectedElement);
-
-      highlight(root, frame, true);
-      highlight(root.querySelector(args[0]), frame);
-    } else if (func === 'type') {
-      scrollIntoView(root);
-      highlight(root, frame);
-    } else if (func === 'click') {
-      scrollIntoView(root);
-      highlight(root, frame);
+    switch (func) {
+      case '$':
+        let selectedElement = root.querySelector(args[0]);
+        scrollIntoView(selectedElement);
+        highlight(root, frame, true);
+        highlight(selectedElement, frame);
+        break;
+      default:
+        scrollIntoView(root);
+        highlight(root, frame);
     }
   });
 
