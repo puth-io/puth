@@ -66,7 +66,7 @@ export function loadHighlights(
     } else if (func === 'type') {
       scrollIntoView(root);
       highlight(root, frame);
-    } else if (func === 'type' && snapshotState === 'before') {
+    } else if (func === 'click') {
       scrollIntoView(root);
       highlight(root, frame);
     }
