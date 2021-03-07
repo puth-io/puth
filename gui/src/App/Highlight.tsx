@@ -66,10 +66,6 @@ export function loadHighlights(
     } else if (func === 'type') {
       scrollIntoView(root);
       highlight(root, frame);
-
-      if (snapshotState === 'after') {
-        root.value = args[0];
-      }
     } else if (func === 'type' && snapshotState === 'before') {
       scrollIntoView(root);
       highlight(root, frame);
@@ -103,32 +99,6 @@ export function loadHighlights(
         }}
       />
     );
-
-    // let overlay = document.createElement('div');
-    // overlay.style.zIndex = '999999';
-    // overlay.style.border = root ? '2px dashed orange' : '2px dashed rgb(49 109 220)';
-    // overlay.style.borderStyle = 'dashed';
-    // overlay.style.position = 'absolute';
-    // overlay.style.top = position.top + 'px';
-    // overlay.style.left = position.left + 'px';
-    // overlay.style.width = highlightSize.width + 'px';
-    // overlay.style.height = highlightSize.height + 'px';
-    // overlay.style.pointerEvents = 'none';
-
-    // TODO check if root element has enough room to show label
-    // if (root) {
-    //   let label = document.createElement('div');
-    //   label.innerText = 'root';
-    //   label.style.background = 'orange';
-    //   label.style.position = 'absolute';
-    //   label.style.left = '0px';
-    //   label.style.top = '0px';
-    //   label.style.padding = '0.25rem 0.5rem';
-    //   label.style.lineHeight = '1';
-    //   label.style.pointerEvents = 'none';
-    //
-    //   overlay.append(label);
-    // }
 
     let node = document.createElement('div');
     context.body.appendChild(node);

@@ -188,6 +188,7 @@ class SnapshotHandler {
           return stack.splice(1);
         }
         function getAllStyle() {
+          // @ts-ignore
           return [...document.styleSheets].map((ss) => ({
             path: getAbsoluteElementPath(ss.ownerNode),
             href: ss.href,
@@ -195,6 +196,7 @@ class SnapshotHandler {
           }));
         }
         function getUntrackedState() {
+          // @ts-ignore
           return [...document.querySelectorAll('input, textarea, select')].map((el) => ({
             path: getAbsoluteElementPath(el),
             value: el.value,

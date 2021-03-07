@@ -43,47 +43,6 @@ function calculateIframeSize(snapshot: ISnapshot | undefined, iframeContainer: a
   return size;
 }
 
-const IframeHandler = ({
-  iframe,
-  iframeContainer,
-  size,
-  background,
-}: {
-  iframe: any;
-  iframeContainer: any;
-  size: any;
-  background: string;
-}) => {
-  return (
-    <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
-      <div
-        ref={iframeContainer}
-        style={{
-          flex: 1,
-          overflow: 'hidden',
-          width: size.container.width,
-          height: size.container.height,
-        }}
-      >
-        <iframe
-          title={'Preview'}
-          frameBorder="0"
-          ref={iframe}
-          sandbox={'allow-same-origin'}
-          onLoad={() => loadHighlights(iframe, previewStore.visibleCommand, previewStore.visibleHighlightState)}
-          style={{
-            transformOrigin: '0 0',
-            transform: 'scale(' + size.scale + ')',
-            width: size.width,
-            height: size.height,
-            background,
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
 export type SnapshotState = 'before' | 'after';
 
 class PreviewStore {
@@ -188,6 +147,11 @@ export const Preview = observer(() => {
   };
 
   let snapshot = previewStore.visibleSnapshot;
+
+  useEffect(() => {
+    loadHighlights(iframe, previewStore.visibleCommand, previewStore.visibleHighlightState);
+  }, [snapshot]);
+
   let size = calculateIframeSize(snapshot, iframeContainer);
 
   let element: any = iframe?.current;
@@ -230,6 +194,7 @@ export const Preview = observer(() => {
   if (snapshot && snapshot.version === 2) {
     let [styleSheets, us] = snapshot?.html?.untracked;
     let rp = [];
+
     styleSheets.forEach((ss) => {
       rp.push({
         node: resolveElement(ss.path, doc),
@@ -241,13 +206,18 @@ export const Preview = observer(() => {
       rawStyleTag.innerHTML = ss.content;
 
       if (!ss.node) {
-        console.error('StyleNode to replace not found!');
-        console.log(ss);
+        console.error('StyleNode to replace not found!', ss);
         return;
       }
-      // console.log('Replacing:', ss.node.href);
-      // console.log(rawStyleTag);
       ss.node.replaceWith(rawStyleTag);
+    });
+    us.forEach((el) => {
+      let node = resolveElement(el.path, doc);
+      if (!node) {
+        console.error('Node for state recovery not found!', node);
+        return;
+      }
+      node.value = el.value;
     });
   }
 
@@ -288,12 +258,31 @@ export const Preview = observer(() => {
           {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(size.scale * 100).toFixed(0)}%)
         </button>
       </div>
-      <IframeHandler
-        iframe={iframe}
-        iframeContainer={iframeContainer}
-        size={size}
-        background={html ? 'white' : 'transparent'}
-      />
+      <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
+        <div
+          ref={iframeContainer}
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            width: size.container.width,
+            height: size.container.height,
+          }}
+        >
+          <iframe
+            title={'Preview'}
+            frameBorder="0"
+            ref={iframe}
+            sandbox={'allow-same-origin'}
+            style={{
+              transformOrigin: '0 0',
+              transform: 'scale(' + size.scale + ')',
+              width: size.width,
+              height: size.height,
+              background: html ? 'white' : 'transparent',
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 });
