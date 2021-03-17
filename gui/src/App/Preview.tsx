@@ -229,11 +229,11 @@ export const Preview = observer(() => {
         overflow: 'hidden',
       }}
     >
-      <div className="py-2 d-flex" style={{ background: '#3e4247', borderBottom: '2px solid #737373' }}>
+      <div className="py-2 d-flex" style={{ borderBottom: '2px solid #737373' }}>
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"
-            className={`btn m-0 btn-outline-warning ${previewStore.visibleHighlightState === 'before' && 'active'}`}
+            className={`btn m-0 btn-primary ${previewStore.visibleHighlightState === 'before' && 'active'}`}
             onClick={(_) => stickSnapshotState('before')}
             disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasBefore}
           >
@@ -241,7 +241,7 @@ export const Preview = observer(() => {
           </button>
           <button
             type="button"
-            className={`btn m-0 btn-outline-warning ${previewStore.visibleHighlightState === 'after' && 'active'}`}
+            className={`btn m-0 btn-primary ${previewStore.visibleHighlightState === 'after' && 'active'}`}
             onClick={(_) => stickSnapshotState('after')}
             disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasAfter}
           >
@@ -254,7 +254,7 @@ export const Preview = observer(() => {
           </span>
           <input type="text" className="form-control" defaultValue={snapshot?.url} readOnly disabled />
         </div>
-        <button type="button" className="btn m-0 btn-outline-warning text-nowrap ms-2 me-2" disabled>
+        <button type="button" className="btn m-0 btn-primary text-nowrap ms-2 me-2" disabled>
           {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(size.scale * 100).toFixed(0)}%)
         </button>
       </div>
