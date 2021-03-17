@@ -159,10 +159,11 @@ export const Preview = observer(() => {
 
   // cleans iframe
   if (element && !snapshot) {
+    // element.src = 'about:blank';
+    // doc.open();
+    // doc.write('');
+    // doc.close();
     element.src = 'about:blank';
-    doc.open();
-    doc.write('');
-    doc.close();
   }
 
   let html;
@@ -175,10 +176,14 @@ export const Preview = observer(() => {
   }
 
   if (html) {
-    element.src = 'about:blank';
-    doc.open();
-    doc.write(html ?? '');
-    doc.close();
+    // element.src = 'about:blank';
+    // doc.open();
+    // doc.write(html ?? '');
+    // doc.close();
+    const blob = new Blob([html], { type: 'text/html' });
+    element.src = URL.createObjectURL(blob);
+
+    console.log(element?.contentWindow?.document);
 
     // Trying to remove every smooth scroll effect.
     doc.documentElement.style.scrollBehavior = 'unset';
@@ -229,7 +234,7 @@ export const Preview = observer(() => {
         overflow: 'hidden',
       }}
     >
-      <div className="py-2 d-flex" style={{ borderBottom: '2px solid #737373' }}>
+      <div className="py-2 d-flex">
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"
