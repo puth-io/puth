@@ -72,7 +72,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
 
   return (
     <div className={'context rounded-2'} data-context-id={context.id}>
-      <div className={'d-flex align-items-center p-2 cursor-pointer'} onClick={toggleExpand}>
+      <div className={'d-flex align-items-center p-2 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
         <div>{pointer}</div>
         <div className={'fw-bold flex-grow-1 ms-2'}>Context</div>
         <div className={'text-secondary fw-light'}>{context.id}</div>

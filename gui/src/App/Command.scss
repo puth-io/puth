@@ -25,16 +25,20 @@ $info: #158fe6;
 .log {
   border-bottom: 1px solid #c7c7c7;
 
-  > td > div {
-    padding: 0.3rem 0.4rem;
-    border-left: 0.5rem solid $info;
+  > td {
+    padding: 0;
 
-    &[data-messagetype='log'] {
-      border-color: $info;
-    }
+    & > div {
+      padding: 0.3rem 0.4rem;
+      border-left: 0.5rem solid $info;
 
-    &[data-messagetype='error'] {
-      border-color: $danger;
+      &[data-messagetype='log'] {
+        border-color: $info;
+      }
+
+      &[data-messagetype='error'] {
+        border-color: $danger;
+      }
     }
   }
 }
