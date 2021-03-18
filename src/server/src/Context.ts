@@ -144,10 +144,14 @@ class Context extends Generic {
       // console.log('LOAD', event);
     });
     this.registerEventListenerOn(page, 'request', async (request) => {
-      // console.log('REQUEST', await request.url());
+      console.log('REQUEST', await request.url(), request._requestId);
     });
-    this.registerEventListenerOn(page, 'request', async (request) => {
+    this.registerEventListenerOn(page, 'requestfailed', async (request) => {
       // console.log('REQUEST FINISHED', await request.url());
+    });
+    this.registerEventListenerOn(page, 'requestfinished', async (request) => {
+      console.log('RESPONSE', await request.url(), request._requestId);
+      console.log(request);
     });
     this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
       Snapshots.addLog({

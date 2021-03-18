@@ -68,10 +68,37 @@ type ILog = {
   time: number;
 };
 
+type IRequest = {
+  id: string;
+  isNavigationRequest: boolean;
+  url: string;
+  resourceType: string;
+  method: string;
+  postData: string;
+  headers: {
+    [key: string]: string;
+  };
+  time: number;
+};
+
+type IResponse = IRequest & {
+  remoteAddress: {
+    ip: string;
+    port: number;
+  };
+  text: string;
+  status: number;
+  statusText: string;
+  fromDiskCache: boolean;
+  fromServiceWorker: boolean;
+  // TODO maybe implement _securityDetails
+};
+
 class SnapshotHandler {
   private snapshots = {};
   private commands: ICommand[] = [];
   private logs: ILog[] = [];
+  private requests: IRequest[] = [];
 
   log(...msg) {
     fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');

@@ -56,17 +56,24 @@ export function loadHighlights(
       return;
     }
 
-    switch (func) {
-      case '$':
-        let selectedElement = root.querySelector(args[0]);
-        scrollIntoView(selectedElement);
-        highlight(root, frame, true);
-        highlight(selectedElement, frame);
-        break;
-      default:
-        scrollIntoView(root);
-        highlight(root, frame);
+    let siv = root;
+    let hl = root;
+
+    // If the function takes a selector as argument, we need to also show the element
+    // that the function did find and perform on.
+    function innerQuery(selector) {
+      siv = root.querySelector(selector);
+      highlight(siv, frame, true);
     }
+
+    // TODO Add an integration inside puth plugin to enable custom highlights
+    //      (This might get a little tricky)
+    if (func === '$' || (func === 'click' && args.length > 0)) {
+      innerQuery(args[0]);
+    }
+
+    scrollIntoView(siv);
+    highlight(hl, frame);
   });
 
   function highlight(element: any, context: Document, root = false) {
