@@ -5,6 +5,8 @@ import { action, makeAutoObservable } from 'mobx';
 import { Events } from '../index';
 import { loadHighlights, resolveElement } from './Highlight';
 
+// Calculates the iframe size relative to the available space
+// and keeps the dimensions and scale of the original viewport
 function calculateIframeSize(snapshot: ISnapshot | undefined, iframeContainer: any) {
   let size = {
     container: {
@@ -100,9 +102,10 @@ class PreviewStore {
 export const previewStore = new PreviewStore();
 
 export const Preview = observer(() => {
-  const iframe = useRef<any>(null);
-  const iframeContainer = useRef(null);
+  const iframeRef = useRef<any>(null);
+  const iframeContainerRef = useRef(null);
 
+  // Register all preview events
   useEffect(() => {
     const eventToggle = action((cmd: ICommand | undefined) => {
       if (previewStore.activeCommand === cmd) {
@@ -148,23 +151,9 @@ export const Preview = observer(() => {
 
   let snapshot = previewStore.visibleSnapshot;
 
-  useEffect(() => {
-    loadHighlights(iframe, previewStore.visibleCommand, previewStore.visibleHighlightState);
-  }, [snapshot]);
+  let size = calculateIframeSize(snapshot, iframeContainerRef);
 
-  let size = calculateIframeSize(snapshot, iframeContainer);
-
-  let element: any = iframe?.current;
-  let doc = element?.contentWindow?.document;
-
-  // cleans iframe
-  if (element && !snapshot) {
-    // element.src = 'about:blank';
-    // doc.open();
-    // doc.write('');
-    // doc.close();
-    element.src = 'about:blank';
-  }
+  let iframe: any = iframeRef?.current;
 
   let html;
 
@@ -175,56 +164,66 @@ export const Preview = observer(() => {
     html = snapshot?.html?.src.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/, '');
   }
 
+  // Check if snapshot contains any html to display
   if (html) {
-    // element.src = 'about:blank';
-    // doc.open();
-    // doc.write(html ?? '');
-    // doc.close();
     const blob = new Blob([html], { type: 'text/html' });
-    element.src = URL.createObjectURL(blob);
+    iframe.src = URL.createObjectURL(blob);
+  } else if (iframe && !snapshot) {
+    // cleans iframe
+    iframe.src = 'about:blank';
+  }
 
-    console.log(element?.contentWindow?.document);
+  // Gets called after src of iframe changes
+  let onIframeLoad = ({ target }) => {
+    let iframeDoc = target?.contentWindow?.document;
+    if (!iframeDoc) {
+      return;
+    }
 
-    // Trying to remove every smooth scroll effect.
-    doc.documentElement.style.scrollBehavior = 'unset';
-    doc.querySelector('body').addEventListener(
+    // Try to completely disable every scroll effect
+    iframeDoc.documentElement.style.scrollBehavior = 'unset';
+    iframeDoc.querySelector('body').addEventListener(
       'wheel',
       function (event: any) {
         event.stopPropagation();
       },
       true,
     );
-  }
 
-  if (snapshot && snapshot.version === 2) {
-    let [styleSheets, us] = snapshot?.html?.untracked;
-    let rp = [];
+    // Restore dynamic html data form snapshot
+    if (snapshot && snapshot.version === 2) {
+      let [styleSheets, us] = snapshot?.html?.untracked;
+      let rp = [];
 
-    styleSheets.forEach((ss) => {
-      rp.push({
-        node: resolveElement(ss.path, doc),
-        content: ss.content,
+      styleSheets.forEach((ss) => {
+        rp.push({
+          node: resolveElement(ss.path, iframeDoc),
+          content: ss.content,
+        });
       });
-    });
-    rp.forEach((ss) => {
-      let rawStyleTag = doc.createElement('style');
-      rawStyleTag.innerHTML = ss.content;
+      rp.forEach((ss) => {
+        let rawStyleTag = iframeDoc.createElement('style');
+        rawStyleTag.innerHTML = ss.content;
 
-      if (!ss.node) {
-        console.error('StyleNode to replace not found!', ss);
-        return;
-      }
-      ss.node.replaceWith(rawStyleTag);
-    });
-    us.forEach((el) => {
-      let node = resolveElement(el.path, doc);
-      if (!node) {
-        console.error('Node for state recovery not found!', node);
-        return;
-      }
-      node.value = el.value;
-    });
-  }
+        if (!ss.node) {
+          console.error('StyleNode to replace not found!', ss);
+          return;
+        }
+        ss.node.replaceWith(rawStyleTag);
+      });
+      us.forEach((el) => {
+        let node = resolveElement(el.path, iframeDoc);
+        if (!node) {
+          console.error('Node for state recovery not found!', node);
+          return;
+        }
+        node.value = el.value;
+      });
+    }
+
+    // Load the highlights for the snapshot
+    loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
+  };
 
   return (
     <div
@@ -265,7 +264,7 @@ export const Preview = observer(() => {
       </div>
       <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
         <div
-          ref={iframeContainer}
+          ref={iframeContainerRef}
           style={{
             flex: 1,
             overflow: 'hidden',
@@ -276,8 +275,9 @@ export const Preview = observer(() => {
           <iframe
             title={'Preview'}
             frameBorder="0"
-            ref={iframe}
+            ref={iframeRef}
             sandbox={'allow-same-origin'}
+            onLoad={onIframeLoad}
             style={{
               transformOrigin: '0 0',
               transform: 'scale(' + size.scale + ')',
