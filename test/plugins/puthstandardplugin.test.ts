@@ -20,6 +20,7 @@ async function puthContextBinder(mochaContext) {
 
 describe(`PuthStandardPlugin`, function() {
   beforeEach(async function() {
+    this.timeout(10000);
     await puthContextBinder(this);
 
     await this.page.goto('https://playground.puth.dev/');
@@ -102,33 +103,5 @@ describe(`PuthStandardPlugin`, function() {
   });
 
   // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
-  // })
-  // it('', async function () {
-
   // })
 });

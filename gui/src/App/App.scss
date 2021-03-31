@@ -1,3 +1,4 @@
+@import './colors';
 @import '../../node_modules/bootstrap/scss/bootstrap';
 
 .status {
@@ -25,4 +26,17 @@ button {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+input {
+  background: $primary!important;
+  border-color: $primary-darker!important;
+}
+
+.input-group {
+  .input-group-text {
+    background: $primary;
+    color: $body-color;
+    border-color: $primary-darker;
+  }
 }

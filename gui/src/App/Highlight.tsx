@@ -19,12 +19,16 @@ function scrollIntoView(element: Element | null) {
   }
 }
 
-function resolveElement(el: any, root: Document) {
-  el = el.map((item: any) => Array.isArray(item) ? `${item[0]}:nth-of-type(${item[1] + 1})` : item);
+export function resolveElement(el: any, root: Document) {
+  el = el.map((item: any) => (Array.isArray(item) ? `${item[0]}:nth-of-type(${item[1] + 1})` : item));
   return root.querySelector(el.join(' > '));
 }
 
-export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameElement>, command: ICommand | undefined, snapshotState: 'before' | 'after') {
+export function loadHighlights(
+  iframe: React.MutableRefObject<null | HTMLIFrameElement>,
+  command: ICommand | undefined,
+  snapshotState: 'before' | 'after',
+) {
   if (!iframe?.current?.contentWindow || !command || command.errors.length > 0) {
     return;
   }
@@ -40,7 +44,7 @@ export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameE
 
   // path is always an array because the user can perform the same function on multiple elements
   // this is a precaution for future functions or other plugins
-  path.forEach(el => {
+  path.forEach((el) => {
     let root: any = frame.body;
 
     // only if el is a path then change root to this element
@@ -52,25 +56,24 @@ export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameE
       return;
     }
 
-    // console.log('highlight', el);
-    // console.log('loadHighlights', root, args);
+    let siv = root;
+    let hl = root;
 
-    if (func === '$') {
-
-      let selectedElement = root.querySelector(args[0]);
-
-      scrollIntoView(selectedElement);
-
-      highlight(root, frame, true);
-      highlight(root.querySelector(args[0]), frame);
-    } else if (func === 'type') {
-      scrollIntoView(root);
-      highlight(root, frame);
-
-      if (snapshotState === 'after') {
-        root.value = args[0];
-      }
+    // If the function takes a selector as argument, we need to also show the element
+    // that the function did find and perform on.
+    function innerQuery(selector) {
+      siv = root.querySelector(selector);
+      highlight(siv, frame, true);
     }
+
+    // TODO Add an integration inside puth plugin to enable custom highlights
+    //      (This might get a little tricky)
+    if (func === '$' || (func === 'click' && args.length > 0)) {
+      innerQuery(args[0]);
+    }
+
+    scrollIntoView(siv);
+    highlight(hl, frame);
   });
 
   function highlight(element: any, context: Document, root = false) {
@@ -85,45 +88,21 @@ export function loadHighlights(iframe: React.MutableRefObject<null | HTMLIFrameE
       height: element.scrollHeight > element.offsetHeight ? element.scrollHeight : element.offsetHeight,
     };
 
-    let overlay = <div
-      style={{
-        zIndex: 999999,
-        border: root ? '2px dashed orange' : '2px dashed rgb(49 109 220)',
-        borderStyle: 'dashed',
-        position: 'absolute',
-        top: position.top + 'px',
-        left: position.left + 'px',
-        width: highlightSize.width + 'px',
-        height: highlightSize.height + 'px',
-        pointerEvents: 'none',
-      }}
-    />;
-
-    // let overlay = document.createElement('div');
-    // overlay.style.zIndex = '999999';
-    // overlay.style.border = root ? '2px dashed orange' : '2px dashed rgb(49 109 220)';
-    // overlay.style.borderStyle = 'dashed';
-    // overlay.style.position = 'absolute';
-    // overlay.style.top = position.top + 'px';
-    // overlay.style.left = position.left + 'px';
-    // overlay.style.width = highlightSize.width + 'px';
-    // overlay.style.height = highlightSize.height + 'px';
-    // overlay.style.pointerEvents = 'none';
-
-    // TODO check if root element has enough room to show label
-    // if (root) {
-    //   let label = document.createElement('div');
-    //   label.innerText = 'root';
-    //   label.style.background = 'orange';
-    //   label.style.position = 'absolute';
-    //   label.style.left = '0px';
-    //   label.style.top = '0px';
-    //   label.style.padding = '0.25rem 0.5rem';
-    //   label.style.lineHeight = '1';
-    //   label.style.pointerEvents = 'none';
-    //
-    //   overlay.append(label);
-    // }
+    let overlay = (
+      <div
+        style={{
+          zIndex: 999999,
+          border: root ? '2px dashed orange' : '2px dashed rgb(49 109 220)',
+          borderStyle: 'dashed',
+          position: 'absolute',
+          top: position.top + 'px',
+          left: position.left + 'px',
+          width: highlightSize.width + 'px',
+          height: highlightSize.height + 'px',
+          pointerEvents: 'none',
+        }}
+      />
+    );
 
     let node = document.createElement('div');
     context.body.appendChild(node);

@@ -25,16 +25,20 @@ $info: #158fe6;
 .log {
   border-bottom: 1px solid #c7c7c7;
 
-  > td > div {
-    padding: 0.3rem 0.4rem;
-    border-left: 0.5rem solid $info;
+  > td {
+    padding: 0;
 
-    &[data-messagetype='log'] {
-      border-color: $info;
-    }
+    & > div {
+      padding: 0.3rem 0.4rem;
+      border-left: 0.5rem solid $info;
 
-    &[data-messagetype='error'] {
-      border-color: $danger;
+      &[data-messagetype='log'] {
+        border-color: $info;
+      }
+
+      &[data-messagetype='error'] {
+        border-color: $danger;
+      }
     }
   }
 }
@@ -43,8 +47,12 @@ $info: #158fe6;
   padding: 0.3rem 0.4rem;
   cursor: pointer;
 
+  &:last-child > td {
+    border: 0;
+  }
+
   &:not(.hasErrors) {
-    border-bottom: 1px solid #c7c7c7;
+    border-bottom: 1px solid #5f636a;
   }
 
   &.hasErrors {
@@ -66,7 +74,7 @@ $info: #158fe6;
   }
 
   &:hover {
-    background: #c4c4c4;
+    background: #575c64;
 
     &.hasErrors {
       background: #cc1022;
@@ -74,7 +82,7 @@ $info: #158fe6;
   }
 
   &.active {
-    background: #c4c4c4;
+    background: #686d77;
 
     &.hasErrors {
       background: #cc1022;

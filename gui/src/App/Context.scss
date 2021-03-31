@@ -1,12 +1,15 @@
+@import './colors';
+
 .context {
   display: flex;
   flex-direction: column;
-  background: white;
-  border-left: 0.5rem solid #bb941d;
+  background: $primary;
+  //border-left: 0.5rem solid #bb941d;
   // box-shadow: -1px 2px 5px 0 #8e8e8e;
   // border-bottom: 1px solid #afafaf;
   margin-bottom: 0.5rem;
-  color: #3e4247;
+  color: $body-color;
+  padding: 0.125rem;
 
   &[data-status="pass"] {
     border-color: #129d12;
@@ -22,9 +25,11 @@
 
   .snapshots {
     flex: 1;
-    background: #eaeaea;
+    background: #494d54;
     border: none;
     border-collapse: collapse;
+    width: auto;
+    border-radius: 2px;
 
     tr {
       & > td:last-child {
@@ -33,7 +38,7 @@
 
       & > td:nth-child(1),
       & > td:nth-child(2) {
-        color: #4c4c4c;
+        color: #bac0ca;
       }
 
       & > td:nth-child(3) {
@@ -41,7 +46,8 @@
       }
 
       & > td:nth-child(4) {
-        color: #303030;
+        color: #d1d4d7;
+        word-break: break-word;
       }
 
       & > td:not(:nth-child(4)) {

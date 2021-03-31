@@ -140,15 +140,19 @@ class Context extends Generic {
   }
 
   async _trackPage(page) {
-    this.registerEventListenerOn(page, 'load', (event) => {
-      // console.log('LOAD', event);
-    });
-    this.registerEventListenerOn(page, 'request', async (request) => {
-      // console.log('REQUEST', await request.url());
-    });
-    this.registerEventListenerOn(page, 'request', async (request) => {
-      // console.log('REQUEST FINISHED', await request.url());
-    });
+    // this.registerEventListenerOn(page, 'load', (event) => {
+    //   console.log('LOAD', event);
+    // });
+    // this.registerEventListenerOn(page, 'request', async (request) => {
+    //   console.log('REQUEST', await request.url(), request._requestId);
+    // });
+    // this.registerEventListenerOn(page, 'requestfailed', async (request) => {
+    //   console.log('REQUEST FINISHED', await request.url());
+    // });
+    // this.registerEventListenerOn(page, 'requestfinished', async (request) => {
+    //   console.log('RESPONSE', await request.url(), request._requestId);
+    //   console.log(request);
+    // });
     this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
       Snapshots.addLog({
         args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),

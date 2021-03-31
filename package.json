@@ -1,6 +1,6 @@
 {
   "name": "puth",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": {
     "name": "Sebastian Uehlin",
     "email": "uehlinse@gmail.com"
@@ -16,9 +16,7 @@
     "fastify-http-proxy": "^4.0.4",
     "fastify-static": "^3.3.0",
     "fastify-websocket": "^2.0.11",
-    "jsdom": "^16.4.0",
     "meow": "^9.0.0",
-    "mhtml2html": "^3.0.0",
     "mitt": "^2.1.0",
     "puppeteer": "^5.5.0",
     "tmp-promise": "^2.0.2",
@@ -45,7 +43,8 @@
   "files": [
     "bin/**/*",
     "browser/**/*",
-    "lib/**/*"
+    "lib/**/*",
+    "static/**/*"
   ],
   "scripts": {
     "build": "rm -rf lib/ && tsc",
@@ -56,8 +55,7 @@
     "daemon": "node src/server/daemon/daemon.js",
     "dev:client": "ts-node-dev --respawn --transpile-only src/dev/client.ts",
     "dev:server": "ts-node-dev --respawn --transpile-only src/scripts/local.ts",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
+    "prepublishOnly": "npm run build && npm test && npm run lint",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags"
