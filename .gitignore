@@ -295,4 +295,5 @@ Temporary Items
 
 /daemon.endpoint
 
-lib
+/lib
+/static
