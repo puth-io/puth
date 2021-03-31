@@ -101,8 +101,7 @@ export class Puth {
 
     if (log) {
       this.log('info', `[Puth][Server] Api on http://${uri}`);
-      this.log('info', `[Puth][Server] Playground on http://${uri}/public/playground.html`);
-      this.log('info', `[Puth][Server] Extension on http://${uri}/public/extension.html`);
+      this.log('info', `[Puth][Server] GUI on http://${uri}/static/gui/index.html`);
     }
   }
 
@@ -142,27 +141,13 @@ export class Puth {
     // TODO do GUI and probably move to another place but without
     //      server, idk where the gui should be served from
     this.server.register(require('fastify-static'), {
-      root: path.join(__dirname, '../static'),
+      root: path.join(__dirname, '../../static'),
       prefix: '/static',
     });
 
     // Create new context
     this.server.post('/context', async (request) => {
       return await this.contextCreate(request.body as {});
-    });
-
-    // Perform method call on context
-    this.server.patch('/context/:puthId/call', async (request, reply) => {
-      let { puthId } = request.params as { puthId: number };
-      let response = await this.contexts[puthId].call(request.body);
-      return reply.send(response);
-    });
-
-    // Perform action on context
-    this.server.patch('/context/:puthId/get', async (request, reply) => {
-      let { puthId } = request.params as { puthId: number };
-      let response = await this.contextCall(request.body);
-      return reply.send(response);
     });
 
     // Perform method call on context

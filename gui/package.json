@@ -23,7 +23,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "PUBLIC_URL='/static/gui' react-scripts build",
+    "postbuild": "mkdir -p ../static/gui && rm -rf ../static/gui && cp -r build ../static/gui",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
