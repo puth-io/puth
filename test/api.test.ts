@@ -21,7 +21,7 @@ envs.forEach(env => {
     if (env[0] === 'remote') {
       this.__remoteTestInstance = puth();
       this.__remoteTestInstance.use(PuthStandardPlugin);
-      this.__remoteTestInstance.listen(4000, '127.0.0.1', false);
+      this.__remoteTestInstance.serve(4000, '127.0.0.1', false);
     }
   });
 
