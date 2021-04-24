@@ -1,31 +1,32 @@
-import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './src/PuthPluginGeneric';
-
-import fastifyWebsocket from 'fastify-websocket';
 import * as path from 'path';
 
 import { fastify } from 'fastify';
-import { SocketStream } from 'fastify-websocket';
-import Context from './src/Context';
-import PuthContextPlugin from './src/PuthContextPlugin';
+import fastifyWebsocket, { SocketStream } from 'fastify-websocket';
+import fastifyCors from 'fastify-cors';
 
+import Context from './src/Context';
 import WebsocketConnections from './src/WebsocketConnections';
-import PuthInstancePlugin from './src/PuthInstancePlugin';
 import Snapshots from './src/Snapshots';
+import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './src/PuthPluginGeneric';
+import PuthContextPlugin from './src/PuthContextPlugin';
+import PuthInstancePlugin from './src/PuthInstancePlugin';
 
 export class Puth {
   private contexts: Context[] = [];
   private contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
   private instancePlugins: PuthInstancePlugin[] = [];
 
-  private readonly server;
+  private server;
   private options: {
     address: string | undefined;
     port: number | undefined;
     silent: boolean | undefined;
     debug: boolean | undefined;
-    server: boolean | undefined;
     plugins: string[] | undefined;
     dev: boolean | undefined;
+    server: {
+      allowOrigins: string[];
+    };
   };
 
   constructor(options?) {
@@ -37,11 +38,6 @@ export class Puth {
       this.options?.plugins.forEach((plugin) => {
         import(path.join(process.cwd(), plugin)).then((ip) => this.use(ip.default));
       });
-    }
-
-    if (!(options?.server === false)) {
-      this.server = fastify({ logger: this.isDebug() });
-      this.setupFastify();
     }
   }
 
@@ -74,19 +70,15 @@ export class Puth {
     return this.options?.silent === true;
   }
 
-  isServer() {
-    return !(this.options?.server === false);
-  }
-
   isDev() {
     return this.options?.dev === true;
   }
 
-  async listen(port = 4000, address = '127.0.0.1', log = true) {
-    if (!this.isServer()) {
-      this.log('warn', '[Puth][Server] Initialized with options {server: false}. Will not listen.');
-      return;
-    }
+  async serve(port = 4000, address = '127.0.0.1', log = true) {
+    let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
+
+    this.server = fastify({ logger: this.isDebug() });
+    this.setupFastify(allowedOrigins);
 
     await this.server.listen(port, address);
 
@@ -135,7 +127,10 @@ export class Puth {
     return this.contexts[packet.context.id].delete(packet);
   }
 
-  private setupFastify() {
+  private setupFastify(allowedOrigins: string[]) {
+    this.server.register(fastifyCors, {
+      origin: allowedOrigins,
+    });
     this.server.register(fastifyWebsocket);
 
     // TODO do GUI and probably move to another place but without
@@ -183,6 +178,11 @@ export class Puth {
     });
 
     this.server.get('/websocket', { websocket: true }, (connection: SocketStream, req) => {
+      // The websocket protocol doesn't care about CORS so we need to test for request origin.
+      if (!allowedOrigins.includes(req.headers.origin)) {
+        return connection.destroy();
+      }
+
       WebsocketConnections.push(connection);
 
       connection.socket.on('close', () => {
