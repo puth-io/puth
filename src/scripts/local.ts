@@ -3,7 +3,7 @@ import PuthStandardPlugin from '../server/src/plugins/PuthStandardPlugin';
 
 const instance = puth({
   debug: true,
-  fastify: {
+  server: {
     allowOrigins: ['http://localhost:3000'],
   },
 });
