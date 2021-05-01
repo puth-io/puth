@@ -1,25 +1,17 @@
 import Context from './Context';
-import { ConsoleMessageType, Page } from 'puppeteer';
+import { ConsoleMessageType, Page, Viewport } from 'puppeteer';
 import * as fs from 'fs';
 import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
 
-export type IViewport = {
-  width: number;
-  height: number;
-  deviceScaleFactor: number;
-  isMobile: boolean;
-  hasTouch: boolean;
-  isLandscaped: boolean;
-};
-
 export type ISnapshot = {
+  type: string;
   html: any;
   version: number;
   url: any;
-  viewport: IViewport;
+  viewport: Viewport;
 };
 
 export type ICommandError = {
@@ -171,14 +163,13 @@ class SnapshotHandler {
    * In general, v2 is 2-10x faster than v1
    *
    * TODO use page network events to catch style
-   *      to further improve performance. Should
+   *      to further improve performance (maybe). Should
    *      be 2x improvement if single request.
    *      Every next request that uses the same
    *      stylesheet doesn't need to process and
    *      send it anymore. Also reduces snapshot.pack.
-   * @param page
    */
-  async makeSnapshot(page) {
+  async makeSnapshot(page: Page): Promise<ISnapshot | undefined> {
     if (!page || (await page.url()) === 'about:blank') {
       return;
     }
@@ -205,7 +196,6 @@ class SnapshotHandler {
             }
 
             if (sibCount > 1) {
-              // stack.unshift(el.nodeName.toLowerCase() + ':nth-child(' + (sibIndex + 1) + ')');
               stack.unshift([el.nodeName.toLowerCase(), sibIndex]);
             } else {
               stack.unshift(el.nodeName.toLowerCase());
