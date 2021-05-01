@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import WebsocketConnections from './WebsocketConnections';
 import { Puth } from '../Server';
 import PuthContextPlugin from './PuthContextPlugin';
-import { Page } from 'puppeteer';
+import { Browser, Page, Response, Target } from 'puppeteer';
 import * as mitt from 'mitt';
 
 import { createBrowser } from '../../../browser/core';
@@ -61,7 +61,7 @@ class Context extends Generic {
     external?: boolean;
   } = {};
 
-  private eventFunctions: [Page, string, () => {}][] = [];
+  private eventFunctions: [any, string, () => {}][] = [];
 
   private capabilities = {};
 
@@ -91,6 +91,8 @@ class Context extends Generic {
     this.instance.browser = await puppeteer.connect(options);
     this.instance.external = true;
 
+    await this._trackBrowser(this.instance.browser);
+
     return this.instance.browser;
   }
 
@@ -105,6 +107,8 @@ class Context extends Generic {
     });
     this.instance.external = false;
 
+    await this._trackBrowser(this.instance.browser);
+
     return this.instance.browser;
   }
 
@@ -116,13 +120,32 @@ class Context extends Generic {
     this.instance.browser = await DaemonBrowser.getBrowser(options);
     this.instance.external = true;
     this.instance.daemon = true;
+
+    await this._trackBrowser(this.instance.browser);
+
     return this.instance.browser;
   }
 
-  async destroy() {
-    this.eventFunctions.forEach(([page, event, func]) => {
-      page.off(event, func);
+  async _trackBrowser(browser: Browser | undefined) {
+    if (browser === undefined) {
+      return;
+    }
+
+    browser.on('disconnected', () => this.removeEventListenersFrom(browser));
+
+    // Track default browser page (there is no 'targetcreated' event for page[0])
+    this._trackPage((await browser.pages())[0]);
+
+    this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
+      // TODO do we need to track more here? like 'browser' or 'background_page'...?
+      if (target.type() === 'page') {
+        this._trackPage(await target.page());
+      }
     });
+  }
+
+  async destroy() {
+    this.unregisterAllEventListeners();
 
     if (this.instance.browser && !this.instance.daemon) {
       if (this.instance.external) {
@@ -139,7 +162,22 @@ class Context extends Generic {
     return true;
   }
 
-  async _trackPage(page) {
+  _trackPage(page) {
+    page.on('close', () => this.removeEventListenersFrom(page));
+
+    this.registerEventListenerOn(page, 'response', async (response: Response) => {
+      // response.request().resourceType === 'stylesheet' ||
+      const [isNavigationRequest, method, url, resourceType, failure, frame, responseText] = [
+        response.request().isNavigationRequest(),
+        response.request().method(),
+        response.request().url(),
+        response.request().resourceType(),
+        response.request().failure(),
+        response.request().frame(),
+        response.request().response()?.text(),
+      ];
+      console.log('response', isNavigationRequest, method, url, resourceType, failure);
+    });
     // this.registerEventListenerOn(page, 'load', (event) => {
     //   console.log('LOAD', event);
     // });
@@ -187,6 +225,21 @@ class Context extends Generic {
   registerEventListenerOn(object, event, func) {
     this.eventFunctions.push([object, event, func]);
     object.on(event, func);
+  }
+
+  removeEventListenersFrom(object) {
+    let listeners = this.eventFunctions.filter((listener) => listener[0] === object);
+    listeners.forEach(([page, event, func]) => {
+      page.off(event, func);
+    });
+
+    this.eventFunctions = this.eventFunctions.filter((listener) => listener[0] !== object);
+  }
+
+  unregisterAllEventListeners() {
+    this.eventFunctions.forEach(([page, event, func]) => {
+      page.off(event, func);
+    });
   }
 
   async _cleanPage(page) {
