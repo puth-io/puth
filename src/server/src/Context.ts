@@ -166,18 +166,24 @@ class Context extends Generic {
     page.on('close', () => this.removeEventListenersFrom(page));
 
     this.registerEventListenerOn(page, 'response', async (response: Response) => {
-      // response.request().resourceType === 'stylesheet' ||
-      const [isNavigationRequest, method, url, resourceType, failure, frame, responseText] = [
-        response.request().isNavigationRequest(),
-        response.request().method(),
-        response.request().url(),
-        response.request().resourceType(),
-        response.request().failure(),
-        response.request().frame(),
-        response.request().response()?.text(),
-      ];
-      console.log('response', isNavigationRequest, method, url, resourceType, failure);
+      if (['stylesheet', 'image', 'font', 'script', 'manifest'].includes(response.request().resourceType())) {
+        Snapshots.addPageInclude(page, response);
+      }
     });
+
+    this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
+      Snapshots.addLog({
+        args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
+        type: 'log',
+        location: consoleMessage.location(),
+        stackTrace: consoleMessage.stackTrace(),
+        text: consoleMessage.text(),
+        messageType: consoleMessage.type(),
+        context: this.serialize(),
+        time: Date.now(),
+      });
+    });
+
     // this.registerEventListenerOn(page, 'load', (event) => {
     //   console.log('LOAD', event);
     // });
@@ -191,18 +197,6 @@ class Context extends Generic {
     //   console.log('RESPONSE', await request.url(), request._requestId);
     //   console.log(request);
     // });
-    this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
-      Snapshots.addLog({
-        args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
-        type: 'log',
-        location: consoleMessage.location(),
-        stackTrace: consoleMessage.stackTrace(),
-        text: consoleMessage.text(),
-        messageType: consoleMessage.type(),
-        context: this.serialize(),
-        time: Date.now(),
-      });
-    });
   }
 
   // TODO write _untrackDialogs

@@ -1,10 +1,17 @@
 import Context from './Context';
-import { ConsoleMessageType, Page, Viewport } from 'puppeteer';
+import { ConsoleMessageType, Page, Viewport, Response } from 'puppeteer';
 import * as fs from 'fs';
 import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
+
+export type IPageInclude = {
+  url: string;
+  method: string;
+  resourceType: string;
+  content: string;
+};
 
 export type ISnapshot = {
   type: string;
@@ -12,6 +19,7 @@ export type ISnapshot = {
   version: number;
   url: any;
   viewport: Viewport;
+  includes?: IPageInclude[];
 };
 
 export type ICommandError = {
@@ -127,7 +135,11 @@ class SnapshotHandler {
     command.time.finished = Date.now();
 
     try {
-      command.snapshots.after = await this.makeSnapshot(page);
+      let snapshot = await this.makeSnapshot(page);
+
+      await this.addPageIncludes(page, snapshot);
+
+      command.snapshots.after = snapshot;
     } catch (err) {
       // Page navigations break the snapshot process.
       // Retry for a second time, this time puppeteer waits before calling page.evaluate
@@ -237,6 +249,44 @@ class SnapshotHandler {
 
   getLogs() {
     return this.logs;
+  }
+
+  private pageIncludes = new Map<Page, Response[]>();
+
+  addPageInclude(page, response: Response) {
+    if (!this.pageIncludes.has(page)) {
+      this.pageIncludes.set(page, []);
+    }
+
+    let pageInclude = this.pageIncludes.get(page);
+
+    if (!pageInclude) {
+      // this should never happen
+      console.log('___ wtf');
+      return;
+    }
+
+    pageInclude.push(response);
+
+    console.log('___ page includes', pageInclude.length, this.pageIncludes.get(page)?.length);
+  }
+
+  async addPageIncludes(page, snapshot) {
+    let responses = this.pageIncludes.get(page) ?? [];
+    console.log('___ found responses', responses.length);
+    snapshot.includes = await Promise.all(
+      responses.map(
+        async (response): Promise<IPageInclude> => {
+          console.log('___ transform response....');
+          return {
+            method: response.request().method(),
+            resourceType: response.request().resourceType(),
+            url: response.request().url(),
+            content: await response.text(),
+          };
+        },
+      ),
+    );
   }
 }
 
