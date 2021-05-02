@@ -5,7 +5,27 @@ export type IContext = {
   id: string;
   commands: ICommand[];
   logs: any[];
+  responses: IResponse[];
   created: number;
+};
+
+type IResponse = {
+  type: 'response';
+  context: {
+    id: string;
+  };
+  time: number;
+  isNavigationRequest: boolean;
+  url: string;
+  resourceType: string;
+  method: string;
+  headers: {
+    [key: string]: string;
+  };
+  content: {
+    data: any[];
+    type: string;
+  };
 };
 
 class WebsocketHandlerSingleton {
@@ -76,15 +96,27 @@ class WebsocketHandlerSingleton {
       this.addCommand(packet);
     } else if (packet.type === 'log') {
       this.addLog(packet);
+    } else if (packet.type === 'response') {
+      this.addResponse(packet);
     }
   }
 
   private addCommand(command: ICommand) {
-    this.getContext(command.context.id).commands.push(command);
+    let context = this.getContext(command.context.id);
+    command.context = context;
+    context.commands.push(command);
   }
 
   private addLog(log: ICommand) {
-    this.getContext(log.context.id).logs.push(log);
+    let context = this.getContext(log.context.id);
+    log.context = context;
+    context.logs.push(log);
+  }
+
+  private addResponse(response: IResponse) {
+    let context = this.getContext(response.context.id);
+    response.context = context;
+    context.responses.push(response);
   }
 
   getContext(id) {
@@ -93,6 +125,7 @@ class WebsocketHandlerSingleton {
         id,
         commands: [],
         logs: [],
+        responses: [],
         created: Date.now(),
       });
     }

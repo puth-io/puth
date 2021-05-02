@@ -167,20 +167,31 @@ class Context extends Generic {
 
     this.registerEventListenerOn(page, 'response', async (response: Response) => {
       if (['stylesheet', 'image', 'font', 'script', 'manifest'].includes(response.request().resourceType())) {
-        Snapshots.addPageInclude(page, response);
+        // Snapshots.addPageInclude(page, response);
+        Snapshots.addResponse({
+          type: 'response',
+          context: this.serialize(),
+          time: Date.now(),
+          isNavigationRequest: response.request().isNavigationRequest(),
+          url: response.request().url(),
+          resourceType: response.request().resourceType(),
+          method: response.request().method(),
+          headers: response.headers(),
+          content: await response.buffer(),
+        });
       }
     });
 
     this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
       Snapshots.addLog({
-        args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
         type: 'log',
-        location: consoleMessage.location(),
-        stackTrace: consoleMessage.stackTrace(),
-        text: consoleMessage.text(),
-        messageType: consoleMessage.type(),
         context: this.serialize(),
         time: Date.now(),
+        messageType: consoleMessage.type(),
+        args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
+        location: consoleMessage.location(),
+        text: consoleMessage.text(),
+        stackTrace: consoleMessage.stackTrace(),
       });
     });
 
@@ -379,6 +390,11 @@ class Context extends Generic {
   }
 
   async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
+    let beforeReturn = async () => {
+      // TODO Implement this in events. Event: 'function:call:return'
+      await Snapshots.createAfter(this, page, command);
+    };
+
     if (expectation) {
       if (expectation.test && !expectation.test(returnValue)) {
         Snapshots.error(this, page, command, {
@@ -396,25 +412,19 @@ class Context extends Generic {
       }
 
       if ('return' in expectation) {
-        // TODO Implement this in events. Event: 'function:call:return'
-        await Snapshots.createAfter(this, page, command);
-
+        await beforeReturn();
         return expectation.return(returnValue);
       }
 
       if (expectation.returns) {
-        // TODO Implement this in events. Event: 'function:call:return'
-        await Snapshots.createAfter(this, page, command);
+        await beforeReturn();
 
         let { type, represents } = expectation.returns;
-
         return this.returnCached(returnValue, type, represents);
       }
     }
 
-    // TODO move this inside handle return function or implement events
-    await Snapshots.createAfter(this, page, command);
-
+    await beforeReturn();
     return this.resolveReturnValue(packet, returnValue);
   }
 

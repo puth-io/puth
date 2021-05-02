@@ -10,7 +10,8 @@ export type IPageInclude = {
   url: string;
   method: string;
   resourceType: string;
-  content: string;
+  content: Buffer;
+  headers: Record<string, string>;
 };
 
 export type ISnapshot = {
@@ -58,47 +59,35 @@ type ILogLocation = {
 };
 
 type ILog = {
-  args: any[];
-  location: ILogLocation;
-  text: string;
-  messageType: ConsoleMessageType;
-  stackTrace: ILogLocation[];
   type: 'log';
   context: {};
   time: number;
+  messageType: ConsoleMessageType;
+  args: any[];
+  location: ILogLocation;
+  text: string;
+  stackTrace: ILogLocation[];
 };
 
-type IRequest = {
-  id: string;
+type IResponse = {
+  type: 'response';
+  context: {};
+  time: number;
   isNavigationRequest: boolean;
   url: string;
   resourceType: string;
   method: string;
-  postData: string;
   headers: {
     [key: string]: string;
   };
-  time: number;
-};
-
-type IResponse = IRequest & {
-  remoteAddress: {
-    ip: string;
-    port: number;
-  };
-  text: string;
-  status: number;
-  statusText: string;
-  fromDiskCache: boolean;
-  fromServiceWorker: boolean;
-  // TODO maybe implement _securityDetails
+  content: Buffer;
 };
 
 class SnapshotHandler {
   private snapshots = {};
   private commands: ICommand[] = [];
   private logs: ILog[] = [];
-  private requests: IRequest[] = [];
+  private responses: IResponse[] = [];
 
   log(...msg) {
     fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');
@@ -117,14 +106,22 @@ class SnapshotHandler {
     this.broadcast(log);
   }
 
+  addResponse(response: IResponse) {
+    this.responses.push(response);
+    this.broadcast(response);
+  }
+
   async createBefore(context: Context, page: Page, command: ICommand | undefined) {
     if (!command) {
       return;
     }
 
+    command.snapshots.before = await this.makeSnapshot(page);
+
+    // TODO move this into createAfter function?
     this.commands.push(command);
 
-    command.snapshots.before = await this.makeSnapshot(page);
+    this.cleanPageIncludes(page);
   }
 
   async createAfter(context: Context, page: Page, command: ICommand | undefined) {
@@ -135,11 +132,7 @@ class SnapshotHandler {
     command.time.finished = Date.now();
 
     try {
-      let snapshot = await this.makeSnapshot(page);
-
-      await this.addPageIncludes(page, snapshot);
-
-      command.snapshots.after = snapshot;
+      command.snapshots.after = await this.makeSnapshot(page);
     } catch (err) {
       // Page navigations break the snapshot process.
       // Retry for a second time, this time puppeteer waits before calling page.evaluate
@@ -251,6 +244,10 @@ class SnapshotHandler {
     return this.logs;
   }
 
+  getResponses() {
+    return this.responses;
+  }
+
   private pageIncludes = new Map<Page, Response[]>();
 
   addPageInclude(page, response: Response) {
@@ -262,27 +259,31 @@ class SnapshotHandler {
 
     if (!pageInclude) {
       // this should never happen
-      console.log('___ wtf');
       return;
     }
 
     pageInclude.push(response);
+  }
 
-    console.log('___ page includes', pageInclude.length, this.pageIncludes.get(page)?.length);
+  cleanPageIncludes(page) {
+    this.pageIncludes.set(page, []);
   }
 
   async addPageIncludes(page, snapshot) {
+    snapshot.includes = this.getPageIncludes(page);
+  }
+
+  async getPageIncludes(page) {
     let responses = this.pageIncludes.get(page) ?? [];
-    console.log('___ found responses', responses.length);
-    snapshot.includes = await Promise.all(
+    return await Promise.all(
       responses.map(
         async (response): Promise<IPageInclude> => {
-          console.log('___ transform response....');
           return {
             method: response.request().method(),
             resourceType: response.request().resourceType(),
             url: response.request().url(),
-            content: await response.text(),
+            content: await response.buffer(),
+            headers: response.headers(),
           };
         },
       ),
