@@ -1,25 +1,26 @@
 import Context from './Context';
-import { ConsoleMessageType, Page } from 'puppeteer';
+import { ConsoleMessageType, Page, Viewport } from 'puppeteer';
 import * as fs from 'fs';
 import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
 
-export type IViewport = {
-  width: number;
-  height: number;
-  deviceScaleFactor: number;
-  isMobile: boolean;
-  hasTouch: boolean;
-  isLandscaped: boolean;
+export type IPageInclude = {
+  url: string;
+  method: string;
+  resourceType: string;
+  content: Buffer;
+  headers: Record<string, string>;
 };
 
 export type ISnapshot = {
+  type: string;
   html: any;
   version: number;
   url: any;
-  viewport: IViewport;
+  viewport: Viewport | null;
+  includes?: IPageInclude[];
 };
 
 export type ICommandError = {
@@ -58,47 +59,35 @@ type ILogLocation = {
 };
 
 type ILog = {
-  args: any[];
-  location: ILogLocation;
-  text: string;
-  messageType: ConsoleMessageType;
-  stackTrace: ILogLocation[];
   type: 'log';
   context: {};
   time: number;
+  messageType: ConsoleMessageType;
+  args: any[];
+  location: ILogLocation;
+  text: string;
+  stackTrace: ILogLocation[];
 };
 
-type IRequest = {
-  id: string;
+type IResponse = {
+  type: 'response';
+  context: {};
+  time: number;
   isNavigationRequest: boolean;
   url: string;
   resourceType: string;
   method: string;
-  postData: string;
   headers: {
     [key: string]: string;
   };
-  time: number;
-};
-
-type IResponse = IRequest & {
-  remoteAddress: {
-    ip: string;
-    port: number;
-  };
-  text: string;
-  status: number;
-  statusText: string;
-  fromDiskCache: boolean;
-  fromServiceWorker: boolean;
-  // TODO maybe implement _securityDetails
+  content: Buffer;
 };
 
 class SnapshotHandler {
   private snapshots = {};
   private commands: ICommand[] = [];
   private logs: ILog[] = [];
-  private requests: IRequest[] = [];
+  private responses: IResponse[] = [];
 
   log(...msg) {
     fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');
@@ -117,14 +106,20 @@ class SnapshotHandler {
     this.broadcast(log);
   }
 
+  addResponse(response: IResponse) {
+    this.responses.push(response);
+    this.broadcast(response);
+  }
+
   async createBefore(context: Context, page: Page, command: ICommand | undefined) {
     if (!command) {
       return;
     }
 
-    this.commands.push(command);
-
     command.snapshots.before = await this.makeSnapshot(page);
+
+    // TODO move this into createAfter function?
+    this.commands.push(command);
   }
 
   async createAfter(context: Context, page: Page, command: ICommand | undefined) {
@@ -171,14 +166,13 @@ class SnapshotHandler {
    * In general, v2 is 2-10x faster than v1
    *
    * TODO use page network events to catch style
-   *      to further improve performance. Should
+   *      to further improve performance (maybe). Should
    *      be 2x improvement if single request.
    *      Every next request that uses the same
    *      stylesheet doesn't need to process and
    *      send it anymore. Also reduces snapshot.pack.
-   * @param page
    */
-  async makeSnapshot(page) {
+  async makeSnapshot(page: Page): Promise<ISnapshot | undefined> {
     if (!page || (await page.url()) === 'about:blank') {
       return;
     }
@@ -205,7 +199,6 @@ class SnapshotHandler {
             }
 
             if (sibCount > 1) {
-              // stack.unshift(el.nodeName.toLowerCase() + ':nth-child(' + (sibIndex + 1) + ')');
               stack.unshift([el.nodeName.toLowerCase(), sibIndex]);
             } else {
               stack.unshift(el.nodeName.toLowerCase());
@@ -247,6 +240,10 @@ class SnapshotHandler {
 
   getLogs() {
     return this.logs;
+  }
+
+  getResponses() {
+    return this.responses;
   }
 }
 

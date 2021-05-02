@@ -10,7 +10,8 @@ const { createBrowser } = require('../browser/core');
 
 const PuthStandardPlugin = require('../lib/server/src/plugins/PuthStandardPlugin').default;
 
-const cli = meow(`
+const cli = meow(
+  `
 	Usage
 	  $ puth command [options]
 
@@ -24,30 +25,32 @@ const cli = meow(`
     $ puth daemon [options]
     
       --debug    -d     Enables debug output
-`, {
-  booleanDefault: true,
-  flags: {
-    debug: {
-      type: 'boolean',
-      alias: 'd',
-      default: false,
-    },
-    address: {
-      type: 'string',
-      default: '127.0.0.1',
-      alias: 'a',
-    },
-    port: {
-      type: 'number',
-      default: 4000,
-      alias: 'p',
-    },
-    noserver: {
-      type: 'boolean',
-      default: false,
+`,
+  {
+    booleanDefault: true,
+    flags: {
+      debug: {
+        type: 'boolean',
+        alias: 'd',
+        default: false,
+      },
+      address: {
+        type: 'string',
+        default: '127.0.0.1',
+        alias: 'a',
+      },
+      port: {
+        type: 'number',
+        default: 4000,
+        alias: 'p',
+      },
+      noserver: {
+        type: 'boolean',
+        default: false,
+      },
     },
   },
-});
+);
 
 const cwd = process.cwd();
 const input = cli.input;
@@ -72,7 +75,7 @@ if (fs.existsSync(path.join(cwd, 'puth.config.json'))) {
   puthConfig = {
     ...puthConfig,
     ...puthConfigFile,
-  }
+  };
   debug('puth.config.json =', puthConfig);
 }
 
@@ -88,7 +91,7 @@ if (input[0] === 'start') {
 async function start() {
   let instance = new Puth(puthConfig);
   instance.use(PuthStandardPlugin);
-  await instance.listen(puthConfig.port, puthConfig.address);
+  await instance.serve(puthConfig.port, puthConfig.address);
 }
 
 async function dev() {
@@ -97,7 +100,7 @@ async function dev() {
     dev: true,
   });
   instance.use(PuthStandardPlugin);
-  await instance.listen(puthConfig.port, puthConfig.address);
+  await instance.serve(puthConfig.port, puthConfig.address);
 }
 
 async function daemon() {

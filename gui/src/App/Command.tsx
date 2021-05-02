@@ -3,74 +3,59 @@ import './Command.scss';
 import { Events } from '../index';
 import { previewStore } from './Preview';
 import { observer } from 'mobx-react';
+import { ISnapshot } from '../../../src/server/src/Snapshots';
+import { IContext } from './WebsocketHandler';
 
 export type IViewport = {
-  width: number,
-  height: number,
-  deviceScaleFactor: number,
-  isMobile: boolean,
-  hasTouch: boolean,
-  isLandscaped: boolean,
-}
-
-export type ISnapshot = {
-  html: any,
-  version: number,
-  url: any,
-  viewport: IViewport,
-}
+  width: number;
+  height: number;
+  deviceScaleFactor: number;
+  isMobile: boolean;
+  hasTouch: boolean;
+  isLandscaped: boolean;
+};
 
 export type ICommand = {
-  id: string,
-  type: 'command',
+  id: string;
+  type: 'command';
   snapshots: {
     before: ISnapshot | undefined;
     after: ISnapshot | undefined;
-  },
-  errors: [],
-  context: {
-    id: string,
-  },
-  func: string,
-  args: string[],
+  };
+  errors: [];
+  context: IContext;
+  func: string;
+  args: string[];
   on: {
-    type: string,
-    path: [[string, number][] | string][],
-  }
+    type: string;
+    path: [[string, number][] | string][];
+  };
 };
 
 type CommandProps = {
-  index: number | undefined,
-  command: ICommand,
-}
+  index: number | undefined;
+  command: ICommand;
+};
 
-export const Command: FunctionComponent<CommandProps> = observer((
-  {
-    index,
-    command,
-  },
-) => {
+export const Command: FunctionComponent<CommandProps> = observer(({ index, command }) => {
   let { on, func, args } = command;
 
-  let mouseClick = useCallback((e) => {
-    e.stopPropagation();
-    Events.emit('preview:toggle', command);
-  }, [command]);
-  let mouseEnter = useCallback(
-    () => Events.emit('preview:highlight:show', command),
+  let mouseClick = useCallback(
+    (e) => {
+      e.stopPropagation();
+      Events.emit('preview:toggle', command);
+    },
     [command],
   );
-  let mouseLeave = useCallback(
-    () => Events.emit('preview:highlight:hide', command),
-    [command],
-  );
+  let mouseEnter = useCallback(() => Events.emit('preview:highlight:show', command), [command]);
+  let mouseLeave = useCallback(() => Events.emit('preview:highlight:hide', command), [command]);
 
   let displayType: any = on.type;
   if (on.type === 'ElementHandle') {
     displayType = 'Element';
   }
 
-  let displayArgs = args.map(arg => {
+  let displayArgs = args.map((arg) => {
     if (typeof arg === 'object') {
       return JSON.stringify(arg);
     }
@@ -93,7 +78,7 @@ export const Command: FunctionComponent<CommandProps> = observer((
 
     if (indices.length <= 10) {
       let suffix = Math.floor(10 / indices.length);
-      indices.forEach(indic => {
+      indices.forEach((indic) => {
         displayFunc += func.slice(indic, indic + (suffix > 1 ? suffix : 1));
       });
     }
@@ -125,20 +110,11 @@ export const Command: FunctionComponent<CommandProps> = observer((
         let message = error.type === 'error' ? error.error.message : error.expectation.message;
 
         return (
-          <tr
-            key={idx}
-            onClick={mouseClick}
-            onMouseEnter={mouseEnter}
-            onMouseLeave={mouseLeave}
-          >
+          <tr key={idx} onClick={mouseClick} onMouseEnter={mouseEnter} onMouseLeave={mouseLeave}>
             <td colSpan={5}>
               <div className={'error'}>
-                <div className={'title'}>
-                  Error
-                </div>
-                <div className={'message'}>
-                  {message}
-                </div>
+                <div className={'title'}>Error</div>
+                <div className={'message'}>{message}</div>
               </div>
             </td>
           </tr>

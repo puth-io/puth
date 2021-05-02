@@ -1,9 +1,11 @@
 import { observer } from 'mobx-react';
-import React, { useEffect, useRef } from 'react';
-import { ICommand, ISnapshot } from './Command';
+import React, { useEffect, useRef, useState } from 'react';
+import { ICommand } from './Command';
 import { action, makeAutoObservable } from 'mobx';
 import { Events } from '../index';
 import { loadHighlights, resolveElement } from './Highlight';
+import { useForceUpdate } from './Util';
+import { ISnapshot } from '../../../src/server/src/Snapshots';
 
 // Calculates the iframe size relative to the available space
 // and keeps the dimensions and scale of the original viewport
@@ -102,6 +104,7 @@ class PreviewStore {
 export const previewStore = new PreviewStore();
 
 export const Preview = observer(() => {
+  const forceUpdate = useForceUpdate();
   const iframeRef = useRef<any>(null);
   const iframeContainerRef = useRef(null);
 
@@ -145,12 +148,22 @@ export const Preview = observer(() => {
     };
   }, []);
 
+  // Handle window resize because preview iframe should scale to the minimum available space.
+  useEffect(() => {
+    let handleResize = () => forceUpdate();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  });
+
   const stickSnapshotState = (state: 'before' | 'after') => {
     previewStore.activeState = state;
   };
 
+  let command = previewStore.visibleCommand;
   let snapshot = previewStore.visibleSnapshot;
-
   let size = calculateIframeSize(snapshot, iframeContainerRef);
 
   let iframe: any = iframeRef?.current;
@@ -166,6 +179,9 @@ export const Preview = observer(() => {
 
   // Check if snapshot contains any html to display
   if (html) {
+    // Using a blob is faster than putting the src into 'srcdoc' and also faster than iframe.document.write
+    // (which is also not the best to use). Creating a blob allows the browser to load the data into the
+    // iframe in a usual way.
     const blob = new Blob([html], { type: 'text/html' });
     iframe.src = URL.createObjectURL(blob);
   } else if (iframe && !snapshot) {
@@ -219,9 +235,43 @@ export const Preview = observer(() => {
         }
         node.value = el.value;
       });
+
+      [...iframeDoc.querySelectorAll('img')].forEach((img) => {
+        // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
+        let src = img.getAttribute('src');
+        let matchUrl = '';
+
+        if (src.startsWith('http://') || src.startsWith('https://')) {
+          // find matching include on full srcurl
+          matchUrl = src;
+        } else if (src.startsWith('//')) {
+          matchUrl = snapshot.url + src.replace('//', '');
+        } else {
+          matchUrl = snapshot.url + src;
+        }
+
+        let resource = command.context.responses.find((pageInclude) => pageInclude.url === matchUrl);
+
+        if (!resource) {
+          // TODO implement error handling
+          return;
+        }
+
+        // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
+        //      and blobs need to be destroyed by hand.
+        const blob = new Blob([Uint8Array.from(resource.content.data)]);
+        img.src = URL.createObjectURL(blob);
+      });
+
+      // TODO check if there are other tags that need to be reinjected from the context.responses resources.
     }
 
     // Load the highlights for the snapshot
+    // TODO to optimize this, always have 2 iframes, one with the before state and one with the after.
+    //      If the preview switches, just change the z-index and the visibility. This prevents the
+    //      need for rerendering the snapshot. Also implement a "ready" state that waits for the
+    //      "onload" callback to finish because the onload callback can cause "flickering" if it scrolls
+    //      the element into view. Would be much nicer if the user doesn't see this processing.
     loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
   };
 
@@ -233,7 +283,7 @@ export const Preview = observer(() => {
         overflow: 'hidden',
       }}
     >
-      <div className="py-2 d-flex">
+      <div className="d-flex py-2 ps-2">
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"
@@ -268,8 +318,7 @@ export const Preview = observer(() => {
           style={{
             flex: 1,
             overflow: 'hidden',
-            width: size.container.width,
-            height: size.container.height,
+            visibility: !!html ? 'visible' : 'hidden',
           }}
         >
           <iframe
@@ -283,7 +332,7 @@ export const Preview = observer(() => {
               transform: 'scale(' + size.scale + ')',
               width: size.width,
               height: size.height,
-              background: html ? 'white' : 'transparent',
+              background: !!html ? 'white' : 'transparent',
             }}
           />
         </div>
