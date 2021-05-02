@@ -1,5 +1,5 @@
 import Context from './Context';
-import { ConsoleMessageType, Page, Viewport, Response } from 'puppeteer';
+import { ConsoleMessageType, Page, Viewport } from 'puppeteer';
 import * as fs from 'fs';
 import WebsocketConnections from './WebsocketConnections';
 
@@ -120,8 +120,6 @@ class SnapshotHandler {
 
     // TODO move this into createAfter function?
     this.commands.push(command);
-
-    this.cleanPageIncludes(page);
   }
 
   async createAfter(context: Context, page: Page, command: ICommand | undefined) {
@@ -246,48 +244,6 @@ class SnapshotHandler {
 
   getResponses() {
     return this.responses;
-  }
-
-  private pageIncludes = new Map<Page, Response[]>();
-
-  addPageInclude(page, response: Response) {
-    if (!this.pageIncludes.has(page)) {
-      this.pageIncludes.set(page, []);
-    }
-
-    let pageInclude = this.pageIncludes.get(page);
-
-    if (!pageInclude) {
-      // this should never happen
-      return;
-    }
-
-    pageInclude.push(response);
-  }
-
-  cleanPageIncludes(page) {
-    this.pageIncludes.set(page, []);
-  }
-
-  async addPageIncludes(page, snapshot) {
-    snapshot.includes = this.getPageIncludes(page);
-  }
-
-  async getPageIncludes(page) {
-    let responses = this.pageIncludes.get(page) ?? [];
-    return await Promise.all(
-      responses.map(
-        async (response): Promise<IPageInclude> => {
-          return {
-            method: response.request().method(),
-            resourceType: response.request().resourceType(),
-            url: response.request().url(),
-            content: await response.buffer(),
-            headers: response.headers(),
-          };
-        },
-      ),
-    );
   }
 }
 

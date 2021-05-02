@@ -167,7 +167,6 @@ class Context extends Generic {
 
     this.registerEventListenerOn(page, 'response', async (response: Response) => {
       if (['stylesheet', 'image', 'font', 'script', 'manifest'].includes(response.request().resourceType())) {
-        // Snapshots.addPageInclude(page, response);
         Snapshots.addResponse({
           type: 'response',
           context: this.serialize(),
