@@ -56,7 +56,7 @@
     "daemon": "node src/server/daemon/daemon.js",
     "dev:client": "ts-node-dev --respawn --transpile-only src/dev/client.ts",
     "dev:server": "ts-node-dev --respawn --transpile-only src/scripts/local.ts",
-    "prepublishOnly": "npm run build && npm test && npm run lint",
+    "prepublishOnly": "npm run build && npm test && npm run lint && cd gui && npm run build",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags"
