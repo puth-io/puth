@@ -233,7 +233,7 @@ export const Preview = observer(() => {
         overflow: 'hidden',
       }}
     >
-      <div className="py-2 d-flex">
+      <div className="d-flex py-2 ps-2">
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"

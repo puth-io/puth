@@ -40,3 +40,10 @@ input {
     border-color: $primary-darker;
   }
 }
+
+// Dark color scheme
+// Currently supported on Chrome 81 and Safari 13
+// https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme
+:root {
+  color-scheme: dark;
+}
