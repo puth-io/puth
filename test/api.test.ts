@@ -22,6 +22,7 @@ envs.forEach((env) => {
       this.__remoteTestInstance = puth();
       this.__remoteTestInstance.use(PuthStandardPlugin);
       this.__remoteTestInstance.serve(4000, '127.0.0.1', false);
+      this.timeout(5000);
     }
   });
 
