@@ -395,14 +395,17 @@ class Context extends Generic {
         };
       }
 
-      // TODO Implement this in events. Event: 'function:call:return'
-      await Snapshots.createAfter(this, page, command);
-
       if ('return' in expectation) {
+        // TODO Implement this in events. Event: 'function:call:return'
+        await Snapshots.createAfter(this, page, command);
+
         return expectation.return(returnValue);
       }
 
       if (expectation.returns) {
+        // TODO Implement this in events. Event: 'function:call:return'
+        await Snapshots.createAfter(this, page, command);
+
         let { type, represents } = expectation.returns;
 
         return this.returnCached(returnValue, type, represents);
