@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import WebsocketConnections from './WebsocketConnections';
 import { Puth } from '../Server';
 import PuthContextPlugin from './PuthContextPlugin';
-import { Browser, Page, Response, Target } from 'puppeteer';
+import { Browser, Page, HTTPResponse, Target } from 'puppeteer';
 import * as mitt from 'mitt';
 
 import { createBrowser } from '../../../browser/core';
@@ -165,7 +165,7 @@ class Context extends Generic {
   _trackPage(page) {
     page.on('close', () => this.removeEventListenersFrom(page));
 
-    this.registerEventListenerOn(page, 'response', async (response: Response) => {
+    this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
       if (['stylesheet', 'image', 'font', 'script', 'manifest'].includes(response.request().resourceType())) {
         Snapshots.addResponse({
           type: 'response',

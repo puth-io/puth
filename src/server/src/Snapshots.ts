@@ -19,7 +19,7 @@ export type ISnapshot = {
   html: any;
   version: number;
   url: any;
-  viewport: Viewport;
+  viewport: Viewport | null;
   includes?: IPageInclude[];
 };
 
