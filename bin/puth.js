@@ -80,6 +80,14 @@ if (fs.existsSync(path.join(cwd, 'puth.config.json'))) {
   debug('puth.config.json =', puthConfig);
 }
 
+// Register SIGTERM and SIGINT
+process.on('SIGTERM', () => {
+  process.exit(0);
+});
+process.on('SIGINT', () => {
+  process.exit(0);
+});
+
 // Commands
 if (input[0] === 'start') {
   start();
