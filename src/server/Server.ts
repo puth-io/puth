@@ -81,13 +81,6 @@ export class Puth {
     this.server = fastify({ logger: this.isDebug() });
     this.setupFastify(allowedOrigins);
 
-    process.on('SIGTERM', () => {
-      this.server.close();
-    });
-    process.on('SIGINT', () => {
-      this.server.close();
-    });
-
     await this.server.listen(port, address);
 
     // TODO do smarter type check so we can remove @ts-ignore
