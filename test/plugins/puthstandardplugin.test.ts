@@ -104,7 +104,4 @@ describe(`PuthStandardPlugin`, function () {
       assert.strictEqual(await this.page.$('#actions-click-verify').innerText(), 'clicked button');
     });
   });
-
-  // it('', async function () {
-  // })
 });

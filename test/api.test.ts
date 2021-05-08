@@ -12,11 +12,21 @@ chai.use(chaiAsPromised);
 const assert = chai.assert;
 
 const envs: [string, () => any][] = [
-  ['remote', () => new RemotePuthClient('http://127.0.0.1:4000')],
+  ['remote', () => new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:4000')],
   ['local', () => new LocalPuthClient()],
 ];
 
-envs.forEach((env) => {
+if (process.env.TEST_ONLY_REMOTE) {
+  puthContextTests(envs[0]);
+} else if (process.env.TEST_ONLY_LOCAL) {
+  puthContextTests(envs[1]);
+} else {
+  envs.forEach((env) => {
+    puthContextTests(env);
+  });
+}
+
+function puthContextTests(env) {
   before(function () {
     if (env[0] === 'remote') {
       this.__remoteTestInstance = puth();
@@ -83,4 +93,4 @@ envs.forEach((env) => {
       });
     });
   });
-});
+}
