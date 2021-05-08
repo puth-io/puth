@@ -27,6 +27,7 @@ export class Puth {
     server: {
       allowOrigins: string[];
     };
+    disableCors: boolean | undefined;
   };
 
   constructor(options?) {
@@ -80,6 +81,13 @@ export class Puth {
     this.server = fastify({ logger: this.isDebug() });
     this.setupFastify(allowedOrigins);
 
+    process.on('SIGTERM', () => {
+      this.server.close();
+    });
+    process.on('SIGINT', () => {
+      this.server.close();
+    });
+
     await this.server.listen(port, address);
 
     // TODO do smarter type check so we can remove @ts-ignore
@@ -128,9 +136,11 @@ export class Puth {
   }
 
   private setupFastify(allowedOrigins: string[]) {
-    this.server.register(fastifyCors, {
-      origin: allowedOrigins,
-    });
+    if (this.options?.disableCors !== true) {
+      this.server.register(fastifyCors, {
+        origin: allowedOrigins,
+      });
+    }
     this.server.register(fastifyWebsocket);
 
     // TODO do GUI and probably move to another place but without
@@ -179,7 +189,7 @@ export class Puth {
 
     this.server.get('/websocket', { websocket: true }, (connection: SocketStream, req) => {
       // The websocket protocol doesn't care about CORS so we need to test for request origin.
-      if (!allowedOrigins.includes(req.headers.origin)) {
+      if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
         return connection.destroy();
       }
 

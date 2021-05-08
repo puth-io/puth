@@ -21,6 +21,7 @@ const cli = meow(
       --debug    -d     Enables debug output
       --address  -a     Address to use (defaults to 127.0.0.1)
       --port     -p     Port to use (default to 4000)
+      --disable-cors    Disables all CORS policies
       
     $ puth daemon [options]
     
@@ -44,7 +45,7 @@ const cli = meow(
         default: 4000,
         alias: 'p',
       },
-      noserver: {
+      disableCors: {
         type: 'boolean',
         default: false,
       },
@@ -66,7 +67,7 @@ let puthConfig = {
   address: flags.address,
   port: flags.port,
   debug: flags.debug,
-  server: !flags.noserver,
+  disableCors: flags.disableCors,
 };
 
 if (fs.existsSync(path.join(cwd, 'puth.config.json'))) {
