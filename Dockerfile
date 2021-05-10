@@ -1,3 +1,18 @@
+FROM node:lts AS build
+
+# USER node
+
+WORKDIR /build
+
+COPY . .
+
+RUN npm install && \
+    npm run build && \
+    cd gui && \
+    npm run build && \
+    rm -rf src/
+
+
 FROM node:lts
 
 RUN echo "deb http://mirror.de.leaseweb.net/debian/ stretch main" > /etc/apt/sources.list && \
@@ -44,8 +59,13 @@ RUN apt-get update && \
         xdg-utils
 
 ENV PUTH_VERSION=latest
-RUN npm install -g --unsafe-perm=true puth@$PUTH_VERSION
+
+WORKDIR /puth
+
+COPY --from=build /build .
 
 EXPOSE 7345
 
-CMD puth start -p 7345 -a 0.0.0.0 -d --disable-cors
+ENTRYPOINT ["/usr/local/bin/node", "bin/puth.js"]
+
+CMD ["start", "-p", "7345", "-a", "0.0.0.0", "--disable-cors"]

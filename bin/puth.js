@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const meow = require('meow');
 
+const pkg = require('../package.json');
+
 const { Puth } = require('../lib/server/Server');
 const { createBrowser } = require('../browser/core');
 
@@ -95,6 +97,8 @@ if (input[0] === 'start') {
   daemon();
 } else if (input[0] === 'dev') {
   dev();
+} else if (input[0] === 'version') {
+  console.log('Puth version', pkg.version);
 }
 
 async function start() {
