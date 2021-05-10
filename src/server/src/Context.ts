@@ -179,7 +179,7 @@ class Context extends Generic {
           content: await response.buffer().catch((err) => {
             // Error occurs only when page is navigating. So if the response is coming in after page is already
             // navigating to somewhere else, then chrome deletes the data.
-            return new Buffer(0);
+            return Buffer.alloc(0);
           }),
         });
       }
