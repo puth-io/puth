@@ -1,6 +1,6 @@
 {
   "name": "puth",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "author": {
     "name": "Sebastian Uehlin",
     "email": "uehlinse@gmail.com"
@@ -51,7 +51,7 @@
     "build": "rm -rf lib/ && tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
-    "test": "mocha --exit -r ts-node/register 'test/**/*.ts'",
+    "test": "mocha --exit --timeout 5000 -r ts-node/register 'test/**/*.ts'",
     "test:api": "mocha --exit -r ts-node/register 'test/api.test.ts'",
     "test:watch": "mocha -r ts-node/register --recursive -w --watch-files src,test 'test/**/*.ts'",
     "daemon": "node src/server/daemon/daemon.js",
