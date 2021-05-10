@@ -176,7 +176,7 @@ class Context extends Generic {
           resourceType: response.request().resourceType(),
           method: response.request().method(),
           headers: response.headers(),
-          content: await response.buffer().catch(err => {
+          content: await response.buffer().catch((err) => {
             // Error occurs only when page is navigating. So if the response is coming in after page is already
             // navigating to somewhere else, then chrome deletes the data.
             return new Buffer(0);
