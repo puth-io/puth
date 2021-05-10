@@ -1,7 +1,5 @@
 FROM node:lts AS build
 
-# USER node
-
 WORKDIR /build
 
 COPY . .
@@ -60,8 +58,6 @@ RUN apt-get update && \
         lsb-release \
         wget \
         xdg-utils
-
-ENV PUTH_VERSION=latest
 
 WORKDIR /puth
 
