@@ -144,7 +144,7 @@ export class Puth {
     });
 
     this.server.get('/', (request, reply) => {
-        return reply.redirect('/static/gui/index.html');
+      return reply.redirect('/static/gui/index.html');
     });
 
     // Create new context
