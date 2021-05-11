@@ -143,6 +143,10 @@ export class Puth {
       prefix: '/static',
     });
 
+    this.server.get('/', (request, reply) => {
+        return reply.redirect('/static/gui/index.html');
+    });
+
     // Create new context
     this.server.post('/context', async (request) => {
       return await this.contextCreate(request.body as {});
