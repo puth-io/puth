@@ -236,9 +236,7 @@ export const Preview = observer(() => {
         node.value = el.value;
       });
 
-      [...iframeDoc.querySelectorAll('img')].forEach((img) => {
-        // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
-        let src = img.getAttribute('src');
+      let resolveSrcFromCache = (src) => {
         let matchUrl = '';
 
         if (src.startsWith('http://') || src.startsWith('https://')) {
@@ -247,6 +245,10 @@ export const Preview = observer(() => {
         } else if (src.startsWith('//')) {
           matchUrl = snapshot.url + src.replace('//', '');
         } else {
+          if (src.startsWith('/')) {
+            src = src.substring(1, src.length);
+          }
+
           matchUrl = snapshot.url + src;
         }
 
@@ -260,7 +262,29 @@ export const Preview = observer(() => {
         // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
         //      and blobs need to be destroyed by hand.
         const blob = new Blob([Uint8Array.from(resource.content.data)]);
-        img.src = URL.createObjectURL(blob);
+        return URL.createObjectURL(blob);
+      }
+
+      [...iframeDoc.querySelectorAll('img')].forEach((img) => {
+        // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
+        let src = img.getAttribute('src');
+
+        // Skip data urls
+        if (src.startsWith('data:')) {
+          return;
+        }
+
+        img.src = resolveSrcFromCache(src);
+
+        if (img.srcset) {
+          let candidates = img.srcset.split(',');
+
+          img.srcset = candidates.map(candidate => {
+            let [cSrc, cSize] = candidate.split(' ');
+
+            return `${resolveSrcFromCache(cSrc)} ${cSize}`;
+          }).join(',');
+        }
       });
 
       // Remove all noscript tags since javascript is enabled. If javascript is disabled, don't do anything.
