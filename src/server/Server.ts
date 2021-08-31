@@ -201,15 +201,8 @@ export class Puth {
       });
 
       // TODO send snapshots on websocket connection
-      // Snapshots.getCommands().forEach(command => connection.socket.send(JSON.stringify(command)));
-      // Snapshots.getLogs().forEach(log => connection.socket.send(JSON.stringify(log)));
-
       connection.socket.send(
-        WebsocketConnections.serialize([
-          ...Snapshots.getCommands(),
-          ...Snapshots.getLogs(),
-          ...Snapshots.getResponses(),
-        ]),
+        WebsocketConnections.serialize(Snapshots.getAllCachedItems()),
       );
     });
   }

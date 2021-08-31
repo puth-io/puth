@@ -5,6 +5,7 @@ import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
+import { IContext } from '../../../gui/src/App/WebsocketHandler';
 
 export type IPageInclude = {
   url: string;
@@ -20,6 +21,7 @@ export type ISnapshot = {
   version: number;
   url: any;
   viewport: Viewport | null;
+  isJavascriptEnabled: boolean;
   includes?: IPageInclude[];
 };
 
@@ -84,31 +86,32 @@ type IResponse = {
 };
 
 class SnapshotHandler {
-  private snapshots = {};
-  private commands: ICommand[] = [];
-  private logs: ILog[] = [];
-  private responses: IResponse[] = [];
+  private cache = new Map<IContext, (ICommand | ILog | IResponse)[]>();
+
+  pushToCache(context, item) {
+    if (!this.cache.has(context)) {
+      // cleanup cache to have at least some memory limit
+      if (this.cache.size >= 100) {
+        this.cache.delete(this.cache.keys()[0]);
+      }
+
+      this.cache.set(context, []);
+    }
+
+    // @ts-ignore
+    this.cache.get(context).push(item);
+
+    // TODO maybe implement a time buffer to send out multiple snapshots
+    this.broadcast(item);
+  }
+
+  getAllCachedItems() {
+    // @ts-ignore
+    return [].concat(...this.cache.values());
+  }
 
   log(...msg) {
     fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');
-  }
-
-  getSnapshots() {
-    return this.snapshots;
-  }
-
-  getCommands() {
-    return this.commands;
-  }
-
-  addLog(log: ILog) {
-    this.logs.push(log);
-    this.broadcast(log);
-  }
-
-  addResponse(response: IResponse) {
-    this.responses.push(response);
-    this.broadcast(response);
   }
 
   async createBefore(context: Context, page: Page, command: ICommand | undefined) {
@@ -119,7 +122,7 @@ class SnapshotHandler {
     command.snapshots.before = await this.makeSnapshot(page);
 
     // TODO move this into createAfter function?
-    this.commands.push(command);
+    this.pushToCache(context, command);
   }
 
   async createAfter(context: Context, page: Page, command: ICommand | undefined) {
@@ -172,12 +175,12 @@ class SnapshotHandler {
    *      stylesheet doesn't need to process and
    *      send it anymore. Also reduces snapshot.pack.
    */
-  async makeSnapshot(page: Page): Promise<ISnapshot | undefined> {
+  async makeSnapshot(page: Page, {cacheAllStyleTags = true,} = {}): Promise<ISnapshot | undefined> {
     if (!page || (await page.url()) === 'about:blank') {
       return;
     }
 
-    let untracked = await page.evaluate((_) => {
+    let untracked = await page.evaluate((cacheAllStyleTagsEval) => {
       return (function () {
         function getAbsoluteElementPath(el) {
           let stack: [string, number][] = [];
@@ -208,12 +211,32 @@ class SnapshotHandler {
           return stack.splice(1);
         }
         function getAllStyle() {
+          if (!cacheAllStyleTagsEval) {
+            return [];
+          }
+
           // @ts-ignore
-          return [...document.styleSheets].map((ss) => ({
-            path: getAbsoluteElementPath(ss.ownerNode),
-            href: ss.href,
-            content: [...ss.cssRules].map((s) => s.cssText).join('\n'),
-          }));
+          return [...document.styleSheets].map((ss) => {
+            let getCssRules = () => {
+              let cssRules = [];
+
+              try {
+                cssRules = [...ss.cssRules];
+              } catch (e) {
+                // wtf
+                console.error(e);
+              }
+
+              return cssRules.map((s) => s?.cssText).join('\n');
+            }
+
+            return {
+              path: getAbsoluteElementPath(ss.ownerNode),
+              href: ss.href,
+              // only load content if this is not an external stylesheet
+              content: ss?.href ? null : getCssRules(),
+            }
+          });
         }
         function getUntrackedState() {
           // @ts-ignore
@@ -222,28 +245,23 @@ class SnapshotHandler {
             value: el.value,
           }));
         }
-        return [getAllStyle(), getUntrackedState()];
+        return [
+          getAllStyle(), getUntrackedState(),
+        ];
       })();
-    });
+    }, cacheAllStyleTags);
 
     return {
       type: 'snapshot',
       version: 2,
-      url: await page.url(),
-      viewport: await page.viewport(),
+      url: page.url(),
+      viewport: page.viewport(),
+      isJavascriptEnabled: page.isJavaScriptEnabled(),
       html: {
         src: await page.content(),
         untracked,
       },
     };
-  }
-
-  getLogs() {
-    return this.logs;
-  }
-
-  getResponses() {
-    return this.responses;
   }
 }
 

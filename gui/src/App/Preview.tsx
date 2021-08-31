@@ -263,6 +263,12 @@ export const Preview = observer(() => {
         img.src = URL.createObjectURL(blob);
       });
 
+      // Remove all noscript tags since javascript is enabled. If javascript is disabled, don't do anything.
+      // This exists because the iframe has javascript disabled therefore noscript tag would be displayed.
+      if (snapshot.isJavascriptEnabled) {
+        [...iframeDoc.querySelectorAll('noscript')].forEach(el => el.remove());
+      }
+
       // TODO check if there are other tags that need to be reinjected from the context.responses resources.
     }
 

@@ -166,8 +166,17 @@ class Context extends Generic {
     page.on('close', () => this.removeEventListenersFrom(page));
 
     this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
-      if (['stylesheet', 'image', 'font', 'script', 'manifest'].includes(response.request().resourceType())) {
-        Snapshots.addResponse({
+      if ([
+        'document',
+        'stylesheet',
+        'image',
+        'media',
+        'font',
+        'script',
+        'manifest',
+        'xhr',
+      ].includes(response.request().resourceType())) {
+        Snapshots.pushToCache(this, {
           type: 'response',
           context: this.serialize(),
           time: Date.now(),
@@ -186,7 +195,7 @@ class Context extends Generic {
     });
 
     this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
-      Snapshots.addLog({
+      Snapshots.pushToCache(this, {
         type: 'log',
         context: this.serialize(),
         time: Date.now(),
