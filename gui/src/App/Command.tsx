@@ -30,6 +30,11 @@ export type ICommand = {
     type: string;
     path: [[string, number][] | string][];
   };
+  time: {
+    started: number;
+    elapsed: number;
+    finished?: number;
+  };
 };
 
 type CommandProps = {
@@ -99,6 +104,7 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
         onMouseLeave={mouseLeave}
       >
         <td>{index !== undefined ? index + 1 : ''}</td>
+        <td>{(command.time.elapsed / 1000).toFixed(1)}s</td>
         <td>{displayType}</td>
 
         <td>{displayFunc}</td>

@@ -69,6 +69,8 @@ class Context extends Generic {
     dialogs: new Map<Page, [string, string]>(),
   };
 
+  private createdAt;
+
   constructor(puth: Puth, options: any = {}) {
     super();
 
@@ -77,6 +79,7 @@ class Context extends Generic {
     // @ts-ignore
     // TODO maybe PR to https://github.com/developit/mitt because broken index.d.ts
     this.emitter = mitt();
+    this.createdAt = Date.now();
   }
 
   async setup() {
@@ -312,6 +315,7 @@ class Context extends Generic {
         path: await Utils.getAbsolutePaths(on),
       },
       time: {
+        elapsed: Date.now() - this.createdAt,
         started: Date.now(),
       },
     };

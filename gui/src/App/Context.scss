@@ -37,24 +37,25 @@
       }
 
       & > td:nth-child(1),
-      & > td:nth-child(2) {
+      & > td:nth-child(2),
+      & > td:nth-child(3) {
         color: #bac0ca;
       }
 
-      & > td:nth-child(3) {
+      & > td:nth-child(4) {
         font-weight: bold;
       }
 
-      & > td:nth-child(4) {
+      & > td:nth-child(5) {
         color: #d1d4d7;
         word-break: break-word;
       }
 
-      & > td:not(:nth-child(4)) {
+      & > td:not(:nth-child(5)) {
         width: 1%;
       }
 
-      & > td:nth-child(5) {
+      & > td:nth-child(6) {
         text-align: right;
       }
     }

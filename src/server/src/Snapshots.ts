@@ -50,6 +50,7 @@ export type ICommand = {
   };
   time: {
     started: number;
+    elapsed: number;
     finished?: number;
   };
 };

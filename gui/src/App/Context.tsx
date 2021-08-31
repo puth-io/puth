@@ -18,7 +18,7 @@ const Log: FunctionComponent<LogProps> = ({ index, log }) => {
 
   return (
     <tr className={'log'}>
-      <td colSpan={5}>
+      <td colSpan={6}>
         <div data-messagetype={log.messageType}>
           <div className="fst-italic small">console message (type: {log.messageType})</div>
           <div className={'small fw-bold'}>{message}</div>
