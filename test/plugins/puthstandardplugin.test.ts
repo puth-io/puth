@@ -6,7 +6,13 @@ import { RemotePuthClient } from '../../src';
 async function puthContextBinder(mochaContext) {
   mochaContext.remote = new LocalPuthClient({ silent: true });
   await mochaContext.remote.getPuth().use(PuthStandardPlugin);
-  mochaContext.context = await mochaContext.remote.contextCreate();
+
+  mochaContext.remote = new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:4000');
+
+  mochaContext.context = await mochaContext.remote.contextCreate({
+    snapshot: true,
+    track: ['commands', 'console', 'network'],
+  });
   mochaContext.browser = await mochaContext.context.createBrowser();
   // mochaContext.browser = await mochaContext.context.connectBrowser({
   //   browserWSEndpoint: 'ws://127.0.0.1:41003/devtools/browser/78d5c8ba-ad3d-4907-813f-e24316be0f80',
