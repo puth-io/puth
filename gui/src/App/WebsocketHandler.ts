@@ -1,5 +1,6 @@
 import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from './Command';
+import { logData, snapshotSize } from './Util';
 
 export type IContext = {
   id: string;
@@ -37,6 +38,8 @@ class WebsocketHandlerSingleton {
 
   constructor() {
     makeAutoObservable(this);
+
+    (window as any).contexts = this.contexts;
   }
 
   try(uri: string) {
@@ -80,15 +83,35 @@ class WebsocketHandlerSingleton {
       }
     };
 
-    this.websocket.onmessage = (event) => {
+    this.websocket.onmessage = action((event) => {
+      let dateBeforeParse = Date.now();
+
       let data = JSON.parse(event.data);
+
+      let dateAfterParse = Date.now();
 
       if (Array.isArray(data)) {
         data.forEach((p) => this.receivedPacket(p));
       } else {
         this.receivedPacket(data);
       }
-    };
+
+      if (process.env.NODE_ENV === 'development') {
+        let size = (event.data.length / 1000 / 1000).toFixed(2);
+
+        console.group('Packet received');
+
+        console.log('Delta time parse', dateAfterParse - dateBeforeParse, 'ms');
+        console.log('Delta time proc.', Date.now() - dateAfterParse, 'ms');
+        console.log('Size', size, 'mb');
+
+        console.group('Events', Array.isArray(data) ? data.length : 1);
+        logData(data);
+        console.groupEnd();
+
+        console.groupEnd();
+      }
+    });
   }
 
   private receivedPacket(packet) {
@@ -143,6 +166,10 @@ class WebsocketHandlerSingleton {
 
   getContexts() {
     return this.contexts;
+  }
+
+  getUri() {
+    return this.uri;
   }
 }
 
