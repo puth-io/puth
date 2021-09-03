@@ -1,105 +1,11 @@
 import { observer } from 'mobx-react';
-import React, { useEffect, useRef, useState } from 'react';
-import { ICommand } from './Command';
-import { action, makeAutoObservable } from 'mobx';
-import { Events } from '../index';
-import { loadHighlights, resolveElement } from './Highlight';
-import { useForceUpdate } from './Util';
-import { ISnapshot } from '../../../src/server/src/Snapshots';
-
-// Calculates the iframe size relative to the available space
-// and keeps the dimensions and scale of the original viewport
-function calculateIframeSize(snapshot: ISnapshot | undefined, iframeContainer: any) {
-  let size = {
-    container: {
-      width: '',
-      height: '',
-    },
-    width: '100%',
-    height: '100%',
-    scale: 1,
-  };
-
-  if (!snapshot?.viewport || !iframeContainer.current) {
-    return size;
-  }
-
-  let { width, height } = snapshot.viewport;
-  let { offsetWidth, offsetHeight } = iframeContainer.current;
-
-  let scaleFactorX = offsetWidth / width;
-  let scaleFactorY = offsetHeight / height;
-
-  let smallestFactor = scaleFactorX < scaleFactorY ? scaleFactorX : scaleFactorY;
-
-  size.container.width = offsetWidth + 'px';
-  size.container.height = offsetHeight + 'px';
-
-  size.width = width + 'px';
-  size.height = height + 'px';
-
-  if (smallestFactor < 1) {
-    size.scale = smallestFactor;
-    size.container.width = width * smallestFactor + 'px';
-    size.container.height = height * smallestFactor + 'px';
-  }
-
-  return size;
-}
-
-export type SnapshotState = 'before' | 'after';
-
-class PreviewStore {
-  activeCommand: ICommand | undefined;
-  activeState: SnapshotState = 'before';
-  highlightCommand: ICommand | undefined;
-  highlightState: SnapshotState = 'before';
-  private highlightInterval: number;
-
-  constructor() {
-    makeAutoObservable(this);
-
-    this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1000);
-  }
-
-  toggleHighlightState() {
-    this.highlightState = this.highlightState === 'before' ? 'after' : 'before';
-  }
-
-  get visibleCommand() {
-    return this.highlightCommand ?? this.activeCommand;
-  }
-
-  get visibleHighlightState() {
-    if (!this.visibleCommand?.snapshots?.before) {
-      return 'after';
-    }
-    if (!this.visibleCommand?.snapshots?.after) {
-      return 'before';
-    }
-    return this.highlightCommand ? this.highlightState : this.activeState;
-  }
-
-  get visibleSnapshot() {
-    return this.visibleCommand?.snapshots[this.visibleHighlightState];
-  }
-
-  get visibleHasBefore() {
-    return this.visibleCommand?.snapshots && 'before' in this.visibleCommand.snapshots;
-  }
-
-  get visibleHasAfter() {
-    return this.visibleCommand?.snapshots && 'after' in this.visibleCommand.snapshots;
-  }
-
-  get visibleHasSnapshots() {
-    return Array.isArray(this.visibleCommand?.snapshots);
-  }
-
-  get isVisibleHighlight() {
-    return this.highlightCommand !== undefined;
-  }
-}
+import React, { useEffect, useRef } from 'react';
+import { ICommand } from '../../App/Command';
+import { action } from 'mobx';
+import { Events } from '../../index';
+import { loadHighlights, resolveElement } from '../../App/Highlight';
+import { calculateIframeSize, useForceUpdate } from '../../App/Util';
+import { PreviewStore } from './PreviewStore';
 
 export const previewStore = new PreviewStore();
 
@@ -164,21 +70,21 @@ export const Preview = observer(() => {
 
   let command = previewStore.visibleCommand;
   let snapshot = previewStore.visibleSnapshot;
-  let size = calculateIframeSize(snapshot, iframeContainerRef);
+  let iframeSize = calculateIframeSize(snapshot, iframeContainerRef);
 
   let iframe: any = iframeRef?.current;
 
   let html;
 
-  if (snapshot && snapshot.version === 1) {
-    html = snapshot?.html;
-  } else if (snapshot && snapshot.version === 2) {
-    // TODO fix replace. Also, replace on server side?
-    html = snapshot?.html?.src.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/, '');
+  if (snapshot) {
+    html = snapshot?.html?.src;
+
+    // replace all script tags
+    // html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/, '');
   }
 
   // Check if snapshot contains any html to display
-  if (html) {
+  if (iframe && html) {
     // Using a blob is faster than putting the src into 'srcdoc' and also faster than iframe.document.write
     // (which is also not the best to use). Creating a blob allows the browser to load the data into the
     // iframe in a usual way.
@@ -192,6 +98,7 @@ export const Preview = observer(() => {
   // Gets called after src of iframe changes
   let onIframeLoad = ({ target }) => {
     let iframeDoc = target?.contentWindow?.document;
+
     if (!iframeDoc) {
       return;
     }
@@ -206,65 +113,103 @@ export const Preview = observer(() => {
       true,
     );
 
-    // Restore dynamic html data form snapshot
-    if (snapshot && snapshot.version === 2) {
-      let [styleSheets, us] = snapshot?.html?.untracked;
-      let rp = [];
+    let resolveSrcFromCache = ({ src, returnType = null }) => {
+      let matchUrl = '';
 
-      styleSheets.forEach((ss) => {
-        rp.push({
-          node: resolveElement(ss.path, iframeDoc),
-          content: ss.content,
-        });
-      });
-      rp.forEach((ss) => {
-        let rawStyleTag = iframeDoc.createElement('style');
-        rawStyleTag.innerHTML = ss.content;
-
-        if (!ss.node) {
-          console.error('StyleNode to replace not found!', ss);
-          return;
-        }
-        ss.node.replaceWith(rawStyleTag);
-      });
-      us.forEach((el) => {
-        let node = resolveElement(el.path, iframeDoc);
-        if (!node) {
-          console.error('Node for state recovery not found!', node);
-          return;
-        }
-        node.value = el.value;
-      });
-
-      let resolveSrcFromCache = (src) => {
-        let matchUrl = '';
-
-        if (src.startsWith('http://') || src.startsWith('https://')) {
-          // find matching include on full srcurl
-          matchUrl = src;
-        } else if (src.startsWith('//')) {
-          matchUrl = snapshot.url + src.replace('//', '');
-        } else {
-          if (src.startsWith('/')) {
-            src = src.substring(1, src.length);
-          }
-
-          matchUrl = snapshot.url + src;
+      if (src.startsWith('http://') || src.startsWith('https://')) {
+        // find matching include on full srcurl
+        matchUrl = src;
+      } else if (src.startsWith('//')) {
+        matchUrl = snapshot.url + src.replace('//', '');
+      } else {
+        if (src.startsWith('/')) {
+          src = src.substring(1, src.length);
         }
 
-        let resource = command.context.responses.find((pageInclude) => pageInclude.url === matchUrl);
-
-        if (!resource) {
-          // TODO implement error handling
-          return;
-        }
-
-        // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
-        //      and blobs need to be destroyed by hand.
-        const blob = new Blob([Uint8Array.from(resource.content.data)]);
-        return URL.createObjectURL(blob);
+        matchUrl = snapshot.url + src;
       }
 
+      let resource = command.context.responses.find((pageInclude) => pageInclude.url === matchUrl);
+
+      if (!resource) {
+        // TODO implement error handling
+        return;
+      }
+
+      if (returnType === 'string') {
+        let uint8array = Uint8Array.from(resource.content.data);
+        return new TextDecoder().decode(uint8array);
+      }
+
+      // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
+      //      and blobs need to be destroyed by hand.
+      const blob = new Blob([Uint8Array.from(resource.content.data)]);
+      return URL.createObjectURL(blob);
+    };
+
+    // Restore dynamic html data form snapshot
+    if (snapshot && snapshot.version === 2) {
+      // pre resolve all nodes because we replace nodes in live dom
+      let [styleSheets, untrackedState] = snapshot?.html?.untracked.map((untracked) =>
+        untracked
+          .map((item) => {
+            let resolvedNode = resolveElement(item.path, iframeDoc);
+
+            if (!resolvedNode) {
+              console.error('Node not found for untracked item', item);
+              return;
+            }
+
+            return {
+              ...item,
+              node: resolvedNode,
+            };
+          })
+          .filter((item) => item != null),
+      );
+
+      // Recovers
+      styleSheets.forEach((ss) => {
+        let content;
+
+        if (ss.href) {
+          // if stylesheet has href set, resolve with cache
+          content = resolveSrcFromCache({ src: ss.href, returnType: 'string' });
+        } else {
+          content = ss.content;
+        }
+
+        let rawStyleTag = iframeDoc.createElement('style');
+        rawStyleTag.innerHTML = content;
+
+        ss.node.replaceWith(rawStyleTag);
+      });
+
+      // Recovers element states
+      untrackedState.forEach((el) => {
+        el.node.value = el.value;
+      });
+
+      /**
+       * Recover external stylesheets
+       */
+      [...iframeDoc.querySelectorAll('link')].forEach((link) => {
+        // need to use getAttribute because if the resource isn't actually loaded, then link.href is empty
+        let href = link.getAttribute('href');
+
+        if (!href) {
+          return;
+        }
+
+        let rawStyleTag = iframeDoc.createElement('style');
+        rawStyleTag.innerHTML = resolveSrcFromCache({ src: href, returnType: 'string' });
+
+        link.replaceWith(rawStyleTag);
+      });
+
+      /**
+       * Recover parts that can not be tracked
+       */
       [...iframeDoc.querySelectorAll('img')].forEach((img) => {
         // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
         let src = img.getAttribute('src');
@@ -274,23 +219,25 @@ export const Preview = observer(() => {
           return;
         }
 
-        img.src = resolveSrcFromCache(src);
+        img.src = resolveSrcFromCache({ src });
 
         if (img.srcset) {
           let candidates = img.srcset.split(',');
 
-          img.srcset = candidates.map(candidate => {
-            let [cSrc, cSize] = candidate.split(' ');
+          img.srcset = candidates
+            .map((candidate) => {
+              let [cSrc, cSize] = candidate.split(' ');
 
-            return `${resolveSrcFromCache(cSrc)} ${cSize}`;
-          }).join(',');
+              return `${resolveSrcFromCache({ src: cSrc })} ${cSize}`;
+            })
+            .join(',');
         }
       });
 
       // Remove all noscript tags since javascript is enabled. If javascript is disabled, don't do anything.
       // This exists because the iframe has javascript disabled therefore noscript tag would be displayed.
       if (snapshot.isJavascriptEnabled) {
-        [...iframeDoc.querySelectorAll('noscript')].forEach(el => el.remove());
+        [...iframeDoc.querySelectorAll('noscript')].forEach((el) => el.remove());
       }
 
       // TODO check if there are other tags that need to be reinjected from the context.responses resources.
@@ -317,7 +264,9 @@ export const Preview = observer(() => {
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"
-            className={`btn m-0 btn-primary ${previewStore.visibleHighlightState === 'before' && 'active'}`}
+            className={`btn m-0 ${
+              previewStore.visibleHighlightState === 'before' ? 'btn-warning active' : 'btn-primary'
+            }`}
             onClick={(_) => stickSnapshotState('before')}
             disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasBefore}
           >
@@ -325,7 +274,9 @@ export const Preview = observer(() => {
           </button>
           <button
             type="button"
-            className={`btn m-0 btn-primary ${previewStore.visibleHighlightState === 'after' && 'active'}`}
+            className={`btn m-0 ${
+              previewStore.visibleHighlightState === 'after' ? 'btn-warning active' : 'btn-primary'
+            }`}
             onClick={(_) => stickSnapshotState('after')}
             disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasAfter}
           >
@@ -339,7 +290,7 @@ export const Preview = observer(() => {
           <input type="text" className="form-control" defaultValue={snapshot?.url} readOnly disabled />
         </div>
         <button type="button" className="btn m-0 btn-primary text-nowrap ms-2 me-2" disabled>
-          {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(size.scale * 100).toFixed(0)}%)
+          {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
         </button>
       </div>
       <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
@@ -359,9 +310,9 @@ export const Preview = observer(() => {
             onLoad={onIframeLoad}
             style={{
               transformOrigin: '0 0',
-              transform: 'scale(' + size.scale + ')',
-              width: size.width,
-              height: size.height,
+              transform: 'scale(' + iframeSize.scale + ')',
+              width: iframeSize.width,
+              height: iframeSize.height,
               background: !!html ? 'white' : 'transparent',
             }}
           />

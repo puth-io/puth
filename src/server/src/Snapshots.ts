@@ -176,7 +176,7 @@ class SnapshotHandler {
    *      stylesheet doesn't need to process and
    *      send it anymore. Also reduces snapshot.pack.
    */
-  async makeSnapshot(page: Page, {cacheAllStyleTags = true,} = {}): Promise<ISnapshot | undefined> {
+  async makeSnapshot(page: Page, { cacheAllStyleTags = false } = {}): Promise<ISnapshot | undefined> {
     if (!page || (await page.url()) === 'about:blank') {
       return;
     }
@@ -225,18 +225,18 @@ class SnapshotHandler {
                 cssRules = [...ss.cssRules];
               } catch (e) {
                 // wtf
-                console.error(e);
+                // console.error(e);
               }
 
               return cssRules.map((s) => s?.cssText).join('\n');
-            }
+            };
 
             return {
               path: getAbsoluteElementPath(ss.ownerNode),
               href: ss.href,
               // only load content if this is not an external stylesheet
               content: ss?.href ? null : getCssRules(),
-            }
+            };
           });
         }
         function getUntrackedState() {
@@ -246,9 +246,7 @@ class SnapshotHandler {
             value: el.value,
           }));
         }
-        return [
-          getAllStyle(), getUntrackedState(),
-        ];
+        return [getAllStyle(), getUntrackedState()];
       })();
     }, cacheAllStyleTags);
 
