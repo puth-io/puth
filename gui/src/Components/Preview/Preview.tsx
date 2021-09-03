@@ -214,6 +214,10 @@ export const Preview = observer(() => {
         // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
         let src = img.getAttribute('src');
 
+        if (!src) {
+          return;
+        }
+
         // Skip data urls
         if (src.startsWith('data:')) {
           return;

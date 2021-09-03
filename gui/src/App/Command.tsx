@@ -33,6 +33,7 @@ export type ICommand = {
   time: {
     started: number;
     elapsed: number;
+    took?: number;
     finished?: number;
   };
 };
@@ -104,7 +105,12 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
         onMouseLeave={mouseLeave}
       >
         <td>{index !== undefined ? index + 1 : ''}</td>
-        <td>{(command.time.elapsed / 1000).toFixed(1)}s</td>
+        <td>
+          {(command.time.elapsed / 1000).toFixed(1)}s
+          {command.time?.took > 250 && (
+            <span className={'ms-1 text-warning'}>({(command.time?.took / 1000).toFixed(1)}s)</span>
+          )}
+        </td>
         <td>{displayType}</td>
 
         <td>{displayFunc}</td>
