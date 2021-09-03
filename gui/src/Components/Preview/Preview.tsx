@@ -35,6 +35,7 @@ export const Preview = observer(() => {
         return;
       }
       previewStore.highlightCommand = cmd;
+      previewStore.resetHighlightInterval();
     });
 
     const eventHighlightHide = action((cmd: ICommand | undefined) => {

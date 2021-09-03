@@ -25,11 +25,19 @@
 
   .snapshots {
     flex: 1;
-    background: #494d54;
     border: none;
     border-collapse: collapse;
     width: auto;
     border-radius: 2px;
+
+    &.table {
+      $border-opacity: 0.15;
+      border-top: 1px solid rgba(255, 255, 255, $border-opacity);
+
+      td {
+        border-bottom: 1px solid rgba(255, 255, 255, $border-opacity);
+      }
+    }
 
     tr {
       & > td:last-child {

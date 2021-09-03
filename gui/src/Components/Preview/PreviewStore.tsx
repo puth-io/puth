@@ -7,13 +7,19 @@ export class PreviewStore {
   activeCommand: ICommand | undefined;
   activeState: SnapshotState = 'before';
   highlightCommand: ICommand | undefined;
-  highlightState: SnapshotState = 'before';
+  highlightState: SnapshotState = 'after';
   private highlightInterval: number;
 
   constructor() {
     makeAutoObservable(this);
 
-    this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1000);
+    this.resetHighlightInterval();
+  }
+
+  resetHighlightInterval() {
+    clearInterval(this.highlightInterval);
+    this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
+    this.highlightState = 'after';
   }
 
   toggleHighlightState() {
