@@ -2,7 +2,7 @@ import React from 'react';
 import './App.scss';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import { Preview } from '../Components/Preview/Preview';
+import { Preview } from './Components/Preview/Preview';
 
 function App() {
   return (

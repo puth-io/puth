@@ -1,4 +1,4 @@
-import { ICommand } from '../../App/Command';
+import { ICommand } from '../../Command';
 import { makeAutoObservable } from 'mobx';
 
 export type SnapshotState = 'before' | 'after';

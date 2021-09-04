@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
 import { Events } from '../index';
-import { previewStore } from '../Components/Preview/Preview';
+import { previewStore } from './Components/Preview/Preview';
 import { observer } from 'mobx-react';
 import { ISnapshot } from '../../../src/server/src/Snapshots';
 import { IContext } from './WebsocketHandler';

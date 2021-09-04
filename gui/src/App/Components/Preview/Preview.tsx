@@ -1,10 +1,10 @@
 import { observer } from 'mobx-react';
 import React, { useEffect, useRef } from 'react';
-import { ICommand } from '../../App/Command';
+import { ICommand } from '../../Command';
 import { action } from 'mobx';
-import { Events } from '../../index';
-import { loadHighlights, resolveElement } from '../../App/Highlight';
-import { calculateIframeSize, useForceUpdate } from '../../App/Util';
+import { Events } from '../../../index';
+import { loadHighlights, resolveElement } from '../../Highlight';
+import { calculateIframeSize, useForceUpdate } from '../../Util';
 import { PreviewStore } from './PreviewStore';
 
 export const previewStore = new PreviewStore();
