@@ -1,7 +1,23 @@
 import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from './Command';
-import { logData, snapshotSize } from './Util';
-import { decode, decodeAsync } from '@msgpack/msgpack';
+import { logData } from './Util';
+import { decode, ExtensionCodec } from '@msgpack/msgpack';
+
+export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
+
+PUTH_EXTENSION_CODEC.register({
+  type: 0,
+  encode: (object: unknown): Uint8Array | null => {
+    if (object instanceof Function) {
+      return new TextEncoder().encode((object as () => void).toString());
+    } else {
+      return null;
+    }
+  },
+  decode: (data: Uint8Array) => {
+    return new TextDecoder().decode(data);
+  },
+});
 
 export type IContext = {
   id: string;
@@ -89,7 +105,7 @@ class WebsocketHandlerSingleton {
     this.websocket.onmessage = action((event) => {
       let dateBeforeParse = Date.now();
 
-      let data = decode(event.data);
+      let data = decode(event.data, { extensionCodec: PUTH_EXTENSION_CODEC });
 
       let dateAfterParse = Date.now();
 
