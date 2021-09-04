@@ -1,8 +1,8 @@
 import React from 'react';
 import './Sidebar.scss';
-import { Context } from './Context';
+import { Context } from '../Context/Context';
 import { observer } from 'mobx-react';
-import { WebsocketHandler } from './WebsocketHandler';
+import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 
 export default observer(function Sidebar() {
   return (

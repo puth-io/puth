@@ -1,6 +1,6 @@
 import React from 'react';
-import Logo from '../assets/puth-logo-white.png';
-import { WebsocketHandler } from './WebsocketHandler';
+import Logo from '../../assets/puth-logo-white.png';
+import { WebsocketHandler } from '../Misc/WebsocketHandler';
 import { observer } from 'mobx-react';
 
 export default observer(function Header() {

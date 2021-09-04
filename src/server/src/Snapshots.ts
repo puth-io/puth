@@ -5,7 +5,7 @@ import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
-import { IContext } from '../../../gui/src/App/WebsocketHandler';
+import { IContext } from '../../../gui/src/App/Misc/WebsocketHandler';
 
 export type IPageInclude = {
   url: string;

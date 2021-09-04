@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App/App';
-import { WebsocketHandler } from './App/WebsocketHandler';
+import { WebsocketHandler } from './App/Misc/WebsocketHandler';
 import mitt from 'mitt';
 
 export const Events = mitt();

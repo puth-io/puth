@@ -1,5 +1,5 @@
 import { action, makeAutoObservable, runInAction } from 'mobx';
-import { ICommand } from './Command';
+import { ICommand } from '../Components/Command/Command';
 import { logData } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 

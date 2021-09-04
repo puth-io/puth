@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { IResponse, ISnapshot } from '../../../src/server/src/Snapshots';
-import { ICommand } from './Command';
+import { IResponse, ISnapshot } from '../../../../src/server/src/Snapshots';
+import { ICommand } from '../Components/Command/Command';
 
 export function useForceUpdate() {
   const [value, setValue] = useState(0);

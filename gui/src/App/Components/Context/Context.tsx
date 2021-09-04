@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useState } from 'react';
 import './Context.scss';
-import { Command, ICommand } from './Command';
-import { IContext } from './WebsocketHandler';
+import { Command, ICommand } from '../Command/Command';
+import { IContext } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react';
 
 type LogProps = {
