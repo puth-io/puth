@@ -2,28 +2,9 @@ $danger: #e22134;
 $dangerDark: #cc1022;
 $info: #158fe6;
 
-.error {
-  padding: 0.3rem 0.4rem;
-  cursor: pointer;
-  border-bottom: 1px solid #c7c7c7;
-  border-left: 0.4rem solid $danger;
-
-  .title {
-    font-weight: bold;
-  }
-
-  .message {
-
-  }
-
-  &:hover {
-    border-left-color: $dangerDark;
-    background: #c4c4c4;
-  }
-}
-
 .log {
   border-bottom: 1px solid #c7c7c7;
+  cursor: pointer;
 
   > td {
     padding: 0;
@@ -41,6 +22,15 @@ $info: #158fe6;
       }
     }
   }
+
+  &.active,
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &.active > td > *[data-messagetype='error'] {
+    border-color: $dangerDark !important;
+  }
 }
 
 .command {
@@ -56,12 +46,14 @@ $info: #158fe6;
   }
 
   &.hasErrors {
-    background: $danger;
+    background-color: $danger;
     color: white !important;
     font-weight: bold;
 
     > td {
       color: white !important;
+      border: none !important;
+      background-image: none !important;
     }
   }
 
@@ -74,7 +66,7 @@ $info: #158fe6;
   }
 
   &:hover {
-    background: #575c64;
+    background: rgba(255, 255, 255, 0.05);
 
     &.hasErrors {
       background: #cc1022;
@@ -88,7 +80,7 @@ $info: #158fe6;
       background: #cc1022;
 
       & ~ tr > td > .error {
-        background: #c4c4c4;
+        background: rgba(255, 255, 255, 0.05);
       }
     }
   }

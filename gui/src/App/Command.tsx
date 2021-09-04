@@ -122,9 +122,15 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
         let message = error.type === 'error' ? error.error.message : error.expectation.message;
 
         return (
-          <tr key={idx} onClick={mouseClick} onMouseEnter={mouseEnter} onMouseLeave={mouseLeave}>
-            <td colSpan={5}>
-              <div className={'error'}>
+          <tr
+            key={idx}
+            className={`log ${active ? 'active' : ''}`}
+            onClick={mouseClick}
+            onMouseEnter={mouseEnter}
+            onMouseLeave={mouseLeave}
+          >
+            <td colSpan={6}>
+              <div data-messagetype={'error'}>
                 <div className={'title'}>Error</div>
                 <div className={'message'}>{message}</div>
               </div>
