@@ -90,7 +90,7 @@ export type IResponse = {
 class SnapshotHandler {
   private cache = new Map<IContext, (ICommand | ILog | IResponse)[]>();
 
-  pushToCache(context, item) {
+  pushToCache(context, item, { broadcast } = { broadcast: true }) {
     if (!this.cache.has(context)) {
       // cleanup cache to have at least some memory limit
       if (this.cache.size >= 100) {
@@ -104,7 +104,9 @@ class SnapshotHandler {
     this.cache.get(context).push(item);
 
     // TODO maybe implement a time buffer to send out multiple snapshots
-    this.broadcast(item);
+    if (broadcast) {
+      this.broadcast(item);
+    }
   }
 
   getAllCachedItems() {
@@ -128,7 +130,7 @@ class SnapshotHandler {
     command.snapshots.before = await this.makeSnapshot(page);
 
     // TODO move this into createAfter function?
-    this.pushToCache(context, command);
+    this.pushToCache(context, command, { broadcast: false });
   }
 
   async createAfter(context: Context, page: Page, command: ICommand | undefined) {
