@@ -1,6 +1,7 @@
 import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from './Command';
 import { logData, snapshotSize } from './Util';
+import { decode, decodeAsync } from '@msgpack/msgpack';
 
 export type IContext = {
   id: string;
@@ -63,6 +64,8 @@ class WebsocketHandlerSingleton {
     this.uri = uri;
     this.websocket = new WebSocket(this.uri);
 
+    this.websocket.binaryType = 'arraybuffer';
+
     const timeoutTimer = setTimeout(() => {
       this.websocket.close();
     }, options?.timeout ?? 3 * 1000);
@@ -86,7 +89,7 @@ class WebsocketHandlerSingleton {
     this.websocket.onmessage = action((event) => {
       let dateBeforeParse = Date.now();
 
-      let data = JSON.parse(event.data);
+      let data = decode(event.data);
 
       let dateAfterParse = Date.now();
 
@@ -97,7 +100,7 @@ class WebsocketHandlerSingleton {
       }
 
       if (process.env.NODE_ENV === 'development') {
-        let size = (event.data.length / 1000 / 1000).toFixed(2);
+        let size = (event.data.byteLength / 1000 / 1000).toFixed(2);
 
         console.group('Packet received');
 
@@ -105,7 +108,7 @@ class WebsocketHandlerSingleton {
         console.log('Delta time proc.', Date.now() - dateAfterParse, 'ms');
         console.log('Size', size, 'mb');
 
-        console.group('Events', Array.isArray(data) ? data.length : 1);
+        console.groupCollapsed('Events', Array.isArray(data) ? data.length : 1);
         logData(data);
         console.groupEnd();
 

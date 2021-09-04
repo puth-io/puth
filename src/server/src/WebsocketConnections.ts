@@ -1,4 +1,5 @@
 import { SocketStream } from 'fastify-websocket';
+import { encode } from '@msgpack/msgpack';
 
 class WebsocketConnectionHandler {
   sockets: SocketStream[] = [];
@@ -22,9 +23,10 @@ class WebsocketConnectionHandler {
 
   serialize(object: string | object | object[]) {
     if (typeof object === 'object' || Array.isArray(object)) {
-      return JSON.stringify(object);
+      return encode(object);
     }
-    return object;
+
+    throw Error('Unsupported serialization type');
   }
 }
 

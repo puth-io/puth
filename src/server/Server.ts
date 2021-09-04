@@ -200,10 +200,9 @@ export class Puth {
         message = JSON.parse(message);
       });
 
-      // TODO send snapshots on websocket connection
-      connection.socket.send(
-        WebsocketConnections.serialize(Snapshots.getAllCachedItems()),
-      );
+      if (Snapshots.hasCachedItems()) {
+        connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+      }
     });
   }
 

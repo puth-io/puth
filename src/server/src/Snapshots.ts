@@ -56,13 +56,13 @@ export type ICommand = {
   };
 };
 
-type ILogLocation = {
+export type ILogLocation = {
   url?: string;
   lineNumber?: number;
   columnNumber?: number;
 };
 
-type ILog = {
+export type ILog = {
   type: 'log';
   context: {};
   time: number;
@@ -73,9 +73,9 @@ type ILog = {
   stackTrace: ILogLocation[];
 };
 
-type IResponse = {
+export type IResponse = {
   type: 'response';
-  context: {};
+  context: IContext;
   time: number;
   isNavigationRequest: boolean;
   url: string;
@@ -84,7 +84,7 @@ type IResponse = {
   headers: {
     [key: string]: string;
   };
-  content: Buffer;
+  content: Uint8Array;
 };
 
 class SnapshotHandler {
@@ -110,6 +110,10 @@ class SnapshotHandler {
   getAllCachedItems() {
     // @ts-ignore
     return [].concat(...this.cache.values());
+  }
+
+  hasCachedItems() {
+    return this.cache.size !== 0;
   }
 
   log(...msg) {
@@ -182,73 +186,95 @@ class SnapshotHandler {
       return;
     }
 
-    let untracked = await page.evaluate((cacheAllStyleTagsEval) => {
-      return (function () {
-        function getAbsoluteElementPath(el) {
-          let stack: [string, number][] = [];
-          while (el.parentNode != null) {
-            let sibCount = 0;
-            let sibIndex = 0;
+    let pageEvalReturn = await page.evaluate((cacheAllStyleTagsEval) => {
+      /**
+       * Helper functions
+       */
+      function getAbsoluteElementPath(el) {
+        let stack: [string, number][] = [];
+        while (el.parentNode != null) {
+          let sibCount = 0;
+          let sibIndex = 0;
 
-            // TODO Changing this to for of loop breaks the hole thing.
-            //      Either disable this lint rule or debug the for of loop.
-            // tslint:disable-next-line:prefer-for-of
-            for (let i = 0; i < el.parentNode.childNodes.length; i++) {
-              let sib = el.parentNode.childNodes[i];
-              if (sib.nodeName === el.nodeName) {
-                if (sib === el) {
-                  sibIndex = sibCount;
-                }
-                sibCount++;
+          // TODO Changing this to for of loop breaks the hole thing.
+          //      Either disable this lint rule or debug the for of loop.
+          // tslint:disable-next-line:prefer-for-of
+          for (let i = 0; i < el.parentNode.childNodes.length; i++) {
+            let sib = el.parentNode.childNodes[i];
+            if (sib.nodeName === el.nodeName) {
+              if (sib === el) {
+                sibIndex = sibCount;
               }
+              sibCount++;
             }
-
-            if (sibCount > 1) {
-              stack.unshift([el.nodeName.toLowerCase(), sibIndex]);
-            } else {
-              stack.unshift(el.nodeName.toLowerCase());
-            }
-            el = el.parentNode;
-          }
-          return stack.splice(1);
-        }
-        function getAllStyle() {
-          if (!cacheAllStyleTagsEval) {
-            return [];
           }
 
-          // @ts-ignore
-          return [...document.styleSheets].map((ss) => {
-            let getCssRules = () => {
-              let cssRules = [];
-
-              try {
-                cssRules = [...ss.cssRules];
-              } catch (e) {
-                // wtf
-                // console.error(e);
-              }
-
-              return cssRules.map((s) => s?.cssText).join('\n');
-            };
-
-            return {
-              path: getAbsoluteElementPath(ss.ownerNode),
-              href: ss.href,
-              // only load content if this is not an external stylesheet
-              content: ss?.href ? null : getCssRules(),
-            };
-          });
+          if (sibCount > 1) {
+            stack.unshift([el.nodeName.toLowerCase(), sibIndex]);
+          } else {
+            stack.unshift(el.nodeName.toLowerCase());
+          }
+          el = el.parentNode;
         }
-        function getUntrackedState() {
-          // @ts-ignore
-          return [...document.querySelectorAll('input, textarea, select')].map((el) => ({
-            path: getAbsoluteElementPath(el),
-            value: el.value,
-          }));
+        return stack.splice(1);
+      }
+
+      function getAllStyle() {
+        if (!cacheAllStyleTagsEval) {
+          return [];
         }
-        return [getAllStyle(), getUntrackedState()];
-      })();
+
+        // @ts-ignore
+        return [...document.styleSheets].map((ss) => {
+          let getCssRules = () => {
+            let cssRules = [];
+
+            try {
+              // @ts-ignore
+              cssRules = [...ss.cssRules];
+            } catch (e) {
+              // wtf
+              // console.error(e);
+            }
+
+            // @ts-ignore
+            return cssRules.map((s) => s?.cssText).join('\n');
+          };
+
+          return {
+            path: getAbsoluteElementPath(ss.ownerNode),
+            href: ss.href,
+            // only load content if this is not an external stylesheet
+            content: ss?.href ? null : getCssRules(),
+          };
+        });
+      }
+
+      function getUntrackedState() {
+        // @ts-ignore
+        return [...document.querySelectorAll('input, textarea, select')].map((el) => ({
+          path: getAbsoluteElementPath(el),
+          value: el.value,
+        }));
+      }
+
+      /**
+       * Get document content
+       */
+      let content = '';
+
+      if (document.doctype) {
+        content = new XMLSerializer().serializeToString(document.doctype);
+      }
+
+      if (document.documentElement) {
+        content += document.documentElement.outerHTML;
+      }
+
+      return {
+        src: content,
+        untracked: [getAllStyle(), getUntrackedState()],
+      };
     }, cacheAllStyleTags);
 
     return {
@@ -257,10 +283,7 @@ class SnapshotHandler {
       url: page.url(),
       viewport: page.viewport(),
       isJavascriptEnabled: page.isJavaScriptEnabled(),
-      html: {
-        src: await page.content(),
-        untracked,
-      },
+      html: pageEvalReturn,
     };
   }
 }

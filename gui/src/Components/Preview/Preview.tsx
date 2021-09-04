@@ -138,13 +138,14 @@ export const Preview = observer(() => {
       }
 
       if (returnType === 'string') {
-        let uint8array = Uint8Array.from(resource.content.data);
-        return new TextDecoder().decode(uint8array);
+        // @ts-ignore
+        return new TextDecoder().decode(resource.content);
       }
 
       // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
       //      and blobs need to be destroyed by hand.
-      const blob = new Blob([Uint8Array.from(resource.content.data)]);
+      // @ts-ignore
+      const blob = new Blob([resource.content]);
       return URL.createObjectURL(blob);
     };
 

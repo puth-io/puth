@@ -9,6 +9,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "dependencies": {
+    "@msgpack/msgpack": "^2.7.1",
     "axios": "^0.21.1",
     "chalk": "^3.0.0",
     "chokidar": "^3.5.1",

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ISnapshot } from '../../../src/server/src/Snapshots';
+import { IResponse, ISnapshot } from '../../../src/server/src/Snapshots';
+import { ICommand } from './Command';
 
 export function useForceUpdate() {
   const [value, setValue] = useState(0);
@@ -76,11 +77,11 @@ export function roughSizeOfObject(object) {
 }
 
 export function snapshotSize(snapshot) {
-  if (snapshot.version !== 2) {
-    return -1;
-  }
-
   let size = [0, 0, 0, 0];
+
+  if (!size) {
+    return size;
+  }
 
   if (snapshot?.html?.src) {
     size[1] += snapshot.html?.src.length;
@@ -127,7 +128,7 @@ export function logMessage(message) {
   if (message.type === 'command') {
     logCommand(message);
   } else if (message.type === 'response') {
-    logResponse(message);
+    logResponse(message as IResponse);
   } else if (message.type === 'log') {
     logLog(message);
   } else {
@@ -177,6 +178,10 @@ export function logCommand(packet) {
 }
 
 export function logSnapshot(type, snapshot) {
+  if (!snapshot) {
+    return;
+  }
+
   let size = snapshotSize(snapshot);
 
   console.group(type);
@@ -191,15 +196,15 @@ export function logSnapshot(type, snapshot) {
   console.groupEnd();
 }
 
-export function logResponse(packet) {
+export function logResponse(packet: IResponse) {
   console.groupCollapsed(
     packet.context.id,
     packet.type,
-    (packet.content.data.length / 1000).toFixed(2),
+    (packet.content.length / 1000).toFixed(2),
     'kb',
     packet.resourceType,
     packet.method,
-    packet.url,
+    packet.url.length > 64 ? packet.url.substring(0, 60) + '...' : packet.url,
   );
   console.log('Headers');
   console.table(packet.headers);
