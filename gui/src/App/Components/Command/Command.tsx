@@ -2,9 +2,9 @@ import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
 import { Events } from '../../../index';
 import { previewStore } from '../Preview/Preview';
-import { observer } from 'mobx-react';
 import { ISnapshot } from '../../../../../src/server/src/Snapshots';
 import { IContext } from '../../Misc/WebsocketHandler';
+import { observer } from 'mobx-react-lite';
 
 export type IViewport = {
   width: number;
@@ -93,7 +93,7 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
   }
 
   const circleDot = '\u2299';
-  let active = previewStore.activeCommand === command;
+  let active = previewStore.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
   return (

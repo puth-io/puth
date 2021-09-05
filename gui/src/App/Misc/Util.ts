@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { IResponse, ISnapshot } from '../../../../src/server/src/Snapshots';
-import { ICommand } from '../Components/Command/Command';
+
+export function pMark(name) {
+  performance.mark(name);
+}
+
+export function pMeasure(name, startMark) {
+  performance.mark(name);
+  performance.measure(name, startMark);
+}
 
 export function useForceUpdate() {
   const [value, setValue] = useState(0);
@@ -131,8 +139,10 @@ export function logMessage(message) {
     logResponse(message as IResponse);
   } else if (message.type === 'log') {
     logLog(message);
+  } else if (message.type === 'context') {
+    logContext(message);
   } else {
-    console.log(message);
+    console.warn(message);
   }
 }
 
@@ -214,6 +224,12 @@ export function logResponse(packet: IResponse) {
 
 export function logLog(packet) {
   console.groupCollapsed(packet.context.id, packet.type, packet.messageType, packet.args);
+  console.log('source', packet);
+  console.groupEnd();
+}
+
+export function logContext(packet) {
+  console.groupCollapsed(packet.id, packet.type);
   console.log('source', packet);
   console.groupEnd();
 }

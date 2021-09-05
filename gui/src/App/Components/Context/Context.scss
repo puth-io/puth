@@ -10,13 +10,14 @@
   margin-bottom: 0.5rem;
   color: $body-color;
   padding: 0.125rem;
+  border-left: 6px solid #adadad;
 
-  &[data-status="pass"] {
-    border-color: #129d12;
+  &[data-status="success"] {
+    border-left-color: #129d12;
   }
 
-  &[data-status="fail"] {
-    border-color: #9d1212;
+  &[data-status="failed"] {
+    border-left-color: #9d1212;
   }
 
   .name {

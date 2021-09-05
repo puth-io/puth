@@ -1,8 +1,10 @@
-import { action, makeAutoObservable, runInAction } from 'mobx';
+import { action, makeAutoObservable, observable, runInAction } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
-import { logData } from './Util';
+import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
+import ContextStore from '../Mobx/ContextStore';
 
+export const DEBUG_ENABLED = true; // process.env.NODE_ENV === 'development'
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
 PUTH_EXTENSION_CODEC.register({
@@ -51,10 +53,12 @@ class WebsocketHandlerSingleton {
   private connected: boolean = false;
   private uri: string | undefined;
 
-  private contexts = new Map<string, IContext>();
+  private contexts = new Map<string, ContextStore>();
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, null, {
+      // deep: false,
+    });
 
     (window as any).contexts = this.contexts;
   }
@@ -103,9 +107,13 @@ class WebsocketHandlerSingleton {
     };
 
     this.websocket.onmessage = action((event) => {
+      pMark('packet.received');
+
       let dateBeforeParse = Date.now();
 
       let data = decode(event.data, { extensionCodec: PUTH_EXTENSION_CODEC });
+
+      pMeasure('decode', 'packet.received');
 
       let dateAfterParse = Date.now();
 
@@ -115,21 +123,29 @@ class WebsocketHandlerSingleton {
         this.receivedPacket(data);
       }
 
-      if (process.env.NODE_ENV === 'development') {
+      let dateAfterProcessing = Date.now();
+
+      pMeasure('proc', 'decode');
+
+      if (DEBUG_ENABLED) {
         let size = (event.data.byteLength / 1000 / 1000).toFixed(2);
 
         console.group('Packet received');
-
-        console.log('Delta time parse', dateAfterParse - dateBeforeParse, 'ms');
-        console.log('Delta time proc.', Date.now() - dateAfterParse, 'ms');
-        console.log('Size', size, 'mb');
 
         console.groupCollapsed('Events', Array.isArray(data) ? data.length : 1);
         logData(data);
         console.groupEnd();
 
+        console.log('Size', size, 'mb');
+
+        console.log('Delta time parse', dateAfterParse - dateBeforeParse, 'ms');
+        console.log('Delta time proc.', dateAfterProcessing - dateAfterParse, 'ms');
+        console.log('Delta time debug', Date.now() - dateAfterProcessing, 'ms');
+
         console.groupEnd();
       }
+
+      pMeasure('debug', 'proc');
     });
   }
 
@@ -140,6 +156,10 @@ class WebsocketHandlerSingleton {
       this.addLog(packet);
     } else if (packet.type === 'response') {
       this.addResponse(packet);
+    } else if (packet.type === 'context') {
+      this.addContext(packet);
+    } else if (packet.type === 'test') {
+      this.addTest(packet);
     }
   }
 
@@ -161,18 +181,33 @@ class WebsocketHandlerSingleton {
     context.responses.push(response);
   }
 
+  private addContext(response) {
+    let context = this.getContext(response.id);
+    context.test = response.test;
+    context.group = response.group;
+    context.options = response.options;
+    context.capabilities = response.capabilities;
+    context.createdAt = response.createdAt;
+  }
+
+  private addTest(response) {
+    let context = this.getContext(response.context.id);
+
+    if (response.specific === 'status') {
+      context.test.status = response.status;
+    }
+  }
+
   getContext(id) {
     if (!this.contexts.has(id)) {
-      this.contexts.set(id, {
-        id,
-        commands: [],
-        logs: [],
-        responses: [],
-        created: Date.now(),
-      });
+      this.contexts.set(id, new ContextStore(id));
     }
 
     return this.contexts.get(id);
+  }
+
+  get contextArray() {
+    return Array.from(WebsocketHandler.getContexts().values()).reverse();
   }
 
   getWebsocket() {

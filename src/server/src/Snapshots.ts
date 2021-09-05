@@ -169,19 +169,9 @@ class SnapshotHandler {
   }
 
   /**
-   * Improvements over v1:
+   * Creates a snapshot of the current dom (with element states)
    *
-   * >> v1: 177.752ms
-   * >> v2: 16.162ms
-   *
-   * In general, v2 is 2-10x faster than v1
-   *
-   * TODO use page network events to catch style
-   *      to further improve performance (maybe). Should
-   *      be 2x improvement if single request.
-   *      Every next request that uses the same
-   *      stylesheet doesn't need to process and
-   *      send it anymore. Also reduces snapshot.pack.
+   * @version 3
    */
   async makeSnapshot(page: Page, { cacheAllStyleTags = false } = {}): Promise<ISnapshot | undefined> {
     if (!page || (await page.url()) === 'about:blank') {

@@ -42,7 +42,10 @@ class Context extends Generic {
   private options: {
     debug: boolean | undefined;
     snapshot: boolean | undefined;
-    test: string | undefined;
+    test: {
+      name: undefined | string;
+      status: undefined | 'failed' | 'success';
+    };
     group: string | undefined;
     status: string | undefined;
     timeouts?: {
@@ -69,7 +72,7 @@ class Context extends Generic {
     dialogs: new Map<Page, [string, string]>(),
   };
 
-  private createdAt;
+  private readonly createdAt;
 
   constructor(puth: Puth, options: any = {}) {
     super();
@@ -80,6 +83,14 @@ class Context extends Generic {
     // TODO maybe PR to https://github.com/developit/mitt because broken index.d.ts
     this.emitter = mitt();
     this.createdAt = Date.now();
+
+    // Track context creation
+    Snapshots.pushToCache(this, {
+      ...this.serialize(true),
+      options: this.options,
+      capabilities: this.capabilities,
+      createdAt: this.createdAt,
+    });
   }
 
   async setup() {
@@ -148,6 +159,11 @@ class Context extends Generic {
   }
 
   async destroy() {
+    // Check test status
+    if (this.getTest()?.status !== 'failed') {
+      this.testSuccess();
+    }
+
     this.unregisterAllEventListeners();
 
     if (this.instance.browser && !this.instance.daemon) {
@@ -175,6 +191,7 @@ class Context extends Generic {
         )
       ) {
         Snapshots.pushToCache(this, {
+          id: v4(),
           type: 'response',
           context: this.serialize(),
           time: Date.now(),
@@ -194,6 +211,7 @@ class Context extends Generic {
 
     this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
       Snapshots.pushToCache(this, {
+        id: v4(),
         type: 'log',
         context: this.serialize(),
         time: Date.now(),
@@ -269,19 +287,25 @@ class Context extends Generic {
     return this.capabilities[capability] === true;
   }
 
-  // TODO make complete structure
-  fail() {
-    this.options.status = 'fail';
+  testFailed() {
+    this.options.test.status = 'failed';
 
-    WebsocketConnections.broadcastAll({
+    Snapshots.pushToCache(this, {
       type: 'test',
       specific: 'status',
-      data: 'fail',
-      context: {
-        id: this.getId(),
-        test: this.getTest(),
-        group: this.getGroup(),
-      },
+      status: 'failed',
+      context: this.serialize(),
+    });
+  }
+
+  testSuccess() {
+    this.options.test.status = 'success';
+
+    Snapshots.pushToCache(this, {
+      type: 'test',
+      specific: 'status',
+      status: 'success',
+      context: this.serialize(),
     });
   }
 
@@ -553,21 +577,27 @@ class Context extends Generic {
     return this.id;
   }
 
-  getType(): string {
-    return this.type;
+  getType(toLowerCase = false): string {
+    return toLowerCase ? this.type.toLowerCase() : this.type;
   }
 
-  serialize() {
+  serialize(toLowerCase = false) {
     return {
       id: this.getId(),
-      type: this.getType(),
+      type: this.getType(toLowerCase),
       test: this.getTest(),
       group: this.getGroup(),
     };
   }
 
   getTest() {
-    return this.options?.test;
+    if (!this.options?.test) {
+      this.options.test = {
+        name: undefined,
+        status: undefined,
+      };
+    }
+    return this.options.test;
   }
 
   getGroup() {

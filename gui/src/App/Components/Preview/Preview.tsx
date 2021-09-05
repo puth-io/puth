@@ -1,4 +1,4 @@
-import { observer } from 'mobx-react';
+import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef } from 'react';
 import { ICommand } from '../Command/Command';
 import { action } from 'mobx';
@@ -17,12 +17,12 @@ export const Preview = observer(() => {
   // Register all preview events
   useEffect(() => {
     const eventToggle = action((cmd: ICommand | undefined) => {
-      if (previewStore.activeCommand === cmd) {
+      if (previewStore.activeCommand?.id === cmd?.id) {
         previewStore.activeCommand = undefined;
         return;
       }
 
-      if (previewStore.highlightCommand === cmd) {
+      if (previewStore.highlightCommand?.id === cmd?.id) {
         previewStore.highlightCommand = undefined;
       }
 
@@ -31,7 +31,7 @@ export const Preview = observer(() => {
     });
 
     const eventHighlightShow = action((cmd: ICommand | undefined) => {
-      if (previewStore.visibleCommand === cmd) {
+      if (previewStore.visibleCommand?.id === cmd?.id) {
         return;
       }
       previewStore.highlightCommand = cmd;
@@ -39,7 +39,7 @@ export const Preview = observer(() => {
     });
 
     const eventHighlightHide = action((cmd: ICommand | undefined) => {
-      if (previewStore.highlightCommand === cmd) {
+      if (previewStore.highlightCommand?.id === cmd?.id) {
         previewStore.highlightCommand = undefined;
       }
     });
