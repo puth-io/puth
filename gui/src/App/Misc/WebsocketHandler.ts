@@ -1,4 +1,4 @@
-import { action, makeAutoObservable, observable, runInAction } from 'mobx';
+import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';

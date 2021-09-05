@@ -56,8 +56,8 @@ export function calculateIframeSize(snapshot: ISnapshot | undefined, iframeConta
 }
 
 export function roughSizeOfObject(object) {
-  let objectList = [];
-  let stack = [object];
+  let objectList: any[] = [];
+  let stack: any[] = [object];
   let bytes = 0;
 
   while (stack.length) {

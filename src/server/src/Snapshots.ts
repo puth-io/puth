@@ -5,7 +5,6 @@ import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
-import { IContext } from '../../../gui/src/App/Misc/WebsocketHandler';
 
 export type IPageInclude = {
   url: string;
@@ -75,7 +74,7 @@ export type ILog = {
 
 export type IResponse = {
   type: 'response';
-  context: IContext;
+  context: {};
   time: number;
   isNavigationRequest: boolean;
   url: string;
@@ -88,7 +87,7 @@ export type IResponse = {
 };
 
 class SnapshotHandler {
-  private cache = new Map<IContext, (ICommand | ILog | IResponse)[]>();
+  private cache = new Map<Context, (ICommand | ILog | IResponse)[]>();
 
   pushToCache(context, item, { broadcast } = { broadcast: true }) {
     if (!this.cache.has(context)) {
