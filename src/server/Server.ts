@@ -128,6 +128,18 @@ export class Puth {
     return this.contexts[packet.context.id].delete(packet);
   }
 
+  public async contextDestroy(packet) {
+    let { id } = packet as { id: string };
+    if (id in this.contexts) {
+      await this.contexts[id].destroy(packet?.options);
+      delete this.contexts[id];
+
+      return true;
+    }
+
+    return false;
+  }
+
   private setupFastify(allowedOrigins: string[]) {
     if (this.options?.disableCors !== true) {
       this.server.register(fastifyCors, {
@@ -174,14 +186,8 @@ export class Puth {
 
     // delete context with puthId
     this.server.delete('/context', async (request, reply) => {
-      let { id } = request.body as { id: string };
-      if (id in this.contexts) {
-        await this.contexts[id].destroy();
-        delete this.contexts[id];
-        return reply.send();
-      } else {
-        return reply.code(404).send();
-      }
+      let destroyed = this.contextDestroy(request.body);
+      return reply.code(destroyed ? 200 : 404).send();
     });
 
     this.server.get('/websocket', { websocket: true }, (connection: SocketStream, req) => {
@@ -196,9 +202,9 @@ export class Puth {
         WebsocketConnections.pop(connection);
       });
 
-      connection.socket.on('message', async (message) => {
-        message = JSON.parse(message);
-      });
+      // connection.socket.on('message', async (message) => {
+      //   message = JSON.parse(message);
+      // });
 
       if (Snapshots.hasCachedItems()) {
         connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));

@@ -11,6 +11,11 @@ import * as mitt from 'mitt';
 
 import { createBrowser } from '../../../browser/core';
 import { DaemonBrowser } from './DaemonBrowser';
+import * as path from 'path';
+import { encode } from '@msgpack/msgpack';
+
+import { promises as fsPromise } from 'fs';
+const { writeFile } = fsPromise;
 
 const Response = {
   EMPTY: '',
@@ -158,10 +163,14 @@ class Context extends Generic {
     });
   }
 
-  async destroy() {
+  async destroy(options: any = null) {
     // Check test status
     if (this.getTest()?.status !== 'failed') {
       this.testSuccess();
+    }
+
+    if (options?.save) {
+      await this.saveContextSnapshot(options.save);
     }
 
     this.unregisterAllEventListeners();
@@ -307,6 +316,27 @@ class Context extends Generic {
       status: 'success',
       context: this.serialize(),
     });
+  }
+
+  async saveContextSnapshot(options) {
+    let { to } = options;
+
+    if (to === 'file') {
+      let { location } = options;
+      let storagePath;
+
+      if (!location) {
+        location = path.join('storage', 'snapshots');
+      }
+
+      if (!Array.isArray(location)) {
+        location = [location];
+      }
+
+      storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.getId()}.puth`);
+
+      await writeFile(storagePath, encode(Snapshots.getAllCachedItemsFrom(this)));
+    }
   }
 
   shouldSnapshot() {

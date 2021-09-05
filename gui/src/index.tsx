@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom';
 import App from './App/App';
 import { WebsocketHandler } from './App/Misc/WebsocketHandler';
 import mitt from 'mitt';
+import { runInAction } from 'mobx';
+import DropzoneStore from './App/Mobx/DropzoneStore';
 
 export const Events = mitt();
 
@@ -31,4 +33,20 @@ WebsocketHandler.try(websocketFirstTryHost);
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-// reportWebVitals();
+// reportWebVitals(console.log);
+
+/**
+ * Register drag and drop events
+ */
+
+let root = document.getElementById('root');
+
+root.addEventListener('dragenter', () => {
+  runInAction(() => DropzoneStore.active++);
+});
+root.addEventListener('dragleave', () => {
+  runInAction(() => DropzoneStore.active--);
+});
+root.addEventListener('drop', () => {
+  runInAction(() => DropzoneStore.active--);
+});

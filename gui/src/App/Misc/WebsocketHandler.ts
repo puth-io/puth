@@ -106,47 +106,58 @@ class WebsocketHandlerSingleton {
       }
     };
 
-    this.websocket.onmessage = action((event) => {
-      pMark('packet.received');
+    this.websocket.onmessage = (event) => {
+      this.receivedBinaryData(event.data);
+    };
+  }
 
-      let dateBeforeParse = Date.now();
+  @action
+  receivedBinaryData(binary: ArrayBuffer, options = null) {
+    pMark('packet.received');
 
-      let data = decode(event.data, { extensionCodec: PUTH_EXTENSION_CODEC });
+    let dateBeforeParse = Date.now();
 
-      pMeasure('decode', 'packet.received');
+    let data = decode(binary, { extensionCodec: PUTH_EXTENSION_CODEC });
 
-      let dateAfterParse = Date.now();
+    pMeasure('decode', 'packet.received');
 
-      if (Array.isArray(data)) {
-        data.forEach((p) => this.receivedPacket(p));
-      } else {
-        this.receivedPacket(data);
-      }
+    let dateAfterParse = Date.now();
 
-      let dateAfterProcessing = Date.now();
+    if (!Array.isArray(data)) {
+      data = [data];
+    }
 
-      pMeasure('proc', 'decode');
+    // @ts-ignore
+    if (options?.returnIfExists && data.length > 0 && this.contexts.has(data[0]?.context?.id ?? data[0]?.id)) {
+      return;
+    }
 
-      if (DEBUG_ENABLED) {
-        let size = (event.data.byteLength / 1000 / 1000).toFixed(2);
+    // @ts-ignore
+    data.forEach((p) => this.receivedPacket(p));
 
-        console.group('Packet received');
+    let dateAfterProcessing = Date.now();
 
-        console.groupCollapsed('Events', Array.isArray(data) ? data.length : 1);
-        logData(data);
-        console.groupEnd();
+    pMeasure('proc', 'decode');
 
-        console.log('Size', size, 'mb');
+    if (DEBUG_ENABLED) {
+      let size = (binary.byteLength / 1000 / 1000).toFixed(2);
 
-        console.log('Delta time parse', dateAfterParse - dateBeforeParse, 'ms');
-        console.log('Delta time proc.', dateAfterProcessing - dateAfterParse, 'ms');
-        console.log('Delta time debug', Date.now() - dateAfterProcessing, 'ms');
+      console.group('Packet received');
 
-        console.groupEnd();
-      }
+      console.groupCollapsed('Events', Array.isArray(data) ? data.length : 1);
+      logData(data);
+      console.groupEnd();
 
-      pMeasure('debug', 'proc');
-    });
+      console.log('Size', size, 'mb');
+
+      console.log('Delta time parse', dateAfterParse - dateBeforeParse, 'ms');
+      console.log('Delta time proc.', dateAfterProcessing - dateAfterParse, 'ms');
+      console.log('Delta time debug', Date.now() - dateAfterProcessing, 'ms');
+
+      console.groupEnd();
+    }
+
+    pMeasure('debug', 'proc');
   }
 
   private receivedPacket(packet) {

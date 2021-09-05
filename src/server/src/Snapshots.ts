@@ -109,15 +109,6 @@ class SnapshotHandler {
     }
   }
 
-  getAllCachedItems() {
-    // @ts-ignore
-    return [].concat(...this.cache.values());
-  }
-
-  hasCachedItems() {
-    return this.cache.size !== 0;
-  }
-
   log(...msg) {
     fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');
   }
@@ -277,6 +268,24 @@ class SnapshotHandler {
       isJavascriptEnabled: page.isJavaScriptEnabled(),
       html: pageEvalReturn,
     };
+  }
+
+  getAllCachedItems() {
+    // @ts-ignore
+    return [].concat(...this.cache.values());
+  }
+
+  getAllCachedItemsFrom(context) {
+    if (!this.cache.has(context)) {
+      return [];
+    }
+
+    // @ts-ignore
+    return [].concat(...this.cache.get(context));
+  }
+
+  hasCachedItems() {
+    return this.cache.size !== 0;
   }
 }
 
