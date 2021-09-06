@@ -2,7 +2,6 @@ import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
 import { Events } from '../../../index';
 import { previewStore } from '../Preview/Preview';
-import { ISnapshot } from '../../../../../src/server/src/Snapshots';
 import { IContext } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 
@@ -19,8 +18,8 @@ export type ICommand = {
   id: string;
   type: 'command';
   snapshots: {
-    before: ISnapshot | undefined;
-    after: ISnapshot | undefined;
+    before: any | undefined;
+    after: any | undefined;
   };
   errors: [];
   context: IContext;
