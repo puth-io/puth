@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { IResponse, ISnapshot } from '../../../../src/server/src/Snapshots';
 
 export function pMark(name) {
   performance.mark(name);
@@ -17,7 +16,7 @@ export function useForceUpdate() {
 
 // Calculates the iframe size relative to the available space
 // and keeps the dimensions and scale of the original viewport
-export function calculateIframeSize(snapshot: ISnapshot | undefined, iframeContainer: any) {
+export function calculateIframeSize(snapshot: any | undefined, iframeContainer: any) {
   let size = {
     container: {
       width: '',
@@ -136,7 +135,7 @@ export function logMessage(message) {
   if (message.type === 'command') {
     logCommand(message);
   } else if (message.type === 'response') {
-    logResponse(message as IResponse);
+    logResponse(message);
   } else if (message.type === 'log') {
     logLog(message);
   } else if (message.type === 'context') {
@@ -206,7 +205,7 @@ export function logSnapshot(type, snapshot) {
   console.groupEnd();
 }
 
-export function logResponse(packet: IResponse) {
+export function logResponse(packet: any) {
   console.groupCollapsed(
     packet.context.id,
     packet.type,

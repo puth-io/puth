@@ -4,7 +4,7 @@ import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
 
-export const DEBUG_ENABLED = true; // process.env.NODE_ENV === 'development'
+export const DEBUG_ENABLED = process.env.NODE_ENV === 'development';
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
 PUTH_EXTENSION_CODEC.register({
