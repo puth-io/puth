@@ -6,7 +6,7 @@ type RequestProps = {
 };
 
 const Request: FunctionComponent<RequestProps> = ({ request }) => {
-  let took = request.response.time.finished - request.time;
+  let took = request?.response ? request?.response?.time?.finished - request.time : 0;
 
   return (
     <tr className={'request'} data-status={request.status}>
