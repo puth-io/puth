@@ -3,7 +3,6 @@ import * as puppeteer from 'puppeteer';
 import Generic from './Generic';
 import Snapshots, { ICommand } from './Snapshots';
 import * as Utils from './Utils';
-import WebsocketConnections from './WebsocketConnections';
 import { Puth } from '../Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { Browser, Page, HTTPResponse, Target } from 'puppeteer';
@@ -90,12 +89,14 @@ class Context extends Generic {
     this.createdAt = Date.now();
 
     // Track context creation
-    Snapshots.pushToCache(this, {
-      ...this.serialize(true),
-      options: this.options,
-      capabilities: this.capabilities,
-      createdAt: this.createdAt,
-    });
+    if (this.shouldSnapshot()) {
+      Snapshots.pushToCache(this, {
+        ...this.serialize(true),
+        options: this.options,
+        capabilities: this.capabilities,
+        createdAt: this.createdAt,
+      });
+    }
   }
 
   async setup() {
@@ -190,47 +191,53 @@ class Context extends Generic {
     return true;
   }
 
+  /**
+   * TODO maybe track "outgoing" navigation requests, and stall incoming request until finished loading
+   *      but check if we need to make sure if call the object called on needs to be existing
+   */
   _trackPage(page) {
     page.on('close', () => this.removeEventListenersFrom(page));
 
-    this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
-      if (
-        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
-          response.request().resourceType(),
-        )
-      ) {
+    if (this.shouldSnapshot()) {
+      this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
+        if (
+          ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
+            response.request().resourceType(),
+          )
+        ) {
+          Snapshots.pushToCache(this, {
+            id: v4(),
+            type: 'response',
+            context: this.serialize(),
+            time: Date.now(),
+            isNavigationRequest: response.request().isNavigationRequest(),
+            url: response.request().url(),
+            resourceType: response.request().resourceType(),
+            method: response.request().method(),
+            headers: response.headers(),
+            content: await response.buffer().catch((err) => {
+              // Error occurs only when page is navigating. So if the response is coming in after page is already
+              // navigating to somewhere else, then chrome deletes the data.
+              return Buffer.alloc(0);
+            }),
+          });
+        }
+      });
+
+      this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
         Snapshots.pushToCache(this, {
           id: v4(),
-          type: 'response',
+          type: 'log',
           context: this.serialize(),
           time: Date.now(),
-          isNavigationRequest: response.request().isNavigationRequest(),
-          url: response.request().url(),
-          resourceType: response.request().resourceType(),
-          method: response.request().method(),
-          headers: response.headers(),
-          content: await response.buffer().catch((err) => {
-            // Error occurs only when page is navigating. So if the response is coming in after page is already
-            // navigating to somewhere else, then chrome deletes the data.
-            return Buffer.alloc(0);
-          }),
+          messageType: consoleMessage.type(),
+          args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
+          location: consoleMessage.location(),
+          text: consoleMessage.text(),
+          stackTrace: consoleMessage.stackTrace(),
         });
-      }
-    });
-
-    this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
-      Snapshots.pushToCache(this, {
-        id: v4(),
-        type: 'log',
-        context: this.serialize(),
-        time: Date.now(),
-        messageType: consoleMessage.type(),
-        args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
-        location: consoleMessage.location(),
-        text: consoleMessage.text(),
-        stackTrace: consoleMessage.stackTrace(),
       });
-    });
+    }
 
     // this.registerEventListenerOn(page, 'load', (event) => {
     //   console.log('LOAD', event);
@@ -299,23 +306,27 @@ class Context extends Generic {
   testFailed() {
     this.options.test.status = 'failed';
 
-    Snapshots.pushToCache(this, {
-      type: 'test',
-      specific: 'status',
-      status: 'failed',
-      context: this.serialize(),
-    });
+    if (this.shouldSnapshot()) {
+      Snapshots.pushToCache(this, {
+        type: 'test',
+        specific: 'status',
+        status: 'failed',
+        context: this.serialize(),
+      });
+    }
   }
 
   testSuccess() {
     this.options.test.status = 'success';
 
-    Snapshots.pushToCache(this, {
-      type: 'test',
-      specific: 'status',
-      status: 'success',
-      context: this.serialize(),
-    });
+    if (this.shouldSnapshot()) {
+      Snapshots.pushToCache(this, {
+        type: 'test',
+        specific: 'status',
+        status: 'success',
+        context: this.serialize(),
+      });
+    }
   }
 
   async saveContextSnapshot(options) {
