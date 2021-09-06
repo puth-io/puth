@@ -1,7 +1,7 @@
 import { observable } from 'mobx';
 
 const DropzoneStore = observable({
-  active: 1,
+  active: 0,
 });
 
 export default DropzoneStore;

@@ -63,7 +63,10 @@
     "prepublishOnly": "npm run build && npm test && npm run lint && cd gui && npm run build",
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "image:install": "npm install && cd gui && npm install",
+    "image:build": "npm run build && cd gui && npm run build",
+    "image:cleanup": "rm -rf src && rm -rf gui"
   },
   "repository": {
     "type": "git",
