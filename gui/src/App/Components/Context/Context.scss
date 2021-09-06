@@ -31,41 +31,16 @@
     width: auto;
     border-radius: 2px;
 
+    font-family: monospace;
+    line-height: 1.25rem;
+    font-size: 0.875rem;
+
     &.table {
       $border-opacity: 0.15;
       border-top: 1px solid rgba(255, 255, 255, $border-opacity);
 
       td {
         border-bottom: 1px solid rgba(255, 255, 255, $border-opacity);
-      }
-    }
-
-    tr {
-      & > td:last-child {
-        // width: 100%;
-      }
-
-      & > td:nth-child(1),
-      & > td:nth-child(2),
-      & > td:nth-child(3) {
-        color: #bac0ca;
-      }
-
-      & > td:nth-child(4) {
-        font-weight: bold;
-      }
-
-      & > td:nth-child(5) {
-        color: #d1d4d7;
-        word-break: break-word;
-      }
-
-      & > td:not(:nth-child(5)) {
-        width: 1%;
-      }
-
-      & > td:nth-child(6) {
-        text-align: right;
       }
     }
   }

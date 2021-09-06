@@ -5,7 +5,7 @@ import Snapshots, { ICommand } from './Snapshots';
 import * as Utils from './Utils';
 import { Puth } from '../Server';
 import PuthContextPlugin from './PuthContextPlugin';
-import { Browser, Page, HTTPResponse, Target } from 'puppeteer';
+import { Browser, Page, HTTPRequest, HTTPResponse, Target } from 'puppeteer';
 import * as mitt from 'mitt';
 
 import { createBrowser } from '../../../browser/core';
@@ -199,18 +199,54 @@ class Context extends Generic {
     page.on('close', () => this.removeEventListenersFrom(page));
 
     if (this.shouldSnapshot()) {
+      let trackable = (request: HTTPRequest) =>
+        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
+          request.resourceType(),
+        );
+
+      this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+        if (trackable(request)) {
+          Snapshots.pushToCache(this, {
+            id: v4(),
+            type: 'request',
+            context: this.serialize(),
+            requestId: request._requestId,
+            time: Date.now(),
+            isNavigationRequest: request.isNavigationRequest(),
+            url: request.url(),
+            resourceType: request.resourceType(),
+            method: request.method(),
+            headers: request.headers(),
+            status: 'pending',
+          });
+        }
+      });
+
+      this.registerEventListenerOn(page, 'requestfailed', async (request: HTTPRequest) => {
+        if (trackable(request)) {
+          Snapshots.pushToCache(this, {
+            id: v4(),
+            type: 'update',
+            specific: 'request.failed',
+            status: 'failed',
+            context: this.serialize(),
+            requestId: request._requestId,
+            time: Date.now(),
+          });
+        }
+      });
+
       this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
-        if (
-          ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
-            response.request().resourceType(),
-          )
-        ) {
+        if (trackable(response.request())) {
           Snapshots.pushToCache(this, {
             id: v4(),
             type: 'response',
             context: this.serialize(),
-            time: Date.now(),
-            isNavigationRequest: response.request().isNavigationRequest(),
+            requestId: response.request()._requestId,
+            time: {
+              elapsed: Date.now() - this.createdAt,
+              finished: Date.now(),
+            },
             url: response.request().url(),
             resourceType: response.request().resourceType(),
             method: response.request().method(),

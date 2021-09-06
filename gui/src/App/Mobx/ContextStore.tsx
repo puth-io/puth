@@ -5,6 +5,7 @@ export default class ContextStore {
   id;
   commands = [];
   logs = [];
+  requests = [];
   responses = [];
   created = Date.now();
   test: {
@@ -32,15 +33,12 @@ export default class ContextStore {
   }
 
   get renderedEvents() {
-    let events = [...this.commands.filter(this.getRenderedTypesFilter()), ...this.logs];
+    return [...this.commands.filter(this.getRenderedTypesFilter()), ...this.logs, ...this.requests].sort(
+      (a, b) => this.getEventTime(a) - this.getEventTime(b),
+    );
+  }
 
-    events = events.sort((a, b) => {
-      let aTime = a.type === 'log' ? a.time : a.time.started;
-      let bTime = b.type === 'log' ? b.time : b.time.started;
-
-      return aTime - bTime;
-    });
-
-    return events;
+  getEventTime(event) {
+    return event?.time?.started ?? event?.time?.created ?? event?.time;
   }
 }

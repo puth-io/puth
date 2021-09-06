@@ -41,6 +41,20 @@ input {
   }
 }
 
+.table-striped-custom {
+  > tbody > tr:nth-of-type(#{$table-striped-order}) {
+    --#{$variable-prefix}table-accent-bg: var(--#{$variable-prefix}table-striped-bg);
+  }
+}
+
+.text-warning-dark {
+  color: #8d6f13;
+}
+
+.text-break-all {
+  word-break: break-all;
+}
+
 // Dark color scheme
 // Currently supported on Chrome 81 and Safari 13
 // https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme
