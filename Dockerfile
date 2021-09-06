@@ -6,7 +6,7 @@ COPY . .
 
 RUN npm run image:install && \
     npm run image:build && \
-    npm run image:cleanup && \
+    npm run image:cleanup
 
 
 FROM node:lts
