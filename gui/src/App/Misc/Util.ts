@@ -134,6 +134,8 @@ export function logData(data) {
 export function logMessage(message) {
   if (message.type === 'command') {
     logCommand(message);
+  } else if (message.type === 'request') {
+    logRequest(message);
   } else if (message.type === 'response') {
     logResponse(message);
   } else if (message.type === 'log') {
@@ -205,15 +207,28 @@ export function logSnapshot(type, snapshot) {
   console.groupEnd();
 }
 
+export function logRequest(packet: any) {
+  console.groupCollapsed(
+    packet.context.id,
+    packet.type,
+    '#' + packet.requestId,
+    packet.resourceType,
+    packet.method,
+    packet.url.length > 64 ? packet.url.substring(0, 60) + '...' : packet.url,
+  );
+  console.log('Headers');
+  console.table(packet.headers);
+  console.log('source', packet);
+  console.groupEnd();
+}
+
 export function logResponse(packet: any) {
   console.groupCollapsed(
     packet.context.id,
     packet.type,
+    '#' + packet.requestId,
     (packet.content.length / 1000).toFixed(2),
     'kb',
-    packet.resourceType,
-    packet.method,
-    packet.url.length > 64 ? packet.url.substring(0, 60) + '...' : packet.url,
   );
   console.log('Headers');
   console.table(packet.headers);

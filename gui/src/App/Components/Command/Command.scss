@@ -2,37 +2,6 @@ $danger: #e22134;
 $dangerDark: #cc1022;
 $info: #158fe6;
 
-.log {
-  border-bottom: 1px solid #c7c7c7;
-  cursor: pointer;
-
-  > td {
-    padding: 0;
-
-    & > div {
-      padding: 0.3rem 0.4rem;
-      border-left: 0.5rem solid $info;
-
-      &[data-messagetype='log'] {
-        border-color: $info;
-      }
-
-      &[data-messagetype='error'] {
-        border-color: $danger;
-      }
-    }
-  }
-
-  &.active,
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  &.active > td > *[data-messagetype='error'] {
-    border-color: $dangerDark !important;
-  }
-}
-
 .command {
   padding: 0.3rem 0.4rem;
   cursor: pointer;
@@ -83,5 +52,32 @@ $info: #158fe6;
         background: rgba(255, 255, 255, 0.05);
       }
     }
+  }
+
+  & > td:last-child {
+    // width: 100%;
+  }
+
+  & > td:nth-child(1),
+  & > td:nth-child(2),
+  & > td:nth-child(3) {
+    color: #bac0ca;
+  }
+
+  & > td:nth-child(4) {
+    font-weight: bold;
+  }
+
+  & > td:nth-child(5) {
+    color: #d1d4d7;
+    word-break: break-word;
+  }
+
+  & > td:not(:nth-child(5)) {
+    width: 1%;
+  }
+
+  & > td:nth-child(6) {
+    text-align: right;
   }
 }

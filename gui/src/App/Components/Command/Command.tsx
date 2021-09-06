@@ -42,7 +42,7 @@ type CommandProps = {
   command: ICommand;
 };
 
-export const Command: FunctionComponent<CommandProps> = observer(({ index, command }) => {
+const Command: FunctionComponent<CommandProps> = observer(({ index, command }) => {
   let { on, func, args } = command;
 
   let mouseClick = useCallback(
@@ -107,7 +107,9 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
         <td>
           {(command.time.elapsed / 1000).toFixed(1)}s
           {command.time?.took > 250 && (
-            <span className={'ms-1 text-warning'}>({(command.time?.took / 1000).toFixed(1)}s)</span>
+            <div>
+              <span className={'text-warning-dark'}>{(command.time?.took / 1000).toFixed(1)}s</span>
+            </div>
           )}
         </td>
         <td>{displayType}</td>
@@ -140,3 +142,5 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
     </>
   );
 });
+
+export default Command;

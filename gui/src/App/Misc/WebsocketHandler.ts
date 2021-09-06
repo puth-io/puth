@@ -165,12 +165,16 @@ class WebsocketHandlerSingleton {
       this.addCommand(packet);
     } else if (packet.type === 'log') {
       this.addLog(packet);
+    } else if (packet.type === 'request') {
+      this.addRequest(packet);
     } else if (packet.type === 'response') {
       this.addResponse(packet);
     } else if (packet.type === 'context') {
       this.addContext(packet);
     } else if (packet.type === 'test') {
       this.addTest(packet);
+    } else if (packet.type === 'update') {
+      this.addUpdate(packet);
     }
   }
 
@@ -186,10 +190,20 @@ class WebsocketHandlerSingleton {
     context.logs.push(log);
   }
 
-  private addResponse(response: IResponse) {
+  private addRequest(response: any) {
+    let context = this.getContext(response.context.id);
+    response.context = context;
+    context.requests.push(response);
+  }
+
+  private addResponse(response) {
     let context = this.getContext(response.context.id);
     response.context = context;
     context.responses.push(response);
+
+    let request = context.requests.find((r) => r.requestId === response.requestId);
+    request.response = response;
+    request.status = 'finished';
   }
 
   private addContext(response) {
@@ -206,6 +220,16 @@ class WebsocketHandlerSingleton {
 
     if (response.specific === 'status') {
       context.test.status = response.status;
+    }
+  }
+
+  private addUpdate(update) {
+    let context = this.getContext(update.context.id);
+
+    if (update.specific === 'context.test') {
+      context.test.status = update.status;
+    } else if (update.specific === 'request.failed') {
+      context.requests.find((r) => r.requestId === update.requestId).status = update.status;
     }
   }
 

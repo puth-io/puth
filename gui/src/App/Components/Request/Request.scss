@@ -1,0 +1,19 @@
+.request {
+  color: #9ba8b2;
+
+  &[data-status="pending"] {
+    background: rgba(4, 90, 4, 0.5);
+  }
+
+  &[data-status="finished"] {
+    background: rgba(4, 90, 4, 0.5);
+  }
+
+  &[data-status="failed"] {
+    background: rgba(84, 4, 4, 0.5);
+  }
+
+  > td {
+    padding: 0.125rem 0.5rem;
+  }
+}
