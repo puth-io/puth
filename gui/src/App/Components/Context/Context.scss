@@ -1,4 +1,4 @@
-@import './colors';
+@import '../../Misc/colors';
 
 .context {
   display: flex;
@@ -10,13 +10,14 @@
   margin-bottom: 0.5rem;
   color: $body-color;
   padding: 0.125rem;
+  border-left: 6px solid #adadad;
 
-  &[data-status="pass"] {
-    border-color: #129d12;
+  &[data-status="success"] {
+    border-left-color: #129d12;
   }
 
-  &[data-status="fail"] {
-    border-color: #9d1212;
+  &[data-status="failed"] {
+    border-left-color: #9d1212;
   }
 
   .name {
@@ -25,11 +26,19 @@
 
   .snapshots {
     flex: 1;
-    background: #494d54;
     border: none;
     border-collapse: collapse;
     width: auto;
     border-radius: 2px;
+
+    &.table {
+      $border-opacity: 0.15;
+      border-top: 1px solid rgba(255, 255, 255, $border-opacity);
+
+      td {
+        border-bottom: 1px solid rgba(255, 255, 255, $border-opacity);
+      }
+    }
 
     tr {
       & > td:last-child {
@@ -37,24 +46,25 @@
       }
 
       & > td:nth-child(1),
-      & > td:nth-child(2) {
+      & > td:nth-child(2),
+      & > td:nth-child(3) {
         color: #bac0ca;
       }
 
-      & > td:nth-child(3) {
+      & > td:nth-child(4) {
         font-weight: bold;
       }
 
-      & > td:nth-child(4) {
+      & > td:nth-child(5) {
         color: #d1d4d7;
         word-break: break-word;
       }
 
-      & > td:not(:nth-child(4)) {
+      & > td:not(:nth-child(5)) {
         width: 1%;
       }
 
-      & > td:nth-child(5) {
+      & > td:nth-child(6) {
         text-align: right;
       }
     }

@@ -34,4 +34,8 @@ export class RemotePuthClient {
   async contextDelete(rpcPacket) {
     return await this.axios.patch('/context/delete', rpcPacket).then((r) => r.data);
   }
+
+  async contextDestroy(rpcPacket) {
+    return await this.axios.delete('/context', { data: rpcPacket }).then((r) => r.data);
+  }
 }

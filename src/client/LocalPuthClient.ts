@@ -38,6 +38,10 @@ export class LocalPuthClient {
     return this.puth.contextDelete(rpcPacket);
   }
 
+  contextDestroy(rpcPacket) {
+    return this.puth.contextDestroy(rpcPacket);
+  }
+
   use(plugin: PuthPluginGeneric<PuthPlugin>) {
     return this.puth.use(plugin);
   }

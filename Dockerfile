@@ -1,15 +1,16 @@
 FROM node:lts AS build
 
-# USER node
-
 WORKDIR /build
 
 COPY . .
 
 RUN npm install && \
     npm run build && \
+    # Build GUI
     cd gui && \
+    npm install && \
     npm run build && \
+    # Remove unwanted files
     rm -rf src/
 
 
@@ -57,8 +58,6 @@ RUN apt-get update && \
         lsb-release \
         wget \
         xdg-utils
-
-ENV PUTH_VERSION=latest
 
 WORKDIR /puth
 

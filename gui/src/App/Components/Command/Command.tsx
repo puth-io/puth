@@ -1,10 +1,10 @@
 import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
-import { Events } from '../index';
-import { previewStore } from './Preview';
-import { observer } from 'mobx-react';
-import { ISnapshot } from '../../../src/server/src/Snapshots';
-import { IContext } from './WebsocketHandler';
+import { Events } from '../../../index';
+import { previewStore } from '../Preview/Preview';
+import { ISnapshot } from '../../../../../src/server/src/Snapshots';
+import { IContext } from '../../Misc/WebsocketHandler';
+import { observer } from 'mobx-react-lite';
 
 export type IViewport = {
   width: number;
@@ -29,6 +29,12 @@ export type ICommand = {
   on: {
     type: string;
     path: [[string, number][] | string][];
+  };
+  time: {
+    started: number;
+    elapsed: number;
+    took?: number;
+    finished?: number;
   };
 };
 
@@ -87,7 +93,7 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
   }
 
   const circleDot = '\u2299';
-  let active = previewStore.activeCommand === command;
+  let active = previewStore.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
   return (
@@ -99,6 +105,12 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
         onMouseLeave={mouseLeave}
       >
         <td>{index !== undefined ? index + 1 : ''}</td>
+        <td>
+          {(command.time.elapsed / 1000).toFixed(1)}s
+          {command.time?.took > 250 && (
+            <span className={'ms-1 text-warning'}>({(command.time?.took / 1000).toFixed(1)}s)</span>
+          )}
+        </td>
         <td>{displayType}</td>
 
         <td>{displayFunc}</td>
@@ -110,9 +122,15 @@ export const Command: FunctionComponent<CommandProps> = observer(({ index, comma
         let message = error.type === 'error' ? error.error.message : error.expectation.message;
 
         return (
-          <tr key={idx} onClick={mouseClick} onMouseEnter={mouseEnter} onMouseLeave={mouseLeave}>
-            <td colSpan={5}>
-              <div className={'error'}>
+          <tr
+            key={idx}
+            className={`log ${active ? 'active' : ''}`}
+            onClick={mouseClick}
+            onMouseEnter={mouseEnter}
+            onMouseLeave={mouseLeave}
+          >
+            <td colSpan={6}>
+              <div data-messagetype={'error'}>
                 <div className={'title'}>Error</div>
                 <div className={'message'}>{message}</div>
               </div>

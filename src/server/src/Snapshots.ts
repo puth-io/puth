@@ -20,6 +20,7 @@ export type ISnapshot = {
   version: number;
   url: any;
   viewport: Viewport | null;
+  isJavascriptEnabled: boolean;
   includes?: IPageInclude[];
 };
 
@@ -48,17 +49,19 @@ export type ICommand = {
   };
   time: {
     started: number;
+    elapsed: number;
+    took?: number;
     finished?: number;
   };
 };
 
-type ILogLocation = {
+export type ILogLocation = {
   url?: string;
   lineNumber?: number;
   columnNumber?: number;
 };
 
-type ILog = {
+export type ILog = {
   type: 'log';
   context: {};
   time: number;
@@ -69,7 +72,7 @@ type ILog = {
   stackTrace: ILogLocation[];
 };
 
-type IResponse = {
+export type IResponse = {
   type: 'response';
   context: {};
   time: number;
@@ -80,35 +83,33 @@ type IResponse = {
   headers: {
     [key: string]: string;
   };
-  content: Buffer;
+  content: Uint8Array;
 };
 
 class SnapshotHandler {
-  private snapshots = {};
-  private commands: ICommand[] = [];
-  private logs: ILog[] = [];
-  private responses: IResponse[] = [];
+  private cache = new Map<Context, (ICommand | ILog | IResponse)[]>();
+
+  pushToCache(context, item, { broadcast } = { broadcast: true }) {
+    if (!this.cache.has(context)) {
+      // cleanup cache to have at least some memory limit
+      if (this.cache.size >= 100) {
+        this.cache.delete(this.cache.keys()[0]);
+      }
+
+      this.cache.set(context, []);
+    }
+
+    // @ts-ignore
+    this.cache.get(context).push(item);
+
+    // TODO maybe implement a time buffer to send out multiple snapshots
+    if (broadcast) {
+      this.broadcast(item);
+    }
+  }
 
   log(...msg) {
     fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');
-  }
-
-  getSnapshots() {
-    return this.snapshots;
-  }
-
-  getCommands() {
-    return this.commands;
-  }
-
-  addLog(log: ILog) {
-    this.logs.push(log);
-    this.broadcast(log);
-  }
-
-  addResponse(response: IResponse) {
-    this.responses.push(response);
-    this.broadcast(response);
   }
 
   async createBefore(context: Context, page: Page, command: ICommand | undefined) {
@@ -119,7 +120,7 @@ class SnapshotHandler {
     command.snapshots.before = await this.makeSnapshot(page);
 
     // TODO move this into createAfter function?
-    this.commands.push(command);
+    this.pushToCache(context, command, { broadcast: false });
   }
 
   async createAfter(context: Context, page: Page, command: ICommand | undefined) {
@@ -158,92 +159,132 @@ class SnapshotHandler {
   }
 
   /**
-   * Improvements over v1:
+   * Creates a snapshot of the current dom (with element states)
    *
-   * >> v1: 177.752ms
-   * >> v2: 16.162ms
-   *
-   * In general, v2 is 2-10x faster than v1
-   *
-   * TODO use page network events to catch style
-   *      to further improve performance (maybe). Should
-   *      be 2x improvement if single request.
-   *      Every next request that uses the same
-   *      stylesheet doesn't need to process and
-   *      send it anymore. Also reduces snapshot.pack.
+   * @version 3
    */
-  async makeSnapshot(page: Page): Promise<ISnapshot | undefined> {
+  async makeSnapshot(page: Page, { cacheAllStyleTags = false } = {}): Promise<ISnapshot | undefined> {
     if (!page || (await page.url()) === 'about:blank') {
       return;
     }
 
-    let untracked = await page.evaluate((_) => {
-      return (function () {
-        function getAbsoluteElementPath(el) {
-          let stack: [string, number][] = [];
-          while (el.parentNode != null) {
-            let sibCount = 0;
-            let sibIndex = 0;
+    let pageEvalReturn = await page.evaluate((cacheAllStyleTagsEval) => {
+      /**
+       * Helper functions
+       */
+      function getAbsoluteElementPath(el) {
+        let stack: [string, number][] = [];
+        while (el.parentNode != null) {
+          let sibCount = 0;
+          let sibIndex = 0;
 
-            // TODO Changing this to for of loop breaks the hole thing.
-            //      Either disable this lint rule or debug the for of loop.
-            // tslint:disable-next-line:prefer-for-of
-            for (let i = 0; i < el.parentNode.childNodes.length; i++) {
-              let sib = el.parentNode.childNodes[i];
-              if (sib.nodeName === el.nodeName) {
-                if (sib === el) {
-                  sibIndex = sibCount;
-                }
-                sibCount++;
+          // TODO Changing this to for of loop breaks the hole thing.
+          //      Either disable this lint rule or debug the for of loop.
+          // tslint:disable-next-line:prefer-for-of
+          for (let i = 0; i < el.parentNode.childNodes.length; i++) {
+            let sib = el.parentNode.childNodes[i];
+            if (sib.nodeName === el.nodeName) {
+              if (sib === el) {
+                sibIndex = sibCount;
               }
+              sibCount++;
+            }
+          }
+
+          if (sibCount > 1) {
+            stack.unshift([el.nodeName.toLowerCase(), sibIndex]);
+          } else {
+            stack.unshift(el.nodeName.toLowerCase());
+          }
+          el = el.parentNode;
+        }
+        return stack.splice(1);
+      }
+
+      function getAllStyle() {
+        if (!cacheAllStyleTagsEval) {
+          return [];
+        }
+
+        // @ts-ignore
+        return [...document.styleSheets].map((ss) => {
+          let getCssRules = () => {
+            let cssRules = [];
+
+            try {
+              // @ts-ignore
+              cssRules = [...ss.cssRules];
+            } catch (e) {
+              // wtf
+              // console.error(e);
             }
 
-            if (sibCount > 1) {
-              stack.unshift([el.nodeName.toLowerCase(), sibIndex]);
-            } else {
-              stack.unshift(el.nodeName.toLowerCase());
-            }
-            el = el.parentNode;
-          }
-          return stack.splice(1);
-        }
-        function getAllStyle() {
-          // @ts-ignore
-          return [...document.styleSheets].map((ss) => ({
+            // @ts-ignore
+            return cssRules.map((s) => s?.cssText).join('\n');
+          };
+
+          return {
             path: getAbsoluteElementPath(ss.ownerNode),
             href: ss.href,
-            content: [...ss.cssRules].map((s) => s.cssText).join('\n'),
-          }));
-        }
-        function getUntrackedState() {
-          // @ts-ignore
-          return [...document.querySelectorAll('input, textarea, select')].map((el) => ({
-            path: getAbsoluteElementPath(el),
-            value: el.value,
-          }));
-        }
-        return [getAllStyle(), getUntrackedState()];
-      })();
-    });
+            // only load content if this is not an external stylesheet
+            content: ss?.href ? null : getCssRules(),
+          };
+        });
+      }
+
+      function getUntrackedState() {
+        // @ts-ignore
+        return [...document.querySelectorAll('input, textarea, select')].map((el) => ({
+          path: getAbsoluteElementPath(el),
+          value: el.value,
+        }));
+      }
+
+      /**
+       * Get document content
+       */
+      let content = '';
+
+      if (document.doctype) {
+        content = new XMLSerializer().serializeToString(document.doctype);
+      }
+
+      if (document.documentElement) {
+        content += document.documentElement.outerHTML;
+      }
+
+      return {
+        src: content,
+        untracked: [getAllStyle(), getUntrackedState()],
+      };
+    }, cacheAllStyleTags);
 
     return {
       type: 'snapshot',
       version: 2,
-      url: await page.url(),
-      viewport: await page.viewport(),
-      html: {
-        src: await page.content(),
-        untracked,
-      },
+      url: page.url(),
+      viewport: page.viewport(),
+      isJavascriptEnabled: page.isJavaScriptEnabled(),
+      html: pageEvalReturn,
     };
   }
 
-  getLogs() {
-    return this.logs;
+  getAllCachedItems() {
+    // @ts-ignore
+    return [].concat(...this.cache.values());
   }
 
-  getResponses() {
-    return this.responses;
+  getAllCachedItemsFrom(context) {
+    if (!this.cache.has(context)) {
+      return [];
+    }
+
+    // @ts-ignore
+    return [].concat(...this.cache.get(context));
+  }
+
+  hasCachedItems() {
+    return this.cache.size !== 0;
   }
 }
 

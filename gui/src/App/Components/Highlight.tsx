@@ -1,5 +1,5 @@
 import React from 'react';
-import { ICommand } from './Command';
+import { ICommand } from './Command/Command';
 import { render } from 'react-dom';
 
 function scrollIntoView(element: Element | null) {

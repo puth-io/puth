@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useState } from 'react';
 import './Context.scss';
-import { Command, ICommand } from './Command';
-import { IContext } from './WebsocketHandler';
-import { observer } from 'mobx-react';
+import { Command, ICommand } from '../Command/Command';
+import { observer } from 'mobx-react-lite';
+import ContextStore from '../../Mobx/ContextStore';
 
 type LogProps = {
   index: number;
@@ -18,7 +18,7 @@ const Log: FunctionComponent<LogProps> = ({ index, log }) => {
 
   return (
     <tr className={'log'}>
-      <td colSpan={5}>
+      <td colSpan={6}>
         <div data-messagetype={log.messageType}>
           <div className="fst-italic small">console message (type: {log.messageType})</div>
           <div className={'small fw-bold'}>{message}</div>
@@ -47,7 +47,7 @@ const Log: FunctionComponent<LogProps> = ({ index, log }) => {
 };
 
 type ContextProps = {
-  context: IContext;
+  context: ContextStore;
 };
 
 export const Context: FunctionComponent<ContextProps> = observer(({ context }) => {
@@ -55,27 +55,18 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
   const toggleExpand = () => setExpanded(!expanded);
   const pointer = expanded ? '\u25BE' : '\u25B8';
 
-  let typeFilter = (command: ICommand) => {
-    return ['Page', 'ElementHandle'].includes(command.on.type);
-  };
-
-  let events = [...context.commands.filter(typeFilter), ...context.logs];
-
-  events = events.sort((a, b) => {
-    let aTime = a.type === 'log' ? a.time : a.time.started;
-    let bTime = b.type === 'log' ? b.time : b.time.started;
-
-    return aTime - bTime;
-  });
+  let events = context.renderedEvents;
 
   let commandIndex = 0;
 
   return (
-    <div className={'context rounded-2'} data-context-id={context.id}>
+    <div className={'context rounded-2'} data-context-id={context.id} data-status={context?.test?.status ?? undefined}>
       <div className={'d-flex align-items-center p-2 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
         <div>{pointer}</div>
-        <div className={'fw-bold flex-grow-1 ms-2'}>Context</div>
-        <div className={'text-secondary fw-light'}>{context.id}</div>
+        <div className={'ms-2 flex-grow-1'}>
+          <div className={'fw-bold'}>{context?.test?.name ?? 'Context'}</div>
+          {context.group && <div className={' fw-light mt-1'}>{context.group}</div>}
+        </div>
       </div>
 
       {expanded && (
@@ -83,14 +74,16 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
           <tbody>
             {events.map((event, idx) =>
               event.type === 'command' ? (
-                <Command key={idx} index={commandIndex++} command={event} />
+                <Command key={event.id} index={commandIndex++} command={event} />
               ) : (
-                <Log key={idx} index={idx} log={event} />
+                <Log key={event.id} index={idx} log={event} />
               ),
             )}
           </tbody>
         </table>
       )}
+
+      <div className={'text-secondary fw-light text-end mb-1 me-2'}>{context.id}</div>
     </div>
   );
 });

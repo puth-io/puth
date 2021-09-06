@@ -11,6 +11,11 @@ import * as mitt from 'mitt';
 
 import { createBrowser } from '../../../browser/core';
 import { DaemonBrowser } from './DaemonBrowser';
+import * as path from 'path';
+import { encode } from '@msgpack/msgpack';
+
+import { promises as fsPromise } from 'fs';
+const { writeFile } = fsPromise;
 
 const Response = {
   EMPTY: '',
@@ -42,7 +47,10 @@ class Context extends Generic {
   private options: {
     debug: boolean | undefined;
     snapshot: boolean | undefined;
-    test: string | undefined;
+    test: {
+      name: undefined | string;
+      status: undefined | 'failed' | 'success';
+    };
     group: string | undefined;
     status: string | undefined;
     timeouts?: {
@@ -69,6 +77,8 @@ class Context extends Generic {
     dialogs: new Map<Page, [string, string]>(),
   };
 
+  private readonly createdAt;
+
   constructor(puth: Puth, options: any = {}) {
     super();
 
@@ -77,6 +87,15 @@ class Context extends Generic {
     // @ts-ignore
     // TODO maybe PR to https://github.com/developit/mitt because broken index.d.ts
     this.emitter = mitt();
+    this.createdAt = Date.now();
+
+    // Track context creation
+    Snapshots.pushToCache(this, {
+      ...this.serialize(true),
+      options: this.options,
+      capabilities: this.capabilities,
+      createdAt: this.createdAt,
+    });
   }
 
   async setup() {
@@ -144,7 +163,16 @@ class Context extends Generic {
     });
   }
 
-  async destroy() {
+  async destroy(options: any = null) {
+    // Check test status
+    if (this.getTest()?.status !== 'failed') {
+      this.testSuccess();
+    }
+
+    if (options?.save) {
+      await this.saveContextSnapshot(options.save);
+    }
+
     this.unregisterAllEventListeners();
 
     if (this.instance.browser && !this.instance.daemon) {
@@ -166,8 +194,13 @@ class Context extends Generic {
     page.on('close', () => this.removeEventListenersFrom(page));
 
     this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
-      if (['stylesheet', 'image', 'font', 'script', 'manifest'].includes(response.request().resourceType())) {
-        Snapshots.addResponse({
+      if (
+        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
+          response.request().resourceType(),
+        )
+      ) {
+        Snapshots.pushToCache(this, {
+          id: v4(),
           type: 'response',
           context: this.serialize(),
           time: Date.now(),
@@ -186,7 +219,8 @@ class Context extends Generic {
     });
 
     this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
-      Snapshots.addLog({
+      Snapshots.pushToCache(this, {
+        id: v4(),
         type: 'log',
         context: this.serialize(),
         time: Date.now(),
@@ -262,20 +296,47 @@ class Context extends Generic {
     return this.capabilities[capability] === true;
   }
 
-  // TODO make complete structure
-  fail() {
-    this.options.status = 'fail';
+  testFailed() {
+    this.options.test.status = 'failed';
 
-    WebsocketConnections.broadcastAll({
+    Snapshots.pushToCache(this, {
       type: 'test',
       specific: 'status',
-      data: 'fail',
-      context: {
-        id: this.getId(),
-        test: this.getTest(),
-        group: this.getGroup(),
-      },
+      status: 'failed',
+      context: this.serialize(),
     });
+  }
+
+  testSuccess() {
+    this.options.test.status = 'success';
+
+    Snapshots.pushToCache(this, {
+      type: 'test',
+      specific: 'status',
+      status: 'success',
+      context: this.serialize(),
+    });
+  }
+
+  async saveContextSnapshot(options) {
+    let { to } = options;
+
+    if (to === 'file') {
+      let { location } = options;
+      let storagePath;
+
+      if (!location) {
+        location = path.join('storage', 'snapshots');
+      }
+
+      if (!Array.isArray(location)) {
+        location = [location];
+      }
+
+      storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.getId()}.puth`);
+
+      await writeFile(storagePath, encode(Snapshots.getAllCachedItemsFrom(this)));
+    }
   }
 
   shouldSnapshot() {
@@ -303,6 +364,7 @@ class Context extends Generic {
         path: await Utils.getAbsolutePaths(on),
       },
       time: {
+        elapsed: Date.now() - this.createdAt,
         started: Date.now(),
       },
     };
@@ -373,8 +435,12 @@ class Context extends Generic {
         });
       }
 
+      command.time.took = Date.now() - command.time.started;
+
       return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
     } catch (error) {
+      command.time.took = Date.now() - command.time.started;
+
       Snapshots.error(this, page, command, {
         type: 'error',
         specific: 'apply',
@@ -541,21 +607,27 @@ class Context extends Generic {
     return this.id;
   }
 
-  getType(): string {
-    return this.type;
+  getType(toLowerCase = false): string {
+    return toLowerCase ? this.type.toLowerCase() : this.type;
   }
 
-  serialize() {
+  serialize(toLowerCase = false) {
     return {
       id: this.getId(),
-      type: this.getType(),
+      type: this.getType(toLowerCase),
       test: this.getTest(),
       group: this.getGroup(),
     };
   }
 
   getTest() {
-    return this.options?.test;
+    if (!this.options?.test) {
+      this.options.test = {
+        name: undefined,
+        status: undefined,
+      };
+    }
+    return this.options.test;
   }
 
   getGroup() {

@@ -1,8 +1,9 @@
 import React from 'react';
 import './App.scss';
-import Header from './Header';
-import Sidebar from './Sidebar';
-import { Preview } from './Preview';
+import Header from './Components/Header';
+import Sidebar from './Components/Sidebar/Sidebar';
+import { Preview } from './Components/Preview/Preview';
+import Dropzone from './Components/Dropzone/Dropzone';
 
 function App() {
   return (
@@ -19,6 +20,8 @@ function App() {
         <Sidebar />
         <Preview />
       </div>
+
+      <Dropzone />
     </>
   );
 }
