@@ -6,6 +6,7 @@ import { Events } from '../../../index';
 import { loadHighlights, resolveElement } from '../Highlight';
 import { calculateIframeSize, useForceUpdate } from '../../Misc/Util';
 import { PreviewStore } from './PreviewStore';
+import * as psl from 'psl';
 
 export const previewStore = new PreviewStore();
 
@@ -115,22 +116,28 @@ export const Preview = observer(() => {
     );
 
     let resolveSrcFromCache = ({ src, returnType = null }) => {
-      let matchUrl = '';
+      let matchUrls = [];
 
       if (src.startsWith('http://') || src.startsWith('https://')) {
         // find matching include on full srcurl
-        matchUrl = src;
+        matchUrls.push(src);
       } else if (src.startsWith('//')) {
-        matchUrl = snapshot.url + src.replace('//', '');
+        let url = new URL(snapshot.url);
+        matchUrls.push(url.origin + src.replace('//', '/'));
+      } else if (src.startsWith('/')) {
+        let url = new URL(snapshot.url);
+        matchUrls.push(url.origin + src);
       } else {
-        if (src.startsWith('/')) {
-          src = src.substring(1, src.length);
+        let url = snapshot.url;
+
+        if (!url.endsWith('/')) {
+          url += '/';
         }
 
-        matchUrl = snapshot.url + src;
+        matchUrls.push(url + src);
       }
 
-      let resource = command.context.responses.find((pageInclude) => pageInclude.url === matchUrl);
+      let resource = command.context.responses.find((pageInclude) => matchUrls.includes(pageInclude.url));
 
       if (!resource) {
         // TODO implement error handling
