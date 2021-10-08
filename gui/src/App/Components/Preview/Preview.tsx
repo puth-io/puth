@@ -7,6 +7,43 @@ import { loadHighlights, resolveElement } from '../Highlight';
 import { calculateIframeSize, useForceUpdate } from '../../Misc/Util';
 import { PreviewStore } from './PreviewStore';
 import * as psl from 'psl';
+import './Preview.scss';
+
+const Tab = ({title, subTitle, active = null}) => {
+  return (
+    <div className={'tab rounded-3' + (active ? ' active' : '')}>
+      <div className={'d-flex'}>
+        <div className={'title flex-grow-1'}>{ title }</div>
+        <div>&times;</div>
+      </div>
+      <div className={'subTitle'}>
+        { subTitle }
+      </div>
+    </div>
+  )
+}
+
+const Sidebar = () => {
+  return (
+    <>
+      <div className={'d-flex tabs'}>
+        <Tab
+          title={'googleTest'}
+          subTitle={'tests/Browser/BasicTest'}
+          active
+        />
+        <Tab
+          title={'googleTest'}
+          subTitle={'tests/Browser/BasicTest'}
+        />
+        <Tab
+          title={'googleTest'}
+          subTitle={'tests/Browser/BasicTest'}
+        />
+      </div>
+    </>
+  )
+}
 
 export const previewStore = new PreviewStore();
 
@@ -267,13 +304,15 @@ export const Preview = observer(() => {
 
   return (
     <div
-      className="d-flex flex-column"
+      className={'d-flex flex-column ps-2 preview'}
       style={{
         flex: 1,
         overflow: 'hidden',
       }}
     >
-      <div className="d-flex py-2 ps-2">
+      <Sidebar/>
+      <div className="d-flex py-2 info">
+
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"
@@ -296,15 +335,17 @@ export const Preview = observer(() => {
             After
           </button>
         </div>
+
         <div className="input-group input-group-sm ms-2">
-          <span className="input-group-text" id="basic-addon1">
-            Url
-          </span>
-          <input type="text" className="form-control" defaultValue={snapshot?.url} readOnly disabled />
+          <div className={'element url'}>
+            { snapshot?.url }
+          </div>
         </div>
-        <button type="button" className="btn m-0 btn-primary text-nowrap ms-2 me-2" disabled>
+
+        <div className={'element ms-2'}>
           {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
-        </button>
+        </div>
+
       </div>
       <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
         <div

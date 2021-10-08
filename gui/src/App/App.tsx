@@ -8,8 +8,6 @@ import Dropzone from './Components/Dropzone/Dropzone';
 function App() {
   return (
     <>
-      <Header />
-
       <div
         className={'d-flex'}
         style={{
