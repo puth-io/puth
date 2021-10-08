@@ -386,8 +386,16 @@ class Context extends Generic {
     }
   }
 
-  shouldSnapshot() {
-    return this.options?.snapshot === true;
+  shouldSnapshot(func?: () => any) {
+    if (this.options?.snapshot === true) {
+      if (func) {
+        return func();
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   async createCommand(packet, on): Promise<ICommand | undefined> {
@@ -482,19 +490,21 @@ class Context extends Generic {
         });
       }
 
-      command.time.took = Date.now() - command.time.started;
+      this.shouldSnapshot(() => command.time.took = Date.now() - command.time.started);
 
       return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
     } catch (error) {
-      command.time.took = Date.now() - command.time.started;
+      if (this.shouldSnapshot()) {
+        command.time.took = Date.now() - command.time.started;
 
-      Snapshots.error(this, page, command, {
-        type: 'error',
-        specific: 'apply',
-        error,
-        time: Date.now(),
-      });
-      Snapshots.broadcast(command);
+        Snapshots.error(this, page, command, {
+          type: 'error',
+          specific: 'apply',
+          error,
+          time: Date.now(),
+        });
+        Snapshots.broadcast(command);
+      }
 
       return {
         type: 'error',
