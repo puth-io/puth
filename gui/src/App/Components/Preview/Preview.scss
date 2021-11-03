@@ -3,7 +3,6 @@
 .tabs {
     //background-color: #232529;
     align-items: center;
-    padding: 0.25rem 0.25rem 0 0;
 }
 
 .tab {
@@ -81,4 +80,10 @@
     & > div {
         margin-right: -$spacing;
     }
+}
+
+.quick-navigation-container {
+    display: grid;
+    grid-gap: 0.5rem;
+    padding: 0.5rem;
 }

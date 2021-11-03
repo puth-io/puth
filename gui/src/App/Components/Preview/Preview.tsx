@@ -298,50 +298,55 @@ export const Preview = observer(() => {
     loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
   };
 
+  const PreviewInfo = () => (
+    <div className="d-flex info">
+      <div className="btn-group btn-group-sm" role="group">
+        <button
+          type="button"
+          className={`btn m-0 ${
+            previewStore.visibleHighlightState === 'before' ? 'btn-primary active' : 'btn-primary'
+          }`}
+          onClick={(_) => stickSnapshotState('before')}
+          disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasBefore}
+        >
+          Before
+        </button>
+        <button
+          type="button"
+          className={`btn m-0 ${previewStore.visibleHighlightState === 'after' ? 'btn-primary active' : 'btn-primary'}`}
+          onClick={(_) => stickSnapshotState('after')}
+          disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasAfter}
+        >
+          After
+        </button>
+      </div>
+
+      <div className="input-group input-group-sm ms-2">
+        <div className={'element url'}>{snapshot?.url}</div>
+      </div>
+
+      <div className={'element ms-2'}>
+        {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
+      </div>
+
+      <Logo className={'ms-2'} />
+    </div>
+  );
+
   return (
     <div
-      className={'d-flex flex-column ps-2 preview'}
+      className={'d-flex flex-column preview'}
       style={{
         flex: 1,
         overflow: 'hidden',
       }}
     >
-      {/*<QuickNavigation />*/}
-      <div className="d-flex py-2 pe-2 info">
-        <div className="btn-group btn-group-sm" role="group">
-          <button
-            type="button"
-            className={`btn m-0 ${
-              previewStore.visibleHighlightState === 'before' ? 'btn-primary active' : 'btn-primary'
-            }`}
-            onClick={(_) => stickSnapshotState('before')}
-            disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasBefore}
-          >
-            Before
-          </button>
-          <button
-            type="button"
-            className={`btn m-0 ${
-              previewStore.visibleHighlightState === 'after' ? 'btn-primary active' : 'btn-primary'
-            }`}
-            onClick={(_) => stickSnapshotState('after')}
-            disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasAfter}
-          >
-            After
-          </button>
-        </div>
-
-        <div className="input-group input-group-sm ms-2">
-          <div className={'element url'}>{snapshot?.url}</div>
-        </div>
-
-        <div className={'element ms-2'}>
-          {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
-        </div>
-
-        <Logo className={'ms-2'} />
+      <div className={'quick-navigation-container'}>
+        <QuickNavigation />
+        <PreviewInfo />
       </div>
-      <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
+
+      <div className={'d-flex bg-striped ms-2'} style={{ flex: 1 }}>
         <div
           ref={iframeContainerRef}
           style={{

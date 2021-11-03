@@ -72,3 +72,18 @@ input {
 .mr-auto {
   margin-right: auto;
 }
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0.75rem;
+}
+::-webkit-scrollbar-track {
+  background: inherit;
+}
+::-webkit-scrollbar-thumb {
+  background: $lighter;
+  border-radius: 0.125rem;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
