@@ -1,5 +1,27 @@
-//$primary: #2b2e32;
-$primary: #1c1c1c;
+$text-disabled: #a2a5a8;
+$lighter: rgba(255, 255, 255, 0.16);
+
+$accent: #daa520;
+
+// $primary: #2b2e32;
+// $primary: #1c1c1c;
+$primary: $lighter;
+
+.btn.btn-primary {
+  background-color: transparent;
+  border-color: $lighter;
+  color: inherit;;
+
+  &.active {
+    background-color: $lighter;
+  }
+
+  &:disabled {
+    background-color: inherit;
+    color: $text-disabled;
+  }
+}
+
 //$primary-darker: #212529;
 $primary-darker: #1c1c1c;
 $body-color: #bdc0c3;

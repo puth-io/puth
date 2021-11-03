@@ -61,3 +61,14 @@ input {
 :root {
   color-scheme: dark;
 }
+
+.btn:focus {
+  box-shadow: none!important;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+.mr-auto {
+  margin-right: auto;
+}

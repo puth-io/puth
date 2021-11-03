@@ -9,41 +9,37 @@ import { PreviewStore } from './PreviewStore';
 import * as psl from 'psl';
 import './Preview.scss';
 
-const Tab = ({title, subTitle, active = null}) => {
+const Tab = ({ title, subTitle, active = null }) => {
   return (
     <div className={'tab rounded-3' + (active ? ' active' : '')}>
       <div className={'d-flex'}>
-        <div className={'title flex-grow-1'}>{ title }</div>
+        <div className={'title flex-grow-1'}>{title}</div>
         <div>&times;</div>
       </div>
-      <div className={'subTitle'}>
-        { subTitle }
-      </div>
+      <div className={'subTitle'}>{subTitle}</div>
     </div>
-  )
-}
+  );
+};
 
-const Sidebar = () => {
+const Logo = ({ className = null }) => (
+  <div className={`logo ${className}`}>
+    <div>PU</div>
+    <div>TH</div>
+  </div>
+);
+
+const QuickNavigation = () => {
   return (
     <>
       <div className={'d-flex tabs'}>
-        <Tab
-          title={'googleTest'}
-          subTitle={'tests/Browser/BasicTest'}
-          active
-        />
-        <Tab
-          title={'googleTest'}
-          subTitle={'tests/Browser/BasicTest'}
-        />
-        <Tab
-          title={'googleTest'}
-          subTitle={'tests/Browser/BasicTest'}
-        />
+        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} active />
+        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
+        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
+        <Logo className={'ml-auto me-2'} />
       </div>
     </>
-  )
-}
+  );
+};
 
 export const previewStore = new PreviewStore();
 
@@ -310,14 +306,13 @@ export const Preview = observer(() => {
         overflow: 'hidden',
       }}
     >
-      <Sidebar/>
-      <div className="d-flex py-2 info">
-
+      {/*<QuickNavigation />*/}
+      <div className="d-flex py-2 pe-2 info">
         <div className="btn-group btn-group-sm" role="group">
           <button
             type="button"
             className={`btn m-0 ${
-              previewStore.visibleHighlightState === 'before' ? 'btn-warning active' : 'btn-primary'
+              previewStore.visibleHighlightState === 'before' ? 'btn-primary active' : 'btn-primary'
             }`}
             onClick={(_) => stickSnapshotState('before')}
             disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasBefore}
@@ -327,7 +322,7 @@ export const Preview = observer(() => {
           <button
             type="button"
             className={`btn m-0 ${
-              previewStore.visibleHighlightState === 'after' ? 'btn-warning active' : 'btn-primary'
+              previewStore.visibleHighlightState === 'after' ? 'btn-primary active' : 'btn-primary'
             }`}
             onClick={(_) => stickSnapshotState('after')}
             disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasAfter}
@@ -337,15 +332,14 @@ export const Preview = observer(() => {
         </div>
 
         <div className="input-group input-group-sm ms-2">
-          <div className={'element url'}>
-            { snapshot?.url }
-          </div>
+          <div className={'element url'}>{snapshot?.url}</div>
         </div>
 
         <div className={'element ms-2'}>
           {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
         </div>
 
+        <Logo className={'ms-2'} />
       </div>
       <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
         <div
@@ -354,6 +348,8 @@ export const Preview = observer(() => {
             flex: 1,
             overflow: 'hidden',
             visibility: !!html ? 'visible' : 'hidden',
+            border: 'solid #46484b',
+            borderWidth: '1px 0 0 1px',
           }}
         >
           <iframe
