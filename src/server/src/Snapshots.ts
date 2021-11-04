@@ -202,34 +202,40 @@ class SnapshotHandler {
       }
 
       function getAllStyle() {
-        if (!cacheAllStyleTagsEval) {
-          return [];
-        }
+        // if (!cacheAllStyleTagsEval) {
+        //   return [];
+        // }
 
         // @ts-ignore
-        return [...document.styleSheets].map((ss) => {
-          let getCssRules = () => {
-            let cssRules = [];
+        return [...document.styleSheets]
+          .map((ss) => {
+            let getCssRules = () => {
+              let cssRules = [];
 
-            try {
+              if (!cacheAllStyleTagsEval && !(ss.ownerNode.tagName === 'STYLE' && ss.ownerNode.innerHTML === '')) {
+                return;
+              }
+
+              try {
+                // @ts-ignore
+                cssRules = [...ss.cssRules];
+              } catch (e) {
+                // wtf
+                // console.error(e);
+              }
+
               // @ts-ignore
-              cssRules = [...ss.cssRules];
-            } catch (e) {
-              // wtf
-              // console.error(e);
-            }
+              return cssRules.map((s) => s?.cssText).join('\n');
+            };
 
-            // @ts-ignore
-            return cssRules.map((s) => s?.cssText).join('\n');
-          };
-
-          return {
-            path: getAbsoluteElementPath(ss.ownerNode),
-            href: ss.href,
-            // only load content if this is not an external stylesheet
-            content: ss?.href ? null : getCssRules(),
-          };
-        });
+            return {
+              path: getAbsoluteElementPath(ss.ownerNode),
+              href: ss.href,
+              // only load content if this is not an external stylesheet
+              content: ss?.href ? null : getCssRules(),
+            };
+          })
+          .filter((item) => item?.content !== null);
       }
 
       function getUntrackedState() {

@@ -123,8 +123,12 @@ export const Preview = observer(() => {
     // Using a blob is faster than putting the src into 'srcdoc' and also faster than iframe.document.write
     // (which is also not the best to use). Creating a blob allows the browser to load the data into the
     // iframe in a usual way.
+
+    let time = Date.now();
+    console.log('---- creating blob');
     const blob = new Blob([html], { type: 'text/html' });
     iframe.src = URL.createObjectURL(blob);
+    console.log('---- creating blob', Date.now() - time + 'ms');
   } else if (iframe && !snapshot) {
     // cleans iframe
     iframe.src = 'about:blank';
@@ -132,6 +136,9 @@ export const Preview = observer(() => {
 
   // Gets called after src of iframe changes
   let onIframeLoad = ({ target }) => {
+    let time = Date.now();
+    console.log('----------------------------------- onload');
+
     let iframeDoc = target?.contentWindow?.document;
 
     if (!iframeDoc) {
@@ -174,6 +181,7 @@ export const Preview = observer(() => {
 
       if (!resource) {
         // TODO implement error handling
+        console.error('Could not find resource for url', matchUrls);
         return;
       }
 
@@ -210,6 +218,9 @@ export const Preview = observer(() => {
           .filter((item) => item != null),
       );
 
+      console.log(styleSheets);
+      console.log(command.context.responses);
+
       // Recovers
       styleSheets.forEach((ss) => {
         let content;
@@ -220,6 +231,15 @@ export const Preview = observer(() => {
         } else {
           content = ss.content;
         }
+
+        if (content.includes('.hsds-beacon')) {
+          console.warn({ ss, content });
+        }
+
+        console.log('test start ----------');
+        console.log(content);
+        // console.log(CSSText.match(/url\(.+(?=\))/g).map((url) => url.replace(/url\(/, '')));
+        console.log('test end ------------');
 
         let rawStyleTag = iframeDoc.createElement('style');
         rawStyleTag.innerHTML = content;
@@ -239,14 +259,37 @@ export const Preview = observer(() => {
         // need to use getAttribute because if the resource isn't actually loaded, then link.href is empty
         let href = link.getAttribute('href');
 
+        console.log([link, href]);
+
         if (!href) {
           return;
         }
 
-        let rawStyleTag = iframeDoc.createElement('style');
-        rawStyleTag.innerHTML = resolveSrcFromCache({ src: href, returnType: 'string' });
+        let src = resolveSrcFromCache({ src: href, returnType: 'string' });
 
-        link.replaceWith(rawStyleTag);
+        if (!src) {
+          return;
+        }
+
+        let urlMatches = src?.match(/url\(.+(?=\))/g);
+
+        // if (urlMatches) {
+        //   console.log('test start ----------');
+        //   console.log(urlMatches);
+        //   // console.log(src?.match(/url\(.+(?=\))/g).map((url) => url.replace(/url\(/, '')));
+        //   console.log('test end ------------');
+        // }
+
+        // let rawStyleTag = iframeDoc.createElement('style');
+        // rawStyleTag.innerHTML = src;
+
+        if (src.includes('.hsds-beacon')) {
+          console.warn({ link, href, src });
+        }
+
+        // link.replaceWith(rawStyleTag);
+
+        link.href = resolveSrcFromCache({ src: href });
       });
 
       /**
@@ -287,6 +330,8 @@ export const Preview = observer(() => {
       }
 
       // TODO check if there are other tags that need to be reinjected from the context.responses resources.
+
+      console.log('----------------------------------- onload finished', Date.now() - time + 'ms');
     }
 
     // Load the highlights for the snapshot
@@ -295,7 +340,7 @@ export const Preview = observer(() => {
     //      need for rerendering the snapshot. Also implement a "ready" state that waits for the
     //      "onload" callback to finish because the onload callback can cause "flickering" if it scrolls
     //      the element into view. Would be much nicer if the user doesn't see this processing.
-    loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
+    // loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
   };
 
   const PreviewInfo = () => (
@@ -342,7 +387,7 @@ export const Preview = observer(() => {
       }}
     >
       <div className={'quick-navigation-container'}>
-        <QuickNavigation />
+        {/*<QuickNavigation />*/}
         <PreviewInfo />
       </div>
 
