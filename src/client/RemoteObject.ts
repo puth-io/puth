@@ -152,7 +152,7 @@ export const RemoteContext = magicClassMethods(
     }
 
     destroy(options = null) {
-      this.puth.contextDestroy({ ...this.getRepresentation(), options });
+      return this.puth.contextDestroy({ ...this.getRepresentation(), options });
     }
 
     __get(property) {
