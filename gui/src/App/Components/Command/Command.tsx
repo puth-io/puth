@@ -1,7 +1,6 @@
 import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
-import { Events } from '../../../index';
-import { previewStore } from '../Preview/Preview';
+import { Events, PreviewStore } from '../../../index';
 import { IContext } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 
@@ -92,7 +91,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command }) =
   }
 
   const circleDot = '\u2299';
-  let active = previewStore.activeCommand?.id === command?.id;
+  let active = PreviewStore.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
   return (

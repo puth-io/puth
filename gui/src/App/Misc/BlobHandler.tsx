@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react';
 
 export class BlobHandler {
-  private component: any;
-
   private blobs = [];
   private urls = [];
-
-  constructor(component) {
-    this.component = component;
-  }
 
   createUrlFromString(source: string, options) {
     return this.createUrlFrom([source], options);
@@ -27,21 +21,9 @@ export class BlobHandler {
     return blob;
   }
 
-  destruct() {
-    this.urls.forEach(URL.revokeObjectURL);
+  cleanup() {
+    this.urls.forEach((item) => URL.revokeObjectURL(item));
+    this.blobs = [];
+    this.urls = [];
   }
-}
-
-export function useBlobHandler(component, dependencies = []) {
-  const [handler, setHandler] = useState(null);
-
-  useEffect(() => {
-    setHandler(new BlobHandler(component));
-
-    return () => {
-      handler?.destruct();
-    };
-  }, dependencies);
-
-  return handler;
 }

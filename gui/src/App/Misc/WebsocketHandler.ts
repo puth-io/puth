@@ -3,8 +3,8 @@ import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
+import { DEBUG, DEBUG_ENABLED } from '../../index';
 
-export const DEBUG_ENABLED = process.env.NODE_ENV === 'development';
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
 PUTH_EXTENSION_CODEC.register({
@@ -139,7 +139,7 @@ class WebsocketHandlerSingleton {
 
     pMeasure('proc', 'decode');
 
-    if (DEBUG_ENABLED) {
+    DEBUG(() => {
       let size = (binary.byteLength / 1000 / 1000).toFixed(2);
 
       console.group('Packet received');
@@ -155,7 +155,7 @@ class WebsocketHandlerSingleton {
       console.log('Delta time debug', Date.now() - dateAfterProcessing, 'ms');
 
       console.groupEnd();
-    }
+    });
 
     pMeasure('debug', 'proc');
   }

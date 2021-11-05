@@ -5,12 +5,33 @@ import { WebsocketHandler } from './App/Misc/WebsocketHandler';
 import mitt from 'mitt';
 import { runInAction } from 'mobx';
 import DropzoneStore from './App/Mobx/DropzoneStore';
+import { PreviewStoreClass } from './App/Components/Preview/PreviewStore';
 
+/**
+ * Debug setup
+ */
+export const DEBUG_ENABLED = false; // process.env.NODE_ENV === 'development';
+// tslint:disable-next-line:no-empty
+export let DEBUG = (func) => {};
+
+if (DEBUG_ENABLED) {
+  DEBUG = (func) => func();
+} else {
+  // tslint:disable-next-line:no-empty
+  console.debug = () => {};
+}
+
+/**
+ * Global Objects initialization
+ */
 export const Events = mitt();
+export const PreviewStore = new PreviewStoreClass();
 
-Events.on('*', (type, event) => {
-  // tslint:disable-next-line:no-console
-  console.log('[EventLogger]', type, event);
+DEBUG(() => {
+  Events.on('*', (type, event) => {
+    // tslint:disable-next-line:no-console
+    console.log('[EventLogger]', type, event);
+  });
 });
 
 ReactDOM.render(
