@@ -4,6 +4,7 @@ import { calculateIframeSize, useForceUpdate } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
 import { PreviewStore } from '../../../index';
+import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 
 const Tab = ({ title, subTitle, active = null }) => {
   return (
@@ -140,9 +141,11 @@ export const Preview = observer(() => {
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
-            onLoad={({ target }) =>
-              loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState)
-            }
+            onLoad={({ target }) => {
+              // @ts-ignore
+              recoverAfterRender(PreviewStore.visibleCommand, PreviewStore.visibleSnapshot, target.contentDocument);
+              loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState);
+            }}
             style={{
               transformOrigin: '0 0',
               transform: 'scale(' + iframeSize.scale + ')',
