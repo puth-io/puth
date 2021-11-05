@@ -3,11 +3,11 @@ import React, { useEffect, useRef } from 'react';
 import { ICommand } from '../Command/Command';
 import { action } from 'mobx';
 import { Events } from '../../../index';
-import { loadHighlights, resolveElement } from '../Highlight';
+import { resolveElement } from '../Highlight';
 import { calculateIframeSize, useForceUpdate } from '../../Misc/Util';
 import { PreviewStore } from './PreviewStore';
-import * as psl from 'psl';
 import './Preview.scss';
+import { useBlobHandler } from '../../Misc/BlobHandler';
 
 const Tab = ({ title, subTitle, active = null }) => {
   return (
@@ -99,6 +99,8 @@ export const Preview = observer(() => {
     };
   });
 
+  const blobHandler = useBlobHandler(this, [previewStore.visibleSnapshot]);
+
   const stickSnapshotState = (state: 'before' | 'after') => {
     previewStore.activeState = state;
   };
@@ -118,36 +120,15 @@ export const Preview = observer(() => {
     // html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/, '');
   }
 
-  // Check if snapshot contains any html to display
-  if (iframe && html) {
-    // Using a blob is faster than putting the src into 'srcdoc' and also faster than iframe.document.write
-    // (which is also not the best to use). Creating a blob allows the browser to load the data into the
-    // iframe in a usual way.
-
-    let time = Date.now();
-    console.log('---- creating blob');
-    const blob = new Blob([html], { type: 'text/html' });
-    iframe.src = URL.createObjectURL(blob);
-    console.log('---- creating blob', Date.now() - time + 'ms');
-  } else if (iframe && !snapshot) {
-    // cleans iframe
-    iframe.src = 'about:blank';
-  }
-
   // Gets called after src of iframe changes
-  let onIframeLoad = ({ target }) => {
-    let time = Date.now();
-    console.log('----------------------------------- onload');
-
-    let iframeDoc = target?.contentWindow?.document;
-
-    if (!iframeDoc) {
+  let onIframeLoad = (doc) => {
+    if (!doc) {
       return;
     }
 
     // Try to completely disable every scroll effect
-    iframeDoc.documentElement.style.scrollBehavior = 'unset';
-    iframeDoc.querySelector('body').addEventListener(
+    doc.documentElement.style.scrollBehavior = 'unset';
+    doc.querySelector('body').addEventListener(
       'wheel',
       function (event: any) {
         event.stopPropagation();
@@ -155,33 +136,27 @@ export const Preview = observer(() => {
       true,
     );
 
-    let resolveSrcFromCache = ({ src, returnType = null }) => {
+    let resolveSrcFromCache = ({ src, base = snapshot?.url, returnType = null, mimeType = 'text/html' }) => {
       let matchUrls = [];
 
       if (src.startsWith('http://') || src.startsWith('https://')) {
         // find matching include on full srcurl
         matchUrls.push(src);
       } else if (src.startsWith('//')) {
-        let url = new URL(snapshot.url);
+        let url = new URL(base);
         matchUrls.push(url.origin + src.replace('//', '/'));
       } else if (src.startsWith('/')) {
-        let url = new URL(snapshot.url);
+        let url = new URL(base);
         matchUrls.push(url.origin + src);
       } else {
-        let url = snapshot.url;
-
-        if (!url.endsWith('/')) {
-          url += '/';
-        }
-
-        matchUrls.push(url + src);
+        matchUrls.push(new URL(src, base).href);
       }
 
       let resource = command.context.responses.find((pageInclude) => matchUrls.includes(pageInclude.url));
 
       if (!resource) {
         // TODO implement error handling
-        console.error('Could not find resource for url', matchUrls);
+        // console.error('Could not find resource for url', matchUrls);
         return;
       }
 
@@ -193,8 +168,9 @@ export const Preview = observer(() => {
       // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
       //      and blobs need to be destroyed by hand.
       // @ts-ignore
-      const blob = new Blob([resource.content]);
-      return URL.createObjectURL(blob);
+      // const blob = new Blob([resource.content], { type: mimeType });
+      // return URL.createObjectURL(blob);
+      return blobHandler.createUrlFrom([resource.content], { type: mimeType });
     };
 
     // Restore dynamic html data form snapshot
@@ -203,7 +179,7 @@ export const Preview = observer(() => {
       let [styleSheets, untrackedState] = snapshot?.html?.untracked.map((untracked) =>
         untracked
           .map((item) => {
-            let resolvedNode = resolveElement(item.path, iframeDoc);
+            let resolvedNode = resolveElement(item.path, doc);
 
             if (!resolvedNode) {
               console.error('Node not found for untracked item', item);
@@ -218,9 +194,6 @@ export const Preview = observer(() => {
           .filter((item) => item != null),
       );
 
-      console.log(styleSheets);
-      console.log(command.context.responses);
-
       // Recovers
       styleSheets.forEach((ss) => {
         let content;
@@ -232,16 +205,7 @@ export const Preview = observer(() => {
           content = ss.content;
         }
 
-        if (content.includes('.hsds-beacon')) {
-          console.warn({ ss, content });
-        }
-
-        console.log('test start ----------');
-        console.log(content);
-        // console.log(CSSText.match(/url\(.+(?=\))/g).map((url) => url.replace(/url\(/, '')));
-        console.log('test end ------------');
-
-        let rawStyleTag = iframeDoc.createElement('style');
+        let rawStyleTag = doc.createElement('style');
         rawStyleTag.innerHTML = content;
 
         ss.node.replaceWith(rawStyleTag);
@@ -255,15 +219,15 @@ export const Preview = observer(() => {
       /**
        * Recover external stylesheets
        */
-      [...iframeDoc.querySelectorAll('link')].forEach((link) => {
+      [...doc.querySelectorAll('link')].forEach((link) => {
         // need to use getAttribute because if the resource isn't actually loaded, then link.href is empty
         let href = link.getAttribute('href');
 
-        console.log([link, href]);
-
-        if (!href) {
+        if (!href || href.startsWith('data:')) {
           return;
         }
+
+        let hrefFull = new URL(href, snapshot?.url).href;
 
         let src = resolveSrcFromCache({ src: href, returnType: 'string' });
 
@@ -271,31 +235,38 @@ export const Preview = observer(() => {
           return;
         }
 
-        let urlMatches = src?.match(/url\(.+(?=\))/g);
+        // Replace all url functions inside css with blobs if known
+        src = src?.replace(/url\((.+?)\)+/g, (match) => {
+          let url = match.substring(4, match.length - 1);
+          let quote = '';
 
-        // if (urlMatches) {
-        //   console.log('test start ----------');
-        //   console.log(urlMatches);
-        //   // console.log(src?.match(/url\(.+(?=\))/g).map((url) => url.replace(/url\(/, '')));
-        //   console.log('test end ------------');
-        // }
+          if (url.startsWith("'") || url.startsWith('"')) {
+            quote = url[0];
+            url = url.substring(1, url.length - 1);
+          }
 
-        // let rawStyleTag = iframeDoc.createElement('style');
-        // rawStyleTag.innerHTML = src;
+          if (url.startsWith('data:')) {
+            return match;
+          }
 
-        if (src.includes('.hsds-beacon')) {
-          console.warn({ link, href, src });
-        }
+          let resolved = resolveSrcFromCache({ src: url, base: hrefFull, mimeType: 'font' });
 
-        // link.replaceWith(rawStyleTag);
+          if (!resolved) {
+            return match;
+          }
 
-        link.href = resolveSrcFromCache({ src: href });
+          return `url(${quote}${resolved}${quote})`;
+        });
+
+        const cssBlob = new Blob([src], { type: 'text/html' });
+        link.href = URL.createObjectURL(cssBlob);
+        link.dataset.puth_original_href = href;
       });
 
       /**
        * Recover parts that can not be tracked
        */
-      [...iframeDoc.querySelectorAll('img')].forEach((img) => {
+      [...doc.querySelectorAll('img')].forEach((img) => {
         // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
         let src = img.getAttribute('src');
 
@@ -326,12 +297,10 @@ export const Preview = observer(() => {
       // Remove all noscript tags since javascript is enabled. If javascript is disabled, don't do anything.
       // This exists because the iframe has javascript disabled therefore noscript tag would be displayed.
       if (snapshot.isJavascriptEnabled) {
-        [...iframeDoc.querySelectorAll('noscript')].forEach((el) => el.remove());
+        [...doc.querySelectorAll('noscript')].forEach((el) => el.remove());
       }
 
       // TODO check if there are other tags that need to be reinjected from the context.responses resources.
-
-      console.log('----------------------------------- onload finished', Date.now() - time + 'ms');
     }
 
     // Load the highlights for the snapshot
@@ -342,6 +311,30 @@ export const Preview = observer(() => {
     //      the element into view. Would be much nicer if the user doesn't see this processing.
     // loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
   };
+
+  // Check if snapshot contains any html to display
+  if (iframe && html) {
+    // Using a blob is faster than putting the src into 'srcdoc' and also faster than iframe.document.write
+    // (which is also not the best to use). Creating a blob allows the browser to load the data into the
+    // iframe in a usual way.
+
+    let time = Date.now();
+    console.log('---- creating blob');
+    // const blob = new Blob([html], { type: 'text/html' });
+    // iframe.src = URL.createObjectURL(blob);
+
+    const parsedDocument = new DOMParser().parseFromString(html, 'text/html');
+    onIframeLoad(parsedDocument);
+
+    const documentBlob = new Blob([parsedDocument.documentElement.innerHTML], { type: 'text/html' });
+    iframe.src = URL.createObjectURL(documentBlob);
+
+    console.log(iframe?.contentWindow?.document);
+    console.log('---- creating blob', Date.now() - time + 'ms');
+  } else if (iframe && !snapshot) {
+    // cleans iframe
+    iframe.src = 'about:blank';
+  }
 
   const PreviewInfo = () => (
     <div className="d-flex info">
@@ -373,8 +366,6 @@ export const Preview = observer(() => {
       <div className={'element ms-2'}>
         {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
       </div>
-
-      <Logo className={'ms-2'} />
     </div>
   );
 
@@ -387,7 +378,7 @@ export const Preview = observer(() => {
       }}
     >
       <div className={'quick-navigation-container'}>
-        {/*<QuickNavigation />*/}
+        <QuickNavigation />
         <PreviewInfo />
       </div>
 
@@ -407,7 +398,9 @@ export const Preview = observer(() => {
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
-            onLoad={onIframeLoad}
+            // onLoad={({ target }) =>
+            //   loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState)
+            // }
             style={{
               transformOrigin: '0 0',
               transform: 'scale(' + iframeSize.scale + ')',

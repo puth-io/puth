@@ -235,7 +235,7 @@ class SnapshotHandler {
               content: ss?.href ? null : getCssRules(),
             };
           })
-          .filter((item) => item?.content !== null);
+          .filter((item) => item?.content);
       }
 
       function getUntrackedState() {
