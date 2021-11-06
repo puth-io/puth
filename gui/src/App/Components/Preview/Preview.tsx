@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef } from 'react';
-import { calculateIframeSize, useForceUpdate } from '../../Misc/Util';
+import { calculateIframeSize, ForceUpdateStorePreview, useForceUpdate, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
 import { PreviewStore } from '../../../index';
@@ -39,13 +39,13 @@ const QuickNavigation = () => {
 };
 
 export const Preview = observer(() => {
-  const forceUpdate = useForceUpdate();
+  const forceUpdatePreview = useForceUpdatePreview(true);
   const iframeRef = useRef<any>(null);
   const iframeContainerRef = useRef(null);
 
   // Handle window resize because preview iframe should scale to the minimum available space.
   useEffect(() => {
-    let handleResize = () => forceUpdate();
+    let handleResize = () => forceUpdatePreview();
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -97,6 +97,9 @@ export const Preview = observer(() => {
 
       <div className="input-group input-group-sm ms-2">
         <div className={'element url'}>{snapshot?.url}</div>
+        <a className="btn btn-primary d-inline-flex align-items-center" target={'_blank'} href={snapshot?.url}>
+          Open
+        </a>
       </div>
 
       <div className={'element ms-2'}>
@@ -125,7 +128,7 @@ export const Preview = observer(() => {
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex bg-striped ms-2'} style={{ flex: 1 }}>
+      <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
         <div
           ref={iframeContainerRef}
           style={{

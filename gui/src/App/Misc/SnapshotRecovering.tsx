@@ -58,7 +58,7 @@ let resolveSrcFromCache = ({
 };
 
 export function recover(command, snapshot, doc) {
-  if (!doc || !snapshot || snapshot.version !== 2) {
+  if (!doc || !PreviewStore.hasVisibleSnapshotSource || snapshot.version !== 2) {
     return;
   }
 
@@ -159,7 +159,7 @@ export function recover(command, snapshot, doc) {
 // TODO run after iframe draw because setting 'inline' styles or adding listeners doesn't work if the document isn't
 //      live (currently rendered in browser: current document, iframe, ...)
 export function recoverAfterRender(command, snapshot, doc) {
-  if (!doc) {
+  if (!doc || !PreviewStore.hasVisibleSnapshotSource || snapshot.version !== 2) {
     return;
   }
 

@@ -10,7 +10,7 @@ import { PreviewStoreClass } from './App/Components/Preview/PreviewStore';
 /**
  * Debug setup
  */
-export const DEBUG_ENABLED = false; // process.env.NODE_ENV === 'development';
+export const DEBUG_ENABLED = process.env.NODE_ENV === 'development';
 // tslint:disable-next-line:no-empty
 export let DEBUG = (func) => {};
 

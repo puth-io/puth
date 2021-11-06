@@ -39,6 +39,10 @@ input {
     color: $body-color;
     border-color: $primary-darker;
   }
+
+  > *:not(:first-child) {
+    border-left: none;
+  }
 }
 
 .table-striped-custom {
@@ -86,4 +90,20 @@ input {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+.ellipsis {
+  position: relative;
+}
+.ellipsis:before {
+  content: '&nbsp;';
+  visibility: hidden;
+}
+.ellipsis span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

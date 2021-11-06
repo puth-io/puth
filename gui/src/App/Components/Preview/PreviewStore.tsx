@@ -20,7 +20,7 @@ export class PreviewStoreClass {
 
   resetHighlightInterval() {
     clearInterval(this.highlightInterval);
-    // this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
+    this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
     this.highlightState = 'after';
   }
 
@@ -47,24 +47,22 @@ export class PreviewStoreClass {
   }
 
   get visibleSnapshotSource() {
+    if (!this.hasVisibleSnapshotSource) {
+      return;
+    }
+
     BlobHandler.cleanup();
 
-    let command = this.visibleCommand;
-    let snapshot = this.visibleSnapshot;
+    const parsedDocument = new DOMParser().parseFromString(this.visibleSnapshot?.html?.src, 'text/html');
+    recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
 
-    if (!snapshot) {
-      return;
-    }
-
-    let html = snapshot?.html?.src;
-
-    if (!html) {
-      return;
-    }
-    const parsedDocument = new DOMParser().parseFromString(html, 'text/html');
-    recover(command, snapshot, parsedDocument);
-
+    // TODO find a way to make Blob out of document directly because this is "document => string => blob"
+    //      but if innerHTML is cached then it doesn't that big of a difference
     return BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+  }
+
+  get hasVisibleSnapshotSource() {
+    return !!this.visibleSnapshot?.html?.src;
   }
 
   get visibleHasBefore() {
