@@ -247,6 +247,7 @@ class Context extends Generic {
               elapsed: Date.now() - this.createdAt,
               finished: Date.now(),
             },
+            status: response.status(),
             url: response.request().url(),
             resourceType: response.request().resourceType(),
             method: response.request().method(),
@@ -490,7 +491,7 @@ class Context extends Generic {
         });
       }
 
-      this.shouldSnapshot(() => command.time.took = Date.now() - command.time.started);
+      this.shouldSnapshot(() => (command.time.took = Date.now() - command.time.started));
 
       return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
     } catch (error) {
