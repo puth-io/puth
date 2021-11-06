@@ -74,6 +74,30 @@ let resolveSrcFromCache = ({
   return BlobHandler.createUrlFrom([resource.content], { type: mimeType });
 };
 
+export function resolveCssLinksToLocal(src, base) {
+  return src?.replace(/url\((.+?)\)+/g, (match) => {
+    let url = match.substring(4, match.length - 1);
+    let quote = '';
+
+    if (url.startsWith("'") || url.startsWith('"')) {
+      quote = url[0];
+      url = url.substring(1, url.length - 1);
+    }
+
+    if (url.startsWith('data:')) {
+      return match;
+    }
+
+    let resolved = resolveSrcFromCache({ src: url, base, mimeType: 'font' });
+
+    if (!resolved) {
+      return match;
+    }
+
+    return `url(${quote}${resolved}${quote})`;
+  });
+}
+
 export function recover(command, snapshot, doc) {
   if (!doc || !PreviewStore.hasVisibleSnapshotSource || snapshot.version !== 2) {
     return;
@@ -107,30 +131,17 @@ export function recover(command, snapshot, doc) {
     }
 
     // Replace all url functions inside css with blobs if known
-    src = src?.replace(/url\((.+?)\)+/g, (match) => {
-      let url = match.substring(4, match.length - 1);
-      let quote = '';
-
-      if (url.startsWith("'") || url.startsWith('"')) {
-        quote = url[0];
-        url = url.substring(1, url.length - 1);
-      }
-
-      if (url.startsWith('data:')) {
-        return match;
-      }
-
-      let resolved = resolveSrcFromCache({ src: url, base: hrefFull, mimeType: 'font' });
-
-      if (!resolved) {
-        return match;
-      }
-
-      return `url(${quote}${resolved}${quote})`;
-    });
+    src = resolveCssLinksToLocal(src, hrefFull);
 
     link.href = BlobHandler.createUrlFromString(src, { type: 'text/html' });
     link.dataset.puth_original_href = href;
+  });
+
+  /**
+   * Recover all external resources inside style tags
+   */
+  [...doc.querySelectorAll('style')].forEach((style) => {
+    style.innerHTML = resolveCssLinksToLocal(style.innerHTML, snapshot?.href);
   });
 
   /**
@@ -212,17 +223,8 @@ export function recoverAfterRender(command, snapshot, doc) {
   );
 
   styleSheets.forEach((ss) => {
-    let content;
-
-    if (ss.href) {
-      // if stylesheet has href set, resolve with cache
-      content = resolveSrcFromCache({ src: ss.href, returnType: 'string' });
-    } else {
-      content = ss.content;
-    }
-
     let rawStyleTag = doc.createElement('style');
-    rawStyleTag.innerHTML = content;
+    rawStyleTag.innerHTML = resolveCssLinksToLocal(ss?.content, snapshot?.href);
 
     ss.node.replaceWith(rawStyleTag);
   });
