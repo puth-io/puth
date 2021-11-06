@@ -13,6 +13,7 @@ export class PreviewStoreClass {
   highlightCommand: ICommand | undefined;
   highlightState: SnapshotState = 'after';
   private highlightInterval: number;
+  darken: boolean = false;
 
   constructor() {
     makeAutoObservable(this);

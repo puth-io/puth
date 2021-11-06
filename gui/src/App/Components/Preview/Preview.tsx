@@ -134,6 +134,7 @@ export const Preview = observer(() => {
             visibility: !!html ? 'visible' : 'hidden',
             border: 'solid #46484b',
             borderWidth: '1px 0 0 1px',
+            position: 'relative',
           }}
         >
           <iframe
@@ -154,6 +155,22 @@ export const Preview = observer(() => {
               background: !!html ? 'white' : 'transparent',
             }}
           />
+          <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>
+        </div>
+      </div>
+
+      <div className={'py-1 pe-2 d-flex justify-content-end'}>
+        <div className="">
+          <input
+            type="checkbox"
+            className="form-check-input me-2"
+            id="darken-preview-checkbox"
+            checked={PreviewStore.darken}
+            onChange={() => (PreviewStore.darken = !PreviewStore.darken)}
+          />
+          <label className="form-check-label" htmlFor="darken-preview-checkbox">
+            Darken preview
+          </label>
         </div>
       </div>
     </div>

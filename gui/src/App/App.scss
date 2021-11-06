@@ -28,9 +28,17 @@ button {
   cursor: pointer;
 }
 
-input {
+input[type="text"] {
   background: $primary!important;
   border-color: $primary-darker!important;
+}
+
+input[type="checkbox"]:focus {
+  box-shadow: none;
+}
+
+.form-check-label {
+  user-select: none;
 }
 
 .input-group {
