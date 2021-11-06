@@ -13,12 +13,23 @@ export class PreviewStoreClass {
   highlightCommand: ICommand | undefined;
   highlightState: SnapshotState = 'after';
   private highlightInterval: number;
-  darken: boolean = false;
+  _darken: boolean = false;
 
   constructor() {
     makeAutoObservable(this);
 
     this.registerEvents();
+
+    this._darken = localStorage.getItem('previewStore.darken') === 'true';
+  }
+
+  set darken(value) {
+    this._darken = value;
+    localStorage.setItem('previewStore.darken', value ? 'true' : 'false');
+  }
+
+  get darken() {
+    return this._darken;
   }
 
   resetHighlightInterval() {

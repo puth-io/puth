@@ -39,6 +39,27 @@ const QuickNavigation = () => {
   );
 };
 
+const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>);
+
+const PreviewFooter = observer(() => {
+  return (
+    <div className={'py-1 pe-2 d-flex justify-content-end'}>
+      <div className="">
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
+          id="darken-preview-checkbox"
+          checked={PreviewStore.darken}
+          onChange={() => (PreviewStore.darken = !PreviewStore.darken)}
+        />
+        <label className="form-check-label" htmlFor="darken-preview-checkbox">
+          Darken preview
+        </label>
+      </div>
+    </div>
+  );
+});
+
 export const Preview = observer(() => {
   const forceUpdatePreview = useForceUpdatePreview(true);
   const iframeRef = useRef<any>(null);
@@ -155,24 +176,11 @@ export const Preview = observer(() => {
               background: !!html ? 'white' : 'transparent',
             }}
           />
-          <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>
+          <PreviewOverlay />
         </div>
       </div>
 
-      <div className={'py-1 pe-2 d-flex justify-content-end'}>
-        <div className="">
-          <input
-            type="checkbox"
-            className="form-check-input me-2"
-            id="darken-preview-checkbox"
-            checked={PreviewStore.darken}
-            onChange={() => (PreviewStore.darken = !PreviewStore.darken)}
-          />
-          <label className="form-check-label" htmlFor="darken-preview-checkbox">
-            Darken preview
-          </label>
-        </div>
-      </div>
+      <PreviewFooter />
     </div>
   );
 });

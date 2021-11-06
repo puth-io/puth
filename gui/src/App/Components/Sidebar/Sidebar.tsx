@@ -21,11 +21,9 @@ export default observer(function Sidebar() {
       onResizeStop={forceUpdatePreview}
     >
       <div className={'sidebar p-2'}>
-        {WebsocketHandler.contextArray
-          // .sort((c1, c2) => c2.created - c1.created)
-          .map((context, idx) => {
-            return <Context key={context.id} context={context} />;
-          })}
+        {WebsocketHandler.contextArray.map((context, idx) => {
+          return <Context key={context.id} context={context} />;
+        })}
       </div>
     </Resizable>
   );
