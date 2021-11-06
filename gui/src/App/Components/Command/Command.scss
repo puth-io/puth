@@ -5,7 +5,7 @@ $dangerDark: #cc1022;
 $info: #158fe6;
 
 .command {
-  padding: 0.3rem 0.4rem;
+  padding: 0.3rem 0;
   cursor: pointer;
 
   &:last-child > td {
@@ -33,7 +33,14 @@ $info: #158fe6;
   }
 
   & > td {
-    padding: 0.125rem 0.5rem;
+    padding: 0.125rem 0.25rem;
+
+    &:first-child {
+      padding-left: 0.25rem;
+    }
+    &:last-child {
+      padding-right: 0.25rem;
+    }
   }
 
   &:hover {

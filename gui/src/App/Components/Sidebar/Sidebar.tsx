@@ -13,10 +13,10 @@ export default observer(function Sidebar() {
     <Resizable
       className={'d-flex pe-2'}
       defaultSize={{
-        width: 630,
+        width: 550,
         height: '100%',
       }}
-      minWidth={500}
+      minWidth={400}
       enable={{ right: true }}
       onResizeStop={forceUpdatePreview}
     >

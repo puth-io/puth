@@ -146,7 +146,7 @@ export const Preview = observer(() => {
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
+      <div className={'d-flex bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
         <div
           ref={iframeContainerRef}
           style={{
