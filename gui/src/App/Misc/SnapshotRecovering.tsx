@@ -15,6 +15,18 @@ export function disableScrollBehavior(doc) {
   );
 }
 
+let getHeader = (headers, find) => {
+  find = find.toLowerCase();
+
+  for (let header of Object.keys(headers)) {
+    if (header.toLowerCase() === find) {
+      return headers[header];
+    }
+  }
+
+  return '';
+};
+
 let resolveSrcFromCache = ({
   src,
   base = PreviewStore.visibleSnapshot?.url,
@@ -44,6 +56,11 @@ let resolveSrcFromCache = ({
     // TODO implement error handling
     // console.error('Could not find resource for url', matchUrls);
     return;
+  }
+
+  let contentType = getHeader(resource.headers, 'content-type');
+  if (contentType) {
+    mimeType = contentType;
   }
 
   if (returnType === 'string') {
