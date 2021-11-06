@@ -85,7 +85,7 @@ input {
   background: inherit;
 }
 ::-webkit-scrollbar-thumb {
-  background: $lighter;
+  background: $light;
   border-radius: 0.125rem;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -106,4 +106,8 @@ input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.fs-small {
+  font-size: 0.875rem;
 }

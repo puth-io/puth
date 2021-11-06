@@ -5,6 +5,7 @@ import ContextStore from '../../Mobx/ContextStore';
 import Log from '../Log/Log';
 import Command from '../Command/Command';
 import Request from '../Request/Request';
+import { PreviewStore } from '../../../index';
 
 type ContextProps = {
   context: ContextStore;
@@ -19,8 +20,14 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
 
   let commandIndex = 0;
 
+  let active = context === PreviewStore.activeContext;
+
   return (
-    <div className={'context rounded-3'} data-context-id={context.id} data-status={context?.test?.status ?? undefined}>
+    <div
+      className={`context rounded-3 ${active ? 'active' : ''}`}
+      data-context-id={context.id}
+      data-status={context?.test?.status ?? undefined}
+    >
       <div className={'d-flex align-items-center p-2 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
         <div>{pointer}</div>
         <div className={'ms-2 flex-grow-1'}>
@@ -30,7 +37,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
       </div>
 
       {expanded && (
-        <table className={'table table-striped-custom snapshots mx-2 mb-2'} cellSpacing={0} cellPadding={0}>
+        <table className={'table snapshots mx-2 mb-2'} cellSpacing={0} cellPadding={0}>
           <tbody>
             {events.map((event, idx) => {
               if (event.type === 'command') {
@@ -47,7 +54,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
         </table>
       )}
 
-      <div className={'text-secondary fw-light text-end mb-1 me-2'}>{context.id}</div>
+      <div className={'fs-small fw-light text-secondary text-end mb-1 me-2'}>{context.id}</div>
     </div>
   );
 });

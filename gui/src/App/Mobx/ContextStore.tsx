@@ -33,7 +33,7 @@ export default class ContextStore {
   }
 
   getRequestFilter() {
-    return (request) => Math.floor(request?.response?.status / 100) !== 2;
+    return (request) => request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
   }
 
   get renderedEvents() {

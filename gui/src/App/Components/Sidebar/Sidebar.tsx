@@ -16,6 +16,7 @@ export default observer(function Sidebar() {
         width: 630,
         height: '100%',
       }}
+      minWidth={500}
       enable={{ right: true }}
       onResizeStop={forceUpdatePreview}
     >

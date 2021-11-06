@@ -1,19 +1,45 @@
 $text-disabled: #a2a5a8;
-$lighter: rgba(255, 255, 255, 0.16);
+
+$lighter: rgba(255, 255, 255, 0.06);
+$light: rgba(255, 255, 255, 0.10);
 
 $accent: #daa520;
 
 // $primary: #2b2e32;
 // $primary: #1c1c1c;
-$primary: $lighter;
+$primary: $light;
+$success: #169057;
+$warning: #e29907;
+$danger: #da3011;
+
+$blue: #0072c5;
+
+.bg-lighter {
+  background-color: $light;
+}
 
 .btn.btn-primary {
-  background-color: transparent;
-  border-color: $lighter;
-  color: inherit;;
+  border-color: $light;
+  color: inherit;
 
-  &.active {
-    background-color: $lighter;
+  &.active,
+  &:hover {
+    background-color: $light;
+  }
+
+  &:disabled {
+    background-color: inherit;
+    color: $text-disabled;
+  }
+}
+.btn.btn-outline-primary {
+  background-color: transparent;
+  border-color: $light;
+  color: inherit;
+
+  &.active,
+  &:hover {
+    background-color: $light;
   }
 
   &:disabled {

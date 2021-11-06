@@ -1,3 +1,5 @@
+@import 'src/App/Misc/colors';
+
 $danger: #e22134;
 $dangerDark: #cc1022;
 $info: #158fe6;
@@ -35,7 +37,7 @@ $info: #158fe6;
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: $light;
 
     &.hasErrors {
       background: #cc1022;
@@ -43,7 +45,7 @@ $info: #158fe6;
   }
 
   &.active {
-    background: #686d77;
+    background: $light;
 
     &.hasErrors {
       background: #cc1022;

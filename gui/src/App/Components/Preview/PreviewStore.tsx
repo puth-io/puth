@@ -2,10 +2,12 @@ import { ICommand } from '../Command/Command';
 import { action, makeAutoObservable } from 'mobx';
 import { BlobHandler, recover } from '../../Misc/SnapshotRecovering';
 import { Events } from '../../../index';
+import { IContext } from '../../Misc/WebsocketHandler';
 
 export type SnapshotState = 'before' | 'after';
 
 export class PreviewStoreClass {
+  private _activeContext: IContext | undefined;
   private _activeCommand: ICommand | undefined;
   activeState: SnapshotState = 'before';
   highlightCommand: ICommand | undefined;
@@ -82,11 +84,20 @@ export class PreviewStoreClass {
   }
 
   set activeCommand(command) {
+    this.activeContext = command?.context;
     this._activeCommand = command;
   }
 
   get activeCommand() {
     return this._activeCommand;
+  }
+
+  set activeContext(context) {
+    this._activeContext = context;
+  }
+
+  get activeContext() {
+    return this._activeContext;
   }
 
   private registerEvents() {

@@ -6,14 +6,14 @@ import { loadHighlights } from '../Highlight';
 import { PreviewStore } from '../../../index';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 
-const Tab = ({ title, subTitle, active = null }) => {
+const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   return (
     <div className={'tab rounded-3' + (active ? ' active' : '')}>
       <div className={'d-flex'}>
         <div className={'title flex-grow-1'}>{title}</div>
-        <div>&times;</div>
+        {deletable && <div className={'close'}>&times;</div>}
       </div>
-      <div className={'subTitle'}>{subTitle}</div>
+      {subTitle && <div className={'subTitle'}>{subTitle}</div>}
     </div>
   );
 };
@@ -28,11 +28,12 @@ const Logo = ({ className = null }) => (
 const QuickNavigation = () => {
   return (
     <>
-      <div className={'d-flex tabs'}>
-        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} active />
+      <div className={'d-flex tabs align-items-stretch'}>
+        <Tab title={'Follow'} subTitle={'Incoming'} deletable={false} active />
+        {/*<Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
         <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
-        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
-        <Logo className={'ml-auto me-2'} />
+        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />*/}
+        <Logo className={'ml-auto me-2 align-self-center'} />
       </div>
     </>
   );
@@ -77,9 +78,7 @@ export const Preview = observer(() => {
       <div className="btn-group btn-group-sm" role="group">
         <button
           type="button"
-          className={`btn m-0 ${
-            PreviewStore.visibleHighlightState === 'before' ? 'btn-primary active' : 'btn-primary'
-          }`}
+          className={`btn m-0 btn-outline-primary ${PreviewStore.visibleHighlightState === 'before' ? 'active' : ''}`}
           onClick={(_) => stickSnapshotState('before')}
           disabled={!PreviewStore.isVisibleHighlight && !PreviewStore.visibleHasBefore}
         >
@@ -87,7 +86,7 @@ export const Preview = observer(() => {
         </button>
         <button
           type="button"
-          className={`btn m-0 ${PreviewStore.visibleHighlightState === 'after' ? 'btn-primary active' : 'btn-primary'}`}
+          className={`btn btn-outline-primary m-0 ${PreviewStore.visibleHighlightState === 'after' ? 'active' : ''}`}
           onClick={(_) => stickSnapshotState('after')}
           disabled={!PreviewStore.isVisibleHighlight && !PreviewStore.visibleHasAfter}
         >
@@ -97,7 +96,7 @@ export const Preview = observer(() => {
 
       <div className="input-group input-group-sm ms-2">
         <div className={'element url'}>{snapshot?.url}</div>
-        <a className="btn btn-primary d-inline-flex align-items-center" target={'_blank'} href={snapshot?.url}>
+        <a className="btn btn-outline-primary d-inline-flex align-items-center" target={'_blank'} href={snapshot?.url}>
           Open
         </a>
       </div>
@@ -105,8 +104,6 @@ export const Preview = observer(() => {
       <div className={'element ms-2'}>
         {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
       </div>
-
-      <Logo className={'ms-2'} />
     </div>
   );
 
@@ -124,7 +121,7 @@ export const Preview = observer(() => {
       }}
     >
       <div className={'quick-navigation-container'}>
-        {/*<QuickNavigation />*/}
+        <QuickNavigation />
         <PreviewInfo />
       </div>
 
