@@ -3,21 +3,26 @@
 .context {
   display: flex;
   flex-direction: column;
-  background: $primary;
-  //border-left: 0.5rem solid #bb941d;
+    //border-left: 0.5rem solid #bb941d;
   // box-shadow: -1px 2px 5px 0 #8e8e8e;
   // border-bottom: 1px solid #afafaf;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   color: $body-color;
   padding: 0.125rem;
-  border-left: 6px solid #adadad;
+  border: solid $light;
+  border-left-color: #adadad;
+  border-width: 1px 1px 1px 6px;
 
   &[data-status="success"] {
-    border-left-color: #129d12;
+    border-left-color: $success;
   }
 
   &[data-status="failed"] {
     border-left-color: #9d1212;
+  }
+
+  &.active {
+    background-color: $lighter;
   }
 
   .name {

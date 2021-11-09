@@ -20,10 +20,9 @@ const Request: FunctionComponent<RequestProps> = ({ request }) => {
           </div>
         )}
       </td>
-      <td>(XHR)</td>
-      <td colSpan={3} className={'text-break-all'}>
-        <span className={'text-warning-dark fw-bold'}>{request.method}</span>{' '}
-        {request.url.length > 64 ? request.url.substring(0, 60) + '...' : request.url}
+      <td>XHR</td>
+      <td colSpan={3} className={'ellipsis'}>
+        <span>{request.url}</span>
       </td>
     </tr>
   );

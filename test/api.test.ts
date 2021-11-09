@@ -51,19 +51,18 @@ function puthContextTests(env) {
     it('can create context', async function () {
       let rep = this.context.representation;
       assert.ok('id' in rep && 'type' in rep);
-      return assert.isFulfilled(this.context.destroy());
+      assert.isFulfilled(this.context.destroy());
     });
 
     it('can delete context', async function () {
-      return assert.isFulfilled(this.context.destroy());
+      assert.isFulfilled(this.context.destroy());
     });
 
     it('can call a function on context', async function () {
       let rep = await (await this.context.createBrowser()).getRepresentation();
       assert.containsAllKeys(rep, ['id', 'type']);
       assert.strictEqual(rep?.represents, 'Browser');
-
-      return assert.isFulfilled(this.context.destroy());
+      assert.isFulfilled(this.context.destroy());
     });
 
     describe('RemoteContext', function () {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { makeAutoObservable } from 'mobx';
 
 export function pMark(name) {
   performance.mark(name);
@@ -12,6 +13,20 @@ export function pMeasure(name, startMark) {
 export function useForceUpdate() {
   const [value, setValue] = useState(0);
   return () => setValue((val) => val + 1);
+}
+
+class ForceUpdateStore {
+  value = 0;
+  constructor() {
+    makeAutoObservable(this);
+  }
+}
+export const ForceUpdateStorePreview = new ForceUpdateStore();
+export function useForceUpdatePreview(initiator = false) {
+  if (initiator) {
+    let use = ForceUpdateStorePreview.value;
+  }
+  return () => ForceUpdateStorePreview.value++;
 }
 
 // Calculates the iframe size relative to the available space

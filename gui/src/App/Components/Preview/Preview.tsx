@@ -1,318 +1,173 @@
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef } from 'react';
-import { ICommand } from '../Command/Command';
-import { action } from 'mobx';
-import { Events } from '../../../index';
-import { loadHighlights, resolveElement } from '../Highlight';
-import { calculateIframeSize, useForceUpdate } from '../../Misc/Util';
-import { PreviewStore } from './PreviewStore';
-import * as psl from 'psl';
+import { calculateIframeSize, useForceUpdatePreview } from '../../Misc/Util';
+import './Preview.scss';
+import { loadHighlights } from '../Highlight';
+import { DebugStore, PreviewStore } from '../../../index';
+import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 
-export const previewStore = new PreviewStore();
+const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
+  return (
+    <div className={'tab rounded-3' + (active ? ' active' : '')}>
+      <div className={'d-flex'}>
+        <div className={'title flex-grow-1'}>{title}</div>
+        {deletable && <div className={'close'}>&times;</div>}
+      </div>
+      {subTitle && <div className={'subTitle'}>{subTitle}</div>}
+    </div>
+  );
+};
+
+const Logo = ({ className = null }) => (
+  <div className={`logo ${className}`}>
+    <div>PU</div>
+    <div>TH</div>
+  </div>
+);
+
+const QuickNavigation = () => {
+  return (
+    <>
+      <div className={'d-flex tabs align-items-stretch'}>
+        <Tab title={'Follow'} subTitle={'Incoming'} deletable={false} active />
+        {/*<Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
+        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
+        <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />*/}
+        <Logo className={'ml-auto me-2 align-self-center'} />
+      </div>
+    </>
+  );
+};
+
+const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>);
+
+const PreviewFooter = observer(() => {
+  return (
+    <div className={'footer py-1 pe-2'}>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
+          id="darken-preview-checkbox"
+          checked={PreviewStore.darken}
+          onChange={() => (PreviewStore.darken = !PreviewStore.darken)}
+        />
+        <label className="form-check-label" htmlFor="darken-preview-checkbox">
+          Darken preview
+        </label>
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
+          id="debug-checkbox"
+          checked={DebugStore.debug}
+          onChange={() => (DebugStore.debug = !DebugStore.debug)}
+        />
+        <label className="form-check-label" htmlFor="debug-checkbox">
+          Debug
+        </label>
+      </div>
+    </div>
+  );
+});
 
 export const Preview = observer(() => {
-  const forceUpdate = useForceUpdate();
+  const forceUpdatePreview = useForceUpdatePreview(true);
   const iframeRef = useRef<any>(null);
   const iframeContainerRef = useRef(null);
 
-  // Register all preview events
-  useEffect(() => {
-    const eventToggle = action((cmd: ICommand | undefined) => {
-      if (previewStore.activeCommand?.id === cmd?.id) {
-        previewStore.activeCommand = undefined;
-        return;
-      }
-
-      if (previewStore.highlightCommand?.id === cmd?.id) {
-        previewStore.highlightCommand = undefined;
-      }
-
-      previewStore.activeCommand = cmd;
-      previewStore.activeState = 'after';
-    });
-
-    const eventHighlightShow = action((cmd: ICommand | undefined) => {
-      if (previewStore.visibleCommand?.id === cmd?.id) {
-        return;
-      }
-      previewStore.highlightCommand = cmd;
-      previewStore.resetHighlightInterval();
-    });
-
-    const eventHighlightHide = action((cmd: ICommand | undefined) => {
-      if (previewStore.highlightCommand?.id === cmd?.id) {
-        previewStore.highlightCommand = undefined;
-      }
-    });
-
-    Events.on('preview:toggle', eventToggle);
-    Events.on('preview:highlight:show', eventHighlightShow);
-    Events.on('preview:highlight:hide', eventHighlightHide);
-
-    return () => {
-      Events.off('preview:toggle', eventToggle);
-      Events.off('preview:highlight:show', eventHighlightShow);
-      Events.off('preview:highlight:hide', eventHighlightHide);
-    };
-  }, []);
-
   // Handle window resize because preview iframe should scale to the minimum available space.
   useEffect(() => {
-    let handleResize = () => forceUpdate();
+    let handleResize = () => forceUpdatePreview();
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  });
+  }, []);
 
   const stickSnapshotState = (state: 'before' | 'after') => {
-    previewStore.activeState = state;
+    PreviewStore.activeState = state;
   };
 
-  let command = previewStore.visibleCommand;
-  let snapshot = previewStore.visibleSnapshot;
-  let iframeSize = calculateIframeSize(snapshot, iframeContainerRef);
-
+  let snapshot = PreviewStore.visibleSnapshot;
   let iframe: any = iframeRef?.current;
+  let iframeSize = calculateIframeSize(snapshot, iframeContainerRef);
+  let html = PreviewStore.visibleSnapshotSource;
 
-  let html;
-
-  if (snapshot) {
-    html = snapshot?.html?.src;
-
-    // replace all script tags
-    // html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/, '');
-  }
-
-  // Check if snapshot contains any html to display
   if (iframe && html) {
     // Using a blob is faster than putting the src into 'srcdoc' and also faster than iframe.document.write
     // (which is also not the best to use). Creating a blob allows the browser to load the data into the
     // iframe in a usual way.
-    const blob = new Blob([html], { type: 'text/html' });
-    iframe.src = URL.createObjectURL(blob);
-  } else if (iframe && !snapshot) {
+    iframe.src = html;
+  } else if (iframe) {
     // cleans iframe
     iframe.src = 'about:blank';
   }
 
-  // Gets called after src of iframe changes
-  let onIframeLoad = ({ target }) => {
-    let iframeDoc = target?.contentWindow?.document;
+  const PreviewInfo = () => (
+    <div className="d-flex info">
+      <div className="btn-group btn-group-sm" role="group">
+        <button
+          type="button"
+          className={`btn m-0 btn-outline-primary ${PreviewStore.visibleHighlightState === 'before' ? 'active' : ''}`}
+          onClick={(_) => stickSnapshotState('before')}
+          disabled={!PreviewStore.isVisibleHighlight && !PreviewStore.visibleHasBefore}
+        >
+          Before
+        </button>
+        <button
+          type="button"
+          className={`btn btn-outline-primary m-0 ${PreviewStore.visibleHighlightState === 'after' ? 'active' : ''}`}
+          onClick={(_) => stickSnapshotState('after')}
+          disabled={!PreviewStore.isVisibleHighlight && !PreviewStore.visibleHasAfter}
+        >
+          After
+        </button>
+      </div>
 
-    if (!iframeDoc) {
-      return;
-    }
+      <div className="input-group input-group-sm ms-2">
+        <div className={'element url'}>{snapshot?.url}</div>
+        <a className="btn btn-outline-primary d-inline-flex align-items-center" target={'_blank'} href={snapshot?.url}>
+          Open
+        </a>
+      </div>
 
-    // Try to completely disable every scroll effect
-    iframeDoc.documentElement.style.scrollBehavior = 'unset';
-    iframeDoc.querySelector('body').addEventListener(
-      'wheel',
-      function (event: any) {
-        event.stopPropagation();
-      },
-      true,
-    );
+      <div className={'element ms-2'}>
+        {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
+      </div>
+    </div>
+  );
 
-    let resolveSrcFromCache = ({ src, returnType = null }) => {
-      let matchUrls = [];
-
-      if (src.startsWith('http://') || src.startsWith('https://')) {
-        // find matching include on full srcurl
-        matchUrls.push(src);
-      } else if (src.startsWith('//')) {
-        let url = new URL(snapshot.url);
-        matchUrls.push(url.origin + src.replace('//', '/'));
-      } else if (src.startsWith('/')) {
-        let url = new URL(snapshot.url);
-        matchUrls.push(url.origin + src);
-      } else {
-        let url = snapshot.url;
-
-        if (!url.endsWith('/')) {
-          url += '/';
-        }
-
-        matchUrls.push(url + src);
-      }
-
-      let resource = command.context.responses.find((pageInclude) => matchUrls.includes(pageInclude.url));
-
-      if (!resource) {
-        // TODO implement error handling
-        return;
-      }
-
-      if (returnType === 'string') {
-        // @ts-ignore
-        return new TextDecoder().decode(resource.content);
-      }
-
-      // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
-      //      and blobs need to be destroyed by hand.
-      // @ts-ignore
-      const blob = new Blob([resource.content]);
-      return URL.createObjectURL(blob);
-    };
-
-    // Restore dynamic html data form snapshot
-    if (snapshot && snapshot.version === 2) {
-      // pre resolve all nodes because we replace nodes in live dom
-      let [styleSheets, untrackedState] = snapshot?.html?.untracked.map((untracked) =>
-        untracked
-          .map((item) => {
-            let resolvedNode = resolveElement(item.path, iframeDoc);
-
-            if (!resolvedNode) {
-              console.error('Node not found for untracked item', item);
-              return;
-            }
-
-            return {
-              ...item,
-              node: resolvedNode,
-            };
-          })
-          .filter((item) => item != null),
-      );
-
-      // Recovers
-      styleSheets.forEach((ss) => {
-        let content;
-
-        if (ss.href) {
-          // if stylesheet has href set, resolve with cache
-          content = resolveSrcFromCache({ src: ss.href, returnType: 'string' });
-        } else {
-          content = ss.content;
-        }
-
-        let rawStyleTag = iframeDoc.createElement('style');
-        rawStyleTag.innerHTML = content;
-
-        ss.node.replaceWith(rawStyleTag);
-      });
-
-      // Recovers element states
-      untrackedState.forEach((el) => {
-        el.node.value = el.value;
-      });
-
-      /**
-       * Recover external stylesheets
-       */
-      [...iframeDoc.querySelectorAll('link')].forEach((link) => {
-        // need to use getAttribute because if the resource isn't actually loaded, then link.href is empty
-        let href = link.getAttribute('href');
-
-        if (!href) {
-          return;
-        }
-
-        let rawStyleTag = iframeDoc.createElement('style');
-        rawStyleTag.innerHTML = resolveSrcFromCache({ src: href, returnType: 'string' });
-
-        link.replaceWith(rawStyleTag);
-      });
-
-      /**
-       * Recover parts that can not be tracked
-       */
-      [...iframeDoc.querySelectorAll('img')].forEach((img) => {
-        // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
-        let src = img.getAttribute('src');
-
-        if (!src) {
-          return;
-        }
-
-        // Skip data urls
-        if (src.startsWith('data:')) {
-          return;
-        }
-
-        img.src = resolveSrcFromCache({ src });
-
-        if (img.srcset) {
-          let candidates = img.srcset.split(',');
-
-          img.srcset = candidates
-            .map((candidate) => {
-              let [cSrc, cSize] = candidate.split(' ');
-
-              return `${resolveSrcFromCache({ src: cSrc })} ${cSize}`;
-            })
-            .join(',');
-        }
-      });
-
-      // Remove all noscript tags since javascript is enabled. If javascript is disabled, don't do anything.
-      // This exists because the iframe has javascript disabled therefore noscript tag would be displayed.
-      if (snapshot.isJavascriptEnabled) {
-        [...iframeDoc.querySelectorAll('noscript')].forEach((el) => el.remove());
-      }
-
-      // TODO check if there are other tags that need to be reinjected from the context.responses resources.
-    }
-
-    // Load the highlights for the snapshot
-    // TODO to optimize this, always have 2 iframes, one with the before state and one with the after.
-    //      If the preview switches, just change the z-index and the visibility. This prevents the
-    //      need for rerendering the snapshot. Also implement a "ready" state that waits for the
-    //      "onload" callback to finish because the onload callback can cause "flickering" if it scrolls
-    //      the element into view. Would be much nicer if the user doesn't see this processing.
-    loadHighlights(iframeRef, previewStore.visibleCommand, previewStore.visibleHighlightState);
-  };
-
+  // TODO to optimize this, always have 2 iframes, one with the before state and one with the after.
+  //      If the preview switches, just change the z-index and the visibility. This prevents the
+  //      need for rerendering the snapshot. Also implement a "ready" state that waits for the
+  //      "onload" callback to finish because the onload callback can cause "flickering" if it scrolls
+  //      the element into view. Would be much nicer if the user doesn't see this processing.
   return (
     <div
-      className="d-flex flex-column"
+      className={'d-flex flex-column preview'}
       style={{
         flex: 1,
         overflow: 'hidden',
       }}
     >
-      <div className="d-flex py-2 ps-2">
-        <div className="btn-group btn-group-sm" role="group">
-          <button
-            type="button"
-            className={`btn m-0 ${
-              previewStore.visibleHighlightState === 'before' ? 'btn-warning active' : 'btn-primary'
-            }`}
-            onClick={(_) => stickSnapshotState('before')}
-            disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasBefore}
-          >
-            Before
-          </button>
-          <button
-            type="button"
-            className={`btn m-0 ${
-              previewStore.visibleHighlightState === 'after' ? 'btn-warning active' : 'btn-primary'
-            }`}
-            onClick={(_) => stickSnapshotState('after')}
-            disabled={!previewStore.isVisibleHighlight && !previewStore.visibleHasAfter}
-          >
-            After
-          </button>
-        </div>
-        <div className="input-group input-group-sm ms-2">
-          <span className="input-group-text" id="basic-addon1">
-            Url
-          </span>
-          <input type="text" className="form-control" defaultValue={snapshot?.url} readOnly disabled />
-        </div>
-        <button type="button" className="btn m-0 btn-primary text-nowrap ms-2 me-2" disabled>
-          {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
-        </button>
+      <div className={'quick-navigation-container'}>
+        <QuickNavigation />
+        <PreviewInfo />
       </div>
-      <div className={'d-flex bg-striped'} style={{ flex: 1 }}>
+
+      <div className={'d-flex bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
         <div
           ref={iframeContainerRef}
           style={{
             flex: 1,
             overflow: 'hidden',
             visibility: !!html ? 'visible' : 'hidden',
+            border: 'solid #46484b',
+            borderWidth: '1px 0 0 1px',
+            position: 'relative',
           }}
         >
           <iframe
@@ -320,7 +175,11 @@ export const Preview = observer(() => {
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
-            onLoad={onIframeLoad}
+            onLoad={({ target }) => {
+              // @ts-ignore
+              recoverAfterRender(PreviewStore.visibleCommand, PreviewStore.visibleSnapshot, target.contentDocument);
+              loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState);
+            }}
             style={{
               transformOrigin: '0 0',
               transform: 'scale(' + iframeSize.scale + ')',
@@ -329,8 +188,11 @@ export const Preview = observer(() => {
               background: !!html ? 'white' : 'transparent',
             }}
           />
+          <PreviewOverlay />
         </div>
       </div>
+
+      <PreviewFooter />
     </div>
   );
 });

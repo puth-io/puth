@@ -2,15 +2,15 @@
   color: #9ba8b2;
 
   &[data-status="pending"] {
-    background: rgba(4, 90, 4, 0.5);
+    background: rgba(4, 90, 4, 0.25);
   }
 
   &[data-status="finished"] {
-    background: rgba(4, 90, 4, 0.5);
+    background: rgba(4, 90, 4, 0.25);
   }
 
   &[data-status="failed"] {
-    background: rgba(84, 4, 4, 0.5);
+    background: rgba(84, 4, 4, 0.25);
   }
 
   > td {

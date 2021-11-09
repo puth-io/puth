@@ -28,9 +28,17 @@ button {
   cursor: pointer;
 }
 
-input {
+input[type="text"] {
   background: $primary!important;
   border-color: $primary-darker!important;
+}
+
+input[type="checkbox"]:focus {
+  box-shadow: none;
+}
+
+.form-check-label {
+  user-select: none;
 }
 
 .input-group {
@@ -38,6 +46,10 @@ input {
     background: $primary;
     color: $body-color;
     border-color: $primary-darker;
+  }
+
+  > *:not(:first-child) {
+    border-left: none;
   }
 }
 
@@ -60,4 +72,50 @@ input {
 // https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme
 :root {
   color-scheme: dark;
+}
+
+.btn:focus {
+  box-shadow: none!important;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+.mr-auto {
+  margin-right: auto;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0.75rem;
+}
+::-webkit-scrollbar-track {
+  background: inherit;
+}
+::-webkit-scrollbar-thumb {
+  background: $light;
+  border-radius: 0.125rem;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.ellipsis {
+  position: relative;
+}
+.ellipsis:before {
+  content: '&nbsp;';
+  visibility: hidden;
+}
+.ellipsis span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fs-small {
+  font-size: 0.875rem;
 }

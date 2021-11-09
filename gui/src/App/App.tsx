@@ -1,6 +1,5 @@
 import React from 'react';
 import './App.scss';
-import Header from './Components/Header';
 import Sidebar from './Components/Sidebar/Sidebar';
 import { Preview } from './Components/Preview/Preview';
 import Dropzone from './Components/Dropzone/Dropzone';
@@ -8,8 +7,6 @@ import Dropzone from './Components/Dropzone/Dropzone';
 function App() {
   return (
     <>
-      <Header />
-
       <div
         className={'d-flex'}
         style={{

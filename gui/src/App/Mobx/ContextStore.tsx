@@ -32,10 +32,16 @@ export default class ContextStore {
     };
   }
 
+  getRequestFilter() {
+    return (request) => request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
+  }
+
   get renderedEvents() {
-    return [...this.commands.filter(this.getRenderedTypesFilter()), ...this.logs, ...this.requests].sort(
-      (a, b) => this.getEventTime(a) - this.getEventTime(b),
-    );
+    return [
+      ...this.commands.filter(this.getRenderedTypesFilter()),
+      ...this.logs,
+      ...this.requests.filter(this.getRequestFilter()),
+    ].sort((a, b) => this.getEventTime(a) - this.getEventTime(b));
   }
 
   getEventTime(event) {

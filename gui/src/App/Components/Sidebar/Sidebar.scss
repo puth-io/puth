@@ -1,7 +1,7 @@
 .sidebar {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  max-width: 32rem;
+  flex: 1;
   color: #d2d3d3;
+  overflow-y: auto;
 }

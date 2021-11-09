@@ -1,0 +1,120 @@
+@import '../../Misc/colors';
+
+.tabs {
+    //background-color: #232529;
+    align-items: center;
+}
+
+.tab {
+    padding: 0.25rem 0.375rem;
+    // border-radius: 4px;
+    cursor: pointer;
+    transition: background ease 0.15s;
+
+    .subTitle {
+        font-size: 0.875rem;
+        color: #959595;
+    }
+
+    &.active,
+    &:hover {
+        background-color: $light;
+    }
+
+    &:not(:first-child) {
+        margin-left: 0.25rem;
+    }
+
+    .close {
+        display: flex;
+        justify-content: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        font-size: 1.125rem;
+        line-height: 1.125rem;
+        border-radius: 50%;
+
+        &:hover {
+            background: $light;
+        }
+    }
+}
+
+.url {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #47484b;
+    flex: 1;
+    border-radius: 4px;
+}
+
+.preview {
+    .url {
+        flex: 1;
+    }
+
+    .info {
+        .element {
+            display: flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #47484b;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+    }
+
+    .footer {
+        display: grid;
+        grid-auto-flow: column;
+        justify-content: flex-end;
+        grid-gap: 1rem;
+    }
+}
+
+.logo {
+    $spacing: 0.125rem;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.125rem;
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+
+    line-height: 1;
+    letter-spacing: $spacing;
+
+    color: $accent;
+    border: 1px solid $accent;
+    border-radius: 0.5rem;
+
+    & > div {
+        margin-right: -$spacing;
+    }
+}
+
+.quick-navigation-container {
+    display: grid;
+    grid-gap: 0.5rem;
+    padding: 0.5rem 0.5rem 0.5rem 0;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0);
+    transition: background-color ease-in-out 150ms;
+    pointer-events: none;
+}
+
+.darken {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
