@@ -64,6 +64,13 @@
             white-space: nowrap;
         }
     }
+
+    .footer {
+        display: grid;
+        grid-auto-flow: column;
+        justify-content: flex-end;
+        grid-gap: 1rem;
+    }
 }
 
 .logo {
@@ -110,3 +117,4 @@
 .darken {
     background-color: rgba(0, 0, 0, 0.25);
 }
+

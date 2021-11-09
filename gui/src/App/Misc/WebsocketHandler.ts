@@ -3,7 +3,7 @@ import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
-import { DEBUG, DEBUG_ENABLED } from '../../index';
+import { DEBUG } from './Debug';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -129,6 +129,7 @@ class WebsocketHandlerSingleton {
 
     // @ts-ignore
     if (options?.returnIfExists && data.length > 0 && this.contexts.has(data[0]?.context?.id ?? data[0]?.id)) {
+      alert('Context with same UUID already exists.');
       return;
     }
 
@@ -140,6 +141,7 @@ class WebsocketHandlerSingleton {
     pMeasure('proc', 'decode');
 
     DEBUG(() => {
+      // tslint:disable
       let size = (binary.byteLength / 1000 / 1000).toFixed(2);
 
       console.group('Packet received');
@@ -155,6 +157,7 @@ class WebsocketHandlerSingleton {
       console.log('Delta time debug', Date.now() - dateAfterProcessing, 'ms');
 
       console.groupEnd();
+      // tslint:enable
     });
 
     pMeasure('debug', 'proc');
@@ -259,6 +262,10 @@ class WebsocketHandlerSingleton {
 
   getUri() {
     return this.uri;
+  }
+
+  clear() {
+    this.contexts.clear();
   }
 }
 

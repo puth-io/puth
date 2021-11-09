@@ -1,8 +1,8 @@
-import { ICommand } from '../Command/Command';
+import { ICommand } from '../Components/Command/Command';
 import { action, makeAutoObservable } from 'mobx';
-import { BlobHandler, recover } from '../../Misc/SnapshotRecovering';
-import { Events } from '../../../index';
-import { IContext } from '../../Misc/WebsocketHandler';
+import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
+import { Events } from '../../index';
+import { IContext } from '../Misc/WebsocketHandler';
 
 export type SnapshotState = 'before' | 'after';
 
@@ -21,6 +21,12 @@ export class PreviewStoreClass {
     this.registerEvents();
 
     this._darken = localStorage.getItem('previewStore.darken') === 'true';
+  }
+
+  clear() {
+    this.highlightCommand = undefined;
+    this.activeCommand = undefined;
+    this.activeContext = undefined;
   }
 
   set darken(value) {

@@ -1,9 +1,9 @@
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef } from 'react';
-import { calculateIframeSize, ForceUpdateStorePreview, useForceUpdate, useForceUpdatePreview } from '../../Misc/Util';
+import { calculateIframeSize, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
-import { PreviewStore } from '../../../index';
+import { DebugStore, PreviewStore } from '../../../index';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
@@ -43,8 +43,8 @@ const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.da
 
 const PreviewFooter = observer(() => {
   return (
-    <div className={'py-1 pe-2 d-flex justify-content-end'}>
-      <div className="">
+    <div className={'footer py-1 pe-2'}>
+      <div>
         <input
           type="checkbox"
           className="form-check-input me-2"
@@ -54,6 +54,18 @@ const PreviewFooter = observer(() => {
         />
         <label className="form-check-label" htmlFor="darken-preview-checkbox">
           Darken preview
+        </label>
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
+          id="debug-checkbox"
+          checked={DebugStore.debug}
+          onChange={() => (DebugStore.debug = !DebugStore.debug)}
+        />
+        <label className="form-check-label" htmlFor="debug-checkbox">
+          Debug
         </label>
       </div>
     </div>
