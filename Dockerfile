@@ -1,4 +1,4 @@
-FROM node:lts AS build
+FROM node:14 AS build
 
 WORKDIR /build
 
@@ -9,7 +9,7 @@ RUN npm run image:install && \
     npm run image:cleanup
 
 
-FROM node:lts
+FROM node:14
 
 RUN echo "deb http://mirror.de.leaseweb.net/debian/ stretch main" > /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list && \
