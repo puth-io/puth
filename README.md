@@ -2,7 +2,7 @@
 
 [Puth](https://puth.dev) is a nice browser testing framework with focus on stability, performance and extensive feedback.
 
-![GUI Preview](assets/gui-preview.jpg)
+![GUI Preview](assets/gui-preview.png)
 
 ## Installing
 
