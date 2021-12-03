@@ -41,7 +41,7 @@ export class PreviewStoreClass {
 
   resetHighlightInterval() {
     clearInterval(this.highlightInterval);
-    this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
+    // this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
     this.highlightState = 'after';
   }
 
