@@ -22,7 +22,7 @@
     "fastify-websocket": "^3.2.0",
     "meow": "^9.0.0",
     "mitt": "^2.1.0",
-    "puppeteer": "^9.0.0",
+    "puppeteer": "^12.0.1",
     "tmp-promise": "^2.1.1",
     "uuid": "^8.3.2"
   },
@@ -57,6 +57,7 @@
     "test": "mocha --exit --timeout 5000 -r ts-node/register 'test/**/*.ts'",
     "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 5000 -r ts-node/register 'test/**/*.ts'",
     "test:only:plugins": "mocha --exit --timeout 5000 -r ts-node/register 'test/plugins/**/*.ts'",
+    "test:only:translation": "mocha --exit --timeout 5000 -r ts-node/register 'test/translation/**/*.ts'",
     "test:api": "mocha --exit -r ts-node/register 'test/api.test.ts'",
     "test:watch": "mocha -r ts-node/register --recursive -w --watch-files src,test 'test/**/*.ts'",
     "daemon": "node src/server/daemon/daemon.js",
