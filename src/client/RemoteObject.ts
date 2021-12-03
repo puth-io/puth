@@ -162,6 +162,14 @@ export const RemoteContext = magicClassMethods(
       return genericGet(this, this, this.getRepresentation(), property);
     }
 
+    callAssertionHandler(assertion) {
+      let handler = this.getPuth().getAssertionHandler();
+
+      if (handler) {
+        handler(assertion);
+      }
+    }
+
     debug(...args) {
       if (this.isDebug) {
         // TODO implement logger
@@ -172,6 +180,10 @@ export const RemoteContext = magicClassMethods(
 
     getRepresentation(): GenericRepresentation {
       return this.representation;
+    }
+
+    getPuth() {
+      return this.puth;
     }
 
     get isDebug() {
@@ -198,6 +210,7 @@ export function genericGet(on, context, representation, property) {
     } else if (response?.type === 'GenericValue') {
       return response.value;
     } else if (response?.type === 'PuthAssertion') {
+      context.callAssertionHandler(response);
       // return response;
       return on;
     } else if (response?.type === 'error') {
