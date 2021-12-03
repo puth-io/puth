@@ -10,9 +10,11 @@
   "types": "lib/index.d.ts",
   "dependencies": {
     "@msgpack/msgpack": "^2.7.1",
+    "@types/diff-match-patch": "^1.0.32",
     "axios": "^0.21.1",
     "chalk": "^3.0.0",
     "chokidar": "^3.5.1",
+    "diff-match-patch": "^1.0.5",
     "fastify": "^3.15.1",
     "fastify-cors": "^6.0.0",
     "fastify-http-proxy": "^5.0.0",

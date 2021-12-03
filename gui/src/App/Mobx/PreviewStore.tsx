@@ -3,6 +3,7 @@ import { action, makeAutoObservable } from 'mobx';
 import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
 import { Events } from '../../index';
 import { IContext } from '../Misc/WebsocketHandler';
+import { resolveSnapshotBacktrack } from '../Misc/Util';
 
 export type SnapshotState = 'before' | 'after';
 
@@ -67,13 +68,25 @@ export class PreviewStoreClass {
   }
 
   get visibleSnapshotSource() {
-    if (!this.hasVisibleSnapshotSource) {
+    if (!this.hasVisibleSnapshotSource || !this.visibleSnapshot) {
       return;
     }
 
     BlobHandler.cleanup();
 
-    const parsedDocument = new DOMParser().parseFromString(this.visibleSnapshot?.html?.src, 'text/html');
+    let html = '';
+
+    if (this.visibleSnapshot?.version === 3) {
+      let context = this.visibleCommand.context;
+      let commands = context.commands.filter((i) => i.type === 'command');
+      let index = commands.findIndex((i) => i.id === this.visibleCommand.id);
+
+      html = resolveSnapshotBacktrack(commands, index, this.activeState === 'after');
+    } else if (this.visibleSnapshot?.version === 2) {
+      html = this.visibleSnapshot?.html?.src;
+    }
+
+    const parsedDocument = new DOMParser().parseFromString(html, 'text/html');
     recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
 
     // TODO find a way to make Blob out of document directly because this is "document => string => blob"
@@ -82,7 +95,7 @@ export class PreviewStoreClass {
   }
 
   get hasVisibleSnapshotSource() {
-    return !!this.visibleSnapshot?.html?.src;
+    return true;
   }
 
   get visibleHasBefore() {

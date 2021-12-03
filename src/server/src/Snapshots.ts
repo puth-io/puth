@@ -1,10 +1,13 @@
 import Context from './Context';
 import { ConsoleMessageType, Page, Viewport } from 'puppeteer';
 import * as fs from 'fs';
+import { diff_match_patch } from 'diff-match-patch';
 import WebsocketConnections from './WebsocketConnections';
 
 // tslint:disable-next-line:no-var-requires
 import { IExpectation } from './Expects';
+
+export const DMP = new diff_match_patch();
 
 export type IPageInclude = {
   url: string;
@@ -15,8 +18,9 @@ export type IPageInclude = {
 };
 
 export type ISnapshot = {
-  type: string;
-  html: any;
+  type: 'snapshot';
+  html?: any; // @deprecated
+  data?: any;
   version: number;
   url: any;
   viewport: Viewport | null;
@@ -86,6 +90,11 @@ export type IResponse = {
   content: Uint8Array;
 };
 
+enum SnapshotState {
+  BEFORE,
+  AFTER,
+}
+
 class SnapshotHandler {
   private cache = new Map<Context, (ICommand | ILog | IResponse)[]>();
 
@@ -117,7 +126,7 @@ class SnapshotHandler {
       return;
     }
 
-    command.snapshots.before = await this.makeSnapshot(page);
+    command.snapshots.before = await this.makeSnapshot(context, page, SnapshotState.BEFORE);
 
     // TODO move this into createAfter function?
     this.pushToCache(context, command, { broadcast: false });
@@ -131,13 +140,13 @@ class SnapshotHandler {
     command.time.finished = Date.now();
 
     try {
-      command.snapshots.after = await this.makeSnapshot(page);
+      command.snapshots.after = await this.makeSnapshot(context, page, SnapshotState.AFTER);
     } catch (err) {
       // Page navigations break the snapshot process.
       // Retry for a second time, this time puppeteer waits before calling page.evaluate
       // so that the snapshot should be made successfully.
       try {
-        command.snapshots.after = await this.makeSnapshot(page);
+        command.snapshots.after = await this.makeSnapshot(context, page, SnapshotState.AFTER);
       } catch (err) {
         // ignore error
       }
@@ -158,17 +167,95 @@ class SnapshotHandler {
     WebsocketConnections.broadcastAll(object);
   }
 
+  resolveSnapshotBacktrack(commands, index, snapshotState: SnapshotState | null = null) {
+    if (index === -1) {
+      return '';
+    }
+
+    let command: ICommand = commands[index];
+
+    let snapshot;
+
+    if (snapshotState === SnapshotState.AFTER) {
+      snapshot = command.snapshots.before;
+    } else {
+      snapshot = command.snapshots.after;
+    }
+
+    if (!snapshot) {
+      return '';
+    }
+
+    let value = this.resolveSnapshotBacktrack(commands, index - 1);
+
+    // return diff.applyPatch(value, snapshot.data.diff);
+    return DMP.patch_apply(snapshot.data.diff, value)[0];
+  }
+
   /**
    * Creates a snapshot of the current dom (with element states)
    *
    * @version 3
    */
-  async makeSnapshot(page: Page, { cacheAllStyleTags = false } = {}): Promise<ISnapshot | undefined> {
-    if (!page || (await page.url()) === 'about:blank') {
+  async makeSnapshot(context: Context, page: Page, snapshotState: SnapshotState): Promise<ISnapshot | undefined> {
+    if (!page || page.url() === 'about:blank') {
       return;
     }
 
-    let pageEvalReturn = await page.evaluate((cacheAllStyleTagsEval) => {
+    let pageSnapshot = await this.createPageSnapshot(page);
+
+    // go through all
+    // diff.createPatch();
+    let commands: any[] = [];
+
+    if (this.cache.has(context)) {
+      commands = this.cache.get(context)?.filter((i) => i.type === 'command') ?? [];
+    }
+
+    // TODO cache latest context html snapshot so we don't need to resolve
+    let rebuild = this.resolveSnapshotBacktrack(commands, commands.length - 1, snapshotState);
+    let patch = DMP.patch_make(rebuild ?? '', pageSnapshot.src);
+
+    return {
+      type: 'snapshot',
+      version: 3,
+      url: page.url(),
+      viewport: page.viewport(),
+      isJavascriptEnabled: page.isJavaScriptEnabled(),
+      data: {
+        diff: patch,
+        untracked: pageSnapshot.untracked,
+      },
+    };
+  }
+
+  /**
+   * Creates a snapshot of the current dom (with element states)
+   *
+   * @deprecated
+   * @version 2
+   */
+  async makeSnapshotV2(context: Context, page: Page, snapshotState: SnapshotState): Promise<ISnapshot | undefined> {
+    if (!page || page.url() === 'about:blank') {
+      return;
+    }
+
+    return {
+      type: 'snapshot',
+      version: 2,
+      url: page.url(),
+      viewport: page.viewport(),
+      isJavascriptEnabled: page.isJavaScriptEnabled(),
+      html: await this.createPageSnapshot(page),
+    };
+  }
+
+  async createPageSnapshot(page: Page, { cacheAllStyleTags = false } = {}): Promise<any> {
+    if (!page || page.url() === 'about:blank') {
+      return;
+    }
+
+    return page.evaluate((cacheAllStyleTagsEval) => {
       /**
        * Helper functions
        */
@@ -264,15 +351,6 @@ class SnapshotHandler {
         untracked: [getAllStyle(), getUntrackedState()],
       };
     }, cacheAllStyleTags);
-
-    return {
-      type: 'snapshot',
-      version: 2,
-      url: page.url(),
-      viewport: page.viewport(),
-      isJavascriptEnabled: page.isJavaScriptEnabled(),
-      html: pageEvalReturn,
-    };
   }
 
   getAllCachedItems() {

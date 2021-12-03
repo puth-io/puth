@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { makeAutoObservable } from 'mobx';
+import { diff_match_patch } from 'diff-match-patch';
+import { ICommand } from '../Components/Command/Command';
+
+export const DMP = new diff_match_patch();
 
 export function pMark(name) {
   performance.mark(name);
@@ -261,4 +265,31 @@ export function logContext(packet) {
   console.groupCollapsed(packet.id, packet.type);
   console.log('source', packet);
   console.groupEnd();
+}
+
+export function resolveSnapshotBacktrack(commands, index, snapshotStateAfter = false) {
+  if (index === -1) {
+    return '';
+  }
+
+  let command: ICommand = commands[index];
+
+  let snapshot;
+
+  if (snapshotStateAfter) {
+    snapshot = command.snapshots.after;
+  } else {
+    snapshot = command.snapshots.before;
+  }
+
+  if (!snapshot) {
+    return '';
+  }
+
+  let next = snapshotStateAfter ? index : index - 1;
+
+  let value = resolveSnapshotBacktrack(commands, next, !snapshotStateAfter);
+
+  // return diff.applyPatch(value, snapshot.data.diff);
+  return DMP.patch_apply(snapshot.data.diff, value)[0];
 }

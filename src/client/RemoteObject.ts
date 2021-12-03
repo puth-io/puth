@@ -23,6 +23,9 @@ export const MagicCustomObject = magicClassMethods(
       }
     }
 
+    // TODO append "should" object in constructor
+    //      this.should = {see: () => {}, ...}
+
     catch(onRejected: (parameter) => any) {
       this._promise = this._promise.catch(onRejected);
       return this;

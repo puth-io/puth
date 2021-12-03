@@ -99,7 +99,7 @@ export function resolveCssLinksToLocal(src, base) {
 }
 
 export function recover(command, snapshot, doc) {
-  if (!doc || !PreviewStore.hasVisibleSnapshotSource || snapshot.version !== 2) {
+  if (!doc || !PreviewStore.hasVisibleSnapshotSource || (snapshot.version !== 2 && snapshot.version !== 3)) {
     return;
   }
 
@@ -187,7 +187,17 @@ export function recover(command, snapshot, doc) {
 // TODO run after iframe draw because setting 'inline' styles or adding listeners doesn't work if the document isn't
 //      live (currently rendered in browser: current document, iframe, ...)
 export function recoverAfterRender(command, snapshot, doc) {
-  if (!doc || !PreviewStore.hasVisibleSnapshotSource || snapshot.version !== 2) {
+  if (!doc || !PreviewStore.hasVisibleSnapshotSource) {
+    return;
+  }
+
+  let ut = [];
+
+  if (snapshot?.version === 2) {
+    ut = snapshot?.html?.untracked;
+  } else if (snapshot?.version === 3) {
+    ut = snapshot?.data?.untracked;
+  } else {
     return;
   }
 
@@ -204,7 +214,7 @@ export function recoverAfterRender(command, snapshot, doc) {
    *    inside the dom and therefore needs to be scraped and reapplied
    */
   // pre resolve all nodes because we replace nodes in live dom
-  let [styleSheets, untrackedState] = snapshot?.html?.untracked.map((untracked) =>
+  let [styleSheets, untrackedState] = ut.map((untracked) =>
     untracked
       .map((item) => {
         let resolvedNode = resolveElement(item.path, doc);
