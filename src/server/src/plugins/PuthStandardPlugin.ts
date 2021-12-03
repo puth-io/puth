@@ -1,6 +1,6 @@
 import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
-import { PuthAssert } from '../PuthAssert';
+import { Assertion, PuthAssert } from '../PuthAssert';
 import { Capability } from '../Context';
 import { retryFor } from '../Utils';
 
@@ -18,6 +18,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           func: this.parent,
           expects: Expects.Element,
         },
+        should: this.should,
       },
       // resolver: {
       //     Page: {}
@@ -34,6 +35,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         },
       },
       Page: {
+        get: this.get,
         contains: {
           func: this.contains,
           expects: Expects.Array,
@@ -59,6 +61,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
       },
       ElementHandle: {
+        get: this.get,
         contains: {
           func: this.contains,
           expects: Expects.Array,
@@ -85,6 +88,22 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
       },
     });
+  }
+
+  async innerText(element) {
+    return (await element.getProperty('innerText')).jsonValue();
+  }
+
+  async its(element, property) {
+    return (await element.getProperty(property)).jsonValue();
+  }
+
+  get(element, search, options?) {
+    return retryFor(
+      this.getContext().getTimeout(options),
+      async (_) => await element.$(search),
+      (v) => v !== null,
+    );
   }
 
   contains(element, search, options?) {
@@ -179,5 +198,70 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
     let box = await element.boundingBox();
     return box.width > 0 && box.height > 0;
+  }
+
+  Assertions = {
+    have: {
+      text: {
+        resolve: (element) => this.its(element, 'innerText'),
+        msg: (actual, expected) => `Expected '${actual}' to be '${expected}'`,
+        test: (actual, expected) => actual === expected,
+      },
+      id: {
+        resolve: (element) => this.its(element, 'id'),
+        msg: (actual, expected) => `Expected '${actual}' to have id '${expected}'`,
+        test: (actual, expected) => actual === expected,
+      },
+      class: {
+        resolve: (element) => this.its(element, 'className'),
+        msg: (actual, expected) => `Expected element to have class '${expected}' but found '${actual}'`,
+        test: (actual, expected) => actual.split(' ').includes(expected),
+      },
+      attr: {
+        resolve: (element, attribute) => this.its(element, attribute),
+        msg: (actual, expected) => `Expected element to have attribute '${expected}' but found '${actual}'`,
+        test: (actual, expected) => actual.split(' ').includes(expected),
+      },
+    },
+  };
+
+  async should(element, assertion, ...params) {
+    let split = assertion.split('.');
+
+    if (params.length === 0) {
+      throw Error('No expected value provided!');
+    }
+
+    let expected = params[params.length - 1];
+
+    if (split.length < 2) {
+      throw Error('Bad assertion.');
+    }
+
+    let invertTest = false;
+    let chainer = split[0];
+    let func = split[1];
+
+    if (split.length === 3 && split[0] === 'not') {
+      invertTest = split[0] === 'not';
+      chainer = split[1];
+      func = split[2];
+    }
+
+    let assert = this.Assertions[chainer]?.[func];
+
+    if (!assert) {
+      throw Error('Assertion not found!');
+    }
+
+    let actual = await assert.resolve(element, ...params.slice(0, params.length));
+    let message = await assert.msg(actual, expected, ...params.slice(0, params.length));
+    let test = await assert.test(actual, expected, ...params.slice(0, params.length));
+
+    if (invertTest) {
+      test = !test;
+    }
+
+    return Assertion(assertion, actual, expected, test, message);
   }
 }

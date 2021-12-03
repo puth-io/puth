@@ -198,7 +198,8 @@ export function genericGet(on, context, representation, property) {
     } else if (response?.type === 'GenericValue') {
       return response.value;
     } else if (response?.type === 'PuthAssertion') {
-      return response;
+      // return response;
+      return on;
     } else if (response?.type === 'error') {
       throw new Error(response.code + ': ' + response.message);
     }
