@@ -188,7 +188,6 @@ class SnapshotHandler {
 
     let value = this.resolveSnapshotBacktrack(commands, index - 1);
 
-    // return diff.applyPatch(value, snapshot.data.diff);
     return DMP.patch_apply(snapshot.data.diff, value)[0];
   }
 
@@ -213,6 +212,10 @@ class SnapshotHandler {
     }
 
     // TODO cache latest context html snapshot so we don't need to resolve
+    // TODO when page changes, diff will have both the old page content and the new content. We do not need
+    //      the old page content because we do not visualize the diff. Therefore we should add an indicator
+    //      that sets the beginning to the current page content (stops backtrace and starts from indicator)
+    //      --> diff should only be used if the diff size is smaller than content size
     let rebuild = this.resolveSnapshotBacktrack(commands, commands.length - 1, snapshotState);
     let patch = DMP.patch_make(rebuild ?? '', pageSnapshot.src);
 
