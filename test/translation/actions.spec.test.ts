@@ -4,10 +4,10 @@ import { LocalPuthClient, RemotePuthClient } from '../../src';
 import PuthStandardPlugin from '../../src/server/src/plugins/PuthStandardPlugin';
 
 async function puthContextBinder(mochaContext) {
-  // mochaContext.remote = new LocalPuthClient({ silent: true });
-  // await mochaContext.remote.getPuth().use(PuthStandardPlugin);
+  mochaContext.remote = new LocalPuthClient();
+  await mochaContext.remote.getPuth().use(PuthStandardPlugin);
 
-  mochaContext.remote = new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:4000');
+  // mochaContext.remote = new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:4000');
 
   mochaContext.remote.setAssertionHandler((assertion) => {
     if (!assertion.result) {
@@ -86,15 +86,15 @@ describe('Actions', function () {
     //   .should('have.value', 'disabled error checking');
   });
 
-  // it('.focus() - focus on a DOM element', async function () {
-  //   // https://on.cypress.io/focus
-  //    await this.page
-  //      .get('.action-focus')
-  //      .focus()
-  //      .should('have.class', 'focus')
-  //      .prev()
-  //      .should('have.attr', 'style', 'color: orange;2');
-  // });
+  it('.focus() - focus on a DOM element', async function () {
+    // https://on.cypress.io/focus
+    await this.page
+      .get('.action-focus')
+      .focus()
+      .should('have.class', 'focus')
+      .prev()
+      .should('have.attr', 'style', 'color: orange;');
+  });
 
   //
   //  it('.blur() - blur off a DOM element', async function () {

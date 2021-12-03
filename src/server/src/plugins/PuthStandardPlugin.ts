@@ -159,8 +159,28 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     return (await element.getProperty('innerText')).jsonValue();
   }
 
+  async innerHTML(element) {
+    return (await element.getProperty('innerHTML')).jsonValue();
+  }
+
+  async value(element) {
+    return (await element.getProperty('value')).jsonValue();
+  }
+
   async its(element, property) {
-    return (await element.getProperty(property)).jsonValue();
+    if (property.toLowerCase() === 'innertext') {
+      return await this.innerText(element);
+    }
+
+    if (property.toLowerCase() === 'innerhtml') {
+      return await this.innerHTML(element);
+    }
+
+    if (property.toLowerCase() === 'value') {
+      return await this.value(element);
+    }
+
+    return (await element.evaluateHandle((el, p) => el.getAttribute(p), property)).jsonValue();
   }
 
   get(element, search, options?) {
@@ -208,11 +228,23 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   async prev(element) {
-    return await element.$x('.//preceding-sibling::*[1]');
+    let prev = await element.$x('.//preceding-sibling::*[1]');
+
+    if (prev.length === 0) {
+      // throw error
+    }
+
+    return prev[0];
   }
 
   async next(element) {
-    return await element.$x('.//following-sibling::*[1]');
+    let next = await element.$x('.//following-sibling::*[1]');
+
+    if (next.length === 0) {
+      // throw error
+    }
+
+    return next;
   }
 
   async blur(element, selector?) {
@@ -286,14 +318,14 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         test: (actual, expected) => actual === expected,
       },
       class: {
-        resolve: (element) => this.its(element, 'className'),
+        resolve: (element) => this.its(element, 'class'),
         msg: (actual, expected) => `Expected element to have class '${expected}' but found '${actual}'`,
         test: (actual, expected) => actual.split(' ').includes(expected),
       },
       attr: {
         resolve: (element, attribute) => this.its(element, attribute),
         msg: (actual, expected) => `Expected element to have attribute '${expected}' but found '${actual}'`,
-        test: (actual, expected) => actual.split(' ').includes(expected),
+        test: (actual, expected) => actual === expected,
       },
       value: {
         resolve: (element) => this.its(element, 'value'),
@@ -339,8 +371,6 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     if (invertTest) {
       test = !test;
     }
-
-    // throw Error(actual + ' - ' + expected);
 
     return Assertion(assertion, actual, expected, test, message);
   }
