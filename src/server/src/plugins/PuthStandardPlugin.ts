@@ -2,7 +2,7 @@ import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { Capability } from '../Context';
-import { retryFor } from '../Utils';
+import { capitalizeFirstLetter, retryFor } from '../Utils';
 
 export default class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -19,6 +19,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           expects: Expects.Element,
         },
         should: this.should,
+        type: this.type,
       },
       // resolver: {
       //     Page: {}
@@ -40,6 +41,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           func: this.contains,
           expects: Expects.Array,
         },
+        visit: (page, url) => page.goto(url),
         evaluate: this.evaluate,
         evaluateRaw: this.evaluateRaw,
         visible: this.visible,
@@ -88,6 +90,66 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
       },
     });
+  }
+
+  KeyMapping = {
+    leftarrow: 'ArrowLeft',
+    rightarrow: 'ArrowRight',
+    uparrow: 'ArrowUp',
+    downarrow: 'ArrowDown',
+    del: 'Delete',
+    option: 'Alt',
+    command: 'Meta',
+    cmd: 'Meta',
+    ctrl: 'Control',
+    selectall: async (element, options) => {
+      await element._page.keyboard.down('Control');
+      await element._page.keyboard.press('A', options);
+      if (options?.delay) {
+        await element._page.waitForTimeout(options?.delay);
+      }
+      await element._page.keyboard.up('Control');
+    },
+    // TODO moveToStart
+    // TODO moveToEnd
+  };
+
+  /**
+   * https://github.com/puppeteer/puppeteer/blob/main/src/common/USKeyboardLayout.ts
+   *
+   * @param element
+   * @param chars
+   * @param options
+   */
+  async type(element, chars, options: { delay? } = {}) {
+    let split = chars.split(/({.+?})/).filter((i) => !!i);
+    let release: string[] = [];
+
+    for (let chs of split) {
+      let specialKey = /{(.+?)}/.exec(chs);
+
+      if (specialKey) {
+        let key = this.KeyMapping[specialKey[1]] ?? capitalizeFirstLetter(specialKey[1]);
+
+        if (typeof key === 'function') {
+          await key(element, options);
+        } else {
+          await element._page.keyboard.down(key);
+          release.push(key);
+        }
+      } else {
+        await element.type(chs, options);
+      }
+    }
+
+    return Promise.all(
+      release.map(async (key) => {
+        if (options?.delay) {
+          await element._page.waitForTimeout(options?.delay);
+        }
+        await element._page.keyboard.up(key);
+      }),
+    );
   }
 
   async innerText(element) {
@@ -222,6 +284,11 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         msg: (actual, expected) => `Expected element to have attribute '${expected}' but found '${actual}'`,
         test: (actual, expected) => actual.split(' ').includes(expected),
       },
+      value: {
+        resolve: (element) => this.its(element, 'value'),
+        msg: (actual, expected) => `Expected '${actual}' to be '${expected}'`,
+        test: (actual, expected) => actual === expected,
+      },
     },
   };
 
@@ -251,7 +318,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     let assert = this.Assertions[chainer]?.[func];
 
     if (!assert) {
-      throw Error('Assertion not found!');
+      throw Error(`Assertion "${assertion}" not found!`);
     }
 
     let actual = await assert.resolve(element, ...params.slice(0, params.length));
@@ -261,6 +328,8 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     if (invertTest) {
       test = !test;
     }
+
+    // throw Error(actual + ' - ' + expected);
 
     return Assertion(assertion, actual, expected, test, message);
   }
