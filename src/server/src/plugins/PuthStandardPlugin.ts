@@ -68,11 +68,14 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           func: this.contains,
           expects: Expects.Array,
         },
+        its: this.its,
         clickAndWait: this.clickAndWait,
         visible: this.visible,
         children: this.children,
         siblings: this.siblings,
         parents: this.parents,
+        prev: this.prev,
+        next: this.next,
         blur: this.blur,
         clear: this.clear,
         submit: this.submit,
@@ -142,7 +145,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
       }
     }
 
-    return Promise.all(
+    await Promise.all(
       release.map(async (key) => {
         if (options?.delay) {
           await element._page.waitForTimeout(options?.delay);
@@ -202,6 +205,14 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
   async siblings(element) {
     return await element.$x('.//preceding-sibling::* | .//following-sibling::*');
+  }
+
+  async prev(element) {
+    return await element.$x('.//preceding-sibling::*[1]');
+  }
+
+  async next(element) {
+    return await element.$x('.//following-sibling::*[1]');
   }
 
   async blur(element, selector?) {

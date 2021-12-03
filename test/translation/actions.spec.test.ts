@@ -57,8 +57,6 @@ describe('Actions', function () {
   // https://on.cypress.io/interacting-with-elements
 
   it('.type() - type into a DOM element', async function () {
-    await this.page.get('body');
-
     // https://on.cypress.io/type
     await this.page
       .get('.action-email')
@@ -79,23 +77,25 @@ describe('Actions', function () {
       .type('slow.typing@email.com', { delay: 100 })
       .should('have.value', 'slow.typing@email.com');
 
-    this.page
-      .get('.action-disabled')
-      // Ignore error checking prior to type
-      // like whether the input is visible or disabled
-      .type('disabled error checking', { force: true })
-      .should('have.value', 'disabled error checking');
+    // TODO "force" is currently not supported
+    // await this.page
+    //   .get('.action-disabled')
+    //   // Ignore error checking prior to type
+    //   // like whether the input is visible or disabled
+    //   .type('disabled error checking', { force: true })
+    //   .should('have.value', 'disabled error checking');
   });
 
-  //  it('.focus() - focus on a DOM element', async function () {
-  //    // https://on.cypress.io/focus
-  //    this.page
+  // it('.focus() - focus on a DOM element', async function () {
+  //   // https://on.cypress.io/focus
+  //    await this.page
   //      .get('.action-focus')
   //      .focus()
   //      .should('have.class', 'focus')
   //      .prev()
-  //      .should('have.attr', 'style', 'color: orange;');
-  //  });
+  //      .should('have.attr', 'style', 'color: orange;2');
+  // });
+
   //
   //  it('.blur() - blur off a DOM element', async function () {
   //    // https://on.cypress.io/blur
