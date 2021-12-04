@@ -48,6 +48,18 @@ const PreviewFooter = observer(() => {
         <input
           type="checkbox"
           className="form-check-input me-2"
+          id="remove-script-tags-checkbox"
+          checked={PreviewStore.removeScriptTags}
+          onChange={() => (PreviewStore.removeScriptTags = !PreviewStore.removeScriptTags)}
+        />
+        <label className="form-check-label" htmlFor="remove-script-tags-checkbox">
+          Remove script tags
+        </label>
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
           id="darken-preview-checkbox"
           checked={PreviewStore.darken}
           onChange={() => (PreviewStore.darken = !PreviewStore.darken)}

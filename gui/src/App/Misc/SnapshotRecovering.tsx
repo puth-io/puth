@@ -3,6 +3,7 @@ import { BlobHandler as BlobHandlerClass } from './BlobHandler';
 import { PreviewStore } from '../../index';
 
 export const BlobHandler = new BlobHandlerClass();
+export const textDecoder = new TextDecoder();
 
 export function disableScrollBehavior(doc) {
   doc.querySelector('body').style.scrollBehavior = 'unset';
@@ -33,24 +34,24 @@ let resolveSrcFromCache = ({
   returnType = null,
   mimeType = 'text/html',
 }) => {
-  let matchUrls = [];
+  let matchUrl;
 
   if (src.startsWith('http://') || src.startsWith('https://')) {
     // find matching include on full srcurl
-    matchUrls.push(src);
+    matchUrl = src;
   } else if (src.startsWith('//')) {
     let url = new URL(base);
-    matchUrls.push(url.origin + src.replace('//', '/'));
+    matchUrl = url.origin + src.replace('//', '/');
   } else if (src.startsWith('/')) {
     let url = new URL(base);
-    matchUrls.push(url.origin + src);
+    matchUrl = url.origin + src;
   } else {
-    matchUrls.push(new URL(src, base).href);
+    matchUrl = new URL(src, base).href;
   }
 
-  let resource = PreviewStore.visibleCommand.context.responses.find((pageInclude) =>
-    matchUrls.includes(pageInclude.url),
-  );
+  let resource = PreviewStore.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
+    return matchUrl === pageInclude.url;
+  });
 
   if (!resource) {
     // TODO implement error handling
@@ -65,7 +66,7 @@ let resolveSrcFromCache = ({
 
   if (returnType === 'string') {
     // @ts-ignore
-    return new TextDecoder().decode(resource.content);
+    return textDecoder.decode(resource.content);
   }
 
   // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
@@ -75,7 +76,7 @@ let resolveSrcFromCache = ({
 };
 
 export function resolveCssLinksToLocal(src, base) {
-  return src?.replace(/url\((.+?)\)+/g, (match) => {
+  return src?.replace(/url\((.+?)\)+/g, function matchedCssLinks(match) {
     let url = match.substring(4, match.length - 1);
     let quote = '';
 
@@ -88,7 +89,7 @@ export function resolveCssLinksToLocal(src, base) {
       return match;
     }
 
-    let resolved = resolveSrcFromCache({ src: url, base, mimeType: 'font' });
+    let resolved = resolveSrcFromCache({ src: url, base });
 
     if (!resolved) {
       return match;
@@ -103,23 +104,17 @@ export function recover(command, snapshot, doc) {
     return;
   }
 
-  /**
-   * Disable any scroll behavior
-   */
-  let puthStyleOverride = document.createElement('style');
-  puthStyleOverride.innerHTML = 'html, body { scroll-behavior: unset!important; }';
-  puthStyleOverride.dataset.name = 'puth_scroll_behavior_override';
-  doc.querySelector('head').appendChild(puthStyleOverride);
+  // Important: for of was chosen because of performance reasons
 
   /**
    * Recover external stylesheets
    */
-  [...doc.querySelectorAll('link')].forEach((link) => {
+  for (let link of doc.querySelectorAll('link')) {
     // need to use getAttribute because if the resource isn't actually loaded, then link.href is empty
     let href = link.getAttribute('href');
 
     if (!href || href.startsWith('data:')) {
-      return;
+      continue;
     }
 
     let hrefFull = new URL(href, snapshot?.url).href;
@@ -127,7 +122,7 @@ export function recover(command, snapshot, doc) {
     let src = resolveSrcFromCache({ src: href, returnType: 'string' });
 
     if (!src) {
-      return;
+      continue;
     }
 
     // Replace all url functions inside css with blobs if known
@@ -135,29 +130,29 @@ export function recover(command, snapshot, doc) {
 
     link.href = BlobHandler.createUrlFromString(src, { type: 'text/html' });
     link.dataset.puth_original_href = href;
-  });
+  }
 
   /**
    * Recover all external resources inside style tags
    */
-  [...doc.querySelectorAll('style')].forEach((style) => {
+  for (let style of doc.querySelectorAll('style')) {
     style.innerHTML = resolveCssLinksToLocal(style.innerHTML, snapshot?.href);
-  });
+  }
 
   /**
    * Recover parts that can not be tracked
    */
-  [...doc.querySelectorAll('img')].forEach((img) => {
+  for (let img of doc.querySelectorAll('img')) {
     // need to use getAttribute because if the resource isn't actually loaded, then img.src is empty
     let src = img.getAttribute('src');
 
     if (!src) {
-      return;
+      continue;
     }
 
     // Skip data urls
     if (src.startsWith('data:')) {
-      return;
+      continue;
     }
 
     img.src = resolveSrcFromCache({ src });
@@ -168,18 +163,37 @@ export function recover(command, snapshot, doc) {
       img.srcset = candidates
         .map((candidate) => {
           let [cSrc, cSize] = candidate.split(' ');
-
           return `${resolveSrcFromCache({ src: cSrc })} ${cSize}`;
         })
         .join(',');
     }
-  });
+  }
 
   // Remove all noscript tags since javascript is enabled. If javascript is disabled, don't do anything.
   // This exists because the iframe has javascript disabled therefore noscript tag would be displayed.
   if (snapshot.isJavascriptEnabled) {
-    [...doc.querySelectorAll('noscript')].forEach((el) => el.remove());
+    for (let script of doc.querySelectorAll('noscript')) {
+      script.remove();
+    }
   }
+
+  for (let script of doc.querySelectorAll('script')) {
+    if (PreviewStore.removeScriptTags) {
+      script.remove();
+    } else {
+      let src = script.getAttribute('src');
+      script.setAttribute('src', '');
+      script.setAttribute('puth_original_src', src);
+    }
+  }
+
+  /**
+   * Disable any scroll behavior
+   */
+  let puthStyleOverride = document.createElement('style');
+  puthStyleOverride.innerHTML = 'html, body { scroll-behavior: unset!important; }';
+  puthStyleOverride.dataset.name = 'puth_scroll_behavior_override';
+  doc.querySelector('head').appendChild(puthStyleOverride);
 
   // TODO check if there are other tags that need to be reinjected from the context.responses resources.
 }
