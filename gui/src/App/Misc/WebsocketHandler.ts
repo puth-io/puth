@@ -4,6 +4,7 @@ import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
 import { DEBUG } from './Debug';
+import { BlobHandler } from './SnapshotRecovering';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -20,6 +21,12 @@ PUTH_EXTENSION_CODEC.register({
     return new TextDecoder().decode(data);
   },
 });
+
+export type IBlobHandle = {
+  blob: Blob;
+  url?: string;
+  options?: BlobPropertyBag;
+};
 
 export type IContext = {
   id: string;
@@ -42,9 +49,10 @@ type IResponse = {
   headers: {
     [key: string]: string;
   };
-  content: {
-    data: any[];
-    type: string;
+  content: Uint8Array;
+  contentParsed: {
+    blob?: IBlobHandle;
+    string?: string;
   };
 };
 
@@ -202,6 +210,7 @@ class WebsocketHandlerSingleton {
   private addResponse(response) {
     let context = this.getContext(response.context.id);
     response.context = context;
+    response.contentParsed = {};
     context.responses.push(response);
 
     let request = context.requests.find((r) => r.requestId === response.requestId);
@@ -265,6 +274,13 @@ class WebsocketHandlerSingleton {
   }
 
   clear() {
+    this.contexts.forEach(function cleanupContext(context) {
+      context.responses.forEach((response) => {
+        if (response.contentParsed?.blob) {
+          BlobHandler.revoke(response.contentParsed.blob.url);
+        }
+      });
+    });
     this.contexts.clear();
   }
 }

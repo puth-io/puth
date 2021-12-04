@@ -5,6 +5,7 @@ export class RemotePuthClient {
   private readonly externalUri: string;
   private axios: any;
   private options: any;
+  private assertionHandler: ((assertion) => any) | undefined;
 
   constructor(externalUri, options?) {
     this.externalUri = externalUri;
@@ -12,6 +13,14 @@ export class RemotePuthClient {
       baseURL: externalUri,
     });
     this.options = options;
+  }
+
+  setAssertionHandler(assertionHandler: (assertion) => any) {
+    this.assertionHandler = assertionHandler;
+  }
+
+  getAssertionHandler() {
+    return this.assertionHandler;
   }
 
   async contextCreate(options = {}) {

@@ -1,29 +1,35 @@
-import { useState, useEffect } from 'react';
-
 export class BlobHandler {
-  private blobs = [];
   private urls = [];
+  urlsUntracked = [];
 
   createUrlFromString(source: string, options) {
     return this.createUrlFrom([source], options);
   }
 
   createUrlFrom(blobParts: BlobPart[], options) {
-    let blob = this.createBlobFrom(blobParts, options);
+    let { blob } = this.createBlobFrom(blobParts, options);
     let url = URL.createObjectURL(blob);
-    this.urls.push(url);
-    return url;
+
+    if (options?.track !== false) {
+      this.urls.push(url);
+    } else {
+      this.urlsUntracked.push(url);
+    }
+
+    return { url, blob, options };
   }
 
   createBlobFrom(blobParts: BlobPart[], options) {
     let blob = new Blob(blobParts, options);
-    this.blobs.push(blob);
-    return blob;
+    return { blob, options };
   }
 
   cleanup() {
-    this.urls.forEach((item) => URL.revokeObjectURL(item));
-    this.blobs = [];
+    this.urls.forEach((url) => this.revoke(url));
     this.urls = [];
+  }
+
+  revoke(url) {
+    return URL.revokeObjectURL(url);
   }
 }

@@ -85,9 +85,10 @@ function puthContextTests(env) {
         this.page.___delete_test = true;
         assert.ok(await this.page._getProperty('___delete_test'));
         delete this.page.___delete_test;
+
         return assert.isRejected(
           this.page._getProperty('___delete_test'),
-          'Undefined: Property ___delete_test not found on Page',
+          'Undefined: Property "___delete_test" not found on Page',
         );
       });
     });
