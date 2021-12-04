@@ -104,7 +104,8 @@ export class PreviewStoreClass {
 
     // TODO find a way to make Blob out of document directly because this is "document => string => blob"
     //      but if innerHTML is cached then it doesn't that big of a difference
-    return BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+    let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+    return url;
   }
 
   get hasVisibleSnapshotSource() {

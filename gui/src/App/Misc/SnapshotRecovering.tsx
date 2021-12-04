@@ -28,12 +28,7 @@ let getHeader = (headers, find) => {
   return '';
 };
 
-let resolveSrcFromCache = ({
-  src,
-  base = PreviewStore.visibleSnapshot?.url,
-  returnType = null,
-  mimeType = 'text/html',
-}) => {
+let findResourceInCache = ({ src, base = PreviewStore.visibleSnapshot?.url }) => {
   let matchUrl;
 
   if (src.startsWith('http://') || src.startsWith('https://')) {
@@ -49,9 +44,21 @@ let resolveSrcFromCache = ({
     matchUrl = new URL(src, base).href;
   }
 
-  let resource = PreviewStore.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
+  return PreviewStore.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
     return matchUrl === pageInclude.url;
   });
+};
+
+let resolveSrcFromCache = ({
+  resource = null,
+  src,
+  base = PreviewStore.visibleSnapshot?.url,
+  returnType = null,
+  mimeType = 'text/html',
+}) => {
+  if (!resource) {
+    resource = findResourceInCache({ src, base });
+  }
 
   if (!resource) {
     // TODO implement error handling
@@ -64,15 +71,38 @@ let resolveSrcFromCache = ({
     mimeType = contentType;
   }
 
+  if (!returnType && resource?.contentParsed?.blob) {
+    let { url, blob, options } = resource.contentParsed.blob;
+
+    if (url && blob && options?.type === mimeType) {
+      return url;
+    }
+  }
+
   if (returnType === 'string') {
-    // @ts-ignore
-    return textDecoder.decode(resource.content);
+    if (resource?.contentParsed?.string) {
+      return resource?.contentParsed?.string;
+    }
+
+    if (ArrayBuffer.isView(resource.content)) {
+      let parsedString = textDecoder.decode(resource.content);
+      resource.contentParsed.string = parsedString;
+      resource.content = undefined;
+
+      return parsedString;
+    }
+
+    // TODO handle error? is this even possible?
   }
 
   // TODO create blob on websocket packet receiving because this does create a in memory blob every rerender
   //      and blobs need to be destroyed by hand.
-  // @ts-ignore
-  return BlobHandler.createUrlFrom([resource.content], { type: mimeType });
+  let blobHandle = BlobHandler.createUrlFrom([resource.content], { type: mimeType, track: false });
+
+  resource.contentParsed.blob = blobHandle;
+  resource.content = undefined;
+
+  return blobHandle.url;
 };
 
 export function resolveCssLinksToLocal(src, base) {
@@ -119,16 +149,26 @@ export function recover(command, snapshot, doc) {
 
     let hrefFull = new URL(href, snapshot?.url).href;
 
-    let src = resolveSrcFromCache({ src: href, returnType: 'string' });
+    let resource = findResourceInCache({ src: href });
 
-    if (!src) {
-      continue;
+    let blobHandle = resource?.contentParsed?.blob;
+
+    if (!blobHandle) {
+      let src = resolveSrcFromCache({ src: href, resource, returnType: 'string' });
+
+      if (!src) {
+        continue;
+      }
+
+      // Replace all url functions inside css with blobs if known
+      src = resolveCssLinksToLocal(src, hrefFull);
+
+      blobHandle = BlobHandler.createUrlFromString(src, { type: 'text/html', track: false });
+      resource.contentParsed.blob = blobHandle;
+      resource.content = undefined;
     }
 
-    // Replace all url functions inside css with blobs if known
-    src = resolveCssLinksToLocal(src, hrefFull);
-
-    link.href = BlobHandler.createUrlFromString(src, { type: 'text/html' });
+    link.href = blobHandle.url;
     link.dataset.puth_original_href = href;
   }
 
