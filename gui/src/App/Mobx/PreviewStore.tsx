@@ -81,7 +81,7 @@ export class PreviewStoreClass {
       let commands = context.commands.filter((i) => i.type === 'command');
       let index = commands.findIndex((i) => i.id === this.visibleCommand.id);
 
-      html = resolveSnapshotBacktrack(commands, index, this.activeState === 'after');
+      html = resolveSnapshotBacktrack(commands, index, this.visibleHighlightState === 'after');
     } else if (this.visibleSnapshot?.version === 2) {
       html = this.visibleSnapshot?.html?.src;
     }
