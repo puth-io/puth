@@ -22,7 +22,7 @@ export default observer(function Header() {
       <div className="container-fluid">
         <div className="d-flex align-items-center">
           <Logo className={'ml-auto me-2 align-self-center'} />
-          Blackcore <span className={'ms-1 fw-bold text-accent'}>Puth</span>
+          <span className={'ms-1 fw-bold text-accent'}>Puth</span>
         </div>
         {/*<ul className="navbar-nav">
           <li className="nav-item">
