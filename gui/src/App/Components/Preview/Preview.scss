@@ -59,7 +59,7 @@
             display: flex;
             align-items: center;
             padding: 0.25rem 0.5rem;
-            border: 1px solid #47484b;
+            border: 1px solid $border-color;
             border-radius: 4px;
             white-space: nowrap;
         }
@@ -70,6 +70,15 @@
         grid-auto-flow: column;
         justify-content: flex-end;
         grid-gap: 1rem;
+        padding: 0.125rem 0.5rem;
+
+        background: #1e1f23;
+        border-left: 1px solid #393b3e;
+        color: #787b81;
+
+        .form-check-input:checked[type="checkbox"] {
+            opacity: 0.75;
+        }
     }
 
     .iframe-wrapper {

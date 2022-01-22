@@ -36,6 +36,11 @@ export default observer(function Header() {
             </a>
           </li>
           <li className="nav-item">
+            <a href="https://puth.dev/" target={'_blank'} className="nav-link">
+              puth.dev
+            </a>
+          </li>
+          <li className="nav-item">
             <a href="https://playground.puth.dev" target={'_blank'} className="nav-link">
               Playground
             </a>

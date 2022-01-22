@@ -35,7 +35,7 @@ const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.da
 
 const PreviewFooter = observer(() => {
   return (
-    <div className={'footer py-1 pe-2'}>
+    <div className={'footer'}>
       <div>
         <input
           type="checkbox"
@@ -107,7 +107,7 @@ export const Preview = observer(() => {
     iframe.src = html;
   } else if (iframe) {
     // cleans iframe
-    iframe.src = 'about:blank';
+    iframe.src = '';
   }
 
   const PreviewInfo = () => (
@@ -171,29 +171,26 @@ export const Preview = observer(() => {
             position: 'relative',
           }}
         >
-          {!!html ? (
-            <iframe
-              title={'Preview'}
-              className={PreviewStore.darken ? 'darken' : ''}
-              frameBorder="0"
-              ref={iframeRef}
-              sandbox={'allow-same-origin'}
-              onLoad={({ target }) => {
-                // @ts-ignore
-                recoverAfterRender(PreviewStore.visibleCommand, PreviewStore.visibleSnapshot, target.contentDocument);
-                loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState);
-              }}
-              style={{
-                transformOrigin: '0 0',
-                transform: 'scale(' + iframeSize.scale + ')',
-                width: iframeSize.width,
-                height: iframeSize.height,
-                background: !!html ? 'white' : 'transparent',
-              }}
-            />
-          ) : (
-            <div className={'no-selected-preview'}>No preview selected</div>
-          )}
+          <iframe
+            title={'Preview'}
+            className={PreviewStore.darken ? 'darken' : ''}
+            frameBorder="0"
+            ref={iframeRef}
+            sandbox={'allow-same-origin'}
+            onLoad={({ target }) => {
+              // @ts-ignore
+              recoverAfterRender(PreviewStore.visibleCommand, PreviewStore.visibleSnapshot, target.contentDocument);
+              loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState);
+            }}
+            style={{
+              transformOrigin: '0 0',
+              transform: 'scale(' + iframeSize.scale + ')',
+              width: iframeSize.width,
+              height: iframeSize.height,
+              visibility: !html ? 'hidden' : 'visible',
+            }}
+          />
+          {!html && <div className={'no-selected-preview'}>No preview selected</div>}
         </div>
       </div>
 
