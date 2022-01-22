@@ -71,50 +71,18 @@
         justify-content: flex-end;
         grid-gap: 1rem;
     }
-}
 
-.logo {
-    $spacing: 0.125rem;
+    .iframe-wrapper {
+        border: solid $border-color;
+        border-width: 1px 0 1px 1px;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+        iframe {
+            opacity: 1;
+            transition: opacity ease-in-out 150ms;
 
-    padding: 0.125rem;
-    min-height: 2.5rem;
-    min-width: 2.5rem;
-
-    line-height: 1;
-    letter-spacing: $spacing;
-
-    color: $accent;
-    border: 1px solid $accent;
-    border-radius: 0.5rem;
-
-    & > div {
-        margin-right: -$spacing;
+            &.darken {
+                opacity: 0.75;
+            }
+        }
     }
 }
-
-.quick-navigation-container {
-    display: grid;
-    grid-gap: 0.5rem;
-    padding: 0.5rem 0.5rem 0.5rem 0;
-}
-
-.overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background-color: rgba(0, 0, 0, 0);
-    transition: background-color ease-in-out 150ms;
-    pointer-events: none;
-}
-
-.darken {
-    background-color: rgba(0, 0, 0, 0.25);
-}
-

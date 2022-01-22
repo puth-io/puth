@@ -1,0 +1,53 @@
+@import '../Misc/colors';
+
+$height: 3rem;
+
+.height-3 {
+  height: $height;
+}
+
+.header {
+  border-bottom: 1px solid $border-color;
+  padding: 0.25rem 0;
+  height: $height;
+}
+
+.quick-navigation-container {
+  // display: grid;
+  // grid-gap: 0.5rem;
+  // padding: 0.5rem 0.5rem 0.5rem 0;
+  display: flex;
+  align-items: center;
+  height: $height;
+}
+
+.nav-link {
+  padding: 0.25rem 0.5rem !important;
+}
+
+.logo {
+  $spacing: 0.125rem;
+  margin-right: 0.75rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0.125rem;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+
+  font-size: 0.675rem;
+
+  line-height: 1;
+  letter-spacing: $spacing;
+
+  color: $accent;
+  border: 1px solid $accent;
+  border-radius: 0.5rem;
+
+  & > div {
+    margin-right: -$spacing;
+  }
+}

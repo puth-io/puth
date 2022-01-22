@@ -14,7 +14,7 @@ const SidebarAction = observer(() => {
   };
 
   return (
-    <div className={'d-flex px-2 pt-2'}>
+    <div className={'height-3 d-flex align-items-center px-2 pt-2 pb-2'}>
       <button className={'btn btn-sm btn-outline-primary'} onClick={clear}>
         Clear
       </button>
@@ -37,7 +37,7 @@ export default observer(function Sidebar() {
       onResizeStop={forceUpdatePreview}
     >
       <SidebarAction />
-      <div className={'sidebar p-2'}>
+      <div className={'sidebar px-2'}>
         {WebsocketHandler.contextArray.map((context, idx) => {
           return <Context key={context.id} context={context} />;
         })}

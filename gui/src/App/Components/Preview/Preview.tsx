@@ -18,13 +18,6 @@ const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   );
 };
 
-const Logo = ({ className = null }) => (
-  <div className={`logo ${className}`}>
-    <div>PU</div>
-    <div>TH</div>
-  </div>
-);
-
 const QuickNavigation = () => {
   return (
     <>
@@ -33,7 +26,6 @@ const QuickNavigation = () => {
         {/*<Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
         <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
         <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />*/}
-        <Logo className={'ml-auto me-2 align-self-center'} />
       </div>
     </>
   );
@@ -119,7 +111,7 @@ export const Preview = observer(() => {
   }
 
   const PreviewInfo = () => (
-    <div className="d-flex info">
+    <div className="d-flex flex-1 info me-2">
       <div className="btn-group btn-group-sm" role="group">
         <button
           type="button"
@@ -166,24 +158,23 @@ export const Preview = observer(() => {
       }}
     >
       <div className={'quick-navigation-container'}>
-        <QuickNavigation />
+        {/*<QuickNavigation />*/}
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
+      <div className={'d-flex iframe-wrapper'} style={{ flex: 1, overflow: 'hidden' }}>
         <div
           ref={iframeContainerRef}
           style={{
             flex: 1,
             overflow: 'hidden',
             visibility: !!html ? 'visible' : 'hidden',
-            border: 'solid #46484b',
-            borderWidth: '1px 0 0 1px',
             position: 'relative',
           }}
         >
           <iframe
             title={'Preview'}
+            className={PreviewStore.darken ? 'darken' : ''}
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
@@ -200,7 +191,6 @@ export const Preview = observer(() => {
               background: !!html ? 'white' : 'transparent',
             }}
           />
-          <PreviewOverlay />
         </div>
       </div>
 
