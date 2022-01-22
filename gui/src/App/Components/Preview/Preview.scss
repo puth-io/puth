@@ -59,7 +59,7 @@
             display: flex;
             align-items: center;
             padding: 0.25rem 0.5rem;
-            border: 1px solid #47484b;
+            border: 1px solid $border-color;
             border-radius: 4px;
             white-space: nowrap;
         }
@@ -70,51 +70,43 @@
         grid-auto-flow: column;
         justify-content: flex-end;
         grid-gap: 1rem;
+        padding: 0.125rem 0.5rem;
+
+        background: #1e1f23;
+        border-left: 1px solid #393b3e;
+        color: #787b81;
+
+        .form-check-input:checked[type="checkbox"] {
+            opacity: 0.75;
+        }
+    }
+
+    .iframe-wrapper {
+        border: solid $border-color;
+        border-width: 1px 0 1px 1px;
+        background-color: #1d1f22;
+
+        iframe {
+            opacity: 1;
+            transition: opacity ease-in-out 150ms;
+
+            &.darken {
+                opacity: 0.75;
+            }
+        }
+
+        .no-selected-preview {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2c2e32;
+            font-size: 2.5rem;
+        }
     }
 }
-
-.logo {
-    $spacing: 0.125rem;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0.125rem;
-    min-height: 2.5rem;
-    min-width: 2.5rem;
-
-    line-height: 1;
-    letter-spacing: $spacing;
-
-    color: $accent;
-    border: 1px solid $accent;
-    border-radius: 0.5rem;
-
-    & > div {
-        margin-right: -$spacing;
-    }
-}
-
-.quick-navigation-container {
-    display: grid;
-    grid-gap: 0.5rem;
-    padding: 0.5rem 0.5rem 0.5rem 0;
-}
-
-.overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background-color: rgba(0, 0, 0, 0);
-    transition: background-color ease-in-out 150ms;
-    pointer-events: none;
-}
-
-.darken {
-    background-color: rgba(0, 0, 0, 0.25);
-}
-

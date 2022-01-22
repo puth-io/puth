@@ -41,6 +41,8 @@ export class DebugClass {
     DEBUG = (func) => func();
     Events.on('*', DebugClass.eventLogger);
     // tslint:enable
+
+    this.printPerformanceWarning();
   }
 
   disable() {
@@ -55,5 +57,9 @@ export class DebugClass {
   private static eventLogger(type, event) {
     // tslint:disable-next-line:no-console
     console.debug('[EventLogger]', type, event);
+  }
+
+  printPerformanceWarning() {
+    console.warn('[Puth] Performance is affected by debug');
   }
 }

@@ -25,7 +25,8 @@ export class PreviewStoreClass {
     this.registerEvents();
 
     this._darken = localStorage.getItem('previewStore.darken') === 'true';
-    this._removeScriptTags = localStorage.getItem('previewStore.removeScriptTags') === 'true';
+    let lsRemoveScriptTags = localStorage.getItem('previewStore.removeScriptTags');
+    this._removeScriptTags = lsRemoveScriptTags ? lsRemoveScriptTags === 'true' : true;
   }
 
   clear() {
