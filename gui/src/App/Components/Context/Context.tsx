@@ -32,7 +32,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
         <div>{pointer}</div>
         <div className={'ms-2 flex-grow-1'}>
           <div className={'fw-bold'}>{context?.test?.name ?? 'Context'}</div>
-          {context.group && <div className={' fw-light mt-1'}>{context.group}</div>}
+          {context.group && <div className={'fw-light fs-small mt-1'}>{context.group}</div>}
         </div>
       </div>
 

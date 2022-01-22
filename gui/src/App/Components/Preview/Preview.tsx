@@ -162,35 +162,38 @@ export const Preview = observer(() => {
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex iframe-wrapper'} style={{ flex: 1, overflow: 'hidden' }}>
+      <div className={'d-flex iframe-wrapper bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
         <div
           ref={iframeContainerRef}
           style={{
             flex: 1,
             overflow: 'hidden',
-            visibility: !!html ? 'visible' : 'hidden',
             position: 'relative',
           }}
         >
-          <iframe
-            title={'Preview'}
-            className={PreviewStore.darken ? 'darken' : ''}
-            frameBorder="0"
-            ref={iframeRef}
-            sandbox={'allow-same-origin'}
-            onLoad={({ target }) => {
-              // @ts-ignore
-              recoverAfterRender(PreviewStore.visibleCommand, PreviewStore.visibleSnapshot, target.contentDocument);
-              loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState);
-            }}
-            style={{
-              transformOrigin: '0 0',
-              transform: 'scale(' + iframeSize.scale + ')',
-              width: iframeSize.width,
-              height: iframeSize.height,
-              background: !!html ? 'white' : 'transparent',
-            }}
-          />
+          {!!html ? (
+            <iframe
+              title={'Preview'}
+              className={PreviewStore.darken ? 'darken' : ''}
+              frameBorder="0"
+              ref={iframeRef}
+              sandbox={'allow-same-origin'}
+              onLoad={({ target }) => {
+                // @ts-ignore
+                recoverAfterRender(PreviewStore.visibleCommand, PreviewStore.visibleSnapshot, target.contentDocument);
+                loadHighlights(iframeRef, PreviewStore.visibleCommand, PreviewStore.visibleHighlightState);
+              }}
+              style={{
+                transformOrigin: '0 0',
+                transform: 'scale(' + iframeSize.scale + ')',
+                width: iframeSize.width,
+                height: iframeSize.height,
+                background: !!html ? 'white' : 'transparent',
+              }}
+            />
+          ) : (
+            <div className={'no-selected-preview'}>No preview selected</div>
+          )}
         </div>
       </div>
 

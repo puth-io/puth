@@ -20,8 +20,11 @@ button {
 }
 
 .bg-striped {
-  background-image: linear-gradient(135deg, #c4c4c4 25%, #969696 25%, #969696 50%, #c4c4c4 50%, #c4c4c4 75%, #969696 75%, #969696 100%);
-  background-size: 5px 5px;
+  $color1: $primary-darker;
+  $color2: $body-bg;
+  $size: 7px;
+  background-image: linear-gradient(135deg, $color1 25%, $color2 25%, $color2 50%, $color1 50%, $color1 75%, $color2 75%, $color2 100%);
+  background-size: $size $size;
 }
 
 .cursor-pointer {
