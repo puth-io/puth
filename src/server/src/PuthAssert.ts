@@ -22,6 +22,7 @@ export class PuthAssert {
         'Expected objects to be the same type.',
       );
     }
+
     if (['ElementHandle', 'JSHandle'].includes(Utils.resolveConstructorName(expected))) {
       return Assertion(
         'strictEquals',

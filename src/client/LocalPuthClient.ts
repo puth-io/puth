@@ -5,6 +5,7 @@ import { PuthPlugin, PuthPluginGeneric } from '../server/src/PuthPluginGeneric';
 export class LocalPuthClient {
   private readonly puth: Puth;
   private options: any;
+  private assertionHandler: ((assertion) => any) | undefined;
 
   constructor(serverOptions?, clientOptions?) {
     this.puth = new PuthServer({
@@ -12,6 +13,14 @@ export class LocalPuthClient {
       ...serverOptions,
     });
     this.options = clientOptions;
+  }
+
+  setAssertionHandler(assertionHandler: (assertion) => any) {
+    this.assertionHandler = assertionHandler;
+  }
+
+  getAssertionHandler() {
+    return this.assertionHandler;
   }
 
   getPuth() {

@@ -23,6 +23,9 @@ export const MagicCustomObject = magicClassMethods(
       }
     }
 
+    // TODO append "should" object in constructor
+    //      this.should = {see: () => {}, ...}
+
     catch(onRejected: (parameter) => any) {
       this._promise = this._promise.catch(onRejected);
       return this;
@@ -159,6 +162,14 @@ export const RemoteContext = magicClassMethods(
       return genericGet(this, this, this.getRepresentation(), property);
     }
 
+    callAssertionHandler(assertion) {
+      let handler = this.getPuth().getAssertionHandler();
+
+      if (handler) {
+        handler(assertion);
+      }
+    }
+
     debug(...args) {
       if (this.isDebug) {
         // TODO implement logger
@@ -169,6 +180,10 @@ export const RemoteContext = magicClassMethods(
 
     getRepresentation(): GenericRepresentation {
       return this.representation;
+    }
+
+    getPuth() {
+      return this.puth;
     }
 
     get isDebug() {
@@ -195,7 +210,9 @@ export function genericGet(on, context, representation, property) {
     } else if (response?.type === 'GenericValue') {
       return response.value;
     } else if (response?.type === 'PuthAssertion') {
-      return response;
+      context.callAssertionHandler(response);
+      // return response;
+      return on;
     } else if (response?.type === 'error') {
       throw new Error(response.code + ': ' + response.message);
     }

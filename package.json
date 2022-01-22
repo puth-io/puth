@@ -10,9 +10,11 @@
   "types": "lib/index.d.ts",
   "dependencies": {
     "@msgpack/msgpack": "^2.7.1",
+    "@types/diff-match-patch": "^1.0.32",
     "axios": "^0.21.1",
     "chalk": "^3.0.0",
     "chokidar": "^3.5.1",
+    "diff-match-patch": "^1.0.5",
     "fastify": "^3.15.1",
     "fastify-cors": "^6.0.0",
     "fastify-http-proxy": "^5.0.0",
@@ -20,7 +22,7 @@
     "fastify-websocket": "^3.2.0",
     "meow": "^9.0.0",
     "mitt": "^2.1.0",
-    "puppeteer": "^9.0.0",
+    "puppeteer": "^12.0.1",
     "tmp-promise": "^2.1.1",
     "uuid": "^8.3.2"
   },
@@ -55,6 +57,7 @@
     "test": "mocha --exit --timeout 5000 -r ts-node/register 'test/**/*.ts'",
     "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 5000 -r ts-node/register 'test/**/*.ts'",
     "test:only:plugins": "mocha --exit --timeout 5000 -r ts-node/register 'test/plugins/**/*.ts'",
+    "test:only:translation": "mocha --exit --timeout 5000 -r ts-node/register 'test/translation/**/*.ts'",
     "test:api": "mocha --exit -r ts-node/register 'test/api.test.ts'",
     "test:watch": "mocha -r ts-node/register --recursive -w --watch-files src,test 'test/**/*.ts'",
     "daemon": "node src/server/daemon/daemon.js",

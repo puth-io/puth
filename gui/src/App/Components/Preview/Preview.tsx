@@ -18,13 +18,6 @@ const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   );
 };
 
-const Logo = ({ className = null }) => (
-  <div className={`logo ${className}`}>
-    <div>PU</div>
-    <div>TH</div>
-  </div>
-);
-
 const QuickNavigation = () => {
   return (
     <>
@@ -33,7 +26,6 @@ const QuickNavigation = () => {
         {/*<Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
         <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
         <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />*/}
-        <Logo className={'ml-auto me-2 align-self-center'} />
       </div>
     </>
   );
@@ -43,7 +35,19 @@ const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.da
 
 const PreviewFooter = observer(() => {
   return (
-    <div className={'footer py-1 pe-2'}>
+    <div className={'footer'}>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
+          id="remove-script-tags-checkbox"
+          checked={PreviewStore.removeScriptTags}
+          onChange={() => (PreviewStore.removeScriptTags = !PreviewStore.removeScriptTags)}
+        />
+        <label className="form-check-label" htmlFor="remove-script-tags-checkbox">
+          Remove script tags
+        </label>
+      </div>
       <div>
         <input
           type="checkbox"
@@ -103,11 +107,11 @@ export const Preview = observer(() => {
     iframe.src = html;
   } else if (iframe) {
     // cleans iframe
-    iframe.src = 'about:blank';
+    iframe.src = '';
   }
 
   const PreviewInfo = () => (
-    <div className="d-flex info">
+    <div className="d-flex flex-1 info me-2">
       <div className="btn-group btn-group-sm" role="group">
         <button
           type="button"
@@ -154,24 +158,22 @@ export const Preview = observer(() => {
       }}
     >
       <div className={'quick-navigation-container'}>
-        <QuickNavigation />
+        {/*<QuickNavigation />*/}
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
+      <div className={'d-flex iframe-wrapper bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
         <div
           ref={iframeContainerRef}
           style={{
             flex: 1,
             overflow: 'hidden',
-            visibility: !!html ? 'visible' : 'hidden',
-            border: 'solid #46484b',
-            borderWidth: '1px 0 0 1px',
             position: 'relative',
           }}
         >
           <iframe
             title={'Preview'}
+            className={PreviewStore.darken ? 'darken' : ''}
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
@@ -185,10 +187,10 @@ export const Preview = observer(() => {
               transform: 'scale(' + iframeSize.scale + ')',
               width: iframeSize.width,
               height: iframeSize.height,
-              background: !!html ? 'white' : 'transparent',
+              visibility: !html ? 'hidden' : 'visible',
             }}
           />
-          <PreviewOverlay />
+          {!html && <div className={'no-selected-preview'}>No preview selected</div>}
         </div>
       </div>
 

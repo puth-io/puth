@@ -1,0 +1,1 @@
+Slowly adding support for complete functionality used in https://github.com/cypress-io/cypress-example-kitchensink/tree/master/cypress/integration/2-advanced-examples

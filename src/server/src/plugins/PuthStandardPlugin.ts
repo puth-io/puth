@@ -1,8 +1,8 @@
 import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
-import { PuthAssert } from '../PuthAssert';
+import { Assertion, PuthAssert } from '../PuthAssert';
 import { Capability } from '../Context';
-import { retryFor } from '../Utils';
+import { capitalizeFirstLetter, retryFor } from '../Utils';
 
 export default class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -18,6 +18,8 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           func: this.parent,
           expects: Expects.Element,
         },
+        should: this.should,
+        type: this.type,
       },
       // resolver: {
       //     Page: {}
@@ -34,10 +36,12 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         },
       },
       Page: {
+        get: this.get,
         contains: {
           func: this.contains,
           expects: Expects.Array,
         },
+        visit: (page, url) => page.goto(url),
         evaluate: this.evaluate,
         evaluateRaw: this.evaluateRaw,
         visible: this.visible,
@@ -59,15 +63,19 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
       },
       ElementHandle: {
+        get: this.get,
         contains: {
           func: this.contains,
           expects: Expects.Array,
         },
+        its: this.its,
         clickAndWait: this.clickAndWait,
         visible: this.visible,
         children: this.children,
         siblings: this.siblings,
         parents: this.parents,
+        prev: this.prev,
+        next: this.next,
         blur: this.blur,
         clear: this.clear,
         submit: this.submit,
@@ -85,6 +93,102 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
       },
     });
+  }
+
+  KeyMapping = {
+    leftarrow: 'ArrowLeft',
+    rightarrow: 'ArrowRight',
+    uparrow: 'ArrowUp',
+    downarrow: 'ArrowDown',
+    del: 'Delete',
+    option: 'Alt',
+    command: 'Meta',
+    cmd: 'Meta',
+    ctrl: 'Control',
+    selectall: async (element, options) => {
+      await element._page.keyboard.down('Control');
+      await element._page.keyboard.press('A', options);
+      if (options?.delay) {
+        await element._page.waitForTimeout(options?.delay);
+      }
+      await element._page.keyboard.up('Control');
+    },
+    // TODO moveToStart
+    // TODO moveToEnd
+  };
+
+  /**
+   * https://github.com/puppeteer/puppeteer/blob/main/src/common/USKeyboardLayout.ts
+   *
+   * @param element
+   * @param chars
+   * @param options
+   */
+  async type(element, chars, options: { delay? } = {}) {
+    let split = chars.split(/({.+?})/).filter((i) => !!i);
+    let release: string[] = [];
+
+    for (let chs of split) {
+      let specialKey = /{(.+?)}/.exec(chs);
+
+      if (specialKey) {
+        let key = this.KeyMapping[specialKey[1]] ?? capitalizeFirstLetter(specialKey[1]);
+
+        if (typeof key === 'function') {
+          await key(element, options);
+        } else {
+          await element._page.keyboard.down(key);
+          release.push(key);
+        }
+      } else {
+        await element.type(chs, options);
+      }
+    }
+
+    await Promise.all(
+      release.map(async (key) => {
+        if (options?.delay) {
+          await element._page.waitForTimeout(options?.delay);
+        }
+        await element._page.keyboard.up(key);
+      }),
+    );
+  }
+
+  async innerText(element) {
+    return (await element.getProperty('innerText')).jsonValue();
+  }
+
+  async innerHTML(element) {
+    return (await element.getProperty('innerHTML')).jsonValue();
+  }
+
+  async value(element) {
+    return (await element.getProperty('value')).jsonValue();
+  }
+
+  async its(element, property) {
+    if (property.toLowerCase() === 'innertext') {
+      return await this.innerText(element);
+    }
+
+    if (property.toLowerCase() === 'innerhtml') {
+      return await this.innerHTML(element);
+    }
+
+    if (property.toLowerCase() === 'value') {
+      return await this.value(element);
+    }
+
+    return (await element.evaluateHandle((el, p) => el.getAttribute(p), property)).jsonValue();
+  }
+
+  get(element, search, options?) {
+    return retryFor(
+      this.getContext().getTimeout(options),
+      async (_) => await element.$(search),
+      (v) => v !== null,
+    );
   }
 
   contains(element, search, options?) {
@@ -121,6 +225,26 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
   async siblings(element) {
     return await element.$x('.//preceding-sibling::* | .//following-sibling::*');
+  }
+
+  async prev(element) {
+    let prev = await element.$x('.//preceding-sibling::*[1]');
+
+    if (prev.length === 0) {
+      // throw error
+    }
+
+    return prev[0];
+  }
+
+  async next(element) {
+    let next = await element.$x('.//following-sibling::*[1]');
+
+    if (next.length === 0) {
+      // throw error
+    }
+
+    return next;
   }
 
   async blur(element, selector?) {
@@ -179,5 +303,75 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
     let box = await element.boundingBox();
     return box.width > 0 && box.height > 0;
+  }
+
+  Assertions = {
+    have: {
+      text: {
+        resolve: (element) => this.its(element, 'innerText'),
+        msg: (actual, expected) => `Expected '${actual}' to be '${expected}'`,
+        test: (actual, expected) => actual === expected,
+      },
+      id: {
+        resolve: (element) => this.its(element, 'id'),
+        msg: (actual, expected) => `Expected '${actual}' to have id '${expected}'`,
+        test: (actual, expected) => actual === expected,
+      },
+      class: {
+        resolve: (element) => this.its(element, 'class'),
+        msg: (actual, expected) => `Expected element to have class '${expected}' but found '${actual}'`,
+        test: (actual, expected) => actual.split(' ').includes(expected),
+      },
+      attr: {
+        resolve: (element, attribute) => this.its(element, attribute),
+        msg: (actual, expected) => `Expected element to have attribute '${expected}' but found '${actual}'`,
+        test: (actual, expected) => actual === expected,
+      },
+      value: {
+        resolve: (element) => this.its(element, 'value'),
+        msg: (actual, expected) => `Expected '${actual}' to be '${expected}'`,
+        test: (actual, expected) => actual === expected,
+      },
+    },
+  };
+
+  async should(element, assertion, ...params) {
+    let split = assertion.split('.');
+
+    if (params.length === 0) {
+      throw Error('No expected value provided!');
+    }
+
+    let expected = params[params.length - 1];
+
+    if (split.length < 2) {
+      throw Error('Bad assertion.');
+    }
+
+    let invertTest = false;
+    let chainer = split[0];
+    let func = split[1];
+
+    if (split.length === 3 && split[0] === 'not') {
+      invertTest = split[0] === 'not';
+      chainer = split[1];
+      func = split[2];
+    }
+
+    let assert = this.Assertions[chainer]?.[func];
+
+    if (!assert) {
+      throw Error(`Assertion "${assertion}" not found!`);
+    }
+
+    let actual = await assert.resolve(element, ...params.slice(0, params.length));
+    let message = await assert.msg(actual, expected, ...params.slice(0, params.length));
+    let test = await assert.test(actual, expected, ...params.slice(0, params.length));
+
+    if (invertTest) {
+      test = !test;
+    }
+
+    return Assertion(assertion, actual, expected, test, message);
   }
 }

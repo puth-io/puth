@@ -470,7 +470,7 @@ class Context extends Generic {
       return {
         type: 'error',
         code: 'FunctionNotFound',
-        message: `Function ${packet.function} not found on ${on.constructor ? on.constructor.name : 'object'}`,
+        message: `Function "${packet.function}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
       };
     }
 
@@ -600,7 +600,7 @@ class Context extends Generic {
       return {
         type: 'error',
         code: 'Undefined',
-        message: `Property ${action.property} not found on ${on.constructor ? on.constructor.name : 'object'}`,
+        message: `Property "${action.property}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
       };
     }
 
@@ -632,7 +632,7 @@ class Context extends Generic {
       return {
         type: 'error',
         code: 'Undefined',
-        message: `Property ${action.property} could not be set on ${on.constructor ? on.constructor.name : 'object'}`,
+        message: `Property ${action.property} could not be deleted ${on.constructor ? on.constructor.name : 'object'}`,
       };
     }
   }

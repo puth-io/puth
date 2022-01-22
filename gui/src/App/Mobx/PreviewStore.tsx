@@ -3,8 +3,11 @@ import { action, makeAutoObservable } from 'mobx';
 import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
 import { Events } from '../../index';
 import { IContext } from '../Misc/WebsocketHandler';
+import { resolveSnapshotBacktrack } from '../Misc/Util';
 
 export type SnapshotState = 'before' | 'after';
+
+export const domParser = new DOMParser();
 
 export class PreviewStoreClass {
   private _activeContext: IContext | undefined;
@@ -14,6 +17,7 @@ export class PreviewStoreClass {
   highlightState: SnapshotState = 'after';
   private highlightInterval: number;
   _darken: boolean = false;
+  _removeScriptTags: boolean = true;
 
   constructor() {
     makeAutoObservable(this);
@@ -21,6 +25,8 @@ export class PreviewStoreClass {
     this.registerEvents();
 
     this._darken = localStorage.getItem('previewStore.darken') === 'true';
+    let lsRemoveScriptTags = localStorage.getItem('previewStore.removeScriptTags');
+    this._removeScriptTags = lsRemoveScriptTags ? lsRemoveScriptTags === 'true' : true;
   }
 
   clear() {
@@ -38,9 +44,18 @@ export class PreviewStoreClass {
     return this._darken;
   }
 
+  set removeScriptTags(value) {
+    this._removeScriptTags = value;
+    localStorage.setItem('previewStore.removeScriptTags', value ? 'true' : 'false');
+  }
+
+  get removeScriptTags() {
+    return this._removeScriptTags;
+  }
+
   resetHighlightInterval() {
     clearInterval(this.highlightInterval);
-    this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
+    // this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
     this.highlightState = 'after';
   }
 
@@ -67,22 +82,35 @@ export class PreviewStoreClass {
   }
 
   get visibleSnapshotSource() {
-    if (!this.hasVisibleSnapshotSource) {
+    if (!this.hasVisibleSnapshotSource || !this.visibleSnapshot) {
       return;
     }
 
     BlobHandler.cleanup();
 
-    const parsedDocument = new DOMParser().parseFromString(this.visibleSnapshot?.html?.src, 'text/html');
+    let html = '';
+
+    if (this.visibleSnapshot?.version === 3) {
+      let context = this.visibleCommand.context;
+      let commands = context.commands.filter((i) => i.type === 'command');
+      let index = commands.findIndex((i) => i.id === this.visibleCommand.id);
+
+      html = resolveSnapshotBacktrack(commands, index, this.visibleHighlightState === 'after');
+    } else if (this.visibleSnapshot?.version === 2) {
+      html = this.visibleSnapshot?.html?.src;
+    }
+
+    const parsedDocument = domParser.parseFromString(html, 'text/html');
     recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
 
     // TODO find a way to make Blob out of document directly because this is "document => string => blob"
     //      but if innerHTML is cached then it doesn't that big of a difference
-    return BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+    let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+    return url;
   }
 
   get hasVisibleSnapshotSource() {
-    return !!this.visibleSnapshot?.html?.src;
+    return true;
   }
 
   get visibleHasBefore() {
