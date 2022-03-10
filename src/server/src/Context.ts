@@ -5,6 +5,7 @@ import Snapshots, { ICommand } from './Snapshots';
 import * as Utils from './Utils';
 import { Puth } from '../Server';
 import PuthContextPlugin from './PuthContextPlugin';
+import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
 import { Browser, Page, HTTPRequest, HTTPResponse, Target } from 'puppeteer';
 import * as mitt from 'mitt';
 
@@ -383,7 +384,7 @@ class Context extends Generic {
 
       storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.getId()}.puth`);
 
-      await writeFile(storagePath, encode(Snapshots.getAllCachedItemsFrom(this)));
+      await writeFile(storagePath, encode(Snapshots.getAllCachedItemsFrom(this), { extensionCodec: PUTH_EXTENSION_CODEC }));
     }
   }
 
