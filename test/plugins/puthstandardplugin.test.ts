@@ -1,22 +1,23 @@
 import * as assert from 'assert';
 import PuthStandardPlugin from '../../src/server/src/plugins/PuthStandardPlugin';
 import { LocalPuthClient } from '../../src';
-import { RemotePuthClient } from '../../src';
 
-async function puthContextBinder(mochaContext) {
+export async function puthContextBinder(mochaContext) {
   mochaContext.remote = new LocalPuthClient({ silent: true });
   await mochaContext.remote.getPuth().use(PuthStandardPlugin);
 
-  mochaContext.remote = new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:4000');
+  mochaContext.remote.setAssertionHandler((assertion) => {
+    if (!assertion.result) {
+      assert.fail(assertion.message);
+    }
+  });
 
   mochaContext.context = await mochaContext.remote.contextCreate({
     snapshot: true,
     track: ['commands', 'console', 'network'],
   });
   mochaContext.browser = await mochaContext.context.createBrowser();
-  // mochaContext.browser = await mochaContext.context.connectBrowser({
-  //   browserWSEndpoint: 'ws://127.0.0.1:41003/devtools/browser/78d5c8ba-ad3d-4907-813f-e24316be0f80',
-  // });
+
   mochaContext.page = (await mochaContext.browser.pages())[0];
   mochaContext.puthAssertStrictEqual = async (handle1, handle2) => {
     let response = await mochaContext.context.assertStrictEqual(

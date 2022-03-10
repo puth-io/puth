@@ -1,13 +1,10 @@
 import * as assert from 'assert';
-
-import { LocalPuthClient, RemotePuthClient } from '../../src';
 import PuthStandardPlugin from '../../src/server/src/plugins/PuthStandardPlugin';
+import { LocalPuthClient } from '../../src';
 
-async function puthContextBinder(mochaContext) {
-  mochaContext.remote = new LocalPuthClient();
+export async function puthContextBinder(mochaContext) {
+  mochaContext.remote = new LocalPuthClient({ silent: true });
   await mochaContext.remote.getPuth().use(PuthStandardPlugin);
-
-  // mochaContext.remote = new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:4000');
 
   mochaContext.remote.setAssertionHandler((assertion) => {
     if (!assertion.result) {
@@ -20,9 +17,7 @@ async function puthContextBinder(mochaContext) {
     track: ['commands', 'console', 'network'],
   });
   mochaContext.browser = await mochaContext.context.createBrowser();
-  // mochaContext.browser = await mochaContext.context.connectBrowser({
-  //   browserWSEndpoint: 'ws://127.0.0.1:41003/devtools/browser/78d5c8ba-ad3d-4907-813f-e24316be0f80',
-  // });
+
   mochaContext.page = (await mochaContext.browser.pages())[0];
   mochaContext.puthAssertStrictEqual = async (handle1, handle2) => {
     let response = await mochaContext.context.assertStrictEqual(
@@ -46,20 +41,20 @@ async function puthContextBinder(mochaContext) {
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-describe('Actions', function () {
-  beforeEach(async function () {
-    this.timeout(5000);
+describe('Actions', function() {
+  beforeEach(async function() {
+    this.timeout(10000);
     await puthContextBinder(this);
 
-    await this.page.visit('https://example.cypress.io/commands/actions');
+    await this.page.goto('https://playground.puth.dev/');
   });
 
   // https://on.cypress.io/interacting-with-elements
 
-  it('.type() - type into a DOM element', async function () {
+  it('.type() - type into a DOM element', async function() {
     // https://on.cypress.io/type
     await this.page
-      .get('.action-email')
+      .get('#actions-type input')
       .type('fake@email.com')
       .should('have.value', 'fake@email.com')
 
@@ -86,14 +81,13 @@ describe('Actions', function () {
     //   .should('have.value', 'disabled error checking');
   });
 
-  it('.focus() - focus on a DOM element', async function () {
+  it('.focus() - focus on a DOM element', async function() {
     // https://on.cypress.io/focus
-    await this.page
-      .get('.action-focus')
-      .focus()
-      .should('have.class', 'focus')
-      .prev()
-      .should('have.attr', 'style', 'color: orange;');
+    let el = await this.page.get('#actions-focus');
+
+    el.focus();
+
+    this.puthAssertStrictEqual(await this.page.focused(), el);
   });
 
   //
