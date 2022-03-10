@@ -387,7 +387,10 @@ class Context extends Generic {
 
       storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.getId()}.puth`);
 
-      await writeFile(storagePath, encode(Snapshots.getAllCachedItemsFrom(this), { extensionCodec: PUTH_EXTENSION_CODEC }));
+      await writeFile(
+        storagePath,
+        encode(Snapshots.getAllCachedItemsFrom(this), { extensionCodec: PUTH_EXTENSION_CODEC }),
+      );
     }
   }
 
