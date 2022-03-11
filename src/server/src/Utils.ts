@@ -19,9 +19,12 @@ export async function getAbsolutePath(on: any): Promise<[string, number][] | str
   }
 
   // Check if on is inside an iframe
-  if ((await on.contentFrame()) !== null) {
-    // TODO implemenet
-  }
+  //
+  // !!! IF ON = JsHandle, there is no contentFrame() function !!!
+  //
+  // if ((await on.contentFrame()) !== null) {
+  //   // TODO implemenet
+  // }
 
   return await on.evaluate((el) => {
     let stack: [string, number][] = [];
