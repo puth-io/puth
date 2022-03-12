@@ -1,3 +1,7 @@
+html {
+  font-size: 15px;
+}
+
 @import 'Misc/colors';
 @import '../../node_modules/bootstrap/scss/bootstrap';
 
@@ -68,6 +72,11 @@ input[type="checkbox"]:focus {
 
 .text-break-all {
   word-break: break-all;
+}
+
+.split {
+  color: #3f3f3f;
+  margin: 0 0.375rem;
 }
 
 // Dark color scheme

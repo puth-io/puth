@@ -66,15 +66,16 @@
     }
 
     .footer {
-        display: grid;
+        display: flex;
         grid-auto-flow: column;
-        justify-content: flex-end;
         grid-gap: 1rem;
-        padding: 0.125rem 0.5rem;
+        padding: 0 0.5rem;
 
         background: #1e1f23;
         border-left: 1px solid #393b3e;
         color: #787b81;
+
+        border-top: 1px solid #2c2c2e;
 
         .form-check-input:checked[type="checkbox"] {
             opacity: 0.75;
@@ -83,7 +84,7 @@
 
     .iframe-wrapper {
         border: solid $border-color;
-        border-width: 1px 0 1px 1px;
+        border-width: 1px 0 0 1px;
         background-color: #1d1f22;
 
         iframe {

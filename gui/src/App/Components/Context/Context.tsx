@@ -14,7 +14,7 @@ type ContextProps = {
 export const Context: FunctionComponent<ContextProps> = observer(({ context }) => {
   const [expanded, setExpanded] = useState(true);
   const toggleExpand = () => setExpanded(!expanded);
-  const pointer = expanded ? '\u25BE' : '\u25B8';
+  const pointer = expanded ? '\u25BE' : '\u25C2';
 
   let events = context.renderedEvents;
 
@@ -29,11 +29,11 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
       data-status={context?.test?.status ?? undefined}
     >
       <div className={'d-flex align-items-center p-2 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
-        <div>{pointer}</div>
-        <div className={'ms-2 flex-grow-1'}>
+        <div className={'flex-grow-1'}>
           <div className={'fw-bold'}>{context?.test?.name ?? 'Context'}</div>
           {context.group && <div className={'fw-light fs-small mt-1'}>{context.group}</div>}
         </div>
+        <div>{pointer}</div>
       </div>
 
       {expanded && (
@@ -53,8 +53,6 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
           </tbody>
         </table>
       )}
-
-      <div className={'fs-small fw-light text-secondary text-end mb-1 me-2'}>{context.id}</div>
     </div>
   );
 });
