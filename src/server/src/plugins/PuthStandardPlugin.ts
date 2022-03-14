@@ -100,6 +100,13 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
           return el.evaluateHandle(func);
         },
+        getEventListeners: async (el) => {
+          let t = await el._client.send('DOMDebugger.getEventListeners', {
+            objectId: el._remoteObject.objectId
+          });
+
+          return t?.listeners;
+        },
       },
     });
   }
