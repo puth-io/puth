@@ -269,10 +269,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   async clickAndWait(element, options, waitOptions) {
-    await Promise.all([
-      element?._page.waitForNavigation(waitOptions),
-      element.click(options),
-    ]);
+    await Promise.all([element?._page.waitForNavigation(waitOptions), element.click(options)]);
   }
 
   async evaluate(page, func) {
