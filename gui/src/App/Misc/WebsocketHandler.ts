@@ -61,6 +61,8 @@ class WebsocketHandlerSingleton {
   private connected: boolean = false;
   private uri: string | undefined;
 
+  private totalBytesReceived: number = 0;
+
   private contexts = new Map<string, ContextStore>();
 
   constructor() {
@@ -122,6 +124,8 @@ class WebsocketHandlerSingleton {
   @action
   receivedBinaryData(binary: ArrayBuffer, options = null) {
     pMark('packet.received');
+
+    this.totalBytesReceived += binary.byteLength;
 
     let dateBeforeParse = Date.now();
 
@@ -271,6 +275,26 @@ class WebsocketHandlerSingleton {
 
   getUri() {
     return this.uri;
+  }
+
+  getTotalBytesReceived() {
+    return this.totalBytesReceived;
+  }
+
+  getMetrics() {
+    let metrics = {
+      contexts: this.contexts.size,
+      events: 0,
+    };
+
+    this.contexts.forEach((ctx) => {
+      metrics.events += ctx.commands.length;
+      metrics.events += ctx.logs.length;
+      metrics.events += ctx.requests.length;
+      metrics.events += ctx.responses.length;
+    });
+
+    return metrics;
   }
 
   clear() {
