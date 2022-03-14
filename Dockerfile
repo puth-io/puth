@@ -11,11 +11,8 @@ RUN npm run image:install && \
 
 FROM node:14
 
-RUN echo "deb http://mirror.de.leaseweb.net/debian/ stretch main" > /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian stretch-updates main" >> /etc/apt/sources.list
-
 RUN apt-get update && \
+    apt-get clean && \
     apt-get install -y ca-certificates \
         fonts-liberation \
         libappindicator3-1 \
