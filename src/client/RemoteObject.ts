@@ -209,6 +209,8 @@ export function genericGet(on, context, representation, property) {
       return response.value.map((ro) => new MagicCustomObject(new RemoteObject(context, ro), { skip: true }));
     } else if (response?.type === 'GenericValue') {
       return response.value;
+    } else if (response?.type === 'GenericValues') {
+      return response.value;
     } else if (response?.type === 'PuthAssertion') {
       context.callAssertionHandler(response);
       // return response;
