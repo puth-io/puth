@@ -377,10 +377,6 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   url(element, options?) {
-    return retryFor(
-      this.getContext().getTimeout(options),
-      async () => await element.url(),
-      Expects.NotNull.test,
-    );
+    return retryFor(this.getContext().getTimeout(options), async () => await element.url(), Expects.NotNull.test);
   }
 }
