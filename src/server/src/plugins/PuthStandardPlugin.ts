@@ -94,6 +94,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
         evaluateHandle: async (el, func) => {
           if (typeof func === 'string') {
+            // tslint:disable-next-line:no-eval
             func = eval(func);
           }
 
