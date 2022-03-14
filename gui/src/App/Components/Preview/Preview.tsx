@@ -5,6 +5,7 @@ import './Preview.scss';
 import { loadHighlights } from '../Highlight';
 import { DebugStore, PreviewStore } from '../../../index';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
+import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   return (
@@ -33,10 +34,35 @@ const QuickNavigation = () => {
 
 const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>);
 
-const PreviewFooter = observer(() => {
+const Split = () => <span className={'split'}> | </span>;
+
+const FooterMetrics = observer(() => {
+  let { contexts, events } = WebsocketHandler.getMetrics();
+
+  let bytesReceived = (WebsocketHandler.getTotalBytesReceived() / 1000 / 1000).toFixed(2);
+
+  return (
+    <div>
+      {`${contexts} contexts`}
+      <Split />
+      {`${events} events`}
+      <Split />
+      {`${bytesReceived} MB received`}
+    </div>
+  );
+});
+
+export const PreviewFooterContextInfo = observer(() => {
+  return (
+    <div className={'footer'}>{PreviewStore.activeContext && `Context ID: ${PreviewStore.activeContext?.id}`}</div>
+  );
+});
+
+export const PreviewFooter = observer(() => {
   return (
     <div className={'footer'}>
-      <div>
+      <FooterMetrics />
+      <div className={'ml-auto'}>
         <input
           type="checkbox"
           className="form-check-input me-2"
@@ -194,6 +220,7 @@ export const Preview = observer(() => {
         </div>
       </div>
 
+      <PreviewFooterContextInfo />
       <PreviewFooter />
     </div>
   );
