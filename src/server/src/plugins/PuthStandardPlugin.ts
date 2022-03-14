@@ -61,6 +61,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           return true;
         },
         _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
+        url: this.url,
       },
       ElementHandle: {
         get: this.get,
@@ -376,5 +377,13 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     }
 
     return Assertion(assertion, actual, expected, test, message);
+  }
+
+  url(element, options?) {
+    return retryFor(
+      this.getContext().getTimeout(options),
+      async () => await element.url(),
+      Expects.NotNull.test,
+    );
   }
 }
