@@ -7,13 +7,19 @@ export async function getAbsolutePaths(on: any): Promise<[[string, number][] | s
 }
 
 export async function getAbsolutePath(on: any): Promise<[string, number][] | string> {
-  if (resolveConstructorName(on) === 'Page') {
+  let onType = resolveConstructorName(on);
+
+  if (onType === 'Page') {
     return 'Page';
   }
+
+  if (onType === 'Frame') {
+    return 'Frame';
+  }
+
   if (
-    resolveConstructorName(on) !== 'ElementHandle' &&
-    resolveConstructorName(on) !== 'JSHandle' &&
-    resolveConstructorName(on) !== 'Frame'
+    onType !== 'ElementHandle' &&
+    onType !== 'JSHandle'
   ) {
     return 'Unknown';
   }
