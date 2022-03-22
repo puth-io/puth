@@ -17,10 +17,7 @@ export async function getAbsolutePath(on: any): Promise<[string, number][] | str
     return 'Frame';
   }
 
-  if (
-    onType !== 'ElementHandle' &&
-    onType !== 'JSHandle'
-  ) {
+  if (onType !== 'ElementHandle' && onType !== 'JSHandle') {
     return 'Unknown';
   }
 
