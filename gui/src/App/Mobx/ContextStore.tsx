@@ -1,13 +1,16 @@
-import { makeAutoObservable, observable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 
 export default class ContextStore {
-  id: string;
-  commands: any[] = [];
-  logs: any[] = [];
-  requests: any[] = [];
-  responses: any[] = [];
-  created = Date.now();
+  id;
+
+  commands = [];
+  logs = [];
+  requests = [];
+  responses = [];
+  exceptions = [];
+
+  group: string = '';
   test: {
     name: string;
     status: undefined | 'failed' | 'success';
@@ -15,15 +18,31 @@ export default class ContextStore {
     name: '',
     status: undefined,
   };
-  group: string = '';
-  options: any[] = [];
-  capabilities: any[] = [];
-  createdAt: number | undefined;
 
-  activeTab: string = 'exceptions';
+  options: {
+    [key: string]: any;
+  };
+  capabilities: {
+    [key: string]: boolean;
+  };
 
-  constructor(id: string) {
+  createdAt: number;
+  created = Date.now();
+
+  constructor(
+    id: string,
+    options: { [key: string]: any },
+    test: { name: string; status: 'failed' | 'success' | undefined },
+    group: string,
+    capabilities: { [key: string]: boolean },
+    createdAt: number,
+  ) {
     this.id = id;
+    this.options = options;
+    this.test = test;
+    this.group = group;
+    this.capabilities = capabilities;
+    this.createdAt = createdAt;
 
     makeAutoObservable(this, {});
   }
@@ -34,8 +53,13 @@ export default class ContextStore {
     };
   }
 
+  get hasDetails() {
+    return this.exceptions.length > 0;
+  }
+
   getRequestFilter() {
-    return (request: any) => request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
+    return (request: { status: string; response: { status: number } }) =>
+      request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
   }
 
   get renderedEvents() {

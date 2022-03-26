@@ -1,13 +1,13 @@
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef, useState } from 'react';
-import { calculateIframeSize, useForceUpdatePreview } from '../../Misc/Util';
+import { calculateIframeSize, debounce, throttle, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
-import { DebugStore, PreviewStore } from '../../../main';
+import { DebugStore, Events, PreviewStore } from '../../../main';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
-import { Resizable } from 're-resizable';
 import Code from '../Code/Code';
+import { ContextDetails } from '../ContextDetails/ContextDetails';
 
 // @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
@@ -60,7 +60,7 @@ export const Files = ({ files }) =>
   files.map((file, idx) => (
     <div key={idx}>
       <div className={'footer'}>{file.path}</div>
-      <Code code={file.content} language={'php'} lineNumbers />
+      <Code code={file.content} language={'php'} lineNumbers={1 + file?.offset ?? 0} />
     </div>
   ));
 
@@ -80,10 +80,13 @@ export const Exception = ({ exception }) => {
   let [active, setActive] = useState('message');
 
   // Calculate previewed lines
-  let lines = files.find((iter) => iter.path === file)?.content?.split('\n');
+  let defaultFile = files.find((iter) => iter.path === file);
+  let lines = defaultFile?.content?.split('\n');
 
-  let previewStart = line - 5;
-  let previewEnd = line + 4;
+  let lineOffset = line - (defaultFile?.offset ?? 0);
+
+  let previewStart = lineOffset - 5;
+  let previewEnd = lineOffset + 5;
   previewStart = previewStart < 0 ? 0 : previewStart;
   previewEnd = previewEnd >= lines ? lines : previewEnd;
 
@@ -120,7 +123,12 @@ export const Exception = ({ exception }) => {
         {active === 'message' && (
           <div className={'border-top border-default p-2'}>
             <Code language={'log'}>{message}</Code>
-            <Code code={preview.join('\n')} language={'php'} lineNumbers={previewStart + 1} highlight={line} />
+            <Code
+              code={preview.join('\n')}
+              language={'php'}
+              lineNumbers={previewStart + (defaultFile?.offset ?? 0) + 1}
+              highlight={line}
+            />
             <Trace trace={trace} />
           </div>
         )}
@@ -129,44 +137,6 @@ export const Exception = ({ exception }) => {
     </>
   );
 };
-
-export const PreviewFooterContextInfo = observer(() => {
-  const forceUpdatePreview = useForceUpdatePreview();
-
-  if (!PreviewStore.activeContext) {
-    return <></>;
-  }
-
-  let hasExceptions = PreviewStore.activeContext?.exceptions?.length > 0;
-
-  let tabsEnabled = hasExceptions;
-
-  return (
-    <Resizable
-      className={'d-flex flex-column border-left border-default bg-dark-5'}
-      defaultSize={{
-        height: tabsEnabled ? 400 : 23,
-        width: '100%',
-      }}
-      minHeight={23}
-      enable={{ top: true }}
-      onResizeStop={forceUpdatePreview}
-    >
-      <div className={'footer'}>
-        <div className={'tab-menu'}>{hasExceptions && <div className={'tab-button active'}>Exceptions</div>}</div>
-        <div className={'ml-auto'}>{PreviewStore.activeContext && `Context: ${PreviewStore.activeContext?.id}`}</div>
-      </div>
-      {tabsEnabled && (
-        <div className={'d-flex flex-column border-default tab-content min-h-0'}>
-          {PreviewStore.activeContext?.activeTab === 'exceptions' &&
-            PreviewStore.activeContext?.exceptions.map((exception, idx) => (
-              <Exception key={`${PreviewStore.activeContext.id}-${idx}`} exception={exception} />
-            ))}
-        </div>
-      )}
-    </Resizable>
-  );
-});
 
 export const PreviewFooter = observer(() => {
   return (
@@ -217,13 +187,16 @@ export const Preview = observer(() => {
   const iframeRef = useRef<any>(null);
   const iframeContainerRef = useRef(null);
 
+  const handleResize = debounce(forceUpdatePreview);
+
   // Handle window resize because preview iframe should scale to the minimum available space.
   useEffect(() => {
-    let handleResize = () => forceUpdatePreview();
     window.addEventListener('resize', handleResize);
+    Events.on('layout:resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      Events.off('layout:resize', handleResize);
     };
   }, []);
 
@@ -298,7 +271,10 @@ export const Preview = observer(() => {
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex iframe-wrapper bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
+      <div
+        className={'d-flex iframe-wrapper bg-striped pb-3 position-relative'}
+        style={{ flex: 1, overflow: 'hidden' }}
+      >
         <div
           ref={iframeContainerRef}
           style={{
@@ -325,12 +301,12 @@ export const Preview = observer(() => {
               visibility: !html ? 'hidden' : 'visible',
             }}
           />
-          <PreviewOverlay />
           {!html && <div className={'no-selected-preview'}>No preview selected</div>}
         </div>
+        <PreviewOverlay />
       </div>
 
-      <PreviewFooterContextInfo />
+      <ContextDetails />
       <PreviewFooter />
     </div>
   );

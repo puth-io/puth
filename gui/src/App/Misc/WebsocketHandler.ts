@@ -35,6 +35,7 @@ export type IContext = {
   responses: IResponse[];
   exceptions: any;
   created: number;
+  hasDetails: boolean;
   activeTab: string;
 };
 
@@ -231,12 +232,9 @@ class WebsocketHandlerSingleton {
   }
 
   private addContext(response: any) {
-    let context = this.getContext(response.id);
-    context.test = response.test;
-    context.group = response.group;
-    context.options = response.options;
-    context.capabilities = response.capabilities;
-    context.createdAt = response.createdAt;
+    let { id, options, test, group, capabilities, createdAt } = response;
+
+    this.contexts.set(id, new ContextStore(id, options, test, group, capabilities, createdAt));
   }
 
   private addTest(response: any) {
@@ -265,7 +263,7 @@ class WebsocketHandlerSingleton {
 
   getContext(id: string): ContextStore {
     if (!this.contexts.has(id)) {
-      this.contexts.set(id, new ContextStore(id));
+      throw new Error('No context found with given id!');
     }
 
     // @ts-ignore

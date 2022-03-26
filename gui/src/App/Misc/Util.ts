@@ -294,3 +294,35 @@ export function resolveSnapshotBacktrack(commands, index, snapshotStateAfter = f
   // return diff.applyPatch(value, snapshot.data.diff);
   return DMP.patch_apply(snapshot.data.diff, value)[0];
 }
+
+export function throttle(func, delay = 250) {
+  let inProgress = false;
+
+  return (...args) => {
+    if (inProgress) {
+      return;
+    }
+
+    inProgress = true;
+
+    setTimeout(() => {
+      func(...args); // Consider moving this line before the set timeout if you want the very first one to be immediate
+      inProgress = false;
+    }, delay);
+  };
+}
+
+export function debounce(func, delay = 250) {
+  let timeout;
+
+  return (...args) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(() => {
+      func(...args);
+      timeout = null;
+    }, delay);
+  };
+}
