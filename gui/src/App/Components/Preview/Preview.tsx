@@ -7,13 +7,7 @@ import { DebugStore, PreviewStore } from '../../../main';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { Resizable } from 're-resizable';
-
-import prism from 'prismjs';
-import 'prismjs/components/prism-markup-templating';
-import 'prismjs/components/prism-php';
-import 'prismjs/plugins/line-numbers/prism-line-numbers';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.min.css';
-import 'prismjs/themes/prism-tomorrow.min.css';
+import Code from '../Code/Code';
 
 // @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
@@ -62,31 +56,11 @@ const FooterMetrics = observer(() => {
   );
 });
 
-export default function Code({ code }) {
-  let ref = useRef();
-
-  useEffect(() => {
-    if (ref.current) {
-      prism.highlightElement(ref.current);
-    }
-  }, [ref.current]);
-
-  let language = 'php';
-
-  return (
-    <pre className={`language-${language}`}>
-      <code ref={ref} className={`language-${language} line-numbers`}>
-        {code}
-      </code>
-    </pre>
-  );
-}
-
 export const Files = ({ files }) =>
   files.map((file, idx) => (
     <div key={idx}>
       <div className={'footer'}>{file.path}</div>
-      <Code code={file.content} />
+      <Code code={file.content} language={'php'} lineNumbers />
     </div>
   ));
 
@@ -94,12 +68,8 @@ export const SPACE = <>&nbsp;</>;
 
 export const Trace = ({ trace }) => {
   return (
-    <div className={'border-top border-default p-2'}>
-      {trace.map((frame, idx) => (
-        <div key={idx}>
-          {frame.file}:{frame.line}
-        </div>
-      ))}
+    <div className={'border-top border-default'}>
+      <Code code={trace.map((frame) => frame.file + ':' + frame.line + '\n')} language={'log'} />
     </div>
   );
 };
@@ -107,8 +77,25 @@ export const Trace = ({ trace }) => {
 export const Exception = ({ exception }) => {
   let { runner, origin, lang } = exception.data;
   let { code, file, files, line, message, trace } = exception.data.exception;
-
   let [active, setActive] = useState('message');
+
+  // Calculate previewed lines
+  let lines = files.find((iter) => iter.path === file)?.content?.split('\n');
+
+  let previewStart = line - 5;
+  let previewEnd = line + 4;
+  previewStart = previewStart < 0 ? 0 : previewStart;
+  previewEnd = previewEnd >= lines ? lines : previewEnd;
+
+  let preview = lines.slice(previewStart, previewEnd);
+
+  // Cleanup puth exceptions
+  if (message.includes('[Puth StackTrace]') && message.includes('... (truncated)')) {
+    let split = message.split('[Puth StackTrace]');
+    let rest = split[1].split('... (truncated)');
+
+    message = [split[0], ...rest.slice(1)].join('').trim();
+  }
 
   return (
     <>
@@ -116,9 +103,6 @@ export const Exception = ({ exception }) => {
         <div className={'tab-menu'}>
           <div className={`tab-button ${active === 'message' && 'active'}`} onClick={(_) => setActive('message')}>
             Message
-          </div>
-          <div className={`tab-button ${active === 'trace' && 'active'}`} onClick={(_) => setActive('trace')}>
-            Trace
           </div>
           <div className={`tab-button ${active === 'files' && 'active'}`} onClick={(_) => setActive('files')}>
             Files
@@ -133,17 +117,14 @@ export const Exception = ({ exception }) => {
         </div>
       </div>
       <div className={'overflow-auto'}>
-        {active === 'trace' && <Trace trace={trace} />}
-        {active === 'files' && <Files files={files} />}
         {active === 'message' && (
           <div className={'border-top border-default p-2'}>
-            {message.split('\n').map((messageLine, idx) => (
-              <div key={idx}>{messageLine || SPACE}</div>
-            ))}
-            <br />
+            <Code language={'log'}>{message}</Code>
+            <Code code={preview.join('\n')} language={'php'} lineNumbers={previewStart + 1} highlight={line} />
             <Trace trace={trace} />
           </div>
         )}
+        {active === 'files' && <Files files={files} />}
       </div>
     </>
   );
@@ -179,7 +160,7 @@ export const PreviewFooterContextInfo = observer(() => {
         <div className={'d-flex flex-column border-default tab-content min-h-0'}>
           {PreviewStore.activeContext?.activeTab === 'exceptions' &&
             PreviewStore.activeContext?.exceptions.map((exception, idx) => (
-              <Exception key={idx} exception={exception} />
+              <Exception key={`${PreviewStore.activeContext.id}-${idx}`} exception={exception} />
             ))}
         </div>
       )}
