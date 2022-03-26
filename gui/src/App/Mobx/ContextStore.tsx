@@ -20,6 +20,8 @@ export default class ContextStore {
   capabilities: any[] = [];
   createdAt: number | undefined;
 
+  activeTab: string = 'exceptions';
+
   constructor(id: string) {
     this.id = id;
 

@@ -130,6 +130,7 @@ export class Puth {
 
   public async contextDestroy(packet) {
     let { id } = packet as { id: string };
+
     if (id in this.contexts) {
       await this.contexts[id].destroy(packet?.options);
       delete this.contexts[id];

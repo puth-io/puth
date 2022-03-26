@@ -33,7 +33,9 @@ export type IContext = {
   commands: ICommand[];
   logs: any[];
   responses: IResponse[];
+  exceptions: any;
   created: number;
+  activeTab: string;
 };
 
 type IResponse = {
@@ -190,6 +192,8 @@ class WebsocketHandlerSingleton {
       this.addTest(packet);
     } else if (packet.type === 'update') {
       this.addUpdate(packet);
+    } else if (packet.type === 'exception') {
+      this.addException(packet);
     }
   }
 
@@ -251,6 +255,12 @@ class WebsocketHandlerSingleton {
     } else if (update.specific === 'request.failed') {
       context.requests.find((r) => r.requestId === update.requestId).status = update.status;
     }
+  }
+
+  private addException(exception) {
+    let context = this.getContext(exception.context.id);
+    exception.context = context;
+    context.exceptions.push(exception);
   }
 
   getContext(id: string): ContextStore {

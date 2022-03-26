@@ -366,6 +366,16 @@ class Context extends Generic {
     }
   }
 
+  exception(exception) {
+    if (this.shouldSnapshot()) {
+      Snapshots.pushToCache(this, {
+        type: 'exception',
+        context: this.serialize(),
+        data: exception,
+      });
+    }
+  }
+
   testSuccess() {
     this.options.test.status = 'success';
 

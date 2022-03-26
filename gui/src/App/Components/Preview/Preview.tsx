@@ -1,11 +1,15 @@
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { calculateIframeSize, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
 import { DebugStore, PreviewStore } from '../../../main';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
+import { Resizable } from 're-resizable';
+
+import prism from 'prismjs';
+import 'prismjs/themes/prism-tomorrow.css';
 
 // @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
@@ -54,15 +58,134 @@ const FooterMetrics = observer(() => {
   );
 });
 
-export const PreviewFooterContextInfo = observer(() => {
+export default function Code({ code }) {
+  // useEffect(() => {
+  //   console.log('useEffect');
+  //   if (ref.current) {
+  //     console.log('useEffect set current', ref.current);
+  //     prism.highlightElement(ref.current);
+  //   }
+  // }, [ref.current]);
+  //
+  let language = 'php';
+
   return (
-    <div className={'footer'}>{PreviewStore.activeContext && `Context ID: ${PreviewStore.activeContext?.id}`}</div>
+    <pre className={'line-numbers'}>
+      <code
+        className={`language-${language}`}
+        dangerouslySetInnerHTML={{ __html: prism.highlight(code, prism.languages.plain, 'plain') }}
+      />
+    </pre>
+  );
+}
+
+export const Files = ({ files }) =>
+  files.map((file, idx) => (
+    <div key={idx}>
+      <div className={'footer'}>{file.path}</div>
+      <Code code={file.content} />
+      <div className={'p-2'}> {file.content}</div>
+    </div>
+  ));
+
+export const SPACE = <>&nbsp;</>;
+
+export const Trace = ({ trace }) => {
+  return (
+    <div className={'border-top border-default p-2'}>
+      {trace.map((frame, idx) => (
+        <div key={idx}>
+          {frame.file}:{frame.line}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const Exception = ({ exception }) => {
+  let { runner, origin, lang } = exception.data;
+  let { code, file, files, line, message, trace } = exception.data.exception;
+
+  let [active, setActive] = useState('message');
+
+  return (
+    <>
+      <div className={'footer'}>
+        <div className={'tab-menu'}>
+          <div className={`tab-button ${active === 'message' && 'active'}`} onClick={(_) => setActive('message')}>
+            Message
+          </div>
+          <div className={`tab-button ${active === 'trace' && 'active'}`} onClick={(_) => setActive('trace')}>
+            Trace
+          </div>
+          <div className={`tab-button ${active === 'files' && 'active'}`} onClick={(_) => setActive('files')}>
+            Files
+          </div>
+        </div>
+        <div className={'ml-auto'}>
+          {`Runner: ${runner}`}
+          <Split />
+          {`Origin: ${origin}`}
+          <Split />
+          {`Language: ${lang}`}
+        </div>
+      </div>
+      <div className={'overflow-auto'}>
+        {active === 'trace' && <Trace trace={trace} />}
+        {active === 'files' && <Files files={files} />}
+        {active === 'message' && (
+          <div className={'border-top border-default p-2'}>
+            {message.split('\n').map((messageLine, idx) => (
+              <div key={idx}>{messageLine || SPACE}</div>
+            ))}
+            <br />
+            <Trace trace={trace} />
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+export const PreviewFooterContextInfo = observer(() => {
+  if (!PreviewStore.activeContext) {
+    return <></>;
+  }
+
+  let tabsEnabled = !!PreviewStore.activeContext?.exceptions;
+
+  return (
+    <Resizable
+      className={'d-flex flex-column border-left border-default'}
+      defaultSize={{
+        height: tabsEnabled ? 400 : 0,
+        width: '100%',
+      }}
+      minHeight={23}
+      enable={{ top: true }}
+    >
+      <div className={'footer'}>
+        <div className={'tab-menu'}>
+          {PreviewStore.activeContext?.exceptions && <div className={'tab-button active'}>Exceptions</div>}
+        </div>
+
+        <div className={'ml-auto'}>{PreviewStore.activeContext && `Context: ${PreviewStore.activeContext?.id}`}</div>
+      </div>
+      {tabsEnabled && (
+        <div className={'d-flex flex-column border-default tab-content min-h-0'}>
+          {PreviewStore.activeContext?.activeTab === 'exceptions' &&
+            PreviewStore.activeContext?.exceptions.map((exception, idx) => (
+              <Exception key={idx} exception={exception} />
+            ))}
+        </div>
+      )}
+    </Resizable>
   );
 });
 
 export const PreviewFooter = observer(() => {
   return (
-    <div className={'footer'}>
+    <div className={'footer border-left border-default z-10'}>
       <FooterMetrics />
       <div className={'ml-auto'}>
         <input
