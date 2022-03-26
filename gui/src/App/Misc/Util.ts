@@ -6,11 +6,11 @@ import { ICommand } from '../Components/Command/Command';
 
 export const DMP = new diff_match_patch();
 
-export function pMark(name) {
+export function pMark(name: string) {
   performance.mark(name);
 }
 
-export function pMeasure(name, startMark) {
+export function pMeasure(name: string, startMark: string) {
   performance.mark(name);
   performance.measure(name, startMark);
 }

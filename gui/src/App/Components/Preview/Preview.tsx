@@ -9,7 +9,11 @@ import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { Resizable } from 're-resizable';
 
 import prism from 'prismjs';
-import 'prismjs/themes/prism-tomorrow.css';
+import 'prismjs/components/prism-markup-templating';
+import 'prismjs/components/prism-php';
+import 'prismjs/plugins/line-numbers/prism-line-numbers';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.min.css';
+import 'prismjs/themes/prism-tomorrow.min.css';
 
 // @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
@@ -59,22 +63,21 @@ const FooterMetrics = observer(() => {
 });
 
 export default function Code({ code }) {
-  // useEffect(() => {
-  //   console.log('useEffect');
-  //   if (ref.current) {
-  //     console.log('useEffect set current', ref.current);
-  //     prism.highlightElement(ref.current);
-  //   }
-  // }, [ref.current]);
-  //
+  let ref = useRef();
+
+  useEffect(() => {
+    if (ref.current) {
+      prism.highlightElement(ref.current);
+    }
+  }, [ref.current]);
+
   let language = 'php';
 
   return (
-    <pre className={'line-numbers p-2'}>
-      <code
-        className={`language-${language}`}
-        dangerouslySetInnerHTML={{ __html: prism.highlight(code, prism.languages.plain, 'plain') }}
-      />
+    <pre className={`language-${language}`}>
+      <code ref={ref} className={`language-${language} line-numbers`}>
+        {code}
+      </code>
     </pre>
   );
 }
