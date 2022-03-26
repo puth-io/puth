@@ -70,7 +70,7 @@ export default function Code({ code }) {
   let language = 'php';
 
   return (
-    <pre className={'line-numbers'}>
+    <pre className={'line-numbers p-2'}>
       <code
         className={`language-${language}`}
         dangerouslySetInnerHTML={{ __html: prism.highlight(code, prism.languages.plain, 'plain') }}
@@ -84,7 +84,6 @@ export const Files = ({ files }) =>
     <div key={idx}>
       <div className={'footer'}>{file.path}</div>
       <Code code={file.content} />
-      <div className={'p-2'}> {file.content}</div>
     </div>
   ));
 
@@ -123,9 +122,9 @@ export const Exception = ({ exception }) => {
           </div>
         </div>
         <div className={'ml-auto'}>
-          {`Runner: ${runner}`}
-          <Split />
           {`Origin: ${origin}`}
+          <Split />
+          {`Runner: ${runner}`}
           <Split />
           {`Language: ${lang}`}
         </div>
@@ -148,27 +147,29 @@ export const Exception = ({ exception }) => {
 };
 
 export const PreviewFooterContextInfo = observer(() => {
+  const forceUpdatePreview = useForceUpdatePreview();
+
   if (!PreviewStore.activeContext) {
     return <></>;
   }
 
-  let tabsEnabled = !!PreviewStore.activeContext?.exceptions;
+  let hasExceptions = PreviewStore.activeContext?.exceptions?.length > 0;
+
+  let tabsEnabled = hasExceptions;
 
   return (
     <Resizable
-      className={'d-flex flex-column border-left border-default'}
+      className={'d-flex flex-column border-left border-default bg-dark-5'}
       defaultSize={{
-        height: tabsEnabled ? 400 : 0,
+        height: tabsEnabled ? 400 : 23,
         width: '100%',
       }}
       minHeight={23}
       enable={{ top: true }}
+      onResizeStop={forceUpdatePreview}
     >
       <div className={'footer'}>
-        <div className={'tab-menu'}>
-          {PreviewStore.activeContext?.exceptions && <div className={'tab-button active'}>Exceptions</div>}
-        </div>
-
+        <div className={'tab-menu'}>{hasExceptions && <div className={'tab-button active'}>Exceptions</div>}</div>
         <div className={'ml-auto'}>{PreviewStore.activeContext && `Context: ${PreviewStore.activeContext?.id}`}</div>
       </div>
       {tabsEnabled && (
@@ -324,7 +325,6 @@ export const Preview = observer(() => {
         >
           <iframe
             title={'Preview'}
-            className={PreviewStore.darken ? 'darken' : ''}
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
@@ -341,6 +341,7 @@ export const Preview = observer(() => {
               visibility: !html ? 'hidden' : 'visible',
             }}
           />
+          <PreviewOverlay />
           {!html && <div className={'no-selected-preview'}>No preview selected</div>}
         </div>
       </div>
