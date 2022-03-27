@@ -1,5 +1,5 @@
 import React from 'react';
-import { WebsocketHandler } from '../Misc/WebsocketHandler';
+import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 import './Header.scss';
 

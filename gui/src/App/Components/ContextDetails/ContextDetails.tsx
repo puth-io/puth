@@ -4,11 +4,10 @@ import { observer } from 'mobx-react-lite';
 import { useForceUpdatePreview } from '../../Misc/Util';
 import { Events, PreviewStore } from '../../../main';
 import { Resizable } from 're-resizable';
-import { Exception } from '../Preview/Preview';
+import { Exception } from '../Exception/Exception';
 
-const ExceptionsTab = ({ exceptions, contextId }) => {
-  return exceptions.map((exception, idx) => <Exception key={`${contextId}-${idx}`} exception={exception} />);
-};
+const ExceptionsTab = ({ exceptions, contextId }) =>
+  exceptions.map((exception, idx) => <Exception key={`${contextId}-${idx}`} exception={exception} />);
 
 export const ContextDetails = observer(() => {
   const [activeTab, setActiveTab] = useState('exceptions');

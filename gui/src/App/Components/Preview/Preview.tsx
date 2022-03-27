@@ -38,7 +38,7 @@ const QuickNavigation = () => {
 
 const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>);
 
-const Split = () => <span className={'split'}> | </span>;
+export const Split = () => <span className={'split'}> | </span>;
 
 const FooterMetrics = observer(() => {
   let { contexts, events } = WebsocketHandler.getMetrics();
@@ -50,93 +50,15 @@ const FooterMetrics = observer(() => {
       {`${contexts} contexts`}
       <Split />
       {`${events} events`}
-      <Split />
-      {`${bytesReceived} MB received`}
     </div>
   );
 });
 
-export const Files = ({ files }) =>
-  files.map((file, idx) => (
-    <div key={idx}>
-      <div className={'footer'}>{file.path}</div>
-      <Code code={file.content} language={'php'} lineNumbers={1 + file?.offset ?? 0} />
-    </div>
-  ));
-
 export const SPACE = <>&nbsp;</>;
 
-export const Trace = ({ trace }) => {
-  return (
-    <div className={'border-top border-default'}>
-      <Code code={trace.map((frame) => frame.file + ':' + frame.line + '\n')} language={'log'} />
-    </div>
-  );
-};
-
-export const Exception = ({ exception }) => {
-  let { runner, origin, lang } = exception.data;
-  let { code, file, files, line, message, trace } = exception.data.exception;
-  let [active, setActive] = useState('message');
-
-  // Calculate previewed lines
-  let defaultFile = files.find((iter) => iter.path === file);
-  let lines = defaultFile?.content?.split('\n');
-
-  let lineOffset = line - (defaultFile?.offset ?? 0);
-
-  let previewStart = lineOffset - 5;
-  let previewEnd = lineOffset + 5;
-  previewStart = previewStart < 0 ? 0 : previewStart;
-  previewEnd = previewEnd >= lines ? lines : previewEnd;
-
-  let preview = lines.slice(previewStart, previewEnd);
-
-  // Cleanup puth exceptions
-  if (message.includes('[Puth StackTrace]') && message.includes('... (truncated)')) {
-    let split = message.split('[Puth StackTrace]');
-    let rest = split[1].split('... (truncated)');
-
-    message = [split[0], ...rest.slice(1)].join('').trim();
-  }
-
-  return (
-    <>
-      <div className={'footer'}>
-        <div className={'tab-menu'}>
-          <div className={`tab-button ${active === 'message' && 'active'}`} onClick={(_) => setActive('message')}>
-            Message
-          </div>
-          <div className={`tab-button ${active === 'files' && 'active'}`} onClick={(_) => setActive('files')}>
-            Files
-          </div>
-        </div>
-        <div className={'ml-auto'}>
-          {`Origin: ${origin}`}
-          <Split />
-          {`Runner: ${runner}`}
-          <Split />
-          {`Language: ${lang}`}
-        </div>
-      </div>
-      <div className={'overflow-auto'}>
-        {active === 'message' && (
-          <div className={'border-top border-default p-2'}>
-            <Code language={'log'}>{message}</Code>
-            <Code
-              code={preview.join('\n')}
-              language={'php'}
-              lineNumbers={previewStart + (defaultFile?.offset ?? 0) + 1}
-              highlight={line}
-            />
-            <Trace trace={trace} />
-          </div>
-        )}
-        {active === 'files' && <Files files={files} />}
-      </div>
-    </>
-  );
-};
+export const Trace = ({ trace }) => (
+  <Code code={trace.map((frame) => frame.file + ':' + frame.line + '\n')} language={'log'} />
+);
 
 export const PreviewFooter = observer(() => {
   return (
