@@ -107,7 +107,7 @@ class ${className} extends GenericObject {}`;
     }
 
     if (type.type === 'union') {
-      return type.types.map(t => transformType(t)).join('|');
+      return [... new Set(type.types.map(t => transformType(t)))].join('|');
     }
 
     if (type.type === 'intrinsic') {
@@ -228,7 +228,7 @@ class ${className} extends GenericObject {}`;
 
       let parameters = signature.parameters
         ? signature.parameters
-            // .filter((p) => p.kindString === 'Parameter')
+            .filter(parameter => parameter.name !== 'this')
             .map((parameter) => {
               let defaultNull = ' = null';
 
@@ -239,7 +239,7 @@ class ${className} extends GenericObject {}`;
               let optional = optionalOrRest ? '|null' : '';
               let typeTransformed;
 
-              if (parameter.name === 'awdawdawda') {
+              if (parameter.name === 'this') {
                 console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
                 console.log(parameter);
               }
