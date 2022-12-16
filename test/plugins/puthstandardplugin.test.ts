@@ -72,7 +72,7 @@ describe(`PuthStandardPlugin`, function () {
     });
 
     it('can clear element', async function () {
-      await this.page.prefersReducedMotion();
+      await this.page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
       let input = await this.page.$('#actions-clear').clear();
       assert.strictEqual(await input.value(), '');
     });
@@ -98,7 +98,7 @@ describe(`PuthStandardPlugin`, function () {
     });
 
     it('can clear element', async function () {
-      await this.page.prefersReducedMotion();
+      await this.page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
 
       let input = await this.page.$('#actions-type input').type('puth test verify').clear();
 
@@ -106,7 +106,7 @@ describe(`PuthStandardPlugin`, function () {
     });
 
     it('can click element', async function () {
-      await this.page.prefersReducedMotion();
+      await this.page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
       await this.page.$('#actions-click button').click();
       assert.strictEqual(await this.page.$('#actions-click-verify').innerText(), 'clicked button');
     });

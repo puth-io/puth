@@ -68,7 +68,7 @@ export function resolveConstructorName(object) {
 }
 
 export async function handleEqual(handle1, handle2) {
-  return await handle1._page.evaluate((h1, h2) => h1 === h2, handle1, handle2);
+  return await handle1.frame.page().evaluate((h1, h2) => h1 === h2, handle1, handle2);
 }
 
 /**

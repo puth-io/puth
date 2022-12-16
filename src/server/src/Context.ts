@@ -211,6 +211,7 @@ class Context extends Generic {
             id: v4(),
             type: 'request',
             context: this.serialize(),
+            // @ts-ignore
             requestId: request._requestId,
             time: Date.now(),
             isNavigationRequest: request.isNavigationRequest(),
@@ -231,6 +232,7 @@ class Context extends Generic {
             specific: 'request.failed',
             status: 'failed',
             context: this.serialize(),
+            // @ts-ignore
             requestId: request._requestId,
             time: Date.now(),
           });
@@ -243,6 +245,7 @@ class Context extends Generic {
             id: v4(),
             type: 'response',
             context: this.serialize(),
+            // @ts-ignore
             requestId: response.request()._requestId,
             time: {
               elapsed: Date.now() - this.createdAt,

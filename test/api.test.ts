@@ -61,7 +61,7 @@ function puthContextTests(env) {
     it('can call a function on context', async function () {
       let rep = await (await this.context.createBrowser()).getRepresentation();
       assert.containsAllKeys(rep, ['id', 'type']);
-      assert.strictEqual(rep?.represents, 'Browser');
+      assert.strictEqual(rep?.represents, 'CDPBrowser');
       assert.isFulfilled(this.context.destroy());
     });
 
@@ -88,7 +88,7 @@ function puthContextTests(env) {
 
         return assert.isRejected(
           this.page._getProperty('___delete_test'),
-          'Undefined: Property "___delete_test" not found on Page',
+          'Undefined: Property "___delete_test" not found on CDPPage',
         );
       });
     });
