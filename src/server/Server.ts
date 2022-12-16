@@ -1,8 +1,8 @@
 import * as path from 'path';
 
 import { fastify } from 'fastify';
-import fastifyWebsocket, { SocketStream } from 'fastify-websocket';
-import fastifyCors from 'fastify-cors';
+import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
+import fastifyCors from '@fastify/cors';
 
 import Context from './src/Context';
 import WebsocketConnections from './src/WebsocketConnections';
@@ -81,7 +81,7 @@ export class Puth {
     this.server = fastify({ logger: this.isDebug() });
     this.setupFastify(allowedOrigins);
 
-    await this.server.listen(port, address);
+    await this.server.listen({port, host: address});
 
     // TODO do smarter type check so we can remove @ts-ignore
     // and thank you typescript for having 4 major versions without interface type checking
@@ -150,7 +150,7 @@ export class Puth {
 
     // TODO do GUI and probably move to another place but without
     //      server, idk where the gui should be served from
-    this.server.register(require('fastify-static'), {
+    this.server.register(require('@fastify/static'), {
       root: path.join(__dirname, '../../static'),
       prefix: '/static',
     });
@@ -186,7 +186,7 @@ export class Puth {
 
     // delete context with puthId
     this.server.delete('/context', async (request, reply) => {
-      let destroyed = this.contextDestroy(request.body);
+      let destroyed: any = this.contextDestroy(request.body);
       return reply.code(destroyed ? 200 : 404).send();
     });
 

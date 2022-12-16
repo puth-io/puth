@@ -495,7 +495,7 @@ class Context extends Generic {
       this.shouldSnapshot(() => (command.time.took = Date.now() - command.time.started));
 
       return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
-    } catch (error) {
+    } catch (error: any) {
       if (this.shouldSnapshot()) {
         command.time.took = Date.now() - command.time.started;
 

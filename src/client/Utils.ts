@@ -2,7 +2,7 @@ export function magicClassMethods(classDef) {
   const classHandler = Object.create(null);
 
   classHandler.construct = (constructTarget, constructArgs, constructReceiver) => {
-    const instance = Reflect.construct(constructTarget, constructArgs, constructReceiver);
+    const instance: any = Reflect.construct(constructTarget, constructArgs, constructReceiver);
     const instanceHandler = Object.create(null);
 
     // __get()
