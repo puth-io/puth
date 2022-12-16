@@ -1,7 +1,8 @@
 const fs = require('fs');
 
 let typedoc = require('./src/test.json');
-// let typedoc = require('../node_modules/@types/puppeteer/index');
+
+let TypesNotFound = new Set();
 
 // let generateFilter = ['Browser'];
 let generateFilter = [
@@ -13,8 +14,8 @@ let generateFilter = [
     'EventEmitter',
     'Target',
     'FileChooser',
-    'Request',
-    'Response',
+    'HTTPRequest',
+    'HTTPResponse',
     'ElementHandle',
     'Metrics',
     // 'Buffer', // is a generic node type
@@ -26,7 +27,6 @@ let generateFilter = [
     'Mouse',
     'Touchscreen',
     'Tracing',
-    'Cookie',
 ];
 
 let languageMethodTranslations = {
@@ -37,6 +37,18 @@ let languageMethodTranslations = {
     '$eval': 'getEval',
     '$x': 'getX',
   },
+}
+
+function sanitize(text) {
+  return text.replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+}
+
+function makeCommentString(comment) {
+  return comment?.summary?.filter(i => ['text', 'code'].includes(i.kind))
+          .map(i => sanitize(i.text))
+          .join('')
+          .replaceAll('\r\n', ' ')
+      ?? '';
 }
 
 function translateMethodName(method, language) {
@@ -74,6 +86,10 @@ class ${className} extends GenericObject {}`;
   // }
 
   function transformType(type) {
+    if (type.type === 'intersection') {
+      return 'mixed';
+    }
+
     if (type.type === 'conditional') {
       return 'mixed';
     }
@@ -108,6 +124,10 @@ class ${className} extends GenericObject {}`;
         return 'mixed';
       }
 
+      if (type.name === 'boolean') {
+        return 'bool';
+      }
+
       if (type.name === 'any') {
         return 'mixed';
       }
@@ -130,6 +150,8 @@ class ${className} extends GenericObject {}`;
       }
 
       if (! generateFilter.includes(type.name)) {
+        TypesNotFound.add(type.name);
+
         return 'mixed';
       }
 
@@ -138,68 +160,69 @@ class ${className} extends GenericObject {}`;
   }
 
   let properties = def.children
-      .filter((e) => e.kindString === 'Property')
+      .filter((e) => e.kindString === 'Property' && ! e.flags?.isPrivate)
       .map((property) => {
         let type = transformType(property.type);
-
         let optional = property.flags?.isOptional ? '|null' : '';
+        let comment = makeCommentString(property?.comment);
 
-        return ` * @property ${type}${optional} $${property.name}`;
+        return ` * @property ${type}${optional} $${property.name.replace(/^]+|]+$/g, "").replace(/^\[+|\[+$/g, "")} ${comment}`;
       });
 
   let methods = def.children
-    .filter((e) => e.kindString === 'Method')
+    .filter((e) => e.kindString === 'Method' && ! e.flags?.isPrivate)
     .map((method) => {
       let signature = method.signatures[0];
+      let comment = makeCommentString(signature?.comment);
 
       function log(...rest) {
-        if (method.name === 'jsonValue') {
-          console.log(...rest);
-        }
+        // if (method.name === 'waitForFunction') {
+        //   console.log(...rest);
+        // }
       }
 
-      function resolveTypeToPhp(typeDef, isDef = false) {
-        log('resolveTypeToPhp', typeDef);
-
-        if (isDef && typeDef.kindString && typeDef.kindString === 'Interface') {
-          return typeDef.name;
-        }
-
-        if (isDef) {
-          if (typeDef.type) {
-            typeDef = typeDef.type;
-          } else {
-            return;
-          }
-        }
-
-        if (typeDef.types) {
-          return typeDef.types.map((type) => resolveTypeToPhp(type)).filter((t) => t)[0];
-        }
-
-        if (typeDef.type) {
-          if (typeDef.type === 'intrinsic') {
-            if (typeDef.name === 'any') {
-              return 'mixed';
-            }
-            if (typeDef.name === 'symbol') {
-              // Symbols are not supported
-              return undefined;
-            }
-            return typeDef.name;
-          }
-          if (typeDef.type === 'reflection') {
-            // Set function type to string because you can't easily transfrom php functions to js function
-            return 'string';
-          }
-          if (typeDef.type === 'array') {
-            return 'array';
-          }
-          if (typeDef.type === 'literal') {
-            return 'string';
-          }
-        }
-      }
+      // function resolveTypeToPhp(typeDef, isDef = false) {
+      //   log('resolveTypeToPhp', typeDef);
+      //
+      //   if (isDef && typeDef.kindString && typeDef.kindString === 'Interface') {
+      //     return typeDef.name;
+      //   }
+      //
+      //   if (isDef) {
+      //     if (typeDef.type) {
+      //       typeDef = typeDef.type;
+      //     } else {
+      //       return;
+      //     }
+      //   }
+      //
+      //   if (typeDef.types) {
+      //     return typeDef.types.map((type) => resolveTypeToPhp(type)).filter((t) => t)[0];
+      //   }
+      //
+      //   if (typeDef.type) {
+      //     if (typeDef.type === 'intrinsic') {
+      //       if (typeDef.name === 'any') {
+      //         return 'mixed';
+      //       }
+      //       if (typeDef.name === 'symbol') {
+      //         // Symbols are not supported
+      //         return undefined;
+      //       }
+      //       return typeDef.name;
+      //     }
+      //     if (typeDef.type === 'reflection') {
+      //       // Set function type to string because you can't easily transfrom php functions to js function
+      //       return 'string';
+      //     }
+      //     if (typeDef.type === 'array') {
+      //       return 'array';
+      //     }
+      //     if (typeDef.type === 'literal') {
+      //       return 'string';
+      //     }
+      //   }
+      // }
 
       log('signature', signature);
 
@@ -211,6 +234,9 @@ class ${className} extends GenericObject {}`;
 
               let typeDef = parameter.type;
               let type = typeDef.type;
+
+              let optionalOrRest = parameter.flags.isOptional || parameter.flags.isRest;
+              let optional = optionalOrRest ? '|null' : '';
               let typeTransformed;
 
               if (parameter.name === 'awdawdawda') {
@@ -219,28 +245,29 @@ class ${className} extends GenericObject {}`;
               }
               log('parameter', parameter, type);
 
-              if (type === 'reference') {
-                let refResovled = typedoc.children.find((c) => c.id === typeDef.id);
+              // if (type === 'reference') {
+              //   let refResovled = typedoc.children.find((c) => c.id === typeDef.id);
+              //
+              //   log('reference', parameter.name, typeDef.name, refResovled);
+              //
+              //   if (refResovled) {
+              //     if (isOptionsArray(refResovled)) {
+              //       typeTransformed = 'array';
+              //     } else {
+              //       // typeTransformed = resolveTypeToPhp(refResovled, true);
+              //       typeTransformed = transformType(refResovled);
+              //     }
+              //     log('reference', parameter.name, typeDef.name, isOptionsArray(refResovled));
+              //   } else {
+              //     typeTransformed = 'object';
+              //   }
+              // } else {
+                typeTransformed = transformType(typeDef);
+              // }
 
-                log('reference', parameter.name, typeDef.name, refResovled);
+              log('abc', typeDef, transformType(typeDef));
 
-                if (refResovled) {
-                  if (isOptionsArray(refResovled)) {
-                    typeTransformed = 'array';
-                  } else {
-                    typeTransformed = resolveTypeToPhp(refResovled, true);
-                  }
-                  log('reference', parameter.name, typeDef.name, isOptionsArray(refResovled));
-                } else {
-                  typeTransformed = 'object';
-                }
-              } else {
-                typeTransformed = resolveTypeToPhp(typeDef);
-              }
-
-              let showDefaultValue = !!parameter.flags.isOptional;
-
-              return `${typeTransformed} $${parameter.name}${showDefaultValue ? defaultNull : ''}`;
+              return `${typeTransformed}${optional} $${parameter.name}${optionalOrRest ? defaultNull : ''}`;
             })
         : [];
 
@@ -251,9 +278,10 @@ class ${className} extends GenericObject {}`;
           return '';
         }
 
-        if (method.name === 'failure') {
-          // console.log('promise', type.typeArguments[0]);
-          console.log('promise', type.types);
+        if (method.name === 'goto') {
+          console.log('promise', type.typeArguments[0]);
+          // console.log('promise', type.types);
+          // console.log('promise', type);
         }
 
         return transformType(type);
@@ -261,7 +289,7 @@ class ${className} extends GenericObject {}`;
 
       log('parameters', parameters);
 
-      return ` * @method ${methodType} ${translateMethodName(method.name, 'php')}(${parameters.join(', ')})`;
+      return ` * @method ${methodType} ${translateMethodName(method.name, 'php')}(${parameters.join(', ')}) ${comment}`;
     });
 
   // File generation
@@ -287,3 +315,5 @@ function isOptionsArray(def) {
   return def.children ? !def.children.find((c) => c.kindString === 'Method') : false;
   // return !def.children.find((c) => c.kindString === 'Method');
 }
+
+// console.log('Types not found', TypesNotFound);
