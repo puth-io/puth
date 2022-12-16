@@ -4,7 +4,44 @@ let typedoc = require('./src/test.json');
 // let typedoc = require('../node_modules/@types/puppeteer/index');
 
 // let generateFilter = ['Browser'];
-let generateFilter = ['Page', 'JSHandle'];
+let generateFilter = [
+    'Page',
+    'JSHandle',
+    'Browser',
+    'Viewport',
+    'Worker',
+    'EventEmitter',
+    'Target',
+    'FileChooser',
+    'Request',
+    'Response',
+    'ElementHandle',
+    'Metrics',
+    // 'Buffer', // is a generic node type
+    'Frame',
+    'BrowserContext',
+    'Accessibility',
+    'Coverage',
+    'Keyboard',
+    'Mouse',
+    'Touchscreen',
+    'Tracing',
+    'Cookie',
+];
+
+let languageMethodTranslations = {
+  php: {
+    '$': 'get',
+    '$$': 'getAll',
+    '$$eval': 'getAllEval',
+    '$eval': 'getEval',
+    '$x': 'getX',
+  },
+}
+
+function translateMethodName(method, language) {
+  return languageMethodTranslations?.[language]?.[method] ?? method;
+}
 
 let generateFor = typedoc.children.filter((e) => generateFilter.includes(e.name));
 
@@ -18,13 +55,13 @@ function createClassFor(def) {
 
   let start = `<?php
 
-namespace Puth\\FakeClasses;
+namespace Puth\\Objects;
 
 use Puth\\GenericObject;
 
 /**
  * Class ${className}
- * @package Puth\\FakeClasses
+ * @package Puth\\Objects
  *\n`;
 
   let end = `\n*/
@@ -32,13 +69,91 @@ class ${className} extends GenericObject {}`;
 
   let methodComments = [];
 
+  // if (className === 'Viewport') {
+  //   console.log(def);
+  // }
+
+  function transformType(type) {
+    if (type.type === 'conditional') {
+      return 'mixed';
+    }
+
+    if (type.type === 'reflection') {
+      return 'mixed';
+    }
+
+    if (type.type === 'literal') {
+      if (type.value === null) {
+        return 'null';
+      }
+
+      return 'mixed';
+    }
+
+    if (type.type === 'union') {
+      return type.types.map(t => transformType(t)).join('|');
+    }
+
+    if (type.type === 'intrinsic') {
+      // TODO decide if void function return self/$this
+      // if (type.name === 'void') {
+      //   return className;
+      // }
+
+      if (type.name === 'undefined') {
+        return 'null';
+      }
+
+      if (type.name === 'unknown') {
+        return 'mixed';
+      }
+
+      if (type.name === 'any') {
+        return 'mixed';
+      }
+
+      if (type.name === 'symbol') {
+        // Symbols are not supported
+        return undefined;
+      }
+
+      return type.name;
+    }
+
+    if (type.type === 'array') {
+      return transformType(type.elementType);
+    }
+
+    if (type.type === 'reference') {
+      if (type.name === 'Promise') {
+        return transformType(type.typeArguments[0]);
+      }
+
+      if (! generateFilter.includes(type.name)) {
+        return 'mixed';
+      }
+
+      return type.name;
+    }
+  }
+
+  let properties = def.children
+      .filter((e) => e.kindString === 'Property')
+      .map((property) => {
+        let type = transformType(property.type);
+
+        let optional = property.flags?.isOptional ? '|null' : '';
+
+        return ` * @property ${type}${optional} $${property.name}`;
+      });
+
   let methods = def.children
     .filter((e) => e.kindString === 'Method')
     .map((method) => {
       let signature = method.signatures[0];
 
       function log(...rest) {
-        if (method.name === 'awdawda') {
+        if (method.name === 'jsonValue') {
           console.log(...rest);
         }
       }
@@ -61,6 +176,7 @@ class ${className} extends GenericObject {}`;
         if (typeDef.types) {
           return typeDef.types.map((type) => resolveTypeToPhp(type)).filter((t) => t)[0];
         }
+
         if (typeDef.type) {
           if (typeDef.type === 'intrinsic') {
             if (typeDef.name === 'any') {
@@ -128,16 +244,43 @@ class ${className} extends GenericObject {}`;
             })
         : [];
 
+      let methodType = (function getMethodType(method) {
+        let type = method.type;
+
+        if (!type) {
+          return '';
+        }
+
+        if (method.name === 'failure') {
+          // console.log('promise', type.typeArguments[0]);
+          console.log('promise', type.types);
+        }
+
+        return transformType(type);
+      })(signature);
+
       log('parameters', parameters);
 
-      return ` * @method ${method.name}(${parameters.join(', ')})`;
+      return ` * @method ${methodType} ${translateMethodName(method.name, 'php')}(${parameters.join(', ')})`;
     });
 
-  let file = start + methods.join('\n') + end;
+  // File generation
+  let file = start;
 
-  // console.log(file);
+  file += properties.join('\n');
 
-  fs.writeFileSync('generated/php/' + className + '.php', file);
+  if (
+    properties.length > 0
+    && methods.length > 0
+  ) {
+    file += ' \n * \n';
+  }
+
+  file += methods.join('\n');
+
+  file += end;
+
+  fs.writeFileSync('generated/Objects/' + className + '.php', file);
 }
 
 function isOptionsArray(def) {
