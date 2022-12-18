@@ -80,5 +80,5 @@
     "puth": "./bin/puth.js"
   },
   "homepage": "https://puth.dev",
-  "license": "LGPL-3.0-only"
+  "license": "UNLICENSED"
 }

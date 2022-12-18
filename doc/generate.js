@@ -27,6 +27,7 @@ let generateFilter = [
     'Mouse',
     'Touchscreen',
     'Tracing',
+    // TODO 'Cookie',
 ];
 
 let languageMethodTranslations = {
