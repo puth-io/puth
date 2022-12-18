@@ -3,7 +3,7 @@
   "version": "0.3.6",
   "author": {
     "name": "Sebastian Uehlin",
-    "email": "uehlinse@gmail.com"
+    "email": "s.uehlin@proton.me"
   },
   "description": "Puth (Puppet-Theater) is a versatile browser test framework that builds on puppeteer.",
   "main": "lib/index.js",
