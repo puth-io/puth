@@ -81,8 +81,6 @@ use Puth\\GenericObject;
   let end = `\n*/
 class ${className} extends GenericObject {}`;
 
-  let methodComments = [];
-
   // if (className === 'Viewport') {
   //   console.log(def);
   // }
@@ -214,7 +212,7 @@ class ${className} extends GenericObject {}`;
       //       return typeDef.name;
       //     }
       //     if (typeDef.type === 'reflection') {
-      //       // Set function type to string because you can't easily transfrom php functions to js function
+      //       // Set function type to string because you can't easily transform php functions to js function
       //       return 'string';
       //     }
       //     if (typeDef.type === 'array') {
@@ -248,18 +246,18 @@ class ${className} extends GenericObject {}`;
               log('parameter', parameter, type);
 
               // if (type === 'reference') {
-              //   let refResovled = typedoc.children.find((c) => c.id === typeDef.id);
+              //   let refResolved = typedoc.children.find((c) => c.id === typeDef.id);
               //
-              //   log('reference', parameter.name, typeDef.name, refResovled);
+              //   log('reference', parameter.name, typeDef.name, refResolved);
               //
-              //   if (refResovled) {
-              //     if (isOptionsArray(refResovled)) {
+              //   if (refResolved) {
+              //     if (isOptionsArray(refResolved)) {
               //       typeTransformed = 'array';
               //     } else {
-              //       // typeTransformed = resolveTypeToPhp(refResovled, true);
-              //       typeTransformed = transformType(refResovled);
+              //       // typeTransformed = resolveTypeToPhp(refResolved, true);
+              //       typeTransformed = transformType(refResolved);
               //     }
-              //     log('reference', parameter.name, typeDef.name, isOptionsArray(refResovled));
+              //     log('reference', parameter.name, typeDef.name, isOptionsArray(refResolved));
               //   } else {
               //     typeTransformed = 'object';
               //   }
@@ -312,10 +310,3 @@ class ${className} extends GenericObject {}`;
 
   fs.writeFileSync('generated/Objects/' + className + '.php', file);
 }
-
-function isOptionsArray(def) {
-  return def.children ? !def.children.find((c) => c.kindString === 'Method') : false;
-  // return !def.children.find((c) => c.kindString === 'Method');
-}
-
-// console.log('Types not found', TypesNotFound);
