@@ -27,6 +27,7 @@ let generateFilter = [
     'Mouse',
     'Touchscreen',
     'Tracing',
+    'CDPBrowser',
     // TODO 'Cookie',
 ];
 
