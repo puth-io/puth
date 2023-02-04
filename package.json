@@ -64,12 +64,12 @@
     "daemon": "node src/server/daemon/daemon.js",
     "dev:client": "ts-node-dev --respawn --transpile-only src/dev/client.ts",
     "dev:server": "ts-node-dev --respawn --transpile-only src/scripts/local.ts",
-    "prepublishOnly": "npm run build && npm test && npm run lint && cd gui && npm run build",
-    "preversion": "npm run lint",
-    "version": "npm run format && git add -A src",
+    "prepublishOnly": "yarn run build && yarn test && yarn run lint && cd gui && yarn run build",
+    "preversion": "yarn run lint",
+    "version": "yarn run format && git add -A src",
     "postversion": "git push && git push --tags",
-    "image:install": "npm install && cd gui && npm install",
-    "image:build": "npm run build && cd gui && npm run build",
+    "image:install": "yarn install && cd gui && yarn install",
+    "image:build": "yarn run build && cd gui && yarn run build",
     "image:cleanup": "rm -rf src && rm -rf gui"
   },
   "repository": {
