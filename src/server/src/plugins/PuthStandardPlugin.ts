@@ -3,6 +3,7 @@ import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { Capability } from '../Context';
 import { capitalizeFirstLetter, retryFor } from '../Utils';
+import { ElementHandle } from 'puppeteer';
 
 export default class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -29,13 +30,13 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
           func: (puth, expected, actual) => PuthAssert.strictEqual(expected, actual),
         },
       },
-      Browser: {
+      CDPBrowser: {
         pages: async (browser, index?) => {
           let pages = browser.pages();
           return index != null ? (await pages)[index] : pages;
         },
       },
-      Page: {
+      CDPPage: {
         get: this.get,
         contains: {
           func: this.contains,
@@ -45,12 +46,12 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         evaluate: this.evaluate,
         evaluateRaw: this.evaluateRaw,
         visible: this.visible,
-        focused: async (e) => e.evaluateHandle('document.activeElement'),
         blur: this.blur,
         // @ts-ignore
         scrollTo: (el, ...options) => el.evaluate((o) => window.scrollTo(...o), options),
         window: (page) => page.evaluateHandle('window'),
         document: (page) => page.evaluateHandle('document'),
+        focused: async (el) => await el.evaluateHandle('document.activeElement'),
         prefersReducedMotion: async (el, value = 'reduce') => {
           await el.emulateMediaFeatures([
             {
@@ -89,7 +90,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         scrollIntoView: (el) => el._scrollIntoViewIfNeeded(),
         // @ts-ignore
         scrollTo: (el, ...options) =>
-          el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
+            el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
         innerText: async (el) => (await el.getProperty('innerText')).jsonValue(),
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
         evaluateHandle: async (el, func) => {
@@ -122,12 +123,14 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     cmd: 'Meta',
     ctrl: 'Control',
     selectall: async (element, options) => {
-      await element._page.keyboard.down('Control');
-      await element._page.keyboard.press('A', options);
+      let page = element.frame.page();
+
+      await page.keyboard.down('Control');
+      await page.keyboard.press('A', options);
       if (options?.delay) {
-        await element._page.waitForTimeout(options?.delay);
+        await page.waitForTimeout(options?.delay);
       }
-      await element._page.keyboard.up('Control');
+      await page.keyboard.up('Control');
     },
     // TODO moveToStart
     // TODO moveToEnd
@@ -153,7 +156,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         if (typeof key === 'function') {
           await key(element, options);
         } else {
-          await element._page.keyboard.down(key);
+          await element.frame.page().keyboard.down(key);
           release.push(key);
         }
       } else {
@@ -162,12 +165,12 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     }
 
     await Promise.all(
-      release.map(async (key) => {
-        if (options?.delay) {
-          await element._page.waitForTimeout(options?.delay);
-        }
-        await element._page.keyboard.up(key);
-      }),
+        release.map(async (key) => {
+          if (options?.delay) {
+            await element.frame.page().waitForTimeout(options?.delay);
+          }
+          await element.frame.page().keyboard.up(key);
+        }),
     );
   }
 
@@ -201,25 +204,25 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
   get(element, search, options?) {
     return retryFor(
-      this.getContext().getTimeout(options),
-      async (_) => await element.$(search),
-      (v) => v !== null,
+        this.getContext().getTimeout(options),
+        async (_) => await element.$(search),
+        (v) => v !== null,
     );
   }
 
   contains(element, search, options?) {
     return retryFor(
-      this.getContext().getTimeout(options),
-      async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
-      (v) => v.length > 0,
+        this.getContext().getTimeout(options),
+        async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
+        (v) => v.length > 0,
     );
   }
 
   async $(element, selector, options?) {
     return retryFor(
-      this.getContext().getTimeout(options),
-      async (_) => await element.$(selector),
-      (v) => v !== null,
+        this.getContext().getTimeout(options),
+        async (_) => await element.$(selector),
+        (v) => v !== null,
     );
   }
 
@@ -271,9 +274,9 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     return await element.evaluate((e) => e.blur());
   }
 
-  async clear(element) {
+  async clear(element: ElementHandle) {
     await element.click({ clickCount: 3 });
-    await element._page.keyboard.press('Backspace');
+    await element.frame.page().keyboard.press('Backspace');
   }
 
   async submit(element, selector) {
@@ -286,7 +289,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
   async clickAndWait(element, options, waitOptions) {
     await Promise.all([
-      element?._page.waitForNavigation(waitOptions),
+      element?.frame.page().waitForNavigation(waitOptions),
       element.click(options),
     ]);
   }
@@ -396,9 +399,9 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
   url(element, options?) {
     return retryFor(
-      this.getContext().getTimeout(options),
-      async () => await element.url(),
-      Expects.NotNull.test,
+        this.getContext().getTimeout(options),
+        async () => await element.url(),
+        Expects.NotNull.test,
     );
   }
 }

@@ -32,7 +32,6 @@ function puthContextTests(env) {
       this.__remoteTestInstance = puth();
       this.__remoteTestInstance.use(PuthStandardPlugin);
       this.__remoteTestInstance.serve(4000, '127.0.0.1', false);
-      this.timeout(5000);
     }
   });
 
@@ -61,7 +60,7 @@ function puthContextTests(env) {
     it('can call a function on context', async function () {
       let rep = await (await this.context.createBrowser()).getRepresentation();
       assert.containsAllKeys(rep, ['id', 'type']);
-      assert.strictEqual(rep?.represents, 'Browser');
+      assert.strictEqual(rep?.represents, 'CDPBrowser');
       assert.isFulfilled(this.context.destroy());
     });
 
@@ -87,8 +86,8 @@ function puthContextTests(env) {
         delete this.page.___delete_test;
 
         return assert.isRejected(
-          this.page._getProperty('___delete_test'),
-          'Undefined: Property "___delete_test" not found on Page',
+            this.page._getProperty('___delete_test'),
+            'Undefined: Property "___delete_test" not found on CDPPage',
         );
       });
     });

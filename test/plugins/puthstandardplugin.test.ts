@@ -21,8 +21,8 @@ export async function puthContextBinder(mochaContext) {
   mochaContext.page = (await mochaContext.browser.pages())[0];
   mochaContext.puthAssertStrictEqual = async (handle1, handle2) => {
     let response = await mochaContext.context.assertStrictEqual(
-      await handle1.getRepresentation(),
-      await handle2.getRepresentation(),
+        await handle1.getRepresentation(),
+        await handle2.getRepresentation(),
     );
     return assert.ok(response.result, 'handle1 and handle2 are not equal');
   };
@@ -30,7 +30,6 @@ export async function puthContextBinder(mochaContext) {
 
 describe(`PuthStandardPlugin`, function () {
   beforeEach(async function () {
-    this.timeout(5000);
     await puthContextBinder(this);
 
     await this.page.goto('https://playground.puth.dev/');
@@ -66,13 +65,13 @@ describe(`PuthStandardPlugin`, function () {
 
     it('can get innerHTML of element', async function () {
       assert.strictEqual(
-        await this.page.$('#properties-innerhtml').innerHTML(),
-        '<div>child div</div> with this innerhtml',
+          await this.page.$('#properties-innerhtml').innerHTML(),
+          '<div>child div</div> with this innerhtml',
       );
     });
 
     it('can clear element', async function () {
-      await this.page.prefersReducedMotion();
+      await this.page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
       let input = await this.page.$('#actions-clear').clear();
       assert.strictEqual(await input.value(), '');
     });
@@ -98,7 +97,7 @@ describe(`PuthStandardPlugin`, function () {
     });
 
     it('can clear element', async function () {
-      await this.page.prefersReducedMotion();
+      await this.page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
 
       let input = await this.page.$('#actions-type input').type('puth test verify').clear();
 
@@ -106,7 +105,7 @@ describe(`PuthStandardPlugin`, function () {
     });
 
     it('can click element', async function () {
-      await this.page.prefersReducedMotion();
+      await this.page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
       await this.page.$('#actions-click button').click();
       assert.strictEqual(await this.page.$('#actions-click-verify').innerText(), 'clicked button');
     });

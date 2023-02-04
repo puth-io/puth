@@ -39,6 +39,7 @@ export function magicClassMethods(classDef) {
       };
     }
 
+    // @ts-ignore
     return new Proxy(instance, instanceHandler);
   };
 

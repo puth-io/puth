@@ -1,4 +1,4 @@
-import { SocketStream } from 'fastify-websocket';
+import { SocketStream } from '@fastify/websocket';
 import { encode, ExtensionCodec } from '@msgpack/msgpack';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();

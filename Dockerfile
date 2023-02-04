@@ -4,9 +4,9 @@ WORKDIR /build
 
 COPY . .
 
-RUN npm run image:install && \
-    npm run image:build && \
-    npm run image:cleanup
+RUN yarn run image:install && \
+    yarn run image:build && \
+    yarn run image:cleanup
 
 
 FROM node:14
