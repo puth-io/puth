@@ -1,4 +1,4 @@
-FROM node:14 AS build
+FROM node:18 AS build
 
 WORKDIR /build
 
@@ -9,7 +9,7 @@ RUN yarn run image:install && \
     yarn run image:cleanup
 
 
-FROM node:14
+FROM node:18
 
 RUN apt-get update && \
     apt-get clean && \
