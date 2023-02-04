@@ -90,7 +90,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
         scrollIntoView: (el) => el._scrollIntoViewIfNeeded(),
         // @ts-ignore
         scrollTo: (el, ...options) =>
-            el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
+          el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
         innerText: async (el) => (await el.getProperty('innerText')).jsonValue(),
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
         evaluateHandle: async (el, func) => {
@@ -165,12 +165,12 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
     }
 
     await Promise.all(
-        release.map(async (key) => {
-          if (options?.delay) {
-            await element.frame.page().waitForTimeout(options?.delay);
-          }
-          await element.frame.page().keyboard.up(key);
-        }),
+      release.map(async (key) => {
+        if (options?.delay) {
+          await element.frame.page().waitForTimeout(options?.delay);
+        }
+        await element.frame.page().keyboard.up(key);
+      }),
     );
   }
 
@@ -204,25 +204,25 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
 
   get(element, search, options?) {
     return retryFor(
-        this.getContext().getTimeout(options),
-        async (_) => await element.$(search),
-        (v) => v !== null,
+      this.getContext().getTimeout(options),
+      async (_) => await element.$(search),
+      (v) => v !== null,
     );
   }
 
   contains(element, search, options?) {
     return retryFor(
-        this.getContext().getTimeout(options),
-        async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
-        (v) => v.length > 0,
+      this.getContext().getTimeout(options),
+      async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
+      (v) => v.length > 0,
     );
   }
 
   async $(element, selector, options?) {
     return retryFor(
-        this.getContext().getTimeout(options),
-        async (_) => await element.$(selector),
-        (v) => v !== null,
+      this.getContext().getTimeout(options),
+      async (_) => await element.$(selector),
+      (v) => v !== null,
     );
   }
 
@@ -288,10 +288,7 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   async clickAndWait(element, options, waitOptions) {
-    await Promise.all([
-      element?.frame.page().waitForNavigation(waitOptions),
-      element.click(options),
-    ]);
+    await Promise.all([element?.frame.page().waitForNavigation(waitOptions), element.click(options)]);
   }
 
   async evaluate(page, func) {
@@ -398,10 +395,6 @@ export default class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   url(element, options?) {
-    return retryFor(
-        this.getContext().getTimeout(options),
-        async () => await element.url(),
-        Expects.NotNull.test,
-    );
+    return retryFor(this.getContext().getTimeout(options), async () => await element.url(), Expects.NotNull.test);
   }
 }
