@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { fastify } from 'fastify';
+import Fastify from 'fastify';
 import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
 
@@ -78,7 +78,7 @@ export class Puth {
   async serve(port = 4000, address = '127.0.0.1', log = true) {
     let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
 
-    this.server = fastify({ logger: this.isDebug() });
+    this.server = Fastify({ logger: this.isDebug() });
     this.setupFastify(allowedOrigins);
 
     await this.server.listen({port, host: address});
@@ -155,60 +155,62 @@ export class Puth {
       prefix: '/static',
     });
 
-    this.server.get('/', (request, reply) => {
-      return reply.redirect('/static/gui/index.html');
-    });
-
-    // Create new context
-    this.server.post('/context', async (request) => {
-      return await this.contextCreate(request.body as {});
-    });
-
-    // Perform method call on context
-    this.server.patch('/context/call', async (request, reply) => {
-      return reply.send(await this.contextCall(request.body));
-    });
-
-    // Perform action on context
-    this.server.patch('/context/get', async (request, reply) => {
-      return reply.send(await this.contextGet(request.body));
-    });
-
-    // Perform action on context
-    this.server.patch('/context/set', async (request, reply) => {
-      return reply.send(await this.contextSet(request.body));
-    });
-
-    // Perform action on context
-    this.server.patch('/context/delete', async (request, reply) => {
-      return reply.send(await this.contextDelete(request.body));
-    });
-
-    // delete context with puthId
-    this.server.delete('/context', async (request, reply) => {
-      let destroyed: any = await this.contextDestroy(request.body);
-      return reply.code(destroyed ? 200 : 404).send();
-    });
-
-    this.server.get('/websocket', { websocket: true }, (connection: SocketStream, req) => {
-      // The websocket protocol doesn't care about CORS so we need to test for request origin.
-      if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
-        return connection.destroy();
-      }
-
-      WebsocketConnections.push(connection);
-
-      connection.socket.on('close', () => {
-        WebsocketConnections.pop(connection);
+    this.server.register(async fastify => {
+      fastify.get('/', (request, reply) => {
+        return reply.redirect('/static/gui/index.html');
       });
 
-      // connection.socket.on('message', async (message) => {
-      //   message = JSON.parse(message);
-      // });
+      // Create new context
+      fastify.post('/context', async (request) => {
+        return await this.contextCreate(request.body as {});
+      });
 
-      if (Snapshots.hasCachedItems()) {
-        connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
-      }
+      // Perform method call on context
+      fastify.patch('/context/call', async (request, reply) => {
+        return reply.send(await this.contextCall(request.body));
+      });
+
+      // Perform action on context
+      fastify.patch('/context/get', async (request, reply) => {
+        return reply.send(await this.contextGet(request.body));
+      });
+
+      // Perform action on context
+      fastify.patch('/context/set', async (request, reply) => {
+        return reply.send(await this.contextSet(request.body));
+      });
+
+      // Perform action on context
+      fastify.patch('/context/delete', async (request, reply) => {
+        return reply.send(await this.contextDelete(request.body));
+      });
+
+      // delete context with puthId
+      fastify.delete('/context', async (request, reply) => {
+        let destroyed: any = await this.contextDestroy(request.body);
+        return reply.code(destroyed ? 200 : 404).send();
+      });
+
+      fastify.get('/websocket', { websocket: true }, (connection: SocketStream, req) => {
+        // The websocket protocol doesn't care about CORS so we need to test for request origin.
+        if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
+          return connection.destroy();
+        }
+        
+        WebsocketConnections.push(connection);
+
+        connection.socket.on('close', () => {
+          WebsocketConnections.pop(connection);
+        });
+
+        // connection.socket.on('message', async (message) => {
+        //   message = JSON.parse(message);
+        // });
+
+        if (Snapshots.hasCachedItems()) {
+          connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+        }
+      });
     });
   }
 
