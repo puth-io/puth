@@ -201,9 +201,9 @@ class Context extends Generic {
 
     if (this.shouldSnapshot()) {
       let trackable = (request: HTTPRequest) =>
-          ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
-              request.resourceType(),
-          );
+        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
+          request.resourceType(),
+        );
 
       this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
         if (trackable(request)) {
@@ -395,7 +395,10 @@ class Context extends Generic {
 
       storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.getId()}.puth`);
 
-      await writeFile(storagePath, encode(Snapshots.getAllCachedItemsFrom(this), { extensionCodec: PUTH_EXTENSION_CODEC }));
+      await writeFile(
+        storagePath,
+        encode(Snapshots.getAllCachedItemsFrom(this), { extensionCodec: PUTH_EXTENSION_CODEC }),
+      );
     }
   }
 
@@ -466,13 +469,13 @@ class Context extends Generic {
 
         // Call extension function and pass object as first parameter
         return this.handleCallApply(
-            packet,
-            page,
-            command,
-            extension,
-            addition.func,
-            [on, ...packet.parameters],
-            addition.expects,
+          packet,
+          page,
+          command,
+          extension,
+          addition.func,
+          [on, ...packet.parameters],
+          addition.expects,
         );
       }
     }

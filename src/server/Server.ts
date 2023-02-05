@@ -81,16 +81,16 @@ export class Puth {
     this.server = Fastify({ logger: this.isDebug() });
     this.setupFastify(allowedOrigins);
 
-    await this.server.listen({port, host: address});
+    await this.server.listen({ port, host: address });
 
     // TODO do smarter type check so we can remove @ts-ignore
     // and thank you typescript for having 4 major versions without interface type checking
     // @ts-ignore
     let uri =
-        typeof this.server.server.address() === 'object'
-            ? // @ts-ignore
-            `${this.server.server.address().address}:${this.server.server.address().port}`
-            : this.server.server.address();
+      typeof this.server.server.address() === 'object'
+        ? // @ts-ignore
+          `${this.server.server.address().address}:${this.server.server.address().port}`
+        : this.server.server.address();
 
     if (log) {
       this.log('info', `[Puth][Server] Api on http://${uri}`);
@@ -155,7 +155,7 @@ export class Puth {
       prefix: '/static',
     });
 
-    this.server.register(async fastify => {
+    this.server.register(async (fastify) => {
       fastify.get('/', (request, reply) => {
         return reply.redirect('/static/gui/index.html');
       });
@@ -196,7 +196,7 @@ export class Puth {
         if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
           return connection.destroy();
         }
-        
+
         WebsocketConnections.push(connection);
 
         connection.socket.on('close', () => {
