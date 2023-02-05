@@ -1,8 +1,9 @@
 import './App.scss';
-import Header from './Components/Header';
 import Sidebar from './Components/Sidebar/Sidebar';
 import { Preview } from './Components/Preview/Preview';
 import Dropzone from './Components/Dropzone/Dropzone';
+import Header from './Components/Header/Header';
+import WebsocketConnectionViewer from './Components/WebsocketConnectionViewer/WebsocketConnectionViewer';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
       </div>
 
       <Dropzone />
+      <WebsocketConnectionViewer/>
     </>
   );
 }

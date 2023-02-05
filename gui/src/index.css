@@ -1,0 +1,23 @@
+.modal-content {
+    background-color: #232529;
+}
+
+input[type="text"] {
+    border-color: #8b8f96;
+}
+
+input[type="text"]:focus {
+    box-shadow: none;
+    /*border-color: #999ea1 !important;*/
+}
+
+.form-control:disabled {
+    background-color: inherit;
+}
+
+.btn-smaller {
+    line-height: 1;
+    padding: 0.3rem 0.5rem 0.375rem;
+    font-size: 0.875rem;
+    border-radius: 0.2rem;
+}

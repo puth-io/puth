@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { calculateIframeSize, debounce, throttle, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
-import { DebugStore, Events, PreviewStore } from '../../../main';
+import { DevStore, Events, PreviewStore } from '../../../main';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import Code from '../Code/Code';
@@ -92,9 +92,21 @@ export const PreviewFooter = observer(() => {
         <input
           type="checkbox"
           className="form-check-input me-2"
+          id="connect-automatically-checkbox"
+          checked={DevStore.connectAutomatically}
+          onChange={() => (DevStore.connectAutomatically = !DevStore.connectAutomatically)}
+        />
+        <label className="form-check-label" htmlFor="connect-automatically-checkbox">
+          Connect automatically
+        </label>
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
           id="debug-checkbox"
-          checked={DebugStore.debug}
-          onChange={() => (DebugStore.debug = !DebugStore.debug)}
+          checked={DevStore.debug}
+          onChange={() => (DevStore.debug = !DevStore.debug)}
         />
         <label className="form-check-label" htmlFor="debug-checkbox">
           Debug

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from 'react';
+import React, { FunctionComponent, MouseEvent, useState } from 'react';
 import './Context.scss';
 import { observer } from 'mobx-react-lite';
 import ContextStore from '../../Mobx/ContextStore';
@@ -16,11 +16,40 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
   const toggleExpand = () => setExpanded(!expanded);
   const pointer = expanded ? '\u25BE' : '\u25C2';
 
+  const [showLogs, setShowLogs] = useState(false);
+  const [showXHR, setShowXHR] = useState(false);
+
   let events = context.renderedEvents;
+
+  let filters = [];
+
+  if (!showLogs) {
+    filters.push('log');
+  }
+
+  if (!showXHR) {
+    filters.push('request');
+  }
+
+  if (filters.length > 0) {
+    events = events.filter(event => !filters.includes(event.type));
+  }
+
+
 
   let commandIndex = 0;
 
   let active = context === PreviewStore.activeContext;
+
+  let logsToggle = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setShowLogs(!showLogs);
+  }
+  
+  let xhrToggle = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setShowXHR(!showXHR);
+  }
 
   return (
     <div
@@ -28,11 +57,17 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
       data-context-id={context.id}
       data-status={context?.test?.status ?? undefined}
     >
-      <div className={'d-flex align-items-center p-2 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
+      <div className={'d-flex align-items-center px-2 py-1 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
         <div className={'flex-grow-1'}>
           <div className={'fw-bold'}>{context?.test?.name ?? 'Context'}</div>
           {context.group && <div className={'fw-light fs-small mt-1'}>{context.group}</div>}
         </div>
+        <button className={`btn btn-smaller btn-outline-primary ${showXHR && 'active'} py-05`} onClick={xhrToggle}>
+          {showXHR && <span>&#10003;</span>} <span>XHR</span>
+        </button>
+        <button className={`btn btn-smaller btn-outline-primary ${showLogs && 'active'} py-05`} onClick={logsToggle}>
+          {showLogs && <span>&#10003;</span>} <span>Logs</span>
+        </button>
         <div>{pointer}</div>
       </div>
 
@@ -47,7 +82,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
               } else if (event.type === 'request') {
                 return <Request key={event.id} request={event} />;
               } else {
-                return 'No component found for type to display';
+                return <tr>No component found for type to display</tr>;
               }
             })}
           </tbody>

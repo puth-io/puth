@@ -201,11 +201,12 @@ class Context extends Generic {
 
     if (this.shouldSnapshot()) {
       let trackable = (request: HTTPRequest) =>
-        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
+        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr', 'fetch'].includes(
           request.resourceType(),
         );
 
       this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+        console.log('  >> ', request.resourceType());
         if (trackable(request)) {
           Snapshots.pushToCache(this, {
             id: v4(),

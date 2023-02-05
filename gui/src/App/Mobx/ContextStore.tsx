@@ -58,8 +58,12 @@ export default class ContextStore {
   }
 
   getRequestFilter() {
-    return (request: { status: string; response: { status: number } }) =>
-      request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
+    return (request: { status: string; response: { status: number } }) => {
+      if (['xhr', 'fetch'].includes(request.resourceType)) {
+        return true;
+      }
+      return request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
+    }
   }
 
   get renderedEvents() {
