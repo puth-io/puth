@@ -21,7 +21,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
 
   let events = context.renderedEvents;
 
-  let filters = [];
+  let filters: any = [];
 
   if (!showLogs) {
     filters.push('log');
@@ -32,24 +32,23 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
   }
 
   if (filters.length > 0) {
-    events = events.filter(event => !filters.includes(event.type));
+    events = events.filter((event: any) => !filters.includes(event.type));
   }
-
-
 
   let commandIndex = 0;
 
+  // @ts-ignore
   let active = context === PreviewStore.activeContext;
 
   let logsToggle = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setShowLogs(!showLogs);
-  }
-  
+  };
+
   let xhrToggle = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setShowXHR(!showXHR);
-  }
+  };
 
   return (
     <div
@@ -74,7 +73,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
       {expanded && (
         <table className={'table snapshots mx-2 mb-2'} cellSpacing={0} cellPadding={0}>
           <tbody>
-            {events.map((event, idx) => {
+            {events.map((event: any, idx) => {
               if (event.type === 'command') {
                 return <Command key={event.id} index={commandIndex++} command={event} />;
               } else if (event.type === 'log') {
