@@ -271,6 +271,7 @@ class Context extends Generic {
         try {
           args = await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue()));
         } catch (e) {
+          // tslint:disable-next-line:no-console
           console.warn('Could not serialize args from console message');
         }
 
