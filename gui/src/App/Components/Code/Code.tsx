@@ -62,12 +62,12 @@ import { Events } from '../../../main';
 export default function Code({
   children = null,
   code = null,
-  language = null,
+  language = '',
   lineNumbers = null,
-  highlight = null,
-  file = null,
+  highlight = '',
+  file = '',
 }) {
-  let ref = useRef();
+  let ref: any = useRef();
 
   if (!language) {
     language = guessLanguageOnFilename(file);
@@ -108,15 +108,15 @@ export default function Code({
   );
 }
 
-export const fileEndingToLanguage = {};
+export const fileEndingToLanguage: any = {};
 
-export function guessLanguageOnFilename(file): string {
+export function guessLanguageOnFilename(file: string): string {
   for (let ending of Object.keys(fileEndingToLanguage)) {
     if (file.endsWith(ending)) {
-      return fileEndingToLanguage[ending];
+      return fileEndingToLanguage[ending] ?? '';
     }
   }
 
   // default handler works for: php, css, js, jsx, ts, tsx, json
-  return file.split('.').pop();
+  return file.split('.').pop() ?? '';
 }

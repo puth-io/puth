@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useRef, useState } from 'react';
 import { calculateIframeSize, debounce, throttle, useForceUpdatePreview } from '../../Misc/Util';

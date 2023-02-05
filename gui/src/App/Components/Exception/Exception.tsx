@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import Code from '../Code/Code';
 import { Split, Trace } from '../Preview/Preview';

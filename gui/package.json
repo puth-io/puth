@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^2.8.0",
+    "@types/prismjs": "^1.26.0",
     "bootstrap": "^5.1.0",
     "diff-match-patch": "^1.0.5",
     "mobx": "^6.3.3",

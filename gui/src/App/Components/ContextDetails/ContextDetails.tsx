@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react-lite';

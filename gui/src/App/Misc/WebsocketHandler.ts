@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
@@ -36,7 +37,6 @@ export type IContext = {
   exceptions: any;
   created: number;
   hasDetails: boolean;
-  activeTab: string;
 };
 
 type IResponse = {
@@ -80,10 +80,7 @@ class WebsocketHandlerSingleton {
     (window as any).contexts = this.contexts;
 
     if (process.env.NODE_ENV === 'development') {
-      this.connectionSuggestions = [
-        'ws://127.0.0.1:4000/websocket',
-        ...this.connectionSuggestions,
-      ];
+      this.connectionSuggestions = ['ws://127.0.0.1:4000/websocket', ...this.connectionSuggestions];
     }
   }
 
@@ -91,7 +88,7 @@ class WebsocketHandlerSingleton {
     this.connect(uri, {
       onclose: () => {
         this.websocket = undefined;
-      }
+      },
     });
   }
 
