@@ -151,13 +151,13 @@ export class Puth {
     // TODO do GUI and probably move to another place but without
     //      server, idk where the gui should be served from
     this.server.register(require('@fastify/static'), {
-      root: path.join(__dirname, '../../static'),
-      prefix: '/static',
+      root: path.join(__dirname, '../../static/gui'),
+      // prefix: '/assets',
     });
 
     this.server.register(async (fastify) => {
-      fastify.get('/', (request, reply) => {
-        return reply.redirect('/static/gui/index.html');
+      fastify.setNotFoundHandler(async (request, reply) => {
+        return reply.sendFile('index.html');
       });
 
       // Create new context
@@ -202,10 +202,6 @@ export class Puth {
         connection.socket.on('close', () => {
           WebsocketConnections.pop(connection);
         });
-
-        // connection.socket.on('message', async (message) => {
-        //   message = JSON.parse(message);
-        // });
 
         if (Snapshots.hasCachedItems()) {
           connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));

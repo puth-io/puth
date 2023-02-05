@@ -66,7 +66,7 @@ class WebsocketHandlerSingleton {
   private contexts = new Map<string, ContextStore>();
 
   constructor() {
-    makeAutoObservable(this, null, {
+    makeAutoObservable(this, undefined, {
       // deep: false,
     });
 
@@ -78,7 +78,7 @@ class WebsocketHandlerSingleton {
       onclose: (event) => {
         let wsUri = prompt('Websocket URI', uri);
         // use setTimeout to clear callstack
-        setTimeout(() => this.try(wsUri));
+        setTimeout(() => this.try(wsUri ?? ''));
       },
     });
   }
@@ -97,7 +97,7 @@ class WebsocketHandlerSingleton {
     this.websocket.binaryType = 'arraybuffer';
 
     const timeoutTimer = setTimeout(() => {
-      this.websocket.close();
+      this.websocket?.close();
     }, options?.timeout ?? 3 * 1000);
 
     this.websocket.onopen = (event) => {
@@ -122,7 +122,7 @@ class WebsocketHandlerSingleton {
   }
 
   @action
-  receivedBinaryData(binary: ArrayBuffer, options = null) {
+  receivedBinaryData(binary: ArrayBuffer, options: any = {}) {
     pMark('packet.received');
 
     this.totalBytesReceived += binary.byteLength;
@@ -175,7 +175,7 @@ class WebsocketHandlerSingleton {
     pMeasure('debug', 'proc');
   }
 
-  private receivedPacket(packet) {
+  private receivedPacket(packet: any) {
     if (packet.type === 'command') {
       this.addCommand(packet);
     } else if (packet.type === 'log') {
@@ -195,24 +195,28 @@ class WebsocketHandlerSingleton {
 
   private addCommand(command: ICommand) {
     let context = this.getContext(command.context.id);
+
     command.context = context;
     context.commands.push(command);
   }
 
   private addLog(log: ICommand) {
     let context = this.getContext(log.context.id);
+
     log.context = context;
     context.logs.push(log);
   }
 
   private addRequest(response: any) {
     let context = this.getContext(response.context.id);
+
     response.context = context;
     context.requests.push(response);
   }
 
-  private addResponse(response) {
+  private addResponse(response: any) {
     let context = this.getContext(response.context.id);
+
     response.context = context;
     response.contentParsed = {};
     context.responses.push(response);
@@ -222,7 +226,7 @@ class WebsocketHandlerSingleton {
     request.status = 'finished';
   }
 
-  private addContext(response) {
+  private addContext(response: any) {
     let context = this.getContext(response.id);
     context.test = response.test;
     context.group = response.group;
@@ -231,7 +235,7 @@ class WebsocketHandlerSingleton {
     context.createdAt = response.createdAt;
   }
 
-  private addTest(response) {
+  private addTest(response: any) {
     let context = this.getContext(response.context.id);
 
     if (response.specific === 'status') {
@@ -239,7 +243,7 @@ class WebsocketHandlerSingleton {
     }
   }
 
-  private addUpdate(update) {
+  private addUpdate(update: any) {
     let context = this.getContext(update.context.id);
 
     if (update.specific === 'context.test') {
@@ -249,11 +253,12 @@ class WebsocketHandlerSingleton {
     }
   }
 
-  getContext(id) {
+  getContext(id: string): ContextStore {
     if (!this.contexts.has(id)) {
       this.contexts.set(id, new ContextStore(id));
     }
 
+    // @ts-ignore
     return this.contexts.get(id);
   }
 

@@ -1,8 +1,8 @@
 import { makeAutoObservable } from 'mobx';
-import { Events } from '../../index';
+import { Events } from '../../main';
 
 // tslint:disable-next-line:no-empty
-export let DEBUG: (func) => any = () => {};
+export let DEBUG: (func: any) => any = () => {};
 
 export class DebugClass {
   private _debug: boolean = false;
@@ -54,12 +54,13 @@ export class DebugClass {
     // tslint:enable
   }
 
-  private static eventLogger(type, event) {
+  private static eventLogger(type: any, event: any) {
     // tslint:disable-next-line:no-console
     console.debug('[EventLogger]', type, event);
   }
 
   printPerformanceWarning() {
+    // tslint:disable-next-line:no-console
     console.warn('[Puth] Performance is affected by debug');
   }
 }

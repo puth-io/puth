@@ -9,14 +9,14 @@ import DropzoneStore from '../../Mobx/DropzoneStore';
 const Dropzone = observer(() => {
   const [importing, setImporting] = useState(false);
 
-  let onDropAccepted = (files) => {
+  let onDropAccepted = (files: any) => {
     setImporting(true);
 
     let reader = new FileReader();
     reader.readAsArrayBuffer(files[0]);
 
     reader.addEventListener('load', (event) => {
-      WebsocketHandler.receivedBinaryData(event.target.result as ArrayBuffer, { returnIfExists: true });
+      WebsocketHandler.receivedBinaryData(event.target?.result as ArrayBuffer, { returnIfExists: true });
 
       setImporting(false);
       runInAction(() => (DropzoneStore.active = 0));

@@ -1,12 +1,12 @@
 export class BlobHandler {
-  private urls = [];
-  urlsUntracked = [];
+  private urls: string[] = [];
+  urlsUntracked: string[] = [];
 
-  createUrlFromString(source: string, options) {
+  createUrlFromString(source: string, options: any) {
     return this.createUrlFrom([source], options);
   }
 
-  createUrlFrom(blobParts: BlobPart[], options) {
+  createUrlFrom(blobParts: BlobPart[], options: { type?: string; track: any }) {
     let { blob } = this.createBlobFrom(blobParts, options);
     let url = URL.createObjectURL(blob);
 
@@ -19,7 +19,7 @@ export class BlobHandler {
     return { url, blob, options };
   }
 
-  createBlobFrom(blobParts: BlobPart[], options) {
+  createBlobFrom(blobParts: BlobPart[], options: BlobPropertyBag | undefined) {
     let blob = new Blob(blobParts, options);
     return { blob, options };
   }
@@ -29,7 +29,7 @@ export class BlobHandler {
     this.urls = [];
   }
 
-  revoke(url) {
+  revoke(url: string) {
     return URL.revokeObjectURL(url);
   }
 }

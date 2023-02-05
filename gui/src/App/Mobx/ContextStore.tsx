@@ -2,11 +2,11 @@ import { makeAutoObservable, observable } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 
 export default class ContextStore {
-  id;
-  commands = [];
-  logs = [];
-  requests = [];
-  responses = [];
+  id: string;
+  commands: any[] = [];
+  logs: any[] = [];
+  requests: any[] = [];
+  responses: any[] = [];
   created = Date.now();
   test: {
     name: string;
@@ -15,12 +15,12 @@ export default class ContextStore {
     name: '',
     status: undefined,
   };
-  group: string;
-  options: [];
-  capabilities: [];
-  createdAt: number;
+  group: string = '';
+  options: any[] = [];
+  capabilities: any[] = [];
+  createdAt: number | undefined;
 
-  constructor(id) {
+  constructor(id: string) {
     this.id = id;
 
     makeAutoObservable(this, {});
@@ -33,7 +33,7 @@ export default class ContextStore {
   }
 
   getRequestFilter() {
-    return (request) => request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
+    return (request: any) => request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
   }
 
   get renderedEvents() {
@@ -44,7 +44,7 @@ export default class ContextStore {
     ].sort((a, b) => this.getEventTime(a) - this.getEventTime(b));
   }
 
-  getEventTime(event) {
+  getEventTime(event: any) {
     return event?.time?.started ?? event?.time?.created ?? event?.time;
   }
 }

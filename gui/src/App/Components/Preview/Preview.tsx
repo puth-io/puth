@@ -3,10 +3,11 @@ import React, { useEffect, useRef } from 'react';
 import { calculateIframeSize, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
-import { DebugStore, PreviewStore } from '../../../index';
+import { DebugStore, PreviewStore } from '../../../main';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 
+// @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   return (
     <div className={'tab rounded-3' + (active ? ' active' : '')}>
@@ -23,6 +24,7 @@ const QuickNavigation = () => {
   return (
     <>
       <div className={'d-flex tabs align-items-stretch'}>
+        {/* @ts-ignore */}
         <Tab title={'Follow'} subTitle={'Incoming'} deletable={false} active />
         {/*<Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />
         <Tab title={'googleTest'} subTitle={'tests/Browser/BasicTest'} />

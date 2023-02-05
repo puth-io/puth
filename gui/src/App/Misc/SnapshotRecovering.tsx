@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { resolveElement } from '../Components/Highlight';
 import { BlobHandler as BlobHandlerClass } from './BlobHandler';
-import { PreviewStore } from '../../index';
+import { PreviewStore } from '../../main';
 
 export const BlobHandler = new BlobHandlerClass();
 export const textDecoder = new TextDecoder();

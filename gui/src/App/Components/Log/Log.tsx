@@ -10,7 +10,7 @@ const Log: FunctionComponent<LogProps> = ({ log }) => {
   let message =
     isError && log.args.length === 0
       ? log.text
-      : log.args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ');
+      : log.args.map((a: any) => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' ');
 
   return (
     <tr className={'log'} data-messagetype={log.messageType}>
@@ -23,7 +23,7 @@ const Log: FunctionComponent<LogProps> = ({ log }) => {
             <>
               <table className="small">
                 <tbody>
-                  {log.stackTrace.map((trace, idx) => (
+                  {log.stackTrace.map((trace: any, idx: number) => (
                     <tr key={idx}>
                       <td>
                         {trace.lineNumber}

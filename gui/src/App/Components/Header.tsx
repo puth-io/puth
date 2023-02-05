@@ -3,7 +3,7 @@ import { WebsocketHandler } from '../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 import './Header.scss';
 
-export const Logo = ({ className = null }) => (
+export const Logo = ({ className = '' }) => (
   <div className={`logo ${className}`}>
     <div>PU</div>
     <div>TH</div>

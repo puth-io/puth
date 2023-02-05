@@ -61,7 +61,7 @@ export function loadHighlights(
 
     // If the function takes a selector as argument, we need to also show the element
     // that the function did find and perform on.
-    function innerQuery(selector) {
+    function innerQuery(selector: string) {
       siv = root.querySelector(selector);
       highlight(siv, frame, true);
     }

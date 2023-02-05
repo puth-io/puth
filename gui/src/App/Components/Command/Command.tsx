@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
-import { Events, PreviewStore } from '../../../index';
+import { Events, PreviewStore } from '../../../main';
 import { IContext } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 
@@ -45,7 +45,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command }) =
   let { on, func, args } = command;
 
   let mouseClick = useCallback(
-    (e) => {
+    (e: any) => {
       e.stopPropagation();
       Events.emit('preview:toggle', command);
     },
@@ -105,9 +105,9 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command }) =
         <td>{index !== undefined ? index + 1 : ''}</td>
         <td>
           {(command.time.elapsed / 1000).toFixed(1)}s
-          {command.time?.took > 250 && (
+          {command?.time?.took && command.time.took > 250 && (
             <div>
-              <span className={'text-warning-dark'}>{(command.time?.took / 1000).toFixed(1)}s</span>
+              <span className={'text-warning-dark'}>{(command.time.took / 1000).toFixed(1)}s</span>
             </div>
           )}
         </td>

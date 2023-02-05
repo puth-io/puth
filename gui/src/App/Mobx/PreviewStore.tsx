@@ -1,7 +1,7 @@
 import { ICommand } from '../Components/Command/Command';
 import { action, makeAutoObservable } from 'mobx';
 import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
-import { Events } from '../../index';
+import { Events } from '../../main';
 import { IContext } from '../Misc/WebsocketHandler';
 import { resolveSnapshotBacktrack } from '../Misc/Util';
 
@@ -15,7 +15,7 @@ export class PreviewStoreClass {
   activeState: SnapshotState = 'before';
   highlightCommand: ICommand | undefined;
   highlightState: SnapshotState = 'after';
-  private highlightInterval: number;
+  private highlightInterval: number | undefined;
   _darken: boolean = false;
   _removeScriptTags: boolean = true;
 
@@ -91,9 +91,9 @@ export class PreviewStoreClass {
     let html = '';
 
     if (this.visibleSnapshot?.version === 3) {
-      let context = this.visibleCommand.context;
-      let commands = context.commands.filter((i) => i.type === 'command');
-      let index = commands.findIndex((i) => i.id === this.visibleCommand.id);
+      let context = this.visibleCommand?.context;
+      let commands = context?.commands.filter((i) => i.type === 'command');
+      let index = commands?.findIndex((i) => i.id === this.visibleCommand?.id);
 
       html = resolveSnapshotBacktrack(commands, index, this.visibleHighlightState === 'after');
     } else if (this.visibleSnapshot?.version === 2) {

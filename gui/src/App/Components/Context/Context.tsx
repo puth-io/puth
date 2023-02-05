@@ -5,7 +5,7 @@ import ContextStore from '../../Mobx/ContextStore';
 import Log from '../Log/Log';
 import Command from '../Command/Command';
 import Request from '../Request/Request';
-import { PreviewStore } from '../../../index';
+import { PreviewStore } from '../../../main';
 
 type ContextProps = {
   context: ContextStore;

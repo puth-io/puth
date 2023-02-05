@@ -1,12 +1,12 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App/App';
-import { WebsocketHandler } from './App/Misc/WebsocketHandler';
+import { createRoot } from 'react-dom/client';
 import mitt from 'mitt';
+import { DebugClass } from './App/Misc/Debug';
+import { WebsocketHandler } from './App/Misc/WebsocketHandler';
 import { runInAction } from 'mobx';
 import DropzoneStore from './App/Mobx/DropzoneStore';
 import { PreviewStoreClass } from './App/Mobx/PreviewStore';
-import { DebugClass } from './App/Misc/Debug';
+import App from './App/App';
 
 /**
  * Pre global objects initialization (required for debug handler)
@@ -23,14 +23,13 @@ export const DebugStore = new DebugClass();
  */
 export const PreviewStore = new PreviewStoreClass();
 
-/**
- * Main render function
- */
-ReactDOM.render(
+const container = document.getElementById('root') as HTMLElement;
+const root = createRoot(container!);
+
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-  document.getElementById('root'),
 );
 
 /**
@@ -54,14 +53,14 @@ WebsocketHandler.try(websocketFirstTryHost);
 /**
  * Register drag and drop events
  */
-let root = document.getElementById('root');
+let rootElement = document.getElementById('root');
 
-root.addEventListener('dragenter', () => {
+rootElement?.addEventListener('dragenter', () => {
   runInAction(() => DropzoneStore.active++);
 });
-root.addEventListener('dragleave', () => {
+rootElement?.addEventListener('dragleave', () => {
   runInAction(() => DropzoneStore.active--);
 });
-root.addEventListener('drop', () => {
+rootElement?.addEventListener('drop', () => {
   runInAction(() => DropzoneStore.active--);
 });

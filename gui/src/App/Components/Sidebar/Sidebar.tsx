@@ -5,7 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { Resizable } from 're-resizable';
 import { useForceUpdatePreview } from '../../Misc/Util';
-import { PreviewStore } from '../../../index';
+import { PreviewStore } from '../../../main';
 
 const SidebarAction = observer(() => {
   let clear = () => {
