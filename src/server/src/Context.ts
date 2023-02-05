@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import { Puth } from '../Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import { Browser, Page, HTTPRequest, HTTPResponse, Target } from 'puppeteer';
+import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage } from 'puppeteer';
 import * as mitt from 'mitt';
 
 import { createBrowser } from '../../../browser/core';
@@ -265,14 +265,22 @@ class Context extends Generic {
         }
       });
 
-      this.registerEventListenerOn(page, 'console', async (consoleMessage) => {
+      this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
+        let args: any = [];
+
+        try {
+          args = await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue()));
+        } catch (e) {
+          console.warn('Could not serialize args from console message');
+        }
+
         Snapshots.pushToCache(this, {
           id: v4(),
           type: 'log',
           context: this.serialize(),
           time: Date.now(),
           messageType: consoleMessage.type(),
-          args: await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue())),
+          args,
           location: consoleMessage.location(),
           text: consoleMessage.text(),
           stackTrace: consoleMessage.stackTrace(),
@@ -403,7 +411,7 @@ class Context extends Generic {
     return false;
   }
 
-  async createCommand(packet, on): Promise<ICommand | undefined> {
+  async createCommandInstance(packet, on): Promise<ICommand | undefined> {
     if (!this.shouldSnapshot()) {
       return;
     }
@@ -434,10 +442,10 @@ class Context extends Generic {
     let on = this.resolveOn(packet);
 
     // resolve page object
-    let page = Utils.resolveConstructorName(on) === 'Page' ? on : on?._page;
+    let page = Utils.resolveConstructorName(on) === 'CDPPage' ? on : on?._page;
 
     // Create command
-    const command: ICommand | undefined = await this.createCommand(packet, on);
+    const command: ICommand | undefined = await this.createCommandInstance(packet, on);
 
     // Create snapshot before command
     await Snapshots.createBefore(this, page, command);
@@ -528,12 +536,14 @@ class Context extends Generic {
 
     if (expectation) {
       if (expectation.test && !expectation.test(returnValue)) {
-        Snapshots.error(this, page, command, {
-          type: 'expectation',
-          expectation,
-          time: Date.now(),
-        });
-        Snapshots.broadcast(command);
+        if (this.shouldSnapshot()) {
+          Snapshots.error(this, page, command, {
+            type: 'expectation',
+            expectation,
+            time: Date.now(),
+          });
+          Snapshots.broadcast(command);
+        }
 
         return {
           type: 'error',

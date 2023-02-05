@@ -28,7 +28,7 @@ export default class ContextStore {
 
   getRenderedTypesFilter() {
     return (command: ICommand) => {
-      return ['Page', 'ElementHandle'].includes(command.on.type);
+      return ['CDPPage', 'ElementHandle'].includes(command.on.type);
     };
   }
 

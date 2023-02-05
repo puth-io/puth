@@ -9,8 +9,8 @@ export async function getAbsolutePaths(on: any): Promise<[[string, number][] | s
 export async function getAbsolutePath(on: any): Promise<[string, number][] | string> {
   let onType = resolveConstructorName(on);
 
-  if (onType === 'Page') {
-    return 'Page';
+  if (onType === 'CDPPage') {
+    return 'CDPPage';
   }
 
   if (onType === 'Frame') {
