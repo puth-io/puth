@@ -8,4 +8,4 @@ const instance = puth({
 
 instance.use(PuthStandardPlugin);
 
-instance.serve();
+instance.serve(4000, '0.0.0.0');
