@@ -4,10 +4,10 @@ on:
     branches:
       - master
       - develop
+      - feature/monorepo
   pull_request:
     branches: 
       - master
-  workflow_dispatch:
 
 jobs:
   test:
@@ -32,10 +32,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-v${{ matrix.node }}-
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
-      - run: yarn run build
-      - name: Run All Node.js Tests
-        run: yarn test
+        run: |
+          npx lerna bootstrap
+          yarn install --frozen-lockfile
+          npx lerna link
+      - name: Build
+        run: npx lerna build
+      - name: Test
+        run: npx lerna test
 
   build-test:
     runs-on: ubuntu-latest
@@ -43,7 +47,7 @@ jobs:
       - id: get_version
         uses: battila7/get-version-action@v2
       - uses: actions/checkout@v2
-      - name: Build the Docker image
+      - name: Build image
         run: |
           TAG=${{ steps.get_version.outputs.version-without-v }}
           echo "Tag: $TAG"
