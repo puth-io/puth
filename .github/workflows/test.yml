@@ -44,12 +44,12 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: 'Cache'
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
@@ -58,6 +58,7 @@ jobs:
             ${{ runner.os }}-node-v${{ matrix.node }}-
       - name: Install Dependencies
         run: |
+          yarn --version
           yarn set version berry
           yarn
           ls -lah
