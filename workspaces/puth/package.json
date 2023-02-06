@@ -54,7 +54,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
     "test": "mocha --exit --timeout 15000 -r ts-node/register 'test/**/*.ts'",
-    "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 15000 -r ts-node/register 'test/**/*.ts'",
+    "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 15000 -r ts-node/register 'test/api.test.ts'",
     "test:only:plugins": "mocha --exit --timeout 15000 -r ts-node/register 'test/plugins/**/*.ts'",
     "test:only:translation": "mocha --exit --timeout 15000 -r ts-node/register 'test/translation/**/*.ts'",
     "test:api": "mocha --exit -r ts-node/register 'test/api.test.ts'",

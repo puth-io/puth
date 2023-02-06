@@ -53,16 +53,16 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-            ${{ runner.os }}-node-v${{ matrix.node }}-
+            ${{ runner.os }}-node-
       - name: yarn build
         run: |
           yarn
           lerna run build
           lerna run postbuild
-      - name: Install Dependencies
+      - name: Build image
         run: |
           yarn workspaces focus --production puth
           rm -rf workspaces/puth/node_modules
@@ -71,3 +71,7 @@ jobs:
           echo "Tag: $TAG"
           cd workspaces/puth
           docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+      - name: Test image
+        run: |
+          docker run -d -p 7345:7345 puthtest:latest
+          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote

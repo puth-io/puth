@@ -26,7 +26,7 @@ if (process.env.TEST_ONLY_REMOTE) {
 
 function puthContextTests(env) {
   before(function () {
-    if (env[0] === 'remote') {
+    if (env[0] === 'remote' && !process.env.PUTH_URL) {
       this.__remoteTestInstance = new Puth();
       this.__remoteTestInstance.use(PuthStandardPlugin);
       this.__remoteTestInstance.serve(43210, '127.0.0.1', false);
@@ -35,7 +35,7 @@ function puthContextTests(env) {
 
   after(async function () {
     if (env[0] === 'remote') {
-      await this.__remoteTestInstance.getServer().close();
+      await this.__remoteTestInstance?.getServer()?.close();
     }
   });
 
