@@ -44,49 +44,71 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-#      - id: get_version
-#        uses: battila7/get-version-action@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 18
+          node-version: '${{ matrix.node-version }}'
       - uses: actions/checkout@v2
-#      - name: 'Cache'
-#        uses: actions/cache@v2
-#        with:
-#          path: ~/.npm
-#          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-#          restore-keys: |
-#            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-#            ${{ runner.os }}-node-
-#      - name: Install
-#        run: |
-#          yarn set version berry
-#          yarn
-#          yarn plugin import workspace-tools
-#          yarn workspaces focus --production puth
-#          mv node_modules workspaces/puth/node_modules
-#          npx lerna link
-#      - name: Build
-#        run: |
-#          ls -lah
-#          ls -lah node_modules
-#          npx lerna run build
-#      - name: Test
-#        run: npx lerna run test
-      - name: Build
+      - name: 'Cache'
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            ${{ runner.os }}-node-v${{ matrix.node }}-
+      - name: Install Dependencies
         run: |
-          yarn set version berry
-          yarn plugin import workspace-tools
           yarn
           ls -lah
           ls -lah workspaces/puth
           ls -lah workspaces/puth/node_modules
-          yarn workspaces focus --production puth
-          ls -lah
-          ls -lah workspaces/puth
-          ls -lah workspaces/puth/node_modules
-          mv node_modules workspaces/puth/node_modules
-          TAG=${{ steps.get_version.outputs.version-without-v }}
-          echo "Tag: $TAG"
-          cd workspaces/puth
-          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+      #          npx lerna link
+#      - name: Build
+#        run: npx lerna run build
+#      - name: Test
+#        run: npx lerna run test
+##      - id: get_version
+##        uses: battila7/get-version-action@v2
+#      - uses: actions/setup-node@v1
+#        with:
+#          node-version: 18
+#      - uses: actions/checkout@v2
+##      - name: 'Cache'
+##        uses: actions/cache@v2
+##        with:
+##          path: ~/.npm
+##          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+##          restore-keys: |
+##            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+##            ${{ runner.os }}-node-
+##      - name: Install
+##        run: |
+##          yarn set version berry
+##          yarn
+##          yarn plugin import workspace-tools
+##          yarn workspaces focus --production puth
+##          mv node_modules workspaces/puth/node_modules
+##          npx lerna link
+##      - name: Build
+##        run: |
+##          ls -lah
+##          ls -lah node_modules
+##          npx lerna run build
+##      - name: Test
+##        run: npx lerna run test
+#      - name: Build
+#        run: |
+#          yarn set version berry
+#          yarn plugin import workspace-tools
+#          yarn
+#          ls -lah
+#          ls -lah workspaces/puth
+#          yarn workspaces focus --production puth
+#          ls -lah
+#          ls -lah workspaces/puth
+#          ls -lah workspaces/puth/node_modules
+#          mv node_modules workspaces/puth/node_modules
+#          TAG=${{ steps.get_version.outputs.version-without-v }}
+#          echo "Tag: $TAG"
+#          cd workspaces/puth
+#          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
