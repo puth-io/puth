@@ -41,5 +41,6 @@ jobs:
           docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
       - name: Test image
         run: |
+          yarn
           docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
