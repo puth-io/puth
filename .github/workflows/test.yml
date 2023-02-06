@@ -56,13 +56,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
             ${{ runner.os }}-node-
-      - name: Install Dependencies
+      - name: Install
         run: |
           yarn set version berry
           yarn
 #          npx lerna link
       - name: Build
-        run: npx lerna run build
+        run: |
+          ls -lah
+          ls -lah node_modules
+          npx lerna run build
       - name: Test
         run: npx lerna run test
       - name: Install production
