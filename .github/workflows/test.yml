@@ -33,7 +33,6 @@ jobs:
             ${{ runner.os }}-node-v${{ matrix.node }}-
       - name: Install Dependencies
         run: |
-          npx lerna bootstrap
           yarn install --frozen-lockfile
           npx lerna link
       - name: Build
