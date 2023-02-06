@@ -9,20 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - id: get_version
-      uses: battila7/get-version-action@v2
-    - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: |
-        TAG=${{ steps.get_version.outputs.version-without-v }}
-        echo "Tag: $TAG"
-        echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
-        docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
-        docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
       - id: get_version
         uses: battila7/get-version-action@v2
       - uses: actions/checkout@v3
