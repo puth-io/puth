@@ -44,6 +44,8 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
+      - id: get_version
+        uses: battila7/get-version-action@v2
       - uses: actions/setup-node@v1
         with:
           node-version: 18
@@ -56,27 +58,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
             ${{ runner.os }}-node-
-      - name: Install
-        run: |
-          yarn set version berry
-          yarn
+#      - name: Install
+#        run: |
+#          yarn set version berry
+#          yarn
+#          yarn plugin import workspace-tools
+#          yarn workspaces focus --production puth
+#          mv node_modules workspaces/puth/node_modules
 #          npx lerna link
+#      - name: Build
+#        run: |
+#          ls -lah
+#          ls -lah node_modules
+#          npx lerna run build
+#      - name: Test
+#        run: npx lerna run test
       - name: Build
         run: |
-          ls -lah
-          ls -lah node_modules
-          npx lerna run build
-      - name: Test
-        run: npx lerna run test
-      - name: Install production
-        run: |
+          yarn set version berry
           yarn plugin import workspace-tools
           yarn workspaces focus --production puth
           mv node_modules workspaces/puth/node_modules
-      - id: get_version
-        uses: battila7/get-version-action@v2
-      - name: Build image
-        run: |
           TAG=${{ steps.get_version.outputs.version-without-v }}
           echo "Tag: $TAG"
           cd workspaces/puth
