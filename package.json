@@ -10,5 +10,8 @@
   "devDependencies": {
     "lerna": "^6.4.1"
   },
+  "engines": {
+    "yarn": ">=3.4.1"
+  },
   "packageManager": "yarn@3.4.1"
 }
