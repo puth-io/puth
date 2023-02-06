@@ -73,9 +73,7 @@
     "type": "git",
     "url": "https://github.com/SEUH/puth"
   },
-  "bin": {
-    "puth": "./bin/puth.js"
-  },
+  "bin": "./bin/puth.js",
   "homepage": "https://puth.dev",
   "license": "UNLICENSED"
 }

@@ -24,12 +24,13 @@ jobs:
         with:
           node-version: '${{ matrix.node-version }}'
       - uses: actions/checkout@v2
-      - name: 'Cache node_modules'
+      - name: 'Cache'
         uses: actions/cache@v2
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
             ${{ runner.os }}-node-v${{ matrix.node }}-
       - name: Install Dependencies
         run: |
@@ -43,11 +44,37 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 18
+      - uses: actions/checkout@v2
+      - name: 'Cache'
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            ${{ runner.os }}-node-
+      - name: Install Dependencies
+        run: |
+          yarn set version berry
+          yarn install --frozen-lockfile
+          npx lerna link
+      - name: Build
+        run: npx lerna run build
+      - name: Test
+        run: npx lerna run test
+      - name: Install production
+        run: |
+          yarn plugin import workspace-tools
+          yarn workspaces focus --production puth
+          mv node_modules workspaces/puth/node_modules
       - id: get_version
         uses: battila7/get-version-action@v2
-      - uses: actions/checkout@v2
       - name: Build image
         run: |
           TAG=${{ steps.get_version.outputs.version-without-v }}
           echo "Tag: $TAG"
+          cd workspaces/puth
           docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG

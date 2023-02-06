@@ -1,14 +1,3 @@
-FROM node:18 AS build
-
-WORKDIR /build
-
-COPY . .
-
-RUN yarn run image:install && \
-    yarn run image:build && \
-    yarn run image:cleanup
-
-
 FROM node:18
 
 RUN apt-get update && \
@@ -53,7 +42,7 @@ RUN apt-get update && \
 
 WORKDIR /puth
 
-COPY --from=build /build .
+COPY . .
 
 EXPOSE 7345
 

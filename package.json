@@ -6,8 +6,9 @@
     "workspaces/dev",
     "workspaces/clients/js/client"
   ],
-  "name": "puth",
+  "name": "@puth/monorepo",
   "devDependencies": {
     "lerna": "^6.4.1"
-  }
+  },
+  "packageManager": "yarn@3.4.1"
 }

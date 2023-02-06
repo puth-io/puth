@@ -7,7 +7,7 @@
     "dev:server": "ts-node-dev --respawn --transpile-only server.ts"
   },
   "dependencies": {
-    "puth": "*",
-    "@puth/client": "*"
+    "@puth/client": "*",
+    "puth": "*"
   }
 }
