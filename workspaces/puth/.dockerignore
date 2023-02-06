@@ -39,7 +39,6 @@ bower_components
 build/Release
 
 # Dependency directories
-node_modules/
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
@@ -74,7 +73,6 @@ web_modules/
 .env.test
 
 # parcel-bundler cache (https://parceljs.org/)
-.cache
 .parcel-cache
 
 # Next.js build output
@@ -86,7 +84,6 @@ out
 dist
 
 # Gatsby files
-.cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
