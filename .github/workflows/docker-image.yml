@@ -38,9 +38,10 @@ jobs:
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
           cd workspaces/puth
           docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
-          docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
       - name: Test image
         run: |
           yarn
           docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
+      - name: Push image
+        run: docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
