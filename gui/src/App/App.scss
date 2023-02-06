@@ -1,3 +1,5 @@
+@import "./Style/prism/prism-darcula.css";
+
 html {
   font-size: 15px;
 }
@@ -35,10 +37,10 @@ button {
   cursor: pointer;
 }
 
-input[type="text"] {
-  background: $primary!important;
-  border-color: $primary-darker!important;
-}
+//input[type="text"] {
+//  background: $primary!important;
+//  border-color: $primary-darker!important;
+//}
 
 input[type="checkbox"]:focus {
   box-shadow: none;
@@ -55,9 +57,9 @@ input[type="checkbox"]:focus {
     border-color: $primary-darker;
   }
 
-  > *:not(:first-child) {
-    border-left: none;
-  }
+  //> *:not(:first-child) {
+  //  border-left: none;
+  //}
 }
 
 .table-striped-custom {

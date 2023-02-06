@@ -39,9 +39,10 @@ export type ICommand = {
 type CommandProps = {
   index: number | undefined;
   command: ICommand;
+  showTimings: boolean;
 };
 
-const Command: FunctionComponent<CommandProps> = observer(({ index, command }) => {
+const Command: FunctionComponent<CommandProps> = observer(({ index, command, showTimings = false }) => {
   let { on, func, args } = command;
 
   let mouseClick = useCallback(
@@ -57,6 +58,10 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command }) =
   let displayType: any = on.type;
   if (on.type === 'ElementHandle') {
     displayType = 'Element';
+  } else if (on.type === 'CDPPage') {
+    displayType = 'Page';
+  } else if (on.type === 'CDPBrowser') {
+    displayType = 'Browser';
   }
 
   let displayArgs = args.map((arg) => {
@@ -104,11 +109,15 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command }) =
       >
         <td>{index !== undefined ? index + 1 : ''}</td>
         <td>
-          {(command.time.elapsed / 1000).toFixed(1)}s
-          {command?.time?.took && command.time.took > 250 && (
-            <div>
-              <span className={'text-warning-dark'}>{(command.time.took / 1000).toFixed(1)}s</span>
-            </div>
+          {showTimings && (
+            <>
+              {(command.time.elapsed / 1000).toFixed(1)}s
+              {command?.time?.took && command.time.took > 250 && (
+                <div>
+                  <span className={'text-warning-dark'}>{(command.time.took / 1000).toFixed(1)}s</span>
+                </div>
+              )}
+            </>
           )}
         </td>
         <td>{displayType}</td>

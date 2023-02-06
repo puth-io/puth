@@ -152,6 +152,9 @@ export class PreviewStoreClass {
       action((cmd: ICommand | undefined) => {
         if (this.activeCommand?.id === cmd?.id) {
           this.activeCommand = undefined;
+          
+          Events.emit('command:active', undefined);
+          
           return;
         }
 
@@ -161,6 +164,8 @@ export class PreviewStoreClass {
 
         this.activeCommand = cmd;
         this.activeState = 'after';
+
+        Events.emit('command:active', cmd);
       }),
     );
     Events.on(

@@ -1,5 +1,5 @@
 import React from 'react';
-import { WebsocketHandler } from '../Misc/WebsocketHandler';
+import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 import './Header.scss';
 
@@ -12,8 +12,8 @@ export const Logo = ({ className = '' }) => (
 
 export default observer(function Header() {
   const status = (
-    <div className="status" data-connected={WebsocketHandler.isConnected()}>
-      {WebsocketHandler.isConnected() ? 'Connected to ' + WebsocketHandler.getUri() : 'Disconneted'}
+    <div className="status" data-connected={WebsocketHandler.isConnected}>
+      {WebsocketHandler.isConnected ? 'connected' : 'Disconneted'}
     </div>
   );
 
@@ -22,13 +22,15 @@ export default observer(function Header() {
       <div className="container-fluid">
         <div className="d-flex align-items-center">
           <Logo className={'ml-auto me-2 align-self-center'} />
-          <span className={'ms-1 fw-bold text-accent'}>Puth</span>
+          <span className={'ms-1 fw-bold text-accent'} style={{ fontSize: '1.125rem' }}>
+            Puth
+          </span>
         </div>
-        {/*<ul className="navbar-nav">
-          <li className="nav-item">
-            <div className="nav-link">{status}</div>
-          </li>
-        </ul>*/}
+        {/*<ul className="navbar-nav">*/}
+        {/*  <li className="nav-item">*/}
+        {/*    <div className="nav-link">{status}</div>*/}
+        {/*  </li>*/}
+        {/*</ul>*/}
         <ul className="navbar-nav ms-auto">
           <li className="nav-item">
             <a href="https://pptr.dev/" target={'_blank'} className="nav-link">

@@ -4,8 +4,7 @@ import { Context } from '../Context/Context';
 import { observer } from 'mobx-react-lite';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { Resizable } from 're-resizable';
-import { useForceUpdatePreview } from '../../Misc/Util';
-import { PreviewStore } from '../../../main';
+import { Events, PreviewStore } from '../../../main';
 
 const SidebarAction = observer(() => {
   let clear = () => {
@@ -23,8 +22,6 @@ const SidebarAction = observer(() => {
 });
 
 export default observer(function Sidebar() {
-  const forceUpdatePreview = useForceUpdatePreview();
-
   return (
     <Resizable
       className={'d-flex flex-column pe-2'}
@@ -34,7 +31,7 @@ export default observer(function Sidebar() {
       }}
       minWidth={400}
       enable={{ right: true }}
-      onResizeStop={forceUpdatePreview}
+      onResizeStop={() => Events.emit('layout:resize')}
     >
       <SidebarAction />
       <div className={'sidebar px-2'}>

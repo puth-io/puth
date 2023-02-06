@@ -1,16 +1,19 @@
+// @ts-nocheck
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useRef } from 'react';
-import { calculateIframeSize, useForceUpdatePreview } from '../../Misc/Util';
+import React, { useEffect, useRef, useState } from 'react';
+import { calculateIframeSize, debounce, throttle, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
-import { DebugStore, PreviewStore } from '../../../main';
+import { DevStore, Events, PreviewStore } from '../../../main';
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
+import Code from '../Code/Code';
+import { ContextDetails } from '../ContextDetails/ContextDetails';
 
 // @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   return (
-    <div className={'tab rounded-3' + (active ? ' active' : '')}>
+    <div className={'tab rounded-2' + (active ? ' active' : '')}>
       <div className={'d-flex'}>
         <div className={'title flex-grow-1'}>{title}</div>
         {deletable && <div className={'close'}>&times;</div>}
@@ -36,7 +39,7 @@ const QuickNavigation = () => {
 
 const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>);
 
-const Split = () => <span className={'split'}> | </span>;
+export const Split = () => <span className={'split'}> | </span>;
 
 const FooterMetrics = observer(() => {
   let { contexts, events } = WebsocketHandler.getMetrics();
@@ -48,21 +51,19 @@ const FooterMetrics = observer(() => {
       {`${contexts} contexts`}
       <Split />
       {`${events} events`}
-      <Split />
-      {`${bytesReceived} MB received`}
     </div>
   );
 });
 
-export const PreviewFooterContextInfo = observer(() => {
-  return (
-    <div className={'footer'}>{PreviewStore.activeContext && `Context ID: ${PreviewStore.activeContext?.id}`}</div>
-  );
-});
+export const SPACE = <>&nbsp;</>;
+
+export const Trace = ({ trace }) => (
+  <Code code={trace?.map((frame) => frame.file + ':' + frame.line + '\n')} language={'log'} />
+);
 
 export const PreviewFooter = observer(() => {
   return (
-    <div className={'footer'}>
+    <div className={'footer border-left border-default z-10'}>
       <FooterMetrics />
       <div className={'ml-auto'}>
         <input
@@ -92,9 +93,21 @@ export const PreviewFooter = observer(() => {
         <input
           type="checkbox"
           className="form-check-input me-2"
+          id="connect-automatically-checkbox"
+          checked={DevStore.connectAutomatically}
+          onChange={() => (DevStore.connectAutomatically = !DevStore.connectAutomatically)}
+        />
+        <label className="form-check-label" htmlFor="connect-automatically-checkbox">
+          Connect automatically
+        </label>
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          className="form-check-input me-2"
           id="debug-checkbox"
-          checked={DebugStore.debug}
-          onChange={() => (DebugStore.debug = !DebugStore.debug)}
+          checked={DevStore.debug}
+          onChange={() => (DevStore.debug = !DevStore.debug)}
         />
         <label className="form-check-label" htmlFor="debug-checkbox">
           Debug
@@ -109,13 +122,16 @@ export const Preview = observer(() => {
   const iframeRef = useRef<any>(null);
   const iframeContainerRef = useRef(null);
 
+  const handleResize = debounce(forceUpdatePreview);
+
   // Handle window resize because preview iframe should scale to the minimum available space.
   useEffect(() => {
-    let handleResize = () => forceUpdatePreview();
     window.addEventListener('resize', handleResize);
+    Events.on('layout:resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      Events.off('layout:resize', handleResize);
     };
   }, []);
 
@@ -190,7 +206,10 @@ export const Preview = observer(() => {
         <PreviewInfo />
       </div>
 
-      <div className={'d-flex iframe-wrapper bg-striped'} style={{ flex: 1, overflow: 'hidden' }}>
+      <div
+        className={'d-flex iframe-wrapper bg-striped pb-3 position-relative'}
+        style={{ flex: 1, overflow: 'hidden' }}
+      >
         <div
           ref={iframeContainerRef}
           style={{
@@ -201,7 +220,6 @@ export const Preview = observer(() => {
         >
           <iframe
             title={'Preview'}
-            className={PreviewStore.darken ? 'darken' : ''}
             frameBorder="0"
             ref={iframeRef}
             sandbox={'allow-same-origin'}
@@ -220,9 +238,10 @@ export const Preview = observer(() => {
           />
           {!html && <div className={'no-selected-preview'}>No preview selected</div>}
         </div>
+        <PreviewOverlay />
       </div>
 
-      <PreviewFooterContextInfo />
+      <ContextDetails />
       <PreviewFooter />
     </div>
   );

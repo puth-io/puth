@@ -2,10 +2,11 @@ import { makeAutoObservable } from 'mobx';
 import { Events } from '../../main';
 
 // tslint:disable-next-line:no-empty
-export let DEBUG: (func: any) => any = () => {};
+export let DebugStoreClass: (func: any) => any = () => {};
 
-export class DebugClass {
+export class DevStoreClass {
   private _debug: boolean = false;
+  private _connectAutomatically: boolean = false;
 
   private _originalDebugFunc;
 
@@ -17,6 +18,7 @@ export class DebugClass {
     // tslint:enable
 
     this.debug = localStorage.getItem('debug.enabled') === 'true';
+    this.connectAutomatically = localStorage.getItem('connectAutomatically.enabled') === 'true';
   }
 
   get debug() {
@@ -35,11 +37,21 @@ export class DebugClass {
     }
   }
 
+  get connectAutomatically() {
+    return this._connectAutomatically;
+  }
+
+  set connectAutomatically(value) {
+    this._connectAutomatically = value;
+
+    localStorage.setItem('connectAutomatically.enabled', value ? 'true' : 'false');
+  }
+
   enable() {
     // tslint:disable
     console.debug = this._originalDebugFunc;
-    DEBUG = (func) => func();
-    Events.on('*', DebugClass.eventLogger);
+    DebugStoreClass = (func) => func();
+    Events.on('*', DevStoreClass.eventLogger);
     // tslint:enable
 
     this.printPerformanceWarning();
@@ -49,8 +61,8 @@ export class DebugClass {
     // tslint:disable
     this._originalDebugFunc = console.debug;
     console.debug = () => {};
-    DEBUG = () => {};
-    Events.off('*', DebugClass.eventLogger);
+    DebugStoreClass = () => {};
+    Events.off('*', DevStoreClass.eventLogger);
     // tslint:enable
   }
 

@@ -201,7 +201,7 @@ class Context extends Generic {
 
     if (this.shouldSnapshot()) {
       let trackable = (request: HTTPRequest) =>
-        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr'].includes(
+        ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr', 'fetch'].includes(
           request.resourceType(),
         );
 
@@ -362,6 +362,16 @@ class Context extends Generic {
         specific: 'status',
         status: 'failed',
         context: this.serialize(),
+      });
+    }
+  }
+
+  exception(exception) {
+    if (this.shouldSnapshot()) {
+      Snapshots.pushToCache(this, {
+        type: 'exception',
+        context: this.serialize(),
+        data: exception,
       });
     }
   }

@@ -1,9 +1,10 @@
+// @ts-nocheck
 import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
-import { DEBUG } from './Debug';
+import { DebugStoreClass } from './DebugStoreClass';
 import { BlobHandler } from './SnapshotRecovering';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
@@ -33,7 +34,9 @@ export type IContext = {
   commands: ICommand[];
   logs: any[];
   responses: IResponse[];
+  exceptions: any;
   created: number;
+  hasDetails: boolean;
 };
 
 type IResponse = {
@@ -58,12 +61,16 @@ type IResponse = {
 
 class WebsocketHandlerSingleton {
   private websocket: WebSocket | undefined;
-  private connected: boolean = false;
+  connectionState: number = WebSocket.CLOSED;
   private uri: string | undefined;
 
   private totalBytesReceived: number = 0;
 
   private contexts = new Map<string, ContextStore>();
+
+  public connectionSuggestions = [
+    (document.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/websocket',
+  ];
 
   constructor() {
     makeAutoObservable(this, undefined, {
@@ -71,14 +78,16 @@ class WebsocketHandlerSingleton {
     });
 
     (window as any).contexts = this.contexts;
+
+    if (process.env.NODE_ENV === 'development') {
+      this.connectionSuggestions = ['ws://127.0.0.1:4000/websocket', ...this.connectionSuggestions];
+    }
   }
 
   try(uri: string) {
     this.connect(uri, {
-      onclose: (event) => {
-        let wsUri = prompt('Websocket URI', uri);
-        // use setTimeout to clear callstack
-        setTimeout(() => this.try(wsUri ?? ''));
+      onclose: () => {
+        this.websocket = undefined;
       },
     });
   }
@@ -93,8 +102,9 @@ class WebsocketHandlerSingleton {
   ) {
     this.uri = uri;
     this.websocket = new WebSocket(this.uri);
-
     this.websocket.binaryType = 'arraybuffer';
+
+    runInAction(() => (this.connectionState = WebSocket.CONNECTING));
 
     const timeoutTimer = setTimeout(() => {
       this.websocket?.close();
@@ -102,11 +112,11 @@ class WebsocketHandlerSingleton {
 
     this.websocket.onopen = (event) => {
       clearTimeout(timeoutTimer);
-      runInAction(() => (this.connected = true));
+      runInAction(() => (this.connectionState = WebSocket.OPEN));
     };
 
     this.websocket.onclose = (event) => {
-      runInAction(() => (this.connected = false));
+      runInAction(() => (this.connectionState = WebSocket.CLOSED));
 
       if (options.retry) {
         setTimeout(() => this.connect(this.uri), 1000);
@@ -152,7 +162,7 @@ class WebsocketHandlerSingleton {
 
     pMeasure('proc', 'decode');
 
-    DEBUG(() => {
+    DebugStoreClass(() => {
       // tslint:disable
       let size = (binary.byteLength / 1000 / 1000).toFixed(2);
 
@@ -190,6 +200,8 @@ class WebsocketHandlerSingleton {
       this.addTest(packet);
     } else if (packet.type === 'update') {
       this.addUpdate(packet);
+    } else if (packet.type === 'exception') {
+      this.addException(packet);
     }
   }
 
@@ -227,12 +239,9 @@ class WebsocketHandlerSingleton {
   }
 
   private addContext(response: any) {
-    let context = this.getContext(response.id);
-    context.test = response.test;
-    context.group = response.group;
-    context.options = response.options;
-    context.capabilities = response.capabilities;
-    context.createdAt = response.createdAt;
+    let { id, options, test, group, capabilities, createdAt } = response;
+
+    this.contexts.set(id, new ContextStore(id, options, test, group, capabilities, createdAt));
   }
 
   private addTest(response: any) {
@@ -253,9 +262,15 @@ class WebsocketHandlerSingleton {
     }
   }
 
+  private addException(exception) {
+    let context = this.getContext(exception.context.id);
+    exception.context = context;
+    context.exceptions.push(exception);
+  }
+
   getContext(id: string): ContextStore {
     if (!this.contexts.has(id)) {
-      this.contexts.set(id, new ContextStore(id));
+      throw new Error('No context found with given id!');
     }
 
     // @ts-ignore
@@ -270,8 +285,8 @@ class WebsocketHandlerSingleton {
     return this.websocket;
   }
 
-  isConnected() {
-    return this.connected;
+  get isConnected() {
+    return this.connectionState === WebSocket.OPEN;
   }
 
   getContexts() {

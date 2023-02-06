@@ -20,7 +20,7 @@ const Request: FunctionComponent<RequestProps> = ({ request }) => {
           </div>
         )}
       </td>
-      <td>XHR</td>
+      <td>{request.resourceType}</td>
       <td colSpan={3} className={'ellipsis'}>
         <span>{request.url}</span>
       </td>

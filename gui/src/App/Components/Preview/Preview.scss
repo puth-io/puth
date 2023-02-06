@@ -71,8 +71,7 @@
         grid-gap: 1rem;
         padding: 0 0.5rem;
 
-        background: #1e1f23;
-        border-left: 1px solid #393b3e;
+        background: #232529;
         color: #787b81;
 
         border-top: 1px solid #2c2c2e;
@@ -109,5 +108,58 @@
             color: #2c2e32;
             font-size: 2.5rem;
         }
+    }
+}
+
+.border-left {
+    border-left: 1px solid;
+}
+.border-bottom {
+    border-bottom: 1px solid;
+}
+.border-top {
+    border-top: 1px solid;
+}
+.border-default {
+    border-color: #393b3e;
+}
+
+.z-10 {
+    z-index: 10;
+}
+
+.tab-menu {
+    display: flex;
+}
+
+.bg-dark-5 {
+    background-color: rgb(25, 26, 29);
+}
+
+.tab-button {
+    padding: 0 0.5rem;
+    cursor: pointer;
+
+    &.active,
+    &:hover {
+        background: black;
+        color: #c5cad0;
+    }
+}
+
+.min-h-0 {
+    min-height: 0;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+
+    &.darken {
+        background-color: rgba(0, 0, 0, 0.3);
     }
 }
