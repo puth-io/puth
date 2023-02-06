@@ -206,7 +206,6 @@ class Context extends Generic {
         );
 
       this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
-        console.log('  >> ', request.resourceType());
         if (trackable(request)) {
           Snapshots.pushToCache(this, {
             id: v4(),

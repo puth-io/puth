@@ -18,6 +18,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
 
   const [showLogs, setShowLogs] = useState(false);
   const [showXHR, setShowXHR] = useState(false);
+  const [showTimings, setShowTimings] = useState(false);
 
   let events = context.renderedEvents;
 
@@ -50,9 +51,14 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
     setShowXHR(!showXHR);
   };
 
+  let timingsToggle = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setShowTimings(!showTimings);
+  };
+
   return (
     <div
-      className={`context rounded-3 ${active ? 'active' : ''}`}
+      className={`context rounded-2 ${active ? 'active' : ''}`}
       data-context-id={context.id}
       data-status={context?.test?.status ?? undefined}
     >
@@ -67,6 +73,12 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
         <button className={`btn btn-smaller btn-outline-primary ${showLogs && 'active'} py-05`} onClick={logsToggle}>
           {showLogs && <span>&#10003;</span>} <span>Logs</span>
         </button>
+        <button
+          className={`btn btn-smaller btn-outline-primary ${showTimings && 'active'} py-05`}
+          onClick={timingsToggle}
+        >
+          {showTimings && <span>&#10003;</span>} <span>Time</span>
+        </button>
         <div>{pointer}</div>
       </div>
 
@@ -75,7 +87,7 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
           <tbody>
             {events.map((event: any, idx) => {
               if (event.type === 'command') {
-                return <Command key={event.id} index={commandIndex++} command={event} />;
+                return <Command key={event.id} index={commandIndex++} command={event} showTimings={showTimings} />;
               } else if (event.type === 'log') {
                 return <Log key={event.id} log={event} />;
               } else if (event.type === 'request') {

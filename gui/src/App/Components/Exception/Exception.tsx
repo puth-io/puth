@@ -5,21 +5,23 @@ import { Split, Trace } from '../Preview/Preview';
 
 export const Exception = ({ exception }) => {
   let { runner, origin, lang } = exception.data;
-  let { code, file, files, line, message, trace } = exception.data.exception;
+  let { code, files, message, trace } = exception.data.exception;
   let [active, setActive] = useState('default');
 
+  let { file, line } = trace[0];
+
   // Calculate previewed lines
-  let defaultFile = files.find((iter) => iter.path === file);
+  let defaultFile = files?.find((iter) => iter.path === file);
   let lines = defaultFile?.content?.split('\n');
 
   let lineOffset = line - (defaultFile?.offset ?? 0);
 
   let previewStart = lineOffset - 5;
-  let previewEnd = lineOffset + 5;
+  let previewEnd = lineOffset + 4;
   previewStart = previewStart < 0 ? 0 : previewStart;
   previewEnd = previewEnd >= lines ? lines : previewEnd;
 
-  let preview = lines.slice(previewStart, previewEnd);
+  let preview = lines?.slice(previewStart, previewEnd);
 
   // Cleanup puth exceptions
   if (message.includes('[Puth StackTrace]') && message.includes('... (truncated)')) {
@@ -56,12 +58,14 @@ export const Exception = ({ exception }) => {
         {active === 'default' && (
           <div className={'border-top border-default p-2'}>
             <Code language={'log'}>{message}</Code>
-            <Code
-              code={preview.join('\n')}
-              language={'php'}
-              lineNumbers={previewStart + (defaultFile?.offset ?? 0) + 1}
-              highlight={line}
-            />
+            {preview?.length > 0 && (
+              <Code
+                code={preview?.join('\n')}
+                language={'php'}
+                lineNumbers={previewStart + (defaultFile?.offset ?? 1)}
+                highlight={line}
+              />
+            )}
             <Trace trace={trace} />
           </div>
         )}

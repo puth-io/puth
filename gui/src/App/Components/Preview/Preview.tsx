@@ -13,7 +13,7 @@ import { ContextDetails } from '../ContextDetails/ContextDetails';
 // @ts-ignore
 const Tab = ({ title, subTitle = null, active = null, deletable = true }) => {
   return (
-    <div className={'tab rounded-3' + (active ? ' active' : '')}>
+    <div className={'tab rounded-2' + (active ? ' active' : '')}>
       <div className={'d-flex'}>
         <div className={'title flex-grow-1'}>{title}</div>
         {deletable && <div className={'close'}>&times;</div>}
@@ -58,7 +58,7 @@ const FooterMetrics = observer(() => {
 export const SPACE = <>&nbsp;</>;
 
 export const Trace = ({ trace }) => (
-  <Code code={trace.map((frame) => frame.file + ':' + frame.line + '\n')} language={'log'} />
+  <Code code={trace?.map((frame) => frame.file + ':' + frame.line + '\n')} language={'log'} />
 );
 
 export const PreviewFooter = observer(() => {
