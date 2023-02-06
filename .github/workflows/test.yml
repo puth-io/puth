@@ -44,6 +44,8 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
+      - id: get_version
+        uses: battila7/get-version-action@v2
       - uses: actions/checkout@v3
       - name: Setup node
         uses: actions/setup-node@v3
@@ -63,6 +65,11 @@ jobs:
           ls -lah node_modules
           ls -lah workspaces/puth
           ls -lah workspaces/puth/node_modules
+          mv node_modules workspaces/puth/node_modules
+          TAG=${{ steps.get_version.outputs.version-without-v }}
+          echo "Tag: $TAG"
+          cd workspaces/puth
+          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
       #          npx lerna link
 #      - name: Build
 #        run: npx lerna run build
