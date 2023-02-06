@@ -78,6 +78,9 @@ jobs:
           yarn set version berry
           yarn plugin import workspace-tools
           yarn workspaces focus --production puth
+          ls -lah
+          ls -lah workspaces/puth
+          ls -lah workspaces/puth/node_modules
           mv node_modules workspaces/puth/node_modules
           TAG=${{ steps.get_version.outputs.version-without-v }}
           echo "Tag: $TAG"
