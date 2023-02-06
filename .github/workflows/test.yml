@@ -36,9 +36,9 @@ jobs:
           yarn install --frozen-lockfile
           npx lerna link
       - name: Build
-        run: npx lerna build
+        run: npx lerna run build
       - name: Test
-        run: npx lerna test
+        run: npx lerna run test
 
   build-test:
     runs-on: ubuntu-latest
