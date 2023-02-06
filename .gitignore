@@ -298,5 +298,4 @@ Temporary Items
 /lib
 /static
 
-.yarn
-.yarnrc.yml
+.yarn/cache
