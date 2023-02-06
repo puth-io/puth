@@ -4,10 +4,10 @@ on:
     branches:
       - master
       - develop
+      - feature/monorepo
   pull_request:
     branches: 
       - master
-  workflow_dispatch:
 
 jobs:
   test:
@@ -20,31 +20,59 @@ jobs:
           - 16
           - 18
     steps:
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
-      - uses: actions/checkout@v2
-      - name: 'Cache node_modules'
-        uses: actions/cache@v2
+      - name: 'Cache'
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
             ${{ runner.os }}-node-v${{ matrix.node }}-
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
-      - run: yarn run build
-      - name: Run All Node.js Tests
-        run: yarn test
+        run: |
+          yarn
+      - name: Build
+        run: lerna run build
+      - name: Test
+        run: lerna run test
 
   build-test:
     runs-on: ubuntu-latest
     steps:
       - id: get_version
         uses: battila7/get-version-action@v2
-      - uses: actions/checkout@v2
-      - name: Build the Docker image
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: 'Cache'
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            ${{ runner.os }}-node-
+      - name: yarn build
         run: |
+          yarn
+          lerna run build
+          lerna run postbuild
+      - name: Build image
+        run: |
+          yarn workspaces focus --production puth
+          rm -rf workspaces/puth/node_modules
+          mv node_modules workspaces/puth
+          cd workspaces/puth
           TAG=${{ steps.get_version.outputs.version-without-v }}
           echo "Tag: $TAG"
           docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+      - name: Test image
+        run: |
+          yarn
+          docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:${{ steps.get_version.outputs.version-without-v }}
+          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote

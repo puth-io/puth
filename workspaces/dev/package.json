@@ -1,0 +1,13 @@
+{
+  "name": "@puth/dev",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev:client": "ts-node-dev --respawn --transpile-only client.ts",
+    "dev:server": "ts-node-dev --respawn --transpile-only server.ts"
+  },
+  "dependencies": {
+    "@puth/client": "*",
+    "puth": "*"
+  }
+}

@@ -297,3 +297,5 @@ Temporary Items
 
 /lib
 /static
+
+.yarn/cache
