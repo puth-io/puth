@@ -299,3 +299,4 @@ Temporary Items
 /static
 
 .yarn
+.yarnrc.yml
