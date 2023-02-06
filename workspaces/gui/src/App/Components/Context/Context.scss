@@ -1,0 +1,52 @@
+@import '../../Misc/colors';
+
+.context {
+  display: flex;
+  flex-direction: column;
+    //border-left: 0.5rem solid #bb941d;
+  // box-shadow: -1px 2px 5px 0 #8e8e8e;
+  // border-bottom: 1px solid #afafaf;
+  margin-bottom: 1rem;
+  color: $body-color;
+  padding: 0.125rem;
+  border: solid $light;
+  border-left-color: #adadad;
+  border-width: 1px 1px 1px 5px;
+
+  &[data-status="success"] {
+    border-left-color: $success;
+  }
+
+  &[data-status="failed"] {
+    border-left-color: #9d1212;
+  }
+
+  &.active {
+    background-color: $lighter;
+  }
+
+  .name {
+    cursor: pointer;
+  }
+
+  .snapshots {
+    flex: 1;
+    border: none;
+    border-collapse: collapse;
+    width: auto;
+    border-radius: 2px;
+
+    font-family: monospace;
+    line-height: 1.25rem;
+    font-size: 0.875rem;
+
+    &.table {
+      $border-opacity: 0.15;
+      border-top: 1px solid rgba(255, 255, 255, $border-opacity);
+
+      td {
+        border-bottom: 1px solid rgba(255, 255, 255, $border-opacity);
+      }
+    }
+  }
+}
