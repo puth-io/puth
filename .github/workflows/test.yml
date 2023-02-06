@@ -59,10 +59,8 @@ jobs:
             ${{ runner.os }}-node-v${{ matrix.node }}-
       - name: Install Dependencies
         run: |
-          yarn --version
-          yarn set version berry
-          yarn
-          ls -lah
+          yarn workspaces focus --production puth
+          ls -lah node_modules
           ls -lah workspaces/puth
           ls -lah workspaces/puth/node_modules
       #          npx lerna link
