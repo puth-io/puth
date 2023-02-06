@@ -67,11 +67,11 @@ jobs:
           yarn workspaces focus --production puth
           rm -rf workspaces/puth/node_modules
           mv node_modules workspaces/puth
+          cd workspaces/puth
           TAG=${{ steps.get_version.outputs.version-without-v }}
           echo "Tag: $TAG"
-          cd workspaces/puth
           docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
       - name: Test image
         run: |
-          docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+          docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:${{ steps.get_version.outputs.version-without-v }}
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote

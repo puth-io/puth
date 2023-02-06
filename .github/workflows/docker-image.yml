@@ -19,3 +19,41 @@ jobs:
         echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
         docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
         docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: 'Cache'
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            ${{ runner.os }}-node-
+      - name: yarn build
+        run: |
+          yarn
+          lerna run build
+          lerna run postbuild
+      - name: Build image
+        run: |
+          yarn workspaces focus --production puth
+          rm -rf workspaces/puth/node_modules
+          mv node_modules workspaces/puth
+          TAG=${{ steps.get_version.outputs.version-without-v }}
+          echo "Tag: $TAG"
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
+          cd workspaces/puth
+          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+          docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+      - name: Test image
+        run: |
+          docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
