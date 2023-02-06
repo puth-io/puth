@@ -59,8 +59,8 @@ jobs:
       - name: Install Dependencies
         run: |
           yarn set version berry
-          yarn install --frozen-lockfile
-          npx lerna link
+          yarn
+#          npx lerna link
       - name: Build
         run: npx lerna run build
       - name: Test
