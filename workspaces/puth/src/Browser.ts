@@ -1,12 +1,12 @@
 import puppeteer from 'puppeteer';
-import * as defaultArgs from './chromeDefaultArgs.json';
-import * as tmp from 'tmp-promise';
+import defaultArgs from './chromeDefaultArgs.json';
+import tmp from 'tmp-promise';
 
 export async function createBrowser(config: any = {}) {
   let {
     headless = true,
     ignoreDefaultArgs = ['--enable-automation'],
-    puthArgs = defaultArgs.default,
+    puthArgs = defaultArgs,
     args = [],
     devtools = false,
     slowMo,

@@ -184,9 +184,9 @@ class SnapshotHandler {
     //      the old page content because we do not visualize the diff. Therefore we should add an indicator
     //      that sets the beginning to the current page content (stops backtrace and starts from indicator)
     //      --> diff should only be used if the diff size is smaller than content size
-    let patch = DMP.patch_make(context.cache.snapshot.lastHtml, pageSnapshot.src);
+    let patch = DMP.patch_make(context.caches.snapshot.lastHtml, pageSnapshot.src);
 
-    context.cache.snapshot.lastHtml = pageSnapshot.src;
+    context.caches.snapshot.lastHtml = pageSnapshot.src;
 
     return {
       type: 'snapshot',
