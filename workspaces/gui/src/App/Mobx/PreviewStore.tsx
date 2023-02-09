@@ -3,7 +3,7 @@ import { action, makeAutoObservable } from 'mobx';
 import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
 import { Events } from '../../main';
 import { IContext } from '../Misc/WebsocketHandler';
-import { resolveSnapshotBacktrack } from '../Misc/Util';
+import { resolveSnapshotBacktrack3, resolveSnapshotBacktrackV4 } from '../Misc/Util';
 
 export type SnapshotState = 'before' | 'after';
 
@@ -90,12 +90,18 @@ export class PreviewStoreClass {
 
     let html = '';
 
-    if (this.visibleSnapshot?.version === 3) {
+    if (this.visibleSnapshot?.version === 4) {
       let context = this.visibleCommand?.context;
       let commands = context?.commands.filter((i) => i.type === 'command');
       let index = commands?.findIndex((i) => i.id === this.visibleCommand?.id);
 
-      html = resolveSnapshotBacktrack(commands, index, this.visibleHighlightState === 'after');
+      html = resolveSnapshotBacktrackV4(commands, index, this.visibleHighlightState === 'before');
+    } else if (this.visibleSnapshot?.version === 3) {
+      let context = this.visibleCommand?.context;
+      let commands = context?.commands.filter((i) => i.type === 'command');
+      let index = commands?.findIndex((i) => i.id === this.visibleCommand?.id);
+
+      html = resolveSnapshotBacktrack3(commands, index, this.visibleHighlightState === 'after');
     } else if (this.visibleSnapshot?.version === 2) {
       html = this.visibleSnapshot?.html?.src;
     }

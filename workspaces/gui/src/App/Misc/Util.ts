@@ -268,7 +268,7 @@ export function logContext(packet) {
   console.groupEnd();
 }
 
-export function resolveSnapshotBacktrack(commands, index, snapshotStateAfter = false) {
+export function resolveSnapshotBacktrack3(commands, index, snapshotStateAfter = false) {
   if (index === -1) {
     return '';
   }
@@ -289,10 +289,36 @@ export function resolveSnapshotBacktrack(commands, index, snapshotStateAfter = f
 
   let next = snapshotStateAfter ? index : index - 1;
 
-  let value = resolveSnapshotBacktrack(commands, next, !snapshotStateAfter);
+  let value = resolveSnapshotBacktrack3(commands, next, !snapshotStateAfter);
 
   // return diff.applyPatch(value, snapshot.data.diff);
   return DMP.patch_apply(snapshot.data.diff, value)[0];
+}
+
+export function resolveSnapshotBacktrackV4(commands, until, lastSnapshotStateBefore, index = 0, value = '') {
+  if (index >= commands.length) {
+    return value;
+  }
+
+  let command: ICommand = commands[index];
+
+  if (command.snapshots.before) {
+    value = DMP.patch_apply(command.snapshots.before.data.diff, value)[0];
+  }
+
+  if (index === until && lastSnapshotStateBefore) {
+    return value;
+  }
+
+  if (command.snapshots.after) {
+    value = DMP.patch_apply(command.snapshots.after.data.diff, value)[0];
+  }
+
+  if (index === until) {
+    return value;
+  }
+
+  return resolveSnapshotBacktrackV4(commands, until, lastSnapshotStateBefore, index + 1, value);
 }
 
 export function throttle(func, delay = 250) {

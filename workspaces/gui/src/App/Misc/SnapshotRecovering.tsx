@@ -131,7 +131,11 @@ export function resolveCssLinksToLocal(src, base) {
 }
 
 export function recover(command, snapshot, doc) {
-  if (!doc || !PreviewStore.hasVisibleSnapshotSource || (snapshot.version !== 2 && snapshot.version !== 3)) {
+  if (
+    !doc ||
+    !PreviewStore.hasVisibleSnapshotSource ||
+    (snapshot.version !== 2 && snapshot.version !== 3 && snapshot.version !== 4)
+  ) {
     return;
   }
 

@@ -79,6 +79,12 @@ class Context extends Generic {
 
   private readonly createdAt;
 
+  public cache = {
+    snapshot: {
+      lastHtml: '',
+    },
+  };
+
   constructor(puth: Puth, options: any = {}) {
     super();
 
