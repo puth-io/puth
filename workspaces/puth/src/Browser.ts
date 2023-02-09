@@ -6,7 +6,7 @@ export async function createBrowser(config: any = {}) {
   let {
     headless = true,
     ignoreDefaultArgs = ['--enable-automation'],
-    puthArgs = defaultArgs,
+    puthArgs = defaultArgs.default,
     args = [],
     devtools = false,
     slowMo,

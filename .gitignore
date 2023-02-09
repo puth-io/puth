@@ -299,3 +299,4 @@ Temporary Items
 /static
 
 .yarn/cache
+.yarn/install-state.gz
