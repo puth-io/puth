@@ -1,0 +1,40 @@
+{
+    "name": "puth/laravel",
+    "description": "Puth Laravel Client",
+    "type": "library",
+    "require": {
+        "illuminate/log": "^v9.51.0",
+        "illuminate/support": "^v9.51.0",
+        "puth/php": "*"
+    },
+    "license": "GPL-3.0-only",
+    "autoload": {
+        "psr-4": {
+            "Puth\\Laravel\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Sebastian Uehlin",
+            "email": "s.uehlin@proton.me"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Puth\\Laravel\\PuthServiceProvider"
+            ]
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../client",
+            "options": {
+                "symLink": true
+            }
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

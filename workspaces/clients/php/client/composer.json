@@ -1,0 +1,23 @@
+{
+    "name": "puth/php",
+    "description": "puth-php",
+    "require": {
+        "php": "^8.0.2",
+        "guzzlehttp/guzzle": "^7.0",
+        "phpunit/phpunit": "^9.4",
+        "symfony/process": "^4.3|^5.0"
+    },
+    "require-dev": {
+        "brianium/paratest": "^6.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Puth\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    }
+}
