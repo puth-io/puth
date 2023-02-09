@@ -11,7 +11,7 @@ import mitt from 'mitt';
 
 import { createBrowser } from './Browser';
 import { DaemonBrowser } from './DaemonBrowser';
-import * as path from 'path';
+import path from 'path';
 import { encode } from '@msgpack/msgpack';
 
 import { promises as fsPromise } from 'fs';
@@ -79,7 +79,7 @@ class Context extends Generic {
 
   private readonly createdAt;
 
-  public cache = {
+  public caches = {
     snapshot: {
       lastHtml: '',
     },

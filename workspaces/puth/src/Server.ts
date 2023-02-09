@@ -1,4 +1,4 @@
-import * as path from 'path';
+import path from 'path';
 
 import Fastify from 'fastify';
 import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
