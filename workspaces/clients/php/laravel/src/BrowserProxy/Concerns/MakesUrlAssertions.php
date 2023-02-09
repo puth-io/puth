@@ -1,11 +1,12 @@
 <?php
 
-namespace Puth\Traits;
+namespace Puth\Laravel\BrowserProxy\Concerns;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Constraint\RegularExpression;
+use Puth\Traits\PuthUtils;
 
-trait PuthDuskUrlAssertions
+trait MakesUrlAssertions
 {
     use PuthUtils;
 

@@ -2,20 +2,19 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Support\Facades\Log;
-use Puth\Laravel\Facades\Puth;
-use Puth\Laravel\TestCase;
+use Puth\Laravel\BrowserProxy\BrowserProxy;
+use Puth\Laravel\PuthDuskTestCase;
 
-class ApplicationTest extends TestCase
+class ApplicationTest extends PuthDuskTestCase
 {
-    function test_visit_playground()
+    function test_dusk_browser_proxy()
     {
-        $this->visit('https://playground.puth.dev');
-        
-        Log::info('test', [$this]);
-        
-        dump(json_encode(Puth::getFormattedLog()));
-        dump(Puth::clearLog());
-        dump(Puth::getFormattedLog());
+        $this->browse(function (BrowserProxy $browser) {
+            $browser->visit('https://playground.puth.dev/')
+                ->type('#actions-focus', 'test')
+                ->type('#actions-clear', 'password')
+                ->press('#actions-click button')
+                ->assertPathIs('/');
+        });
     }
 }

@@ -20,7 +20,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           expects: Expects.Element,
         },
         should: this.should,
-        type: this.type,
       },
       // resolver: {
       //     Page: {}
@@ -63,6 +62,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         },
         _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
         url: this.url,
+        type: this.type,
       },
       ElementHandle: {
         get: this.get,

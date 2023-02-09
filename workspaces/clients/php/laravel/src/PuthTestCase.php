@@ -4,18 +4,20 @@ namespace Puth\Laravel;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Puth\Laravel\Facades\Puth;
+use Puth\Laravel\Traits\PuthDuskBrowser;
 use Puth\Traits\PuthAssertions;
 use Puth\Traits\PuthDuskAssertions;
 use Puth\Traits\PuthDuskUrlAssertions;
 use Puth\Traits\PuthTestCaseTrait;
 use Tests\CreatesApplication;
 
-abstract class TestCase extends BaseTestCase
+abstract class PuthTestCase extends BaseTestCase
 {
     use CreatesApplication;
     use PuthAssertions;
     use PuthDuskAssertions;
     use PuthDuskUrlAssertions;
+    use PuthDuskBrowser;
     
     use PuthTestCaseTrait {
         PuthTestCaseTrait::setUp as protected setUpPuth;
@@ -24,11 +26,12 @@ abstract class TestCase extends BaseTestCase
     
     protected function setUp(): void
     {
+        $this->setUpPuth();
+        
         if ($this->shouldTrackLog()) {
-            $this->setUpPuth();
+            Puth::captureLog();
         }
         
-        Puth::captureLog();
     }
     
     protected function tearDown(): void
