@@ -61,7 +61,7 @@
     "test:watch": "mocha -r ts-node/register --recursive -w --watch-files src,test 'test/**/*.ts'",
     "generate:doc": "typedoc node_modules/puppeteer/lib/types.d.ts --json doc/src/test.json",
     "daemon": "node src/server/daemon/daemon.js",
-    "prepublishOnly": "yarn run build && yarn test && yarn run lint && cd gui && yarn run build",
+    "prepublishOnly": "yarn run build && yarn test && yarn run lint",
     "preversion": "yarn run lint",
     "version": "yarn run format && git add -A src",
     "postversion": "git push && git push --tags",
