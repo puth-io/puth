@@ -31,16 +31,25 @@ class BrowserProxy
     public static $baseUrl;
     
     /**
+     * The element resolver instance.
+     *
+     * @var ElementResolver
+     */
+    public $resolver;
+    
+    /**
      * The page object currently being viewed.
      *
      * @var mixed
      */
     public $page;
     
-    public function __construct($browser)
+    public function __construct($browser, $resolver = null)
     {
         $this->puthBrowser = $browser;
         $this->puthPage = $this->puthBrowser->pages()[0];
+        
+        $this->resolver = $resolver ?: new ElementResolver($this->puthPage);
     }
     
     /**
