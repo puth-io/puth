@@ -42,7 +42,14 @@ function puthContextTests(env) {
   describe(`Api [${env[0]}]`, function () {
     beforeEach(async function () {
       this.remote = env[1]();
-      this.context = await this.remote.contextCreate();
+
+      if (env[0] === 'local') {
+        this.remote.use(PuthStandardPlugin);
+      }
+
+      this.context = await this.remote.contextCreate({
+        snapshot: true,
+      });
     });
 
     it('can create context', async function () {
@@ -60,6 +67,18 @@ function puthContextTests(env) {
       assert.containsAllKeys(rep, ['id', 'type']);
       assert.strictEqual(rep?.represents, 'CDPBrowser');
       assert.isFulfilled(this.context.destroy());
+    });
+
+    describe('Browser', function () {
+      it('can visit site', async function () {
+        let browser = await await this.context.createBrowser();
+
+        let page = (await browser.pages())[0];
+        await page.visit('https://playground.puth.dev');
+
+        assert.strictEqual(await page.url(), 'https://playground.puth.dev/');
+        assert.isFulfilled(this.context.destroy());
+      });
     });
 
     describe('RemoteContext', function () {
