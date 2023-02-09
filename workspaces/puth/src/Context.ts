@@ -7,7 +7,7 @@ import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
 import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage } from 'puppeteer';
-import * as mitt from 'mitt';
+import mitt from 'mitt';
 
 import { createBrowser } from './Browser';
 import { DaemonBrowser } from './DaemonBrowser';
