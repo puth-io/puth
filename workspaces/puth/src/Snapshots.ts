@@ -167,34 +167,10 @@ class SnapshotHandler {
     WebsocketConnections.broadcastAll(object);
   }
 
-  resolveSnapshotBacktrack(commands, index, snapshotState: SnapshotState | null = null) {
-    if (index === -1) {
-      return '';
-    }
-
-    let command: ICommand = commands[index];
-
-    let snapshot;
-
-    if (snapshotState === SnapshotState.AFTER) {
-      snapshot = command.snapshots.before;
-    } else {
-      snapshot = command.snapshots.after;
-    }
-
-    if (!snapshot) {
-      return '';
-    }
-
-    let value = this.resolveSnapshotBacktrack(commands, index - 1);
-
-    return DMP.patch_apply(snapshot.data.diff, value)[0];
-  }
-
   /**
    * Creates a snapshot of the current dom (with element states)
    *
-   * @version 3
+   * @version 4
    */
   async makeSnapshot(context: Context, page: Page, snapshotState: SnapshotState): Promise<ISnapshot | undefined> {
     if (!page || page.url() === 'about:blank') {
@@ -203,25 +179,18 @@ class SnapshotHandler {
 
     let pageSnapshot = await this.createPageSnapshot(page);
 
-    // go through all
-    // diff.createPatch();
-    let commands: any[] = [];
-
-    if (this.cache.has(context)) {
-      commands = this.cache.get(context)?.filter((i) => i.type === 'command') ?? [];
-    }
-
     // TODO cache latest context html snapshot so we don't need to resolve
     // TODO when page changes, diff will have both the old page content and the new content. We do not need
     //      the old page content because we do not visualize the diff. Therefore we should add an indicator
     //      that sets the beginning to the current page content (stops backtrace and starts from indicator)
     //      --> diff should only be used if the diff size is smaller than content size
-    let rebuild = this.resolveSnapshotBacktrack(commands, commands.length - 1, snapshotState);
-    let patch = DMP.patch_make(rebuild ?? '', pageSnapshot.src);
+    let patch = DMP.patch_make(context.cache.snapshot.lastHtml, pageSnapshot.src);
+
+    context.cache.snapshot.lastHtml = pageSnapshot.src;
 
     return {
       type: 'snapshot',
-      version: 3,
+      version: 4,
       url: page.url(),
       viewport: page.viewport(),
       isJavascriptEnabled: page.isJavaScriptEnabled(),
