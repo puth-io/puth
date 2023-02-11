@@ -26,8 +26,7 @@ trait PerformsActionsTrait
             'parameters' => $parameters,
         ]]);
     
-        dump($function);
-        $this->log('call method > ' . $this->translateActionReverse($function));
+        $this->log("call: $function (translated: {$this->translateActionReverse($function)}})");
 
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
             throw new Exception(BackTrace::message(
@@ -46,7 +45,7 @@ trait PerformsActionsTrait
             'property' => $property,
         ]]);
 
-        $this->log('get property > ' . $property);
+        $this->log('get: ' . $property);
 
         return $this->handleResponse($response, [$property], function ($body, $arguments) {
             throw new Exception(BackTrace::message(
@@ -61,6 +60,12 @@ trait PerformsActionsTrait
         if ($response->getStatusCode() !== 200) {
             throw new \Exception("Puth server returned status code: {$response->getStatusCode()}");
         }
+        
+        if ($this->getContext()->isDebug()) {
+            $this->log('return: ', false);
+            var_export($this->toJson($response->getBody()));
+            print("\n\n");
+        }
     
         // Check if binary response body
         foreach ($response->getHeader('Content-Type') as $value) {
@@ -70,10 +75,6 @@ trait PerformsActionsTrait
         }
         
         $body = $this->toJson($response->getBody());
-
-        if ($this->getContext()->isDebug()) {
-            var_dump($body);
-        }
 
         if (empty($body)) {
             return $this;

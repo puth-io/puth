@@ -164,21 +164,21 @@ trait ProvidesBrowser
         });
     }
 
-//    /**
-//     * Store the source code for the given browsers (if necessary).
-//     *
-//     * @param \Illuminate\Support\Collection $browsers
-//     * @return void
-//     */
-//    protected function storeSourceLogsFor($browsers)
-//    {
-//        $browsers->each(function ($browser, $key) {
-//            if (property_exists($browser, 'madeSourceAssertion') &&
-//                $browser->madeSourceAssertion) {
-//                $browser->storeSource($this->getCallerName() . '-' . $key);
-//            }
-//        });
-//    }
+    /**
+     * Store the source code for the given browsers (if necessary).
+     *
+     * @param \Illuminate\Support\Collection $browsers
+     * @return void
+     */
+    protected function storeSourceLogsFor($browsers)
+    {
+        $browsers->each(function ($browser, $key) {
+            if (property_exists($browser, 'madeSourceAssertion') &&
+                $browser->madeSourceAssertion) {
+                $browser->storeSource($this->getCallerName() . '-' . $key);
+            }
+        });
+    }
     
     /**
      * Close all of the browsers except the primary (first) one.

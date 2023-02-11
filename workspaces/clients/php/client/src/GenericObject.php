@@ -97,9 +97,9 @@ class GenericObject
         return $this->represents;
     }
 
-    private function log($string)
+    private function log($string, $newline = true)
     {
-        $this->getParent()->log('[GEN ' . substr($this->getId(), 0, 4) . '] ' . $string);
+        $this->getParent()->log('[GEN ' . $this->getRepresents() . '] ' . $string, $newline);
     }
     
     public function __toString() {

@@ -231,9 +231,9 @@ trait MakesUrlAssertions
     {
         $pattern = preg_quote($fragment, '/');
 
-        $this->context->setCapability('EVAL', true);
+        $this->puthContext->setCapability('EVAL', true);
         $actualFragment = (string)parse_url($this->puthPage->evaluate('() => window.location.href'), PHP_URL_FRAGMENT);
-        $this->context->setCapability('EVAL', false);
+        $this->puthContext->setCapability('EVAL', false);
 
         Assert::assertThat(
             $actualFragment, new RegularExpression('/^' . str_replace('\*', '.*', $pattern) . '$/u'),
@@ -251,9 +251,9 @@ trait MakesUrlAssertions
      */
     public function assertFragmentBeginsWith($fragment)
     {
-        $this->context->setCapability('EVAL', true);
+        $this->puthContext->setCapability('EVAL', true);
         $actualFragment = (string)parse_url($this->puthPage->evaluate('() => window.location.href'), PHP_URL_FRAGMENT);
-        $this->context->setCapability('EVAL', false);
+        $this->puthContext->setCapability('EVAL', false);
         
         Assert::assertStringStartsWith(
             $fragment, $actualFragment,
@@ -271,9 +271,9 @@ trait MakesUrlAssertions
      */
     public function assertFragmentIsNot($fragment)
     {
-        $this->context->setCapability('EVAL', true);
+        $this->puthContext->setCapability('EVAL', true);
         $actualFragment = (string)parse_url($this->puthPage->evaluate('() => window.location.href'), PHP_URL_FRAGMENT);
-        $this->context->setCapability('EVAL', false);
+        $this->puthContext->setCapability('EVAL', false);
         
         Assert::assertNotEquals(
             $fragment, $actualFragment,
@@ -354,7 +354,7 @@ trait MakesUrlAssertions
      * @param string $name
      * @return array
      */
-    protected function assertHasQueryStringParameter($name)
+    public function assertHasQueryStringParameter($name)
     {
         $parsedUrl = parse_url($this->puthPage->url());
         

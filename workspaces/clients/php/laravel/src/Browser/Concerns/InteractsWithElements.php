@@ -164,7 +164,7 @@ trait InteractsWithElements
      */
     public function append($field, $value)
     {
-        $this->resolver->resolveForTyping($field)->sendKeys($value);
+        $this->resolver->resolveForTyping($field)->type($value);
         
         return $this;
     }

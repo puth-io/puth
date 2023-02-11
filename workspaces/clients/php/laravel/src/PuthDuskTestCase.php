@@ -2,6 +2,7 @@
 
 namespace Puth\Laravel;
 
+use Exception;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Puth\Context;
 use Puth\Laravel\Browser\Browser;
@@ -27,24 +28,27 @@ abstract class PuthDuskTestCase extends BaseTestCase
         parent::setUp();
     
         $this->context = new Context(Puth::instanceUrl(), [
-            'snapshot' => true,
             'test' => [
                 'name' => $this->getName(),
+                'group' => get_class($this),
             ],
-            'group' => get_class($this),
-            'dev' => false,
+//            'timeouts' => [
+//                'commands' => 5000,
+////                'assertions' => 5000,
+////                'default' => 5000,
+//            ],
+            'snapshot' => true,
+//            'dev' => false,
             'debug' => true,
-            'timeouts' => [
-                'commands' => 5000,
-//                'assertions' => 5000,
-//                'default' => 5000,
-            ],
         ]);
     
         Browser::$baseUrl = $this->baseUrl();
         Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
         Browser::$storeConsoleLogAt = base_path('tests/Browser/console');
         Browser::$storeSourceAt = base_path('tests/Browser/source');
+        Browser::$userResolver = function () {
+            return $this->user();
+        };
     
         if ($this->shouldTrackLog()) {
             Puth::captureLog();
@@ -94,5 +98,15 @@ abstract class PuthDuskTestCase extends BaseTestCase
     protected function baseUrl()
     {
         return rtrim(config('app.url'), '/');
+    }
+    
+    /**
+     * Return the default user to authenticate.
+     *
+     * @throws \Exception
+     */
+    protected function user()
+    {
+        throw new Exception('User resolver has not been set.');
     }
 }

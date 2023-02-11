@@ -2,23 +2,32 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
+use Exception;
+
 trait InteractsWithMouse
 {
-    /**
-     * Move the mouse by offset X and Y.
-     *
-     * @param int $xOffset
-     * @param int $yOffset
-     * @return $this
-     */
-    public function moveMouse($xOffset, $yOffset)
-    {
-        (new WebDriverActions($this->driver))->moveByOffset(
-            $xOffset, $yOffset
-        )->perform();
-        
-        return $this;
-    }
+//    public int $mouseX = 0;
+//    public int $mouseY = 0;
+  
+///// Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y
+///// location but then we need to update it on $page->click, $element->click, ...
+//
+//    /**
+//     * Move the mouse by offset X and Y.
+//     *
+//     * @param int $xOffset
+//     * @param int $yOffset
+//     * @return $this
+//     */
+//    public function moveMouse($xOffset, $yOffset)
+//    {
+//        $this->mouseX += $xOffset;
+//        $this->mouseY += $yOffset;
+//        
+//        $this->puthPage->mouse->move($this->mouseX, $this->mouseY);
+//        
+//        return $this;
+//    }
     
     /**
      * Move the mouse over the given selector.
@@ -28,9 +37,7 @@ trait InteractsWithMouse
      */
     public function mouseover($selector)
     {
-        $element = $this->resolver->findOrFail($selector);
-        
-        $this->driver->getMouse()->mouseMove($element->getCoordinates());
+        $this->resolver->findOrFail($selector)->hover();
         
         return $this;
     }
@@ -38,28 +45,28 @@ trait InteractsWithMouse
     /**
      * Click the element at the given selector.
      *
-     * @param string|null $selector
+     * @param string $selector
      * @return $this
      */
-    public function click($selector = null)
+    public function click($selector)
     {
-        if (is_null($selector)) {
-            (new WebDriverActions($this->driver))->click()->perform();
-            
-            return $this;
-        }
+//        if (is_null($selector)) {
+//            $this->puthPage->mouse->click($this->mouseX, $this->mouseY);
+//            
+//            return $this;
+//        }
         
         foreach ($this->resolver->all($selector) as $element) {
             try {
                 $element->click();
                 
                 return $this;
-            } catch (ElementClickInterceptedException $e) {
+            } catch (Exception $e) {
                 //
             }
         }
         
-        throw $e ?? new NoSuchElementException("Unable to locate element with selector [{$selector}].");
+        throw $e;
     }
     
     /**
@@ -71,7 +78,7 @@ trait InteractsWithMouse
      */
     public function clickAtPoint($x, $y)
     {
-        $this->driver->executeScript("document.elementFromPoint({$x}, {$y}).click()");
+        $this->puthPage->mouse->click($x, $y);
         
         return $this;
     }
@@ -84,9 +91,7 @@ trait InteractsWithMouse
      */
     public function clickAtXPath($expression)
     {
-        $this->driver
-            ->findElement(WebDriverBy::xpath($expression))
-            ->click();
+        $this->puthPage->getX($expression)->click();
         
         return $this;
     }
@@ -97,15 +102,12 @@ trait InteractsWithMouse
      * @param string|null $selector
      * @return $this
      */
-    public function clickAndHold($selector = null)
+    public function clickAndHold($selector)
     {
-        if (is_null($selector)) {
-            (new WebDriverActions($this->driver))->clickAndHold()->perform();
-        } else {
-            (new WebDriverActions($this->driver))->clickAndHold(
-                $this->resolver->findOrFail($selector)
-            )->perform();
-        }
+        $point = $this->resolver->findOrFail($selector)->clickablePoint();
+        $this->puthPage->mouse->move($point->x, $point->y);
+        $this->puthPage->mouse->down();
+        
         
         return $this;
     }
@@ -116,15 +118,9 @@ trait InteractsWithMouse
      * @param string|null $selector
      * @return $this
      */
-    public function doubleClick($selector = null)
+    public function doubleClick($selector)
     {
-        if (is_null($selector)) {
-            (new WebDriverActions($this->driver))->doubleClick()->perform();
-        } else {
-            (new WebDriverActions($this->driver))->doubleClick(
-                $this->resolver->findOrFail($selector)
-            )->perform();
-        }
+        $this->resolver->findOrFail($selector)->click(['clickCount' => 2]);
         
         return $this;
     }
@@ -137,13 +133,7 @@ trait InteractsWithMouse
      */
     public function rightClick($selector = null)
     {
-        if (is_null($selector)) {
-            (new WebDriverActions($this->driver))->contextClick()->perform();
-        } else {
-            (new WebDriverActions($this->driver))->contextClick(
-                $this->resolver->findOrFail($selector)
-            )->perform();
-        }
+        $this->resolver->findOrFail($selector)->click(['button' => 'right']);
         
         return $this;
     }
@@ -155,7 +145,7 @@ trait InteractsWithMouse
      */
     public function releaseMouse()
     {
-        (new WebDriverActions($this->driver))->release()->perform();
+        $this->puthPage->mouse->up();
         
         return $this;
     }

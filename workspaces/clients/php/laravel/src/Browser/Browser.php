@@ -21,11 +21,11 @@ class Browser
         Macroable::__call as macroCall;
     }
     
-    private $puthContext;
+    public $puthContext;
     
-    private $puthBrowser;
+    public $puthBrowser;
     
-    private $puthPage;
+    public $puthPage;
     
     /**
      * The base URL for all URLs.

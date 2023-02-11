@@ -381,11 +381,11 @@ trait MakesAssertions
         return $this;
     }
     
-    function resolveElement($element)
+    function resolveElement($element, $options = [])
     {
         if (is_string($element)) {
             try {
-                return $this->puthPage->get($element);
+                return $this->puthPage->get($element, $options);
             } catch (\Exception $e) {
                 return null;
             }
@@ -672,7 +672,8 @@ trait MakesAssertions
      */
     public function assertMissing($element)
     {
-        $element = $this->resolveElement($element);
+        $this->puthPage->waitForSelector($element, ['hidden' => true]);
+        $element = $this->resolveElement($element, ['timeout' => 0]);
         
         Assert::assertNull(
             $element,

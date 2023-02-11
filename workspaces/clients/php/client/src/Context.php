@@ -13,21 +13,28 @@ use Puth\Traits\PerformsActionsTrait;
  */
 class Context
 {
-    use ActionTranslationTrait, PerformsActionsTrait;
+    use ActionTranslationTrait;
+    use PerformsActionsTrait;
 
-    protected $baseUrl;
-    protected $options;
-    protected $client;
+    protected string $baseUrl;
+    protected array $options;
+    protected Client $client;
 
-    protected $id;
-    protected $type = 'Context';
+    protected string $id;
+    protected string $type = 'Context';
 
-    private $actionTranslations = [];
-
+    private array $actionTranslations = [];
+    
+    private bool $dev;
+    private bool $debug;
+    
     function __construct($baseUrl, $options = [])
     {
         $this->baseUrl = $baseUrl;
         $this->options = $options;
+        
+        $this->dev = $this->options['dev'] ?? false;
+        $this->debug = $this->options['debug'] ?? false;
 
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
@@ -43,7 +50,7 @@ class Context
         $this->id = $response->id;
         $this->type = $response->type;
 
-        $this->log("Created");
+        $this->log("created");
     }
 
     public function destroy($options)
@@ -57,7 +64,7 @@ class Context
         $statusCode = $response->getStatusCode();
 
         if ($statusCode === 200) {
-            $this->log("Destroyed");
+            $this->log("destroyed");
             return true;
         } else if ($statusCode === 404) {
             echo $response->getBody();
@@ -78,11 +85,11 @@ class Context
     }
 
     public function isDebug() {
-        return $this->options['debug'] === true;
+        return $this->debug;
     }
 
     public function isDev() {
-        return $this->options['dev'] === true;
+        return $this->dev;
     }
 
     public function getContext() {
@@ -91,14 +98,10 @@ class Context
 
     public function __call($name, $arguments)
     {
-        $this->log('__call > ' . $name);
-
         return $this->callMethod($this->translateAction($name), $arguments);
     }
 
     public function __get($property) {
-        $this->log('__get > ' . $property);
-
         return $this->getProperty($property);
     }
 
@@ -116,10 +119,10 @@ class Context
         return $this->type;
     }
 
-    public function log($string)
+    public function log($string, $newline = true)
     {
         if ($this->isDebug()) {
-            print('[E2E ' . substr($this->id, 0, 4) . '] ' . $string . "\n");
+            print('[CTX ' . substr($this->id, 0, 4) . '] ' . $string . ($newline ? "\n" : ''));
         }
     }
 }

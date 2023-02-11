@@ -150,7 +150,6 @@ trait PuthTestCaseTrait
             }
         }
     
-        dump('PuthTestCaseTrait', 'tearDown');
         $this->context->destroy(['options' => $destroyOptions]);
     }
 
