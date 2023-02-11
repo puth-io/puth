@@ -2,6 +2,9 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
+use Laravel\Dusk\Browser;
+use PHPUnit\Framework\Assert;
+
 trait InteractsWithAuthentication
 {
     /**
@@ -49,7 +52,7 @@ trait InteractsWithAuthentication
     {
         $response = $this->visit(route('puth.dusk.user', ['guard' => $guard], $this->shouldUseAbsoluteRouteForAuthentication()));
         
-        return json_decode(strip_tags($response->driver->getPageSource()), true);
+        return json_decode(strip_tags($response->puthPage->content()), true);
     }
     
     /**
@@ -60,9 +63,9 @@ trait InteractsWithAuthentication
      */
     public function assertAuthenticated($guard = null)
     {
-        $currentUrl = $this->driver->getCurrentURL();
+        $currentUrl = $this->puthPage->url();
         
-        PHPUnit::assertNotEmpty($this->currentUserInfo($guard), 'The user is not authenticated.');
+        Assert::assertNotEmpty($this->currentUserInfo($guard), 'The user is not authenticated.');
         
         return $this->visit($currentUrl);
     }
@@ -75,9 +78,9 @@ trait InteractsWithAuthentication
      */
     public function assertGuest($guard = null)
     {
-        $currentUrl = $this->driver->getCurrentURL();
-        
-        PHPUnit::assertEmpty(
+        $currentUrl = $this->puthPage->url();
+    
+        Assert::assertEmpty(
             $this->currentUserInfo($guard), 'The user is unexpectedly authenticated.'
         );
         
@@ -93,14 +96,14 @@ trait InteractsWithAuthentication
      */
     public function assertAuthenticatedAs($user, $guard = null)
     {
-        $currentUrl = $this->driver->getCurrentURL();
+        $currentUrl = $this->puthPage->url();
         
         $expected = [
             'id' => $user->getAuthIdentifier(),
             'className' => get_class($user),
         ];
         
-        PHPUnit::assertSame(
+        Assert::assertSame(
             $expected, $this->currentUserInfo($guard),
             'The currently authenticated user is not who was expected.'
         );
@@ -115,6 +118,6 @@ trait InteractsWithAuthentication
      */
     private function shouldUseAbsoluteRouteForAuthentication()
     {
-        return config('puth.dusk.domain') !== null;
+        return config('puth.dusk.domain', config('dusk.domain')) !== null;
     }
 }

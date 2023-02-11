@@ -2,6 +2,7 @@
 
 namespace Tests\Browser;
 
+use App\Models\User;
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
@@ -11,20 +12,6 @@ class AllMethodsTest extends PuthDuskTestCase
     function test_wip()
     {
     }
-    
-//    function test_all_methods()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                ->pause(1)
-//                ->type('@input-type', 'test')
-//                ->screenshot('test2')
-//                ->press('h1')
-//                ->assertSourceHas('html')
-//                ->assertPathIs('/')
-//            ;
-//        });
-//    }
     
     /**
      * DONE
@@ -161,4 +148,18 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
+    function test_interacts_with_authentication()
+    {
+        $user = User::factory()->create();
+    
+        $this->browse(function (Browser $browser) use ($user) {
+            $browser->visit('/')
+                ->loginAs($user)
+                ->assertAuthenticated()
+                ->assertAuthenticatedAs($user)
+                ->logout()
+                ->assertGuest()
+            ;
+        });
+    }
 }
