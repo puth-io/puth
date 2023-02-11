@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\BrowserProxy;
+namespace Puth\Laravel\Browser;
 
 use Exception;
 use Illuminate\Support\Str;
@@ -74,7 +74,7 @@ class ElementResolver
      * Resolve the element for a given input "field".
      *
      * @param string $field
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      */
@@ -93,7 +93,7 @@ class ElementResolver
      * Resolve the element for a given select "field".
      *
      * @param string $field
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      */
@@ -113,7 +113,7 @@ class ElementResolver
      *
      * @param string $field
      * @param array $values
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement[]
+     * @return mixed[]
      *
      * @throws \Exception
      */
@@ -137,7 +137,7 @@ class ElementResolver
      *
      * @param string $field
      * @param string|null $value
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      * @throws \InvalidArgumentException
@@ -164,7 +164,7 @@ class ElementResolver
      *
      * @param string|null $field
      * @param string|null $value
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      */
@@ -193,7 +193,7 @@ class ElementResolver
      * Resolve the element for a given file "field".
      *
      * @param string $field
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      */
@@ -212,7 +212,7 @@ class ElementResolver
      * Resolve the element for a given "field".
      *
      * @param string $field
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      */
@@ -232,7 +232,7 @@ class ElementResolver
      * Resolve the element for a given button.
      *
      * @param string $button
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \InvalidArgumentException
      */
@@ -253,7 +253,7 @@ class ElementResolver
      * Resolve the element for a given button by selector.
      *
      * @param string $button
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
+     * @return mixed|null
      */
     protected function findButtonBySelector($button)
     {
@@ -266,7 +266,7 @@ class ElementResolver
      * Resolve the element for a given button by name.
      *
      * @param string $button
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
+     * @return mixed|null
      */
     protected function findButtonByName($button)
     {
@@ -281,7 +281,7 @@ class ElementResolver
      * Resolve the element for a given button by value.
      *
      * @param string $button
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
+     * @return mixed|null
      */
     protected function findButtonByValue($button)
     {
@@ -296,7 +296,7 @@ class ElementResolver
      * Resolve the element for a given button by text.
      *
      * @param string $button
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
+     * @return mixed|null
      */
     protected function findButtonByText($button)
     {
@@ -311,12 +311,15 @@ class ElementResolver
      * Attempt to find the selector by ID.
      *
      * @param string $selector
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
+     * @return mixed|null
      */
     protected function findById($selector)
     {
         if (preg_match('/^#[\w\-:]+$/', $selector)) {
-            return $this->puthPage->get('#' . substr($selector, 1));
+            return $this->puthPage->get(
+                '#' . substr($selector, 1),
+                ['timeout' => 0],
+            );
         }
     }
     
@@ -324,7 +327,7 @@ class ElementResolver
      * Find an element by the given selector or return null.
      *
      * @param string $selector
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
+     * @return mixed|null
      */
     public function find($selector)
     {
@@ -339,7 +342,7 @@ class ElementResolver
      * Get the first element matching the given selectors.
      *
      * @param array $selectors
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      *
      * @throws \Exception
      */
@@ -360,7 +363,7 @@ class ElementResolver
      * Find an element by the given selector or throw an exception.
      *
      * @param string $selector
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     * @return mixed
      */
     public function findOrFail($selector)
     {
@@ -369,7 +372,8 @@ class ElementResolver
         }
         
         return $this->puthPage->get(
-            $this->format($selector)
+            $this->format($selector),
+            ['timeout' => 0],
         );
     }
     
@@ -377,12 +381,15 @@ class ElementResolver
      * Find the elements by the given selector or return an empty array.
      *
      * @param string $selector
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement[]
+     * @return mixed[]
      */
     public function all($selector)
     {
         try {
-            return $this->puthPage->getAll($this->format($selector));
+            return $this->puthPage->getAll(
+                $this->format($selector),
+                ['timeout' => 0],
+            );
         } catch (Exception $e) {
             //
         }

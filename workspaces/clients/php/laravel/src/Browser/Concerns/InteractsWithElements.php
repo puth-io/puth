@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\BrowserProxy\Concerns;
+namespace Puth\Laravel\Browser\Concerns;
 
 trait InteractsWithElements
 {
@@ -135,8 +135,7 @@ trait InteractsWithElements
      */
     public function type($field, $value)
     {
-        $this->puthPage->get($field)->type($value);
-//        $this->resolver->resolveForTyping($field)->clear()->sendKeys($value);
+        $this->resolver->resolveForTyping($field)->clear()->type($value); //->sendKeys($value);
         
         return $this;
     }

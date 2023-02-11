@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\BrowserProxy\Concerns;
+namespace Puth\Laravel\Browser\Concerns;
 
 trait InteractsWithJavascript
 {

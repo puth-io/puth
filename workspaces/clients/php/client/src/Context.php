@@ -7,7 +7,6 @@ use Puth\Objects\Browser;
 use Puth\Traits\ActionTranslationTrait;
 use Puth\Traits\PerformsActionsTrait;
 
-
 /**
  * @method Browser connectBrowser(string[] $array)
  * @method Browser createBrowser(string[] $array)
@@ -30,7 +29,7 @@ class Context
         $this->baseUrl = $baseUrl;
         $this->options = $options;
 
-        $this->client =  new Client([
+        $this->client = new Client([
             'base_uri' => $this->baseUrl,
         ]);
 

@@ -62,12 +62,12 @@ class Context extends Generic {
 
   private plugins: PuthContextPlugin[] = [];
 
-  private instance: {
+  private instances: {
     daemon?: boolean;
     browser?: puppeteer.Browser;
     browserCleanup?: () => {};
     external?: boolean;
-  } = {};
+  }[] = [];
 
   private eventFunctions: [any, string, () => {}][] = [];
 
@@ -115,43 +115,58 @@ class Context extends Generic {
   }
 
   async connectBrowser(options) {
-    this.instance.browser = await puppeteer.connect(options);
-    this.instance.external = true;
+    let browser = await puppeteer.connect(options);
 
-    await this._trackBrowser(this.instance.browser);
+    await this._trackBrowser(browser);
 
-    return this.instance.browser;
+    let instance = {
+      browser,
+      external: true,
+    };
+
+    this.instances.push(instance);
+
+    return browser;
   }
 
   async createBrowser(options = {}) {
-    if (this.puth.isDev() || this.isDev()) {
-      return await this.getDaemonBrowser();
-    }
+    // TODO remove daemon browser code
+    // if (this.puth.isDev() || this.isDev()) {
+    //   return await this.getDaemonBrowser();
+    // }
 
-    this.instance = await createBrowser({
+    let { browser, browserCleanup } = await createBrowser({
       launchOptions: options,
       args: ['--no-sandbox'],
     });
-    this.instance.external = false;
 
-    await this._trackBrowser(this.instance.browser);
+    await this._trackBrowser(browser);
 
-    return this.instance.browser;
+    let instance = {
+      browser,
+      browserCleanup,
+      external: false,
+    };
+
+    this.instances.push(instance);
+
+    return browser;
   }
 
   isDev() {
     return this.options?.dev === true;
   }
 
-  async getDaemonBrowser(options?) {
-    this.instance.browser = await DaemonBrowser.getBrowser(options);
-    this.instance.external = true;
-    this.instance.daemon = true;
-
-    await this._trackBrowser(this.instance.browser);
-
-    return this.instance.browser;
-  }
+  // TODO remove daemon browser code
+  // async getDaemonBrowser(options?) {
+  //   this.instance.browser = await DaemonBrowser.getBrowser(options);
+  //   this.instance.external = true;
+  //   this.instance.daemon = true;
+  //
+  //   await this._trackBrowser(this.instance.browser);
+  //
+  //   return this.instance.browser;
+  // }
 
   async _trackBrowser(browser: Browser | undefined) {
     if (browser === undefined) {
@@ -183,19 +198,42 @@ class Context extends Generic {
 
     this.unregisterAllEventListeners();
 
-    if (this.instance.browser && !this.instance.daemon) {
-      if (this.instance.external) {
-        await this.instance.browser.disconnect();
-      } else {
-        await this.instance.browser.close();
-      }
-
-      if (this.instance.browserCleanup) {
-        await this.instance.browserCleanup();
-      }
-    }
+    await Promise.all(this.instances.map((instance) => this.destroyBrowserByInstance(instance)));
 
     return true;
+  }
+
+  async destroyBrowserByBrowser(browser) {
+    return this.destroyBrowserByInstance(this.instances.find((instance) => instance.browser === browser));
+  }
+
+  async destroyBrowserByInstance(instance) {
+    if (!instance.browser) {
+      return this.removeBrowserInstance(instance);
+    }
+
+    if (instance.daemon) {
+      return this.removeBrowserInstance(instance);
+    }
+
+    if (instance.external) {
+      await instance.browser.disconnect();
+    } else {
+      await instance.browser.close();
+    }
+
+    if (instance.browserCleanup) {
+      await instance.browserCleanup();
+    }
+
+    this.removeBrowserInstance(instance);
+  }
+
+  private removeBrowserInstance(instance) {
+    this.instances.splice(
+      this.instances.findIndex((i) => i === instance),
+      1,
+    );
   }
 
   /**
@@ -750,9 +788,10 @@ class Context extends Generic {
   }
 
   getTimeout(options?) {
-    if (options?.timeout) {
+    if (options?.timeout != null) {
       return options.timeout;
     }
+
     return this.options?.timeouts?.command ?? 30 * 1000;
   }
 }

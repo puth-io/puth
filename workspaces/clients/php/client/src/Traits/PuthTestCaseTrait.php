@@ -149,7 +149,8 @@ trait PuthTestCaseTrait
                 $destroyOptions['save'] = ['to' => 'file'];
             }
         }
-
+    
+        dump('PuthTestCaseTrait', 'tearDown');
         $this->context->destroy(['options' => $destroyOptions]);
     }
 

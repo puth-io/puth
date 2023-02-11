@@ -112,6 +112,7 @@ export default class Puth {
   }
 
   public contextCall(packet) {
+    console.log('_______packet', packet);
     return this.contexts[packet.context.id].call(packet);
   }
 

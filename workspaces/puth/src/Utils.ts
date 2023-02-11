@@ -83,8 +83,9 @@ export async function retryFor(time, func, test?: (v: any) => boolean, cycleTime
   let error;
   let delta = 0;
   let first = true;
+  let once = time === 0;
 
-  while (Date.now() < until) {
+  while (Date.now() < until || once) {
     if (!first) {
       if (delta < cycleTime) {
         await sleep(cycleTime - delta);
@@ -109,6 +110,12 @@ export async function retryFor(time, func, test?: (v: any) => boolean, cycleTime
       }
     } catch (e) {
       error = e;
+    }
+
+    // Break while immediately if retryFor should only try once
+    if (once) {
+      console.log('___________only tried once');
+      break;
     }
 
     // Async sleep so while doesn't eat the CPU

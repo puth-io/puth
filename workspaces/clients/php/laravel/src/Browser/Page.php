@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\BrowserProxy;
+namespace Puth\Laravel\Browser;
 
 abstract class Page
 {
@@ -14,10 +14,10 @@ abstract class Page
     /**
      * Assert that the browser is on the page.
      *
-     * @param BrowserProxy $browser
+     * @param Browser $browser
      * @return void
      */
-    public function assert(BrowserProxy $browser)
+    public function assert(Browser $browser)
     {
         //
     }

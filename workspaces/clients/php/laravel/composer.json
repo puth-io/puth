@@ -23,7 +23,10 @@
         "laravel": {
             "providers": [
                 "Puth\\Laravel\\PuthServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Browser": "Browser\\Browser"
+            }
         }
     },
     "repositories": [

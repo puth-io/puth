@@ -1,10 +1,10 @@
 <?php
 
-namespace Puth\Laravel\BrowserProxy;
+namespace Puth\Laravel\Browser;
 
 use Illuminate\Support\Str;
 
-class BrowserProxy
+class Browser
 {
     use Concerns\InteractsWithAuthentication;
     use Concerns\InteractsWithCookies;
@@ -18,6 +18,8 @@ class BrowserProxy
 //    use Macroable {
 //        Macroable::__call as macroCall;
 //    }
+    
+    private $puthContext;
     
     private $puthBrowser;
     
@@ -44,8 +46,9 @@ class BrowserProxy
      */
     public $page;
     
-    public function __construct($browser, $resolver = null)
+    public function __construct($context, $browser, $resolver = null)
     {
+        $this->puthContext = $context;
         $this->puthBrowser = $browser;
         $this->puthPage = $this->puthBrowser->pages()[0];
         
@@ -86,6 +89,16 @@ class BrowserProxy
         }
         
         return $this;
+    }
+    
+    /**
+     * Close the browser.
+     *
+     * @return void
+     */
+    public function quit()
+    {
+        $this->puthContext->destroyBrowserByBrowser($this->puthBrowser);
     }
     
     /**
