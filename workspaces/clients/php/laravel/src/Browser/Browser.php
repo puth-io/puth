@@ -2,7 +2,9 @@
 
 namespace Puth\Laravel\Browser;
 
+use BadMethodCallException;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Macroable;
 
 class Browser
 {
@@ -14,10 +16,10 @@ class Browser
     use Concerns\MakesAssertions;
     use Concerns\MakesUrlAssertions;
     use Concerns\WaitsForElements;
-
-//    use Macroable {
-//        Macroable::__call as macroCall;
-//    }
+    
+    use Macroable {
+        Macroable::__call as macroCall;
+    }
     
     private $puthContext;
     
@@ -33,6 +35,73 @@ class Browser
     public static $baseUrl;
     
     /**
+     * The directory that will contain any screenshots.
+     *
+     * @var string
+     */
+    public static $storeScreenshotsAt;
+    
+    /**
+     * The common screen sizes to use for responsive screenshots.
+     *
+     * @var array
+     */
+    public static $responsiveScreenSizes = [
+        'xs' => [
+            'width' => 360,
+            'height' => 640,
+        ],
+        'sm' => [
+            'width' => 640,
+            'height' => 360,
+        ],
+        'md' => [
+            'width' => 768,
+            'height' => 1024,
+        ],
+        'lg' => [
+            'width' => 1024,
+            'height' => 768,
+        ],
+        'xl' => [
+            'width' => 1280,
+            'height' => 1024,
+        ],
+        '2xl' => [
+            'width' => 1536,
+            'height' => 864,
+        ],
+    ];
+    
+    /**
+     * The directory that will contain any console logs.
+     *
+     * @var string
+     */
+    public static $storeConsoleLogAt;
+    
+    /**
+     * The directory where source code snapshots will be stored.
+     *
+     * @var string
+     */
+    public static $storeSourceAt;
+    
+    /**
+     * Get the callback which resolves the default user to authenticate.
+     *
+     * @var \Closure
+     */
+    public static $userResolver;
+    
+    /**
+     * The default wait time in seconds.
+     *
+     * @var int
+     */
+    public static $waitSeconds = 5;
+    
+    /**
      * The element resolver instance.
      *
      * @var ElementResolver
@@ -45,6 +114,20 @@ class Browser
      * @var mixed
      */
     public $page;
+    
+    /**
+     * The component object currently being viewed.
+     *
+     * @var mixed
+     */
+    public $component;
+    
+    /**
+     * Indicates that the browser should be resized to fit the entire "body" before screenshotting failures.
+     *
+     * @var bool
+     */
+    public $fitOnFailure = true;
     
     public function __construct($context, $browser, $resolver = null)
     {
@@ -92,20 +175,10 @@ class Browser
     }
     
     /**
-     * Close the browser.
-     *
-     * @return void
-     */
-    public function quit()
-    {
-        $this->puthContext->destroyBrowserByBrowser($this->puthBrowser);
-    }
-    
-    /**
      * Browse to the given route.
      *
-     * @param  string  $route
-     * @param  array  $parameters
+     * @param string $route
+     * @param array $parameters
      * @return $this
      */
     public function visitRoute($route, $parameters = [])
@@ -120,7 +193,7 @@ class Browser
      */
     public function blank()
     {
-        $this->puthPage->visit('about:blank');
+        $this->puthPage->goto('about:blank');
         
         return $this;
     }
@@ -128,7 +201,7 @@ class Browser
     /**
      * Set the current page object.
      *
-     * @param  mixed  $page
+     * @param mixed $page
      * @return $this
      */
     public function on($page)
@@ -143,7 +216,7 @@ class Browser
     /**
      * Set the current page object without executing the assertions.
      *
-     * @param  mixed  $page
+     * @param mixed $page
      * @return $this
      */
     public function onWithoutAssert($page)
@@ -160,37 +233,527 @@ class Browser
         return $this;
     }
     
+    /**
+     * Refresh the page.
+     *
+     * @return $this
+     */
+    public function refresh($options = [])
+    {
+        $this->puthPage->reload($options);
+        
+        return $this;
+    }
+    
+    /**
+     * Navigate to the previous page.
+     *
+     * @return $this
+     */
+    public function back($options = [])
+    {
+        $this->puthPage->goBack($options);
+        
+        return $this;
+    }
+    
+    /**
+     * Navigate to the next page.
+     *
+     * @return $this
+     */
+    public function forward($options = [])
+    {
+        $this->puthPage->goForward($options);
+        
+        return $this;
+    }
+
+///// There is no equivalent in puppeteer to do this
+//
 //    /**
-//     * Dynamically call a method on the browser.
+//     * Maximize the browser window.
 //     *
-//     * @param  string  $method
-//     * @param  array  $parameters
-//     * @return mixed
-//     *
-//     * @throws BadMethodCallException
+//     * @return $this
 //     */
-//    public function __call($method, $parameters)
+//    public function maximize()
 //    {
-//        if (static::hasMacro($method)) {
-//            return $this->macroCall($method, $parameters);
-//        }
+//        $this->driver->manage()->window()->maximize();
 //        
-//        if ($this->component && method_exists($this->component, $method)) {
-//            array_unshift($parameters, $this);
-//            
-//            $this->component->{$method}(...$parameters);
-//            
-//            return $this;
-//        }
-//        
-//        if ($this->page && method_exists($this->page, $method)) {
-//            array_unshift($parameters, $this);
-//            
-//            $this->page->{$method}(...$parameters);
-//            
-//            return $this;
-//        }
-//        
-//        throw new BadMethodCallException("Call to undefined method [{$method}].");
+//        return $this;
 //    }
+    
+    /**
+     * Resize the browser window.
+     *
+     * @param int $width
+     * @param int $height
+     * @return $this
+     */
+    public function resize($width, $height)
+    {
+        $this->puthPage->setViewport([
+            'width' => $width,
+            'height' => $height,
+        ]);
+        
+        return $this;
+    }
+
+///// This is mainly used for screenshots but pptr can do full page screenshots
+///// TODO may be needed by some, implement later
+//
+//    /**
+//     * Make the browser window as large as the content.
+//     *
+//     * @return $this
+//     */
+//    public function fitContent()
+//    {
+//        $this->driver->switchTo()->defaultContent();
+//        
+//        $html = $this->driver->findElement(WebDriverBy::tagName('html'));
+//        
+//        if (! empty($html) && $html->getSize()->getWidth() > 0 && $html->getSize()->getHeight() > 0) {
+//            $this->resize($html->getSize()->getWidth(), $html->getSize()->getHeight());
+//        }
+//        
+//        return $this;
+//    }
+    
+    /**
+     * Disable fit on failures.
+     *
+     * @return $this
+     */
+    public function disableFitOnFailure()
+    {
+        $this->fitOnFailure = false;
+        
+        return $this;
+    }
+    
+    /**
+     * Enable fit on failures.
+     *
+     * @return $this
+     */
+    public function enableFitOnFailure()
+    {
+        $this->fitOnFailure = true;
+        
+        return $this;
+    }
+
+///// pptr can not move window
+//
+//    /**
+//     * Move the browser window.
+//     *
+//     * @param  int  $x
+//     * @param  int  $y
+//     * @return $this
+//     */
+//    public function move($x, $y)
+//    {
+//        $this->driver->manage()->window()->setPosition(
+//            new WebDriverPoint($x, $y)
+//        );
+//        
+//        return $this;
+//    }
+    
+    /**
+     * Scroll element into view at the given selector.
+     *
+     * @param string $selector
+     * @return $this
+     */
+    public function scrollIntoView($selector)
+    {
+        $this->resolver->findOrFail($selector)->scrollIntoView();
+        
+        return $this;
+    }
+    
+    /**
+     * Scroll screen to element at the given selector.
+     *
+     * @param string $selector
+     * @return $this
+     */
+    public function scrollTo($selector)
+    {
+//        $this->ensurejQueryIsAvailable();
+//        
+//        $selector = addslashes($this->resolver->format($selector));
+//        
+//        $this->driver->executeScript("jQuery(\"html, body\").animate({scrollTop: jQuery(\"$selector\").offset().top}, 0);");
+        
+        // TODO add scrollToElement function in PuthStandardPlugin
+        $this->scrollIntoView($selector);
+        
+        return $this;
+    }
+    
+    /**
+     * Take a screenshot and store it with the given name.
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function screenshot($name, $options = [])
+    {
+        $filePath = sprintf('%s/%s.png', rtrim(static::$storeScreenshotsAt, '/'), $name);
+        
+        $directoryPath = dirname($filePath);
+        
+        if (!is_dir($directoryPath)) {
+            mkdir($directoryPath, 0777, true);
+        }
+        
+        file_put_contents(
+            $filePath,
+            $this->puthPage->screenshot($options),
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Take a series of screenshots at different browser sizes to emulate different devices.
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function responsiveScreenshots($name)
+    {
+        if (substr($name, -1) !== '/') {
+            $name .= '-';
+        }
+        
+        foreach (static::$responsiveScreenSizes as $device => $size) {
+            $this->resize($size['width'], $size['height'])
+                ->screenshot("$name$device");
+        }
+        
+        return $this;
+    }
+
+//    TODO implement
+//
+//    /**
+//     * Store the console output with the given name.
+//     *
+//     * @param  string  $name
+//     * @return $this
+//     */
+//    public function storeConsoleLog($name)
+//    {
+//        if (in_array($this->driver->getCapabilities()->getBrowserName(), static::$supportsRemoteLogs)) {
+//            $console = $this->driver->manage()->getLog('browser');
+//            
+//            if (! empty($console)) {
+//                file_put_contents(
+//                    sprintf('%s/%s.log', rtrim(static::$storeConsoleLogAt, '/'), $name), json_encode($console, JSON_PRETTY_PRINT)
+//                );
+//            }
+//        }
+//        
+//        return $this;
+//    }
+    
+    /**
+     * Store a snapshot of the page's current source code with the given name.
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function storeSource($name)
+    {
+        $source = $this->puthPage->content();
+        
+        if (!empty($source)) {
+            file_put_contents(
+                sprintf('%s/%s.txt', rtrim(static::$storeSourceAt, '/'), $name), $source
+            );
+        }
+        
+        return $this;
+    }
+
+//    /**
+//     * Switch to a specified frame in the browser and execute the given callback.
+//     *
+//     * @param  string  $selector
+//     * @param  \Closure  $callback
+//     * @return $this
+//     */
+//    public function withinFrame($selector, Closure $callback)
+//    {
+//        $this->driver->switchTo()->frame($this->resolver->findOrFail($selector));
+//        
+//        $callback($this);
+//        
+//        $this->driver->switchTo()->defaultContent();
+//        
+//        return $this;
+//    }
+//    
+//    /**
+//     * Execute a Closure with a scoped browser instance.
+//     *
+//     * @param  string|\Laravel\Dusk\Component  $selector
+//     * @param  \Closure  $callback
+//     * @return $this
+//     */
+//    public function within($selector, Closure $callback)
+//    {
+//        return $this->with($selector, $callback);
+//    }
+    
+    /**
+     * Execute a Closure with a scoped browser instance.
+     *
+     * @param string|\Laravel\Dusk\Component $selector
+     * @param \Closure $callback
+     * @return $this
+     */
+    public function with($selector, Closure $callback)
+    {
+        $browser = new static(
+            $this->driver, new ElementResolver($this->driver, $this->resolver->format($selector))
+        );
+        
+        if ($this->page) {
+            $browser->onWithoutAssert($this->page);
+        }
+        
+        if ($selector instanceof Component) {
+            $browser->onComponent($selector, $this->resolver);
+        }
+        
+        call_user_func($callback, $browser);
+        
+        return $this;
+    }
+
+//    /**
+//     * Execute a Closure outside of the current browser scope.
+//     *
+//     * @param  string|\Laravel\Dusk\Component  $selector
+//     * @param  \Closure  $callback
+//     * @return $this
+//     */
+//    public function elsewhere($selector, Closure $callback)
+//    {
+//        $browser = new static(
+//            $this->driver, new ElementResolver($this->driver, 'body '.$selector)
+//        );
+//        
+//        if ($this->page) {
+//            $browser->onWithoutAssert($this->page);
+//        }
+//        
+//        if ($selector instanceof Component) {
+//            $browser->onComponent($selector, $this->resolver);
+//        }
+//        
+//        call_user_func($callback, $browser);
+//        
+//        return $this;
+//    }
+//    
+//    /**
+//     * Execute a Closure outside of the current browser scope when the selector is available.
+//     *
+//     * @param  string  $selector
+//     * @param  \Closure  $callback
+//     * @param  int|null  $seconds
+//     * @return $this
+//     */
+//    public function elsewhereWhenAvailable($selector, Closure $callback, $seconds = null)
+//    {
+//        return $this->elsewhere('', function ($browser) use ($selector, $callback, $seconds) {
+//            $browser->whenAvailable($selector, $callback, $seconds);
+//        });
+//    }
+    
+    /**
+     * Set the current component state.
+     *
+     * @param Component $component
+     * @param ElementResolver $parentResolver
+     * @return void
+     */
+    public function onComponent($component, $parentResolver)
+    {
+        $this->component = $component;
+        
+        // Here we will set the component elements on the resolver instance, which will allow
+        // the developer to access short-cuts for CSS selectors on the component which can
+        // allow for more expressive navigation and interaction with all the components.
+        $this->resolver->pageElements(
+            $component->elements() + $parentResolver->elements
+        );
+        
+        $component->assert($this);
+        
+        $this->resolver->prefix = $this->resolver->format(
+            $component->selector()
+        );
+    }
+
+//    /**
+//     * Ensure that jQuery is available on the page.
+//     *
+//     * @return void
+//     */
+//    public function ensurejQueryIsAvailable()
+//    {
+//        if ($this->driver->executeScript('return window.jQuery == null')) {
+//            $this->driver->executeScript(file_get_contents(__DIR__.'/../bin/jquery.js'));
+//        }
+//    }
+    
+    /**
+     * Pause for the given amount of milliseconds.
+     *
+     * @param int $milliseconds
+     * @return $this
+     */
+    public function pause($milliseconds)
+    {
+        usleep($milliseconds * 1000);
+        
+        return $this;
+    }
+    
+    /**
+     * Pause for the given amount of milliseconds if the given condition is true.
+     *
+     * @param bool $boolean
+     * @param int $milliseconds
+     * @return $this
+     */
+    public function pauseIf($boolean, $milliseconds)
+    {
+        if ($boolean) {
+            return $this->pause($milliseconds);
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * Pause for the given amount of milliseconds unless the given condition is true.
+     *
+     * @param bool $boolean
+     * @param int $milliseconds
+     * @return $this
+     */
+    public function pauseUnless($boolean, $milliseconds)
+    {
+        if (!$boolean) {
+            return $this->pause($milliseconds);
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * Close the browser.
+     *
+     * @return void
+     */
+    public function quit()
+    {
+        $this->puthContext->destroyBrowserByBrowser($this->puthBrowser);
+    }
+    
+    /**
+     * Tap the browser into a callback.
+     *
+     * @param \Closure $callback
+     * @return $this
+     */
+    public function tap($callback)
+    {
+        $callback($this);
+        
+        return $this;
+    }
+    
+    /**
+     * Dump the content from the last response.
+     *
+     * @return void
+     */
+    public function dump()
+    {
+        dd($this->puthPage->content());
+    }
+    
+    /**
+     * Pause execution of test and open Laravel Tinker (PsySH) REPL.
+     *
+     * @return $this
+     */
+    public function tinker()
+    {
+        \Psy\Shell::debug([
+            'browser' => $this,
+            'resolver' => $this->resolver,
+            'page' => $this->page,
+            'puthContext' => $this->puthContext,
+            'puthBrowser' => $this->puthBrowser,
+            'puthPage' => $this->puthPage,
+        ], $this);
+        
+        return $this;
+    }
+    
+    /**
+     * Stop running tests but leave the browser open.
+     *
+     * @return void
+     */
+    public function stop()
+    {
+        exit();
+    }
+    
+    /**
+     * Dynamically call a method on the browser.
+     *
+     * @param string $method
+     * @param array $parameters
+     * @return mixed
+     *
+     * @throws BadMethodCallException
+     */
+    public function __call($method, $parameters)
+    {
+        if (static::hasMacro($method)) {
+            return $this->macroCall($method, $parameters);
+        }
+        
+        if ($this->component && method_exists($this->component, $method)) {
+            array_unshift($parameters, $this);
+            
+            $this->component->{$method}(...$parameters);
+            
+            return $this;
+        }
+        
+        if ($this->page && method_exists($this->page, $method)) {
+            array_unshift($parameters, $this);
+            
+            $this->page->{$method}(...$parameters);
+            
+            return $this;
+        }
+        
+        throw new BadMethodCallException("Call to undefined method [{$method}].");
+    }
 }

@@ -11,7 +11,14 @@ trait MakesAssertions
 {
     use PuthAssertions;
     use PuthUtils;
-
+    
+    /**
+     * Indicates the browser has made an assertion about the source code of the page.
+     *
+     * @var bool
+     */
+    public $madeSourceAssertion = false;
+    
     /**
      * Assert that the page title is the given value.
      *
@@ -108,7 +115,7 @@ trait MakesAssertions
     public function assertCookieValue($name, $value)
     {
         $actual = $this->plainCookie($name);
-
+        
         Assert::assertEquals(
             $value, $actual,
             "Cookie [{$name}] had value [{$actual}], but expected [{$value}]."
@@ -217,6 +224,8 @@ trait MakesAssertions
      */
     public function assertSourceHas($code)
     {
+        $this->madeSourceAssertion = true;
+        
         Assert::assertTrue(
             strpos($this->puthPage->content(), $code) !== false,
             "Did not find expected source code [{$code}]"
@@ -233,6 +242,8 @@ trait MakesAssertions
      */
     public function assertSourceMissing($code)
     {
+        $this->madeSourceAssertion = true;
+        
         Assert::assertFalse(
             strpos($this->puthPage->content(), $code) !== false,
             "Found unexpected source code [{$code}]"
@@ -379,7 +390,7 @@ trait MakesAssertions
                 return null;
             }
         }
-
+        
         return $element;
     }
     
@@ -483,12 +494,12 @@ trait MakesAssertions
         if (!is_array($values)) {
             $values = [$values];
         }
-
+        
         $element = $this->resolveElement($element);
         $options = array_map(function ($option) {
             return $option->value();
         }, $element->getAll('option'));
-
+        
         foreach ($values as $value) {
             Assert::assertTrue(
                 in_array($value, $options),
@@ -511,7 +522,7 @@ trait MakesAssertions
         if (!is_array($values)) {
             $values = [$values];
         }
-
+        
         Assert::assertCount(
             0, $this->resolver->resolveSelectOptions($field, $values),
             'Unexpected options [' . implode(',', $values) . "] for selection field [{$field}]."
@@ -595,7 +606,7 @@ trait MakesAssertions
         $element = $this->resolveElement($element);
         
         $actual = $element->getProperty($attribute)->jsonValue();
-
+        
         Assert::assertNotNull(
             $actual,
             "Did not see expected attribute [{$attribute}] within element [{$element}]."
@@ -673,9 +684,9 @@ trait MakesAssertions
     
     /**
      * Assert that a JavaScript dialog with given message has been opened.
-     * @todo change implementation
      * @param string $message
      * @return $this
+     * @todo change implementation
      */
     // public function assertDialogOpened($message)
     // {
@@ -756,9 +767,9 @@ trait MakesAssertions
     public function assertFocused($element)
     {
         $element = $this->resolveElement($element);
-
+        
         $this->assertElementEquals($this->puthPage->focused(), $element);
-
+        
         return $this;
     }
     
@@ -771,7 +782,7 @@ trait MakesAssertions
     public function assertNotFocused($element)
     {
         $element = $this->resolveElement($element);
-
+        
         $this->assertElementNotEquals($this->puthPage->focused(), $element);
         
         return $this;

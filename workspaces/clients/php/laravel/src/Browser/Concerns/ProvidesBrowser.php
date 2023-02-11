@@ -5,6 +5,7 @@ namespace Puth\Laravel\Browser\Concerns;
 use Closure;
 use Exception;
 use Illuminate\Support\Collection;
+use PHPUnit\Runner\Version;
 use Puth\Laravel\Browser\Browser;
 use ReflectionFunction;
 use Throwable;
@@ -24,7 +25,9 @@ trait ProvidesBrowser
      * @var array
      */
     protected static $afterClassCallbacks = [];
-    
+
+///// Implemented in PuthDuskTestCase
+//
 //    /**
 //     * Tear down the Dusk test case class.
 //     *
@@ -62,13 +65,13 @@ trait ProvidesBrowser
         try {
             $callback(...$browsers->all());
         } catch (Exception $e) {
-//            $this->captureFailuresFor($browsers);
-//            $this->storeSourceLogsFor($browsers);
+            $this->captureFailuresFor($browsers);
+            $this->storeSourceLogsFor($browsers);
             
             throw $e;
         } catch (Throwable $e) {
-//            $this->captureFailuresFor($browsers);
-//            $this->storeSourceLogsFor($browsers);
+            $this->captureFailuresFor($browsers);
+            $this->storeSourceLogsFor($browsers);
             
             throw $e;
         } finally {
@@ -135,13 +138,14 @@ trait ProvidesBrowser
     protected function captureFailuresFor($browsers)
     {
         $browsers->each(function ($browser, $key) {
-            if (property_exists($browser, 'fitOnFailure') && $browser->fitOnFailure) {
-                $browser->fitContent();
-            }
+            $fullPageScreenshot = property_exists($browser, 'fitOnFailure') && $browser->fitOnFailure;
             
             $name = $this->getCallerName();
             
-            $browser->screenshot('failure-' . $name . '-' . $key);
+            dump(['$fullPageScreenshot' => $fullPageScreenshot]);
+            $browser->screenshot('failure-' . $name . '-' . $key, [
+                'fullPage' => $fullPageScreenshot,
+            ]);
         });
     }
     
@@ -159,22 +163,22 @@ trait ProvidesBrowser
             $browser->storeConsoleLog($name . '-' . $key);
         });
     }
-    
-    /**
-     * Store the source code for the given browsers (if necessary).
-     *
-     * @param \Illuminate\Support\Collection $browsers
-     * @return void
-     */
-    protected function storeSourceLogsFor($browsers)
-    {
-        $browsers->each(function ($browser, $key) {
-            if (property_exists($browser, 'madeSourceAssertion') &&
-                $browser->madeSourceAssertion) {
-                $browser->storeSource($this->getCallerName() . '-' . $key);
-            }
-        });
-    }
+
+//    /**
+//     * Store the source code for the given browsers (if necessary).
+//     *
+//     * @param \Illuminate\Support\Collection $browsers
+//     * @return void
+//     */
+//    protected function storeSourceLogsFor($browsers)
+//    {
+//        $browsers->each(function ($browser, $key) {
+//            if (property_exists($browser, 'madeSourceAssertion') &&
+//                $browser->madeSourceAssertion) {
+//                $browser->storeSource($this->getCallerName() . '-' . $key);
+//            }
+//        });
+//    }
     
     /**
      * Close all of the browsers except the primary (first) one.

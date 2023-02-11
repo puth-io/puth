@@ -56,6 +56,13 @@
             "options": {
                 "symLink": true
             }
+        },
+        {
+            "type": "path",
+            "url": "../../client",
+            "options": {
+                "symLink": true
+            }
         }
     ],
     "extra": {

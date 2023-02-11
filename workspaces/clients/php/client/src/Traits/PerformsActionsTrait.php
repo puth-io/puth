@@ -25,7 +25,8 @@ trait PerformsActionsTrait
             'function' => $function,
             'parameters' => $parameters,
         ]]);
-
+    
+        dump($function);
         $this->log('call method > ' . $this->translateActionReverse($function));
 
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
@@ -60,7 +61,14 @@ trait PerformsActionsTrait
         if ($response->getStatusCode() !== 200) {
             throw new \Exception("Puth server returned status code: {$response->getStatusCode()}");
         }
-
+    
+        // Check if binary response body
+        foreach ($response->getHeader('Content-Type') as $value) {
+            if (str_contains($value, 'application/octet-stream')) {
+                return $response->getBody();
+            }
+        }
+        
         $body = $this->toJson($response->getBody());
 
         if ($this->getContext()->isDebug()) {

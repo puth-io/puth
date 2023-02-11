@@ -33,23 +33,22 @@ abstract class PuthDuskTestCase extends BaseTestCase
             ],
             'group' => get_class($this),
             'dev' => false,
-            'debug' => false,
+            'debug' => true,
             'timeouts' => [
-                'command' => 5000,
+                'commands' => 5000,
+//                'assertions' => 5000,
+//                'default' => 5000,
             ],
         ]);
-        
+    
+        Browser::$baseUrl = $this->baseUrl();
+        Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
+        Browser::$storeConsoleLogAt = base_path('tests/Browser/console');
+        Browser::$storeSourceAt = base_path('tests/Browser/source');
+    
         if ($this->shouldTrackLog()) {
             Puth::captureLog();
         }
-    
-        Browser::$baseUrl = $this->baseUrl();
-    
-//        Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
-//    
-//        Browser::$storeConsoleLogAt = base_path('tests/Browser/console');
-//    
-//        Browser::$storeSourceAt = base_path('tests/Browser/source');
     }
     
     protected function tearDown(): void

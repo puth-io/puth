@@ -629,6 +629,10 @@ class Context extends Generic {
 
   // TODO add return value resolver structure
   resolveReturnValue(action, returnValue) {
+    if (Buffer.isBuffer(returnValue)) {
+      return returnValue;
+    }
+
     if (Array.isArray(returnValue)) {
       if (returnValue.length === 0) {
         return Response.GenericValues(returnValue);
