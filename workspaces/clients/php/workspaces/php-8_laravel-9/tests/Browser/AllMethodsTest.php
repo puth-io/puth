@@ -10,30 +10,6 @@ class AllMethodsTest extends PuthDuskTestCase
 {
     function test_wip()
     {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
-            
-            $browser->resize(300, 400);
-            $viewport = $browser->puthPage->viewport();
-            
-            static::assertEquals([300, 400],[
-                $viewport->width,
-                $viewport->height,
-            ]);
-            
-            $browser->resize(600, 800);
-            $viewport = $browser->puthPage->viewport();
-            
-            static::assertEquals([600, 800],[
-                $viewport->width,
-                $viewport->height,
-            ]);
-            
-            
-            
-//            dump($browser->puthPage->viewport());
-        
-        });
     }
     
     function test_all_methods()
@@ -76,11 +52,23 @@ class AllMethodsTest extends PuthDuskTestCase
     function test_resize()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->resize(900, 800)
-            ;
-            
-                
+            $browser->visit(new Playground);
+    
+            $browser->resize(300, 400);
+            $viewport = $browser->puthPage->viewport();
+    
+            static::assertEquals([300, 400],[
+                $viewport->width,
+                $viewport->height,
+            ]);
+    
+            $browser->resize(600, 800);
+            $viewport = $browser->puthPage->viewport();
+    
+            static::assertEquals([600, 800],[
+                $viewport->width,
+                $viewport->height,
+            ]);
         });
     }
     
@@ -133,4 +121,43 @@ class AllMethodsTest extends PuthDuskTestCase
             ;
         });
     }
+    
+    function test_interacts_with_mouse()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->click('#actions-click > button')
+                ->assertSeeIn('#actions-click', 'clicked button')
+                ->doubleClick('#actions-click-double')
+                ->assertSeeIn('#actions-click', 'double clicked button')
+                ->rightClick('#actions-click-mousedown')
+                ->assertSeeIn('#actions-click', 'mousedown: 3')
+            ;
+        });
+    
+        $this->browse(function (Browser $browser) {
+            $browser->puthPage->prefersReducedMotion();
+            
+            $browser->visit(new Playground)
+                ->clickAndHold('#actions-click > button')
+                ->releaseMouse()
+                ->assertSeeIn('#actions-click', 'clicked button')
+            ;
+        });
+    
+        $this->browse(function (Browser $browser) {
+            $browser->puthPage->prefersReducedMotion();
+            
+            $browser->visit(new Playground);
+            
+            $element = $browser->puthPage->get('#actions-click > button');
+            $element->scrollIntoView();
+            
+            $point = $element->clickablePoint();
+            
+            $browser->clickAtPoint($point->x, $point->y)
+                ->assertSeeIn('#actions-click', 'clicked button');
+        });
+    }
+    
 }

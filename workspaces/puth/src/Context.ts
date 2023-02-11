@@ -672,7 +672,9 @@ class Context extends Generic {
   async get(action) {
     let on = this.resolveOn(action);
 
-    if (on[action.property] === undefined) {
+    let resolvedTo = on[action.property];
+
+    if (resolvedTo === undefined) {
       return {
         type: 'error',
         code: 'Undefined',
@@ -680,7 +682,12 @@ class Context extends Generic {
       };
     }
 
-    return Response.GenericValue(on[action.property]);
+    // TODO check for other types which are actual instances and not serializable objects
+    if (['Mouse'].includes(Utils.resolveConstructorName(resolvedTo))) {
+      return this.returnCached(resolvedTo);
+    }
+
+    return Response.GenericValue(resolvedTo);
   }
 
   async set(action) {

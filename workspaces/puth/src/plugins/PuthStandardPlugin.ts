@@ -87,7 +87,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
         rightClick: (el, options) => el.click({ ...options, button: 'right' }),
         selected: (el) => el.evaluate((s) => [...s.options].filter((o) => o.selected).map((o) => o.value)),
-        scrollIntoView: (el) => el._scrollIntoViewIfNeeded(),
+        scrollIntoView: (el) => console.log(el) && el._scrollIntoViewIfNeeded(),
         // @ts-ignore
         scrollTo: (el, ...options) =>
           el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
