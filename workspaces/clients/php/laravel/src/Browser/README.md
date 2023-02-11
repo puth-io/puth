@@ -1,6 +1,18 @@
 ## TODO
 
-- Using The Mouse
+### Concerns
+
+- InteractsWithAuthentication
+- InteractsWithCookies
+- InteractsWithElements
+- InteractsWithJavascript
+- DONE InteractsWithMouse
+- MakesAssertions
+- MakesUrlAssertions
+- WaitsForElements
+
+### Concepts
+
 - JavaScript Dialogs
 - Scoping Selectors
 - Waiting For Elements

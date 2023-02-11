@@ -13,7 +13,7 @@ class Playground extends Page
      */
     public function url()
     {
-        return '/';
+        return 'https://playground.puth.dev/';
     }
     
     /**
@@ -23,7 +23,7 @@ class Playground extends Page
      */
     public function assert($browser)
     {
-        $browser->assertPathIs($this->url());
+        $browser->assertUrlIs($this->url());
     }
     
     /**

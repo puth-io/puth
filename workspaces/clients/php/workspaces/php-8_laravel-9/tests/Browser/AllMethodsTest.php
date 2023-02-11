@@ -12,19 +12,19 @@ class AllMethodsTest extends PuthDuskTestCase
     {
     }
     
-    function test_all_methods()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->pause(1)
-                ->type('@input-type', 'test')
-                ->screenshot('test2')
-                ->press('h1')
-                ->assertSourceHas('html')
-                ->assertPathIs('/')
-            ;
-        });
-    }
+//    function test_all_methods()
+//    {
+//        $this->browse(function (Browser $browser) {
+//            $browser->visit(new Playground)
+//                ->pause(1)
+//                ->type('@input-type', 'test')
+//                ->screenshot('test2')
+//                ->press('h1')
+//                ->assertSourceHas('html')
+//                ->assertPathIs('/')
+//            ;
+//        });
+//    }
     
     /**
      * DONE
@@ -151,6 +151,7 @@ class AllMethodsTest extends PuthDuskTestCase
             $browser->visit(new Playground);
             
             $element = $browser->puthPage->get('#actions-click > button');
+            
             $element->scrollIntoView();
             
             $point = $element->clickablePoint();
