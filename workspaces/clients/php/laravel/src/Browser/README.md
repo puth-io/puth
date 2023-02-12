@@ -16,6 +16,7 @@
 - JavaScript Dialogs
 - Scoping Selectors
 - Waiting For Elements
+- Using The Keyboard
 
 ## Transition from Dusk
 

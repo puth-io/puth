@@ -39,7 +39,7 @@ abstract class PuthDuskTestCase extends BaseTestCase
 //            ],
             'snapshot' => true,
 //            'dev' => false,
-//            'debug' => true,
+            'debug' => true,
         ]);
     
         Browser::$baseUrl = $this->baseUrl();

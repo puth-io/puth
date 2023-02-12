@@ -11,6 +11,31 @@ class AllMethodsTest extends PuthDuskTestCase
 {
     function test_wip()
     {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->value('#actions-type', 'test-1234')
+                ->assertValue('#actions-type', 'test-1234')
+                ->assertAttribute('#actions-focus', 'type', 'text')
+            ;
+            
+            static::assertEquals('test-1234', $browser->value('#actions-type'));
+            static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
+            static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));
+            
+            $browser->type('#actions-focus', '12')
+                ->assertValue('#actions-focus', '12')
+                ->type('#actions-focus', '34')
+                ->assertValue('#actions-focus', '34')
+                ->typeSlowly('#actions-focus', '56')
+                ->assertValue('#actions-focus', '56')
+                ->append('#actions-focus', '78')
+                ->assertValue('#actions-focus', '5678')
+                ->appendSlowly('#actions-focus', '90')
+                ->assertValue('#actions-focus', '567890')
+                ->clear('#actions-focus')
+                ->assertValue('#actions-focus', '')
+            ;
+        });
     }
     
     /**
@@ -59,7 +84,7 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
-    function test_assertion()
+    function test_concern_makes_assertions()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
@@ -85,7 +110,7 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
-    function test_url_assertion()
+    function test_concern_makes_url_assertions()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
@@ -109,7 +134,7 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
-    function test_interacts_with_mouse()
+    function test_concern_interacts_with_mouse()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
@@ -148,7 +173,7 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
-    function test_interacts_with_authentication()
+    function test_concern_interacts_with_authentication()
     {
         $user = User::factory()->create();
     

@@ -2,6 +2,8 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
+use Facebook\WebDriver\WebDriverKeys;
+
 trait InteractsWithElements
 {
     /**
@@ -26,25 +28,27 @@ trait InteractsWithElements
         return $this->resolver->find($selector);
     }
     
-    /**
-     * Click the link with the given text.
-     *
-     * @param string $link
-     * @param string $element
-     * @return $this
-     */
-    public function clickLink($link, $element = 'a')
-    {
-        $this->ensurejQueryIsAvailable();
-        
-        $selector = addslashes(trim($this->resolver->format("{$element}")));
-        
-        $link = str_replace("'", "\\\\'", $link);
-        
-        $this->driver->executeScript("jQuery.find(`{$selector}:contains('{$link}'):visible`)[0].click();");
-        
-        return $this;
-    }
+//    TODO maan...what is this, why do we need this
+//
+//    /**
+//     * Click the link with the given text.
+//     *
+//     * @param string $link
+//     * @param string $element
+//     * @return $this
+//     */
+//    public function clickLink($link, $element = 'a')
+//    {
+//        $this->ensurejQueryIsAvailable();
+//        
+//        $selector = addslashes(trim($this->resolver->format("{$element}")));
+//        
+//        $link = str_replace("'", "\\\\'", $link);
+//        
+//        $this->driver->executeScript("jQuery.find(`{$selector}:contains('{$link}'):visible`)[0].click();");
+//        
+//        return $this;
+//    }
     
     /**
      * Directly get or set the value attribute of an input field.
@@ -56,15 +60,11 @@ trait InteractsWithElements
     public function value($selector, $value = null)
     {
         if (is_null($value)) {
-            return $this->resolver->findOrFail($selector)->getAttribute('value');
+            return $this->resolver->findOrFail($selector)->value();
         }
-        
-        $selector = $this->resolver->format($selector);
-        
-        $this->driver->executeScript(
-            'document.querySelector(' . json_encode($selector) . ').value = ' . json_encode($value) . ';'
-        );
-        
+    
+        $this->resolver->findOrFail($selector)->value($value);
+    
         return $this;
     }
     
@@ -76,7 +76,7 @@ trait InteractsWithElements
      */
     public function text($selector)
     {
-        return $this->resolver->findOrFail($selector)->getText();
+        return $this->resolver->findOrFail($selector)->innerText();
     }
     
     /**
@@ -88,7 +88,7 @@ trait InteractsWithElements
      */
     public function attribute($selector, $attribute)
     {
-        return $this->resolver->findOrFail($selector)->getAttribute($attribute);
+        return $this->resolver->findOrFail($selector)->getProperty($attribute)->jsonValue();
     }
     
     /**
@@ -105,6 +105,7 @@ trait InteractsWithElements
         return $this;
     }
     
+    // TODO implement
     /**
      * Parse the keys before sending to the keyboard.
      *
@@ -198,6 +199,8 @@ trait InteractsWithElements
         
         return $this;
     }
+    
+    // TODO WIP HERE
     
     /**
      * Select the given value or random value of a drop-down field.
