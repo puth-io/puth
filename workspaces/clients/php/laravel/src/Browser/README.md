@@ -2,10 +2,10 @@
 
 ### Concerns
 
-- InteractsWithAuthentication
+- DONE InteractsWithAuthentication
 - InteractsWithCookies
 - InteractsWithElements
-- InteractsWithJavascript
+- DONE InteractsWithJavascript
 - DONE InteractsWithMouse
 - MakesAssertions
 - MakesUrlAssertions

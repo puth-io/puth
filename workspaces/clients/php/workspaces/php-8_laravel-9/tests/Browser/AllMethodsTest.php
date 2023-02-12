@@ -6,6 +6,7 @@ use App\Models\User;
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use function PHPUnit\Framework\assertEquals;
 
 class AllMethodsTest extends PuthDuskTestCase
 {
@@ -185,6 +186,20 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->logout()
                 ->assertGuest()
             ;
+        });
+    }
+    
+    function test_concern_interacts_with_javascript()
+    {
+        $this->browse(function (Browser $browser) {
+            $response = $browser->visit(new Playground)
+                ->script([
+                    '1 + 1',
+                    'window.document.location.href',
+                ])
+            ;
+            
+            assertEquals([2, (new Playground)->url()], $response);
         });
     }
 }
