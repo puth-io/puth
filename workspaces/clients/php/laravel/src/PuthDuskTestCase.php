@@ -11,6 +11,7 @@ use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;
 use Puth\Traits\PuthDuskAssertions;
 use Puth\Traits\PuthDuskUrlAssertions;
+use Puth\Utils\BackTrace;
 use Tests\CreatesApplication;
 
 abstract class PuthDuskTestCase extends BaseTestCase
@@ -22,6 +23,8 @@ abstract class PuthDuskTestCase extends BaseTestCase
     use PuthDuskUrlAssertions;
     
     public Context $context;
+    
+    public static bool $debug = false;
     
     protected function setUp(): void
     {
@@ -39,9 +42,9 @@ abstract class PuthDuskTestCase extends BaseTestCase
 //            ],
             'snapshot' => true,
 //            'dev' => false,
-//            'debug' => true,
+            'debug' => static::$debug,
         ]);
-    
+        
         Browser::$baseUrl = $this->baseUrl();
         Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
         Browser::$storeConsoleLogAt = base_path('tests/Browser/console');
@@ -49,6 +52,8 @@ abstract class PuthDuskTestCase extends BaseTestCase
         Browser::$userResolver = function () {
             return $this->user();
         };
+        
+        BackTrace::$debug = static::$debug;
     
         if ($this->shouldTrackLog()) {
             Puth::captureLog();

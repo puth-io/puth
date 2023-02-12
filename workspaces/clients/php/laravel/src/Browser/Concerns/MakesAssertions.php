@@ -2,6 +2,7 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
+use Illuminate\Support\Arr;
 use PHPUnit\Framework\Assert;
 use Puth\GenericObject;
 use Puth\Traits\PuthAssertions;
@@ -452,14 +453,17 @@ trait MakesAssertions
      * Assert that the given select field has the given value selected.
      *
      * @param string|GenericObject $field
-     * @param string $value
+     * @param array|string $value
      * @return $this
      */
-    public function assertSelected($field, $value)
+    public function assertSelected($element, $value)
     {
-        Assert::assertTrue(
-            $this->selected($field, $value),
-            "Expected value [{$value}] to be selected for [{$field}], but it wasn't."
+        $element = $this->resolveElement($element);
+        
+        Assert::assertEqualsCanonicalizing(
+            Arr::wrap($value),
+            $element->selected(),
+            "Expected given value to be selected for element, but it wasn't.",
         );
         
         return $this;

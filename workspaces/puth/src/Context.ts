@@ -675,6 +675,15 @@ class Context extends Generic {
     let resolvedTo = on[action.property];
 
     if (resolvedTo === undefined) {
+      if (Utils.resolveConstructorName(on) === 'ElementHandle') {
+        resolvedTo = await (
+          await on.evaluateHandle((handle, property) => handle[property], action.property)
+        ).jsonValue();
+      }
+    }
+
+    // If still undefined, return undefined exception
+    if (resolvedTo === undefined) {
       return {
         type: 'error',
         code: 'Undefined',

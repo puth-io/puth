@@ -142,7 +142,6 @@ trait ProvidesBrowser
             
             $name = $this->getCallerName();
             
-            dump(['$fullPageScreenshot' => $fullPageScreenshot]);
             $browser->screenshot('failure-' . $name . '-' . $key, [
                 'fullPage' => $fullPageScreenshot,
             ]);

@@ -121,14 +121,20 @@ class ElementResolver
     {
         
         $options = $this->resolveForSelection($field)
-            ->getAll('option');
+            ->children('option');
         
         if (empty($options)) {
             return [];
         }
         
+//        dump($options);
+//        dd(array_filter($options, function ($option) use ($values) {
+//            dump($option->value);
+//            return in_array($option->value, $values);
+//        }));
+        
         return array_filter($options, function ($option) use ($values) {
-            return in_array($option->getAttribute('value'), $values);
+            return in_array($option->value, $values);
         });
     }
     

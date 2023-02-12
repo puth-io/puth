@@ -14,7 +14,7 @@ trait PuthAssertions
 
     function assertElementNotEquals($element1, $element2)
     {
-        Assert::assertThat($element1, $this->logicalNot(
+        Assert::assertThat($element1, Assert::logicalNot(
             new ElementEquals($element2, $this->context)
         ));
     }

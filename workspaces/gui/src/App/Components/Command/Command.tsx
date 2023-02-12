@@ -112,7 +112,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
           {showTimings && (
             <>
               {(command.time.elapsed / 1000).toFixed(1)}s
-              {command?.time?.took && command.time.took > 250 && (
+              {command?.time?.took !== 0 && command?.time?.took && command.time.took > 250 && (
                 <div>
                   <span className={'text-warning-dark'}>{(command.time.took / 1000).toFixed(1)}s</span>
                 </div>

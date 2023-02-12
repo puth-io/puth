@@ -3,6 +3,7 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Facebook\WebDriver\WebDriverKeys;
+use Illuminate\Support\Arr;
 
 trait InteractsWithElements
 {
@@ -91,6 +92,7 @@ trait InteractsWithElements
         return $this->resolver->findOrFail($selector)->getProperty($attribute)->jsonValue();
     }
     
+    // TODO implement
     /**
      * Send the given keys to the element matching the given selector.
      *
@@ -200,8 +202,6 @@ trait InteractsWithElements
         return $this;
     }
     
-    // TODO WIP HERE
-    
     /**
      * Select the given value or random value of a drop-down field.
      *
@@ -212,39 +212,25 @@ trait InteractsWithElements
     public function select($field, $value = null)
     {
         $element = $this->resolver->resolveForSelection($field);
+    
+        $options = array_map(function ($option) {
+            return $option->value();
+        }, $element->children('option'));
         
-        $options = $element->findElements(WebDriverBy::cssSelector('option:not([disabled])'));
-        
-        $select = $element->getTagName() === 'select' ? new WebDriverSelect($element) : null;
-        
-        $isMultiple = false;
-        
-        if (!is_null($select)) {
-            if ($isMultiple = $select->isMultiple()) {
-                $select->deselectAll();
-            }
-        }
+        $select = $element->tagName === 'SELECT' ? $element : null;
         
         if (func_num_args() === 1) {
-            $options[array_rand($options)]->click();
+            $element->select(array_rand($options));
         } else {
-            $value = collect(Arr::wrap($value))->transform(function ($value) {
+            $values = collect(Arr::wrap($value))->transform(function ($value) {
                 if (is_bool($value)) {
                     return $value ? '1' : '0';
                 }
                 
                 return (string)$value;
             })->all();
-            
-            foreach ($options as $option) {
-                if (in_array((string)$option->getAttribute('value'), $value)) {
-                    $option->click();
-                    
-                    if (!$isMultiple) {
-                        break;
-                    }
-                }
-            }
+    
+            $select->select(...$values);
         }
         
         return $this;

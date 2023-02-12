@@ -4,6 +4,7 @@ import { Preview } from './Components/Preview/Preview';
 import Dropzone from './Components/Dropzone/Dropzone';
 import Header from './Components/Header/Header';
 import WebsocketConnectionViewer from './Components/WebsocketConnectionViewer/WebsocketConnectionViewer';
+import './Components/Header/Header.scss';
 
 function App() {
   return (
@@ -15,7 +16,7 @@ function App() {
           flex: 1,
         }}
       >
-        <Header />
+        {/*<Header />*/}
         <div
           className="d-flex"
           style={{
@@ -29,7 +30,7 @@ function App() {
       </div>
 
       <Dropzone />
-      <WebsocketConnectionViewer/>
+      <WebsocketConnectionViewer />
     </>
   );
 }

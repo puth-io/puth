@@ -63,18 +63,24 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
       data-status={context?.test?.status ?? undefined}
     >
       <div className={'d-flex align-items-center px-2 py-1 cursor-pointer lh-1 mb-1'} onClick={toggleExpand}>
-        <div className={'flex-grow-1'}>
-          <div className={'fw-bold'}>{context?.test?.name ?? 'Context'}</div>
-          {context.group && <div className={'fw-light fs-small mt-1'}>{context.group}</div>}
+        <div className={'flex-grow-1 overflow-hidden min-w-0 pe-1'}>
+          <div className={'fw-bold text-ellipsis'}>{context?.test?.name ?? 'Context'}</div>
+          {context.group && <div className={'fw-light fs-small mt-1 text-ellipsis'}>{context.group}</div>}
         </div>
-        <button className={`btn btn-smaller btn-outline-primary ${showXHR && 'active'} py-05`} onClick={xhrToggle}>
+        <button
+          className={`btn btn-smaller btn-outline-primary ${showXHR && 'active'} py-05 text-nowrap`}
+          onClick={xhrToggle}
+        >
           {showXHR && <span>&#10003;</span>} <span>XHR</span>
         </button>
-        <button className={`btn btn-smaller btn-outline-primary ${showLogs && 'active'} py-05`} onClick={logsToggle}>
+        <button
+          className={`btn btn-smaller btn-outline-primary ${showLogs && 'active'} py-05 text-nowrap`}
+          onClick={logsToggle}
+        >
           {showLogs && <span>&#10003;</span>} <span>Logs</span>
         </button>
         <button
-          className={`btn btn-smaller btn-outline-primary ${showTimings && 'active'} py-05`}
+          className={`btn btn-smaller btn-outline-primary ${showTimings && 'active'} py-05 text-nowrap`}
           onClick={timingsToggle}
         >
           {showTimings && <span>&#10003;</span>} <span>Time</span>

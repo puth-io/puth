@@ -108,6 +108,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
           return t?.listeners;
         },
+        tagName: async (el) => (await el.evaluateHandle((handle) => handle.tagName)).jsonValue(),
       },
     });
   }

@@ -179,7 +179,6 @@ class SnapshotHandler {
 
     let pageSnapshot = await this.createPageSnapshot(page);
 
-    // TODO cache latest context html snapshot so we don't need to resolve
     // TODO when page changes, diff will have both the old page content and the new content. We do not need
     //      the old page content because we do not visualize the diff. Therefore we should add an indicator
     //      that sets the beginning to the current page content (stops backtrace and starts from indicator)

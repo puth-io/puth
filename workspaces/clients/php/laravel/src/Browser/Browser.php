@@ -131,7 +131,7 @@ class Browser
     
     public function __construct($context, $browser, $resolver = null)
     {
-        $this->puthContext = $context;
+        $this->context = $context;
         $this->puthBrowser = $browser;
         $this->puthPage = $this->puthBrowser->pages()[0];
         
@@ -668,7 +668,7 @@ class Browser
      */
     public function quit()
     {
-        $this->puthContext->destroyBrowserByBrowser($this->puthBrowser);
+        $this->context->destroyBrowserByBrowser($this->puthBrowser);
     }
     
     /**
@@ -705,7 +705,7 @@ class Browser
             'browser' => $this,
             'resolver' => $this->resolver,
             'page' => $this->page,
-            'puthContext' => $this->puthContext,
+            'context' => $this->context,
             'puthBrowser' => $this->puthBrowser,
             'puthPage' => $this->puthPage,
         ], $this);

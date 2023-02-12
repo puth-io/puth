@@ -14,27 +14,13 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->value('#actions-type', 'test-1234')
-                ->assertValue('#actions-type', 'test-1234')
-                ->assertAttribute('#actions-focus', 'type', 'text')
-            ;
-            
-            static::assertEquals('test-1234', $browser->value('#actions-type'));
-            static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
-            static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));
-            
-            $browser->type('#actions-focus', '12')
-                ->assertValue('#actions-focus', '12')
-                ->type('#actions-focus', '34')
-                ->assertValue('#actions-focus', '34')
-                ->typeSlowly('#actions-focus', '56')
-                ->assertValue('#actions-focus', '56')
-                ->append('#actions-focus', '78')
-                ->assertValue('#actions-focus', '5678')
-                ->appendSlowly('#actions-focus', '90')
-                ->assertValue('#actions-focus', '567890')
-                ->clear('#actions-focus')
-                ->assertValue('#actions-focus', '')
+                ->select('#actions-select-multiple', ['apple', 'orange'])
+                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
+                ->select('#actions-select-multiple', 'orange')
+                ->assertSelected('#actions-select-multiple', 'orange')
+                ->assertSelected('#actions-select', '')
+                ->select('#actions-select', 'orange')
+                ->assertSelected('#actions-select', 'orange')
             ;
         });
     }
@@ -42,6 +28,20 @@ class AllMethodsTest extends PuthDuskTestCase
     /**
      * DONE
      */
+    function test_select()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->select('#actions-select-multiple', ['apple', 'orange'])
+                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
+                ->select('#actions-select-multiple', 'orange')
+                ->assertSelected('#actions-select-multiple', 'orange')
+                ->assertSelected('#actions-select', '')
+                ->select('#actions-select', 'orange')
+                ->assertSelected('#actions-select', 'orange')
+            ;
+        });
+    }
     
     function test_navigation()
     {
@@ -103,9 +103,33 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertVisible($browser->puthPage->get('body'))
                 ->assertInputValue($browser->puthPage->get('#properties-value input'), 'input with value')
                 ->assertInputValueIsNot($browser->puthPage->get('#properties-value input'), 'not the correct value')
+                ->select('#actions-select-multiple', ['apple', 'orange'])
+                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
+                ->assertNotSelected('#actions-select-multiple', 'not-selected')
+                ->assertSelectHasOptions('#actions-select-multiple', ['apple', 'orange'])
+                ->assertSelectMissingOptions('#actions-select-multiple', 'not-an-options')
+                ->assertSelectHasOption('#actions-select-multiple', 'orange')
+                ->assertSelectMissingOption('#actions-select-multiple', 'not-an-options')
+                ->type('#actions-type input', 'test-1234')
+                ->assertValue('#actions-type input', 'test-1234')
+                ->assertAttribute('#actions-type input', 'type', 'text')
+//                ->assertDataAttribute
+//                ->assertArtiaAttribute
                 ->assertPresent('body')
                 ->assertMissing('missingelement')
+//                ->assertDialogOpened
                 ->assertEnabled($browser->puthPage->get('#actions-focus'))
+//                ->assertDisabled($browser->puthPage->get('#actions-focus'))
+//                ->assertButtonEnabled
+//                ->assertButtonDisabled
+                ->click('#actions-focus')
+                ->assertFocused('#actions-focus')
+                ->assertNotFocused('#actions-type input')
+//                ->assertVue
+//                ->assertVueIsNot
+//                ->assertVueContains
+//                ->assertVueDoesNotContain
+//                ->vueAttribute
                 ->assertScript('1+1', 2)
             ;
         });
@@ -200,6 +224,35 @@ class AllMethodsTest extends PuthDuskTestCase
             ;
             
             assertEquals([2, (new Playground)->url()], $response);
+        });
+    }
+    
+    function test_concerns_interacts_with_elements_values()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->value('#actions-type', 'test-1234')
+                ->assertValue('#actions-type', 'test-1234')
+                ->assertAttribute('#actions-focus', 'type', 'text')
+            ;
+        
+            static::assertEquals('test-1234', $browser->value('#actions-type'));
+            static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
+            static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));
+        
+            $browser->type('#actions-focus', '12')
+                ->assertValue('#actions-focus', '12')
+                ->type('#actions-focus', '34')
+                ->assertValue('#actions-focus', '34')
+                ->typeSlowly('#actions-focus', '56')
+                ->assertValue('#actions-focus', '56')
+                ->append('#actions-focus', '78')
+                ->assertValue('#actions-focus', '5678')
+                ->appendSlowly('#actions-focus', '90')
+                ->assertValue('#actions-focus', '567890')
+                ->clear('#actions-focus')
+                ->assertValue('#actions-focus', '')
+            ;
         });
     }
 }
