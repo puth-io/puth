@@ -37,7 +37,7 @@ export default observer(function Sidebar() {
       onResizeStop={() => Events.emit('layout:resize')}
     >
       <div className="d-flex align-items-center">
-        <div className="d-flex align-items-center ms-2 me-auto">
+        <div className="d-flex align-items-center ms-2 me-4">
           <img src={puthLogoNew} className={'align-self-center'} style={{ height: '18px' }} alt="" />
           <span className={'ms-2 text-accent'} style={{ fontSize: '1.2rem' }}>
             Puth

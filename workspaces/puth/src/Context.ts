@@ -500,7 +500,7 @@ class Context extends Generic {
     let on = this.resolveOn(packet);
 
     // resolve page object
-    let page = Utils.resolveConstructorName(on) === 'CDPPage' ? on : on?._page;
+    let page = Utils.resolveConstructorName(on) === 'CDPPage' ? on : on?.frame?.page();
 
     // Create command
     const command: ICommand | undefined = await this.createCommandInstance(packet, on);
