@@ -113,6 +113,9 @@ trait ProvidesBrowser
             $this->context->createBrowser([
                 'headless' => true,
             ]),
+            options: [
+                'legacyBrowserHandling' => $this->legacyBrowserHandling ?? false,
+            ],
         );
     }
     

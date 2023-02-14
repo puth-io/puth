@@ -10,19 +10,15 @@ use function PHPUnit\Framework\assertEquals;
 
 class AllMethodsTest extends PuthDuskTestCase
 {
+    // use LegacyBrowserHandling;
+    
+    public $legacyBrowserHandling = true;
+    
     function test_wip()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->puthPage->clickNoBlockDialog('#dialog-alert')
-                
-//                ->assertDisabled($browser->resolver->findOrFail('#actions-focus'))
-//                ->assertButtonEnabled
-//                ->assertButtonDisabled
             ;
-    
-            $browser->waitForDialog()
-                ->acceptDialog();
         });
     }
     
@@ -87,6 +83,25 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
+    function test_dialog() {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                // alert
+                ->click('#dialog-alert')
+                ->waitForDialog()
+                ->acceptDialog()
+                // prompt
+                ->click('#dialog-prompt')
+                ->acceptDialog('prompt answer')
+                ->assertSee('prompt answer')
+                // confirm
+                ->click('#dialog-confirm')
+                ->acceptDialog()
+                ->assertSee('true')
+            ;
+        });
+    }
+    
     function test_concern_makes_assertions()
     {
         $this->browse(function (Browser $browser) {
@@ -135,11 +150,13 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
                 ->assertPresent('body')
                 ->assertMissing('missingelement')
-//                ->assertDialogOpened // https://github.com/puppeteer/puppeteer/issues/9666
-                ->assertEnabled($browser->resolver->findOrFail('#actions-focus'))
-//                ->assertDisabled($browser->resolver->findOrFail('#actions-focus'))
-//                ->assertButtonEnabled
-//                ->assertButtonDisabled
+                ->click('#dialog-confirm')
+                ->assertDialogOpened('confirm this')
+                ->dismissDialog()
+                ->assertEnabled('#actions-focus')
+                ->assertDisabled('#actions-click-disabled')
+                ->assertButtonDisabled('#actions-click-disabled')
+                ->assertButtonEnabled('#actions-click-double')
                 ->click('#actions-focus')
                 ->assertFocused('#actions-focus')
                 ->assertNotFocused('#actions-type input')

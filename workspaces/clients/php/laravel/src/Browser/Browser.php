@@ -129,13 +129,17 @@ class Browser
      */
     public $fitOnFailure = true;
     
-    public function __construct($context, $browser, $resolver = null)
+    public $legacyBrowserHandling = true;
+    
+    public function __construct($context, $browser, $resolver = null, $options = [])
     {
         $this->context = $context;
         $this->puthBrowser = $browser;
         $this->puthPage = $this->puthBrowser->pages()[0];
         
         $this->resolver = $resolver ?: new ElementResolver($this->puthPage);
+        
+        $this->legacyBrowserHandling = $options['legacyBrowserHandling'] ?? false;
     }
     
     /**

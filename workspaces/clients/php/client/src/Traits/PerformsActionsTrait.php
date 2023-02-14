@@ -25,8 +25,11 @@ trait PerformsActionsTrait
             'function' => $function,
             'parameters' => $parameters,
         ]]);
-    
-        $this->log("call: $function (translated: {$this->translateActionReverse($function)}})");
+        
+        if ($this->getContext()->isDebug()) {
+            $this->log("call: $function (translated: {$this->translateActionReverse($function)}})");
+            $this->log('with: ' . json_encode($parameters));
+        }
 
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
             throw new Exception(BackTrace::message(

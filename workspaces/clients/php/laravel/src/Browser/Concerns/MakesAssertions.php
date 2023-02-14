@@ -719,7 +719,7 @@ trait MakesAssertions
      */
      public function assertDialogOpened($message)
      {
-         $actualMessage = $this->driver->switchTo()->alert()->getText();
+         $actualMessage = $this->puthPage->waitForDialog()?->message();
     
          Assert::assertEquals(
              $message, $actualMessage,
@@ -732,15 +732,15 @@ trait MakesAssertions
     /**
      * Assert that the given field is enabled.
      *
-     * @param string|GenericObject $element
+     * @param string|GenericObject $field
      * @return $this
      */
-    public function assertEnabled($element)
+    public function assertEnabled($field)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForField($field);
         
         Assert::assertFalse(
-            $element->getProperty('disabled')->jsonValue(),
+            $element->disabled,
             "Expected element [{$element}] to be enabled, but it wasn't."
         );
         
@@ -750,15 +750,15 @@ trait MakesAssertions
     /**
      * Assert that the given field is disabled.
      *
-     * @param string|GenericObject $element
+     * @param string|GenericObject $field
      * @return $this
      */
-    public function assertDisabled($element)
+    public function assertDisabled($field)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForField($field);
         
         Assert::assertTrue(
-            $element->getProperty('disabled')->jsonValue(),
+            $element->disabled,
             "Expected element [{$element}] to be disabled, but it wasn't."
         );
         
@@ -768,12 +768,19 @@ trait MakesAssertions
     /**
      * Assert that the given button is enabled.
      *
-     * @param string|GenericObject $element
+     * @param string|GenericObject $button
      * @return $this
      */
-    public function assertButtonEnabled($element)
+    public function assertButtonEnabled($button)
     {
-        return $this->assertEnabled($element);
+        $element = $this->resolver->resolveForButtonPress($button);
+    
+        Assert::assertFalse(
+            $element->disabled,
+            "Expected button [{$button}] to be enabled, but it wasn't."
+        );
+    
+        return $this;
     }
     
     /**
@@ -784,7 +791,14 @@ trait MakesAssertions
      */
     public function assertButtonDisabled($button)
     {
-        return $this->assertDisabled($button);
+        $element = $this->resolver->resolveForButtonPress($button);
+    
+        Assert::assertTrue(
+            $element->disabled,
+            "Expected button [{$button}] to be disabled, but it wasn't."
+        );
+    
+        return $this;
     }
     
     /**

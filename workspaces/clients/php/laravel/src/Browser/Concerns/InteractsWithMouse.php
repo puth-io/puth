@@ -48,17 +48,15 @@ trait InteractsWithMouse
      * @param string $selector
      * @return $this
      */
-    public function click($selector)
+    public function click($selector, $options = [])
     {
-//        if (is_null($selector)) {
-//            $this->puthPage->mouse->click($this->mouseX, $this->mouseY);
-//            
-//            return $this;
-//        }
+        if (isset($this->legacyBrowserHandling) && $this->legacyBrowserHandling) {
+            $options['unblockOnDialogOpen'] = true;
+        }
         
         foreach ($this->resolver->all($selector) as $element) {
             try {
-                $element->click();
+                $element->click($options);
                 
                 return $this;
             } catch (Exception $e) {

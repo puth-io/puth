@@ -88,6 +88,8 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         clear: this.clear,
         submit: this.submit,
         value: this.value,
+        click: (el, options: any = {}) =>
+          options?.unblockOnDialogOpen ? this.clickNoBlockDialog(el.frame.page(), el, options) : el.click(options),
         doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
         leftClick: (el, options) => el.click(options),
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
@@ -225,6 +227,14 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return retryFor(
       this.getContext().getTimeout(options),
       async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
+      // // async () => await element.$x('.//*[contains(text(), "' + search + '")]'),
+      // async () =>
+      //   await Promise.any([
+      //     element.$x('.//*[contains(text(), "' + search + '")]'),
+      //     element.$x('.[contains(text(), "' + search + '")]'),
+      //     // element.$x('//*[contains(text(), "' + search + '")]'),
+      //     element.$x('.[text()[contains(., "' + search + '")]]'),
+      //   ]),
       (v) => v.length > 0,
     );
   }
@@ -452,14 +462,16 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return elementHandle.evaluateHandle((handle) => handle.scrollIntoView());
   }
 
-  async clickNoBlockDialog(page, selector, options: any = {}) {
-    let elementHandle = await page.$(selector);
+  async clickNoBlockDialog(page, selectorOrElement, options: any = {}) {
+    if (!(selectorOrElement instanceof ElementHandle)) {
+      selectorOrElement = await page.$(selectorOrElement);
+    }
 
-    await this.scrollIntoView(elementHandle);
+    await this.scrollIntoView(selectorOrElement);
 
     await sleep(1000);
 
-    const { x, y } = await elementHandle.clickablePoint(options.offset);
+    const { x, y } = await selectorOrElement.clickablePoint(options.offset);
 
     const mouse = page.mouse;
 

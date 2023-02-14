@@ -309,9 +309,9 @@ trait InteractsWithElements
      * @return $this
      */
     public function press($button)
-    {
-//        $this->resolver->resolveForButtonPress($button)->click();
-        $this->puthPage->click($button);
+    {   
+        // TODO check implementation
+        $this->resolver->resolveForButtonPress($button)->click();
         
         return $this;
     }
@@ -447,8 +447,8 @@ trait InteractsWithElements
      */
     public function dismissDialog()
     {
-        $this->driver->switchTo()->alert()->dismiss();
-        
+        $this->puthPage->dismissDialog();
+    
         return $this;
     }
 }
