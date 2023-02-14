@@ -910,13 +910,17 @@ trait MakesAssertions
     public function vueAttribute($componentSelector, $key)
     {
         $fullSelector = $this->resolver->format($componentSelector);
-        
-        return $this->driver->executeScript(
+    
+        $this->context->setCapability('EVAL', true);
+        $value =  $this->puthPage->evaluateRaw(
             "var el = document.querySelector('" . $fullSelector . "');" .
             "return typeof el.__vue__ === 'undefined' " .
             '? JSON.parse(JSON.stringify(el.__vueParentComponent.ctx)).' . $key .
             ': el.__vue__.' . $key
         );
+        $this->context->setCapability('EVAL', false);
+        
+        return $value;
     }
     
     /**

@@ -3,12 +3,12 @@
 ### Concerns
 
 - DONE InteractsWithAuthentication
-- InteractsWithCookies
+- DONE InteractsWithCookies
 - InteractsWithElements
 - DONE InteractsWithJavascript
 - DONE InteractsWithMouse
-- MakesAssertions
-- MakesUrlAssertions
+- DONE MakesAssertions (missing tests for vue assertions)
+- DONE MakesUrlAssertions
 - WaitsForElements
 
 ### Concepts
@@ -35,6 +35,7 @@ but I don't think enough people would use this feature so I removed it.
 
 - `$browser->maximize()`: Puppeteer has no way of controlling the actual browser window
 - `$browser->move($x = 100, $y = 100)`: Puppeteer has no way of controlling the actual browser window
+- `$browser->typeInDialog(selector, value)`: Please use the accept function which now takes a value `$browser->acceptDialog(value)`
 
 #### Mouse
 - `moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
