@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage } from 'puppeteer';
+import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
 import mitt from 'mitt';
 
 import { createBrowser } from './Browser';
@@ -15,23 +15,8 @@ import path from 'path';
 import { encode } from '@msgpack/msgpack';
 
 import { promises as fsPromise } from 'fs';
+import Return from './Context/Return';
 const { writeFile } = fsPromise;
-
-const Response = {
-  EMPTY: '',
-  GenericValue: (val) => ({
-    type: 'GenericValue',
-    value: val,
-  }),
-  GenericValues: (val) => ({
-    type: 'GenericValues',
-    value: val,
-  }),
-  GenericObjects: (val) => ({
-    type: 'GenericObjects',
-    value: val,
-  }),
-};
 
 export enum Capability {
   EVAL = 'EVAL',
@@ -73,16 +58,18 @@ class Context extends Generic {
 
   private capabilities = {};
 
-  public tracked = {
-    dialogs: new Map<Page, [string, string]>(),
-  };
-
   private readonly createdAt;
 
-  public caches = {
+  public caches: {
+    snapshot: {
+      lastHtml: string;
+    };
+    dialog: Map<Page, Dialog>;
+  } = {
     snapshot: {
       lastHtml: '',
     },
+    dialog: new Map<Page, Dialog>(),
   };
 
   constructor(puth: Puth, options: any = {}) {
@@ -236,12 +223,17 @@ class Context extends Generic {
     );
   }
 
+  isPageBlockedByDialog(page) {
+    return this.caches.dialog.has(page);
+  }
+
   /**
    * TODO maybe track "outgoing" navigation requests, and stall incoming request until finished loading
    *      but check if we need to make sure if call the object called on needs to be existing
    */
   _trackPage(page) {
     page.on('close', () => this.removeEventListenersFrom(page));
+    page.on('dialog', (dialog) => this.caches.dialog.set(page, dialog));
 
     if (this.shouldSnapshot()) {
       let trackable = (request: HTTPRequest) =>
@@ -348,22 +340,22 @@ class Context extends Generic {
     // });
   }
 
-  // TODO write _untrackDialogs
-  async _trackDialogs(page) {
-    this.registerEventListenerOn(page, 'dialog', async (dialog) => {
-      let action = this.tracked.dialogs.get(page);
-
-      if (!action) {
-        return;
-      }
-
-      await dialog[action[0]](action.length > 1 ? action[1] : undefined);
-
-      if (action[0] === 'type') {
-        await dialog.accept();
-      }
-    });
-  }
+  // // TODO write _untrackDialogs
+  // async _trackDialogs(page) {
+  //   this.registerEventListenerOn(page, 'dialog', async (dialog) => {
+  //     let action = this.tracked.dialogs.get(page);
+  //
+  //     if (!action) {
+  //       return;
+  //     }
+  //
+  //     await dialog[action[0]](action.length > 1 ? action[1] : undefined);
+  //
+  //     if (action[0] === 'type') {
+  //       await dialog.accept();
+  //     }
+  //   });
+  // }
 
   registerEventListenerOn(object, event, func) {
     this.eventFunctions.push([object, event, func]);
@@ -506,7 +498,9 @@ class Context extends Generic {
     const command: ICommand | undefined = await this.createCommandInstance(packet, on);
 
     // Create snapshot before command
-    await Snapshots.createBefore(this, page, command);
+    if (!this.isPageBlockedByDialog(page)) {
+      await Snapshots.createBefore(this, page, command);
+    }
 
     // Turn object representations into the actual object
     packet.parameters = packet.parameters ? packet.parameters.map((item) => this.resolveIfCached(item)) : [];
@@ -588,6 +582,10 @@ class Context extends Generic {
 
   async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
     let beforeReturn = async () => {
+      if (this.isPageBlockedByDialog(page)) {
+        return;
+      }
+
       // TODO Implement this in events. Event: 'function:call:return'
       await Snapshots.createAfter(this, page, command);
     };
@@ -624,7 +622,21 @@ class Context extends Generic {
     }
 
     await beforeReturn();
-    return this.resolveReturnValue(packet, returnValue);
+
+    // TODO refactor "resolveReturnValue" to "handleValueForReturn"
+    if (returnValue instanceof Return) {
+      return returnValue.serialize();
+    }
+
+    if (!(returnValue instanceof Return)) {
+      returnValue = this.resolveReturnValue(packet, returnValue);
+    }
+
+    if (returnValue instanceof Return) {
+      return returnValue.serialize();
+    }
+
+    return returnValue;
   }
 
   // TODO add return value resolver structure
@@ -635,7 +647,7 @@ class Context extends Generic {
 
     if (Array.isArray(returnValue)) {
       if (returnValue.length === 0) {
-        return Response.GenericValues(returnValue);
+        return Return.Values(returnValue);
       }
 
       // This is also true if the return value content is an associative array
@@ -643,17 +655,18 @@ class Context extends Generic {
       //      problem is, if you return mixed content, values and reference objects together,
       //      then the content is not naturally resolvable for the client
       if (Utils.resolveConstructorName(returnValue[0]) === 'Object') {
-        return Response.GenericValue(returnValue);
-      }
-      if (typeof returnValue[0] === 'object') {
-        return Response.GenericObjects(returnValue.map((item) => this.returnCached(item)));
+        return Return.Value(returnValue);
       }
 
-      return Response.GenericValue(returnValue);
+      if (typeof returnValue[0] === 'object') {
+        return Return.Objects(returnValue.map((item) => this.returnCached(item)));
+      }
+
+      return Return.Value(returnValue);
     }
 
     if (typeof returnValue === 'string' || typeof returnValue === 'boolean' || typeof returnValue === 'number') {
-      return Response.GenericValue(returnValue);
+      return Return.Value(returnValue);
     }
 
     if (returnValue?.type === 'PuthAssertion') {
@@ -664,9 +677,11 @@ class Context extends Generic {
       return this.returnCached(returnValue);
     }
 
-    // Fallback to returning null because undefined gets
-    // ignored by Fastify so no response would be sent
-    return null;
+    if (returnValue === null) {
+      return Return.Null();
+    }
+
+    return Return.Undefined();
   }
 
   async get(action) {
@@ -696,7 +711,7 @@ class Context extends Generic {
       return this.returnCached(resolvedTo);
     }
 
-    return Response.GenericValue(resolvedTo);
+    return Return.Value(resolvedTo);
   }
 
   async set(action) {

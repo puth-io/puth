@@ -5,6 +5,7 @@ namespace Puth\Laravel\Browser;
 use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
+use InvalidArgumentException;
 
 class ElementResolver
 {
@@ -51,7 +52,7 @@ class ElementResolver
      * @param string $prefix
      * @return void
      */
-    public function __construct($puthPage, $prefix = 'body')
+    public function __construct($puthPage, $prefix = '')
     {
         $this->puthPage = $puthPage;
         $this->prefix = trim($prefix);
@@ -420,7 +421,8 @@ class ElementResolver
         );
         
         if (Str::startsWith($selector, '@') && $selector === $originalSelector) {
-            $selector = '[' . Dusk::$selectorHtmlAttribute . '="' . explode('@', $selector)[1] . '"]';
+            // TODO put Dusk::selectorHtmlAttribute in PuthManager
+            $selector = '[' . 'dusk' . '="' . explode('@', $selector)[1] . '"]';
         }
         
         return trim($this->prefix . ' ' . $selector);

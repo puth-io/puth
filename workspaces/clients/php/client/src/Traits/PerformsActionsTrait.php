@@ -96,6 +96,12 @@ trait PerformsActionsTrait
             return $body->value;
         } else if ($body->type === 'GenericValues') {
             return $body->value;
+        } else if ($body->type === 'GenericNull') {
+            return null;
+        } else if ($body->type === 'GenericSelf') {
+            return $this;
+        } else if ($body->type === 'GenericUndefined') {
+            return $this;
         } else if ($body->type === 'PuthAssertion') {
             return $body;
         } else {

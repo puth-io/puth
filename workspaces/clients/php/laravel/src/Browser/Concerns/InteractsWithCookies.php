@@ -3,42 +3,36 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use DateTimeInterface;
+use Illuminate\Cookie\CookieValuePrefix;
+use Illuminate\Support\Facades\Crypt;
 
 trait InteractsWithCookies
 {
-    // /**
-    //  * Get or set an encrypted cookie's value.
-    //  *
-    //  * @param string $name
-    //  * @param string|null $value
-    //  * @param int|DateTimeInterface|null $expiry
-    //  * @param array $options
-    //  * @return string
-    //  */
-    // public function cookie($name, $value = null, $expiry = null, array $options = [])
-    // {
-    //     if (!is_null($value)) {
-    //         return $this->addCookie($name, $value, $expiry, $options);
-    //     }
-    //
-    //     $cookies = array_filter($this->puthPage->cookies(), function ($cookie) use ($name) {
-    //        return $cookie->name === $name;
-    //     });
-    //
-    //     if (count($cookies) > 0) {
-    //         $cookie = $cookies[0];
-    //     } else {
-    //         $cookie = null;
-    //     }
-    //
-    //     if ($cookie) {
-    //         $decryptedValue = decrypt(rawurldecode($cookie['value']), $unserialize = false);
-    //
-    //         $hasValuePrefix = strpos($decryptedValue, CookieValuePrefix::create($name, Crypt::getKey())) === 0;
-    //
-    //         return $hasValuePrefix ? CookieValuePrefix::remove($decryptedValue) : $decryptedValue;
-    //     }
-    // }
+     /**
+      * Get or set an encrypted cookie's value.
+      *
+      * @param string $name
+      * @param string|null $value
+      * @param int|DateTimeInterface|null $expiry
+      * @param array $options
+      * @return $this|string
+      */
+     public function cookie($name, $value = null, $expiry = null, array $options = [])
+     {
+         if (!is_null($value)) {
+             return $this->addCookie($name, $value, $expiry, $options);
+         }
+    
+         $cookie = $this->puthPage->getCookieByName($name);
+    
+         if ($cookie) {
+             $decryptedValue = decrypt(rawurldecode($cookie->value), $unserialize = false);
+    
+             $hasValuePrefix = strpos($decryptedValue, CookieValuePrefix::create($name, Crypt::getKey())) === 0;
+    
+             return $hasValuePrefix ? CookieValuePrefix::remove($decryptedValue) : $decryptedValue;
+         }
+     }
     
     /**
      * Get or set an unencrypted cookie's value.
@@ -47,26 +41,18 @@ trait InteractsWithCookies
      * @param string|null $value
      * @param int|DateTimeInterface|null $expiry
      * @param array $options
-     * @return string
+     * @return $this|string
      */
     public function plainCookie($name, $value = null, $expiry = null, array $options = [])
     {
         if (!is_null($value)) {
-            return $this->addCookie($name, $value, $expiry, $options);
-        }
-    
-        $cookies = array_filter($this->puthPage->cookies(), function ($cookie) use ($name) {
-            return $cookie->name === $name;
-        });
-    
-        if (count($cookies) > 0) {
-            $cookie = $cookies[0];
-        } else {
-            $cookie = null;
+            return $this->addCookie($name, $value, $expiry, $options, false);
         }
         
+        $cookie = $this->puthPage->getCookieByName($name);
+        
         if ($cookie) {
-            return rawurldecode($cookie['value']);
+            return rawurldecode($cookie->value);
         }
     }
     
@@ -79,11 +65,13 @@ trait InteractsWithCookies
      * @param array $options
      * @return $this
      */
-    public function addCookie($name, $value, $expiry = null, array $options = [])
+    public function addCookie($name, $value, $expiry = null, array $options = [], $encrypt = true)
     {
-        // if ($encrypt) {
-        //     $value = encrypt($value, $serialize = false);
-        // }
+         if ($encrypt) {
+             $prefix = CookieValuePrefix::create($name, Crypt::getKey());
+             
+             $value = encrypt($prefix.$value, $serialize = false);
+         }
         
         if ($expiry instanceof DateTimeInterface) {
             $expiry = $expiry->getTimestamp();

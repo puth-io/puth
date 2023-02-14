@@ -113,9 +113,9 @@ trait MakesAssertions
      * @param string $value
      * @return $this
      */
-    public function assertCookieValue($name, $value)
+    public function assertCookieValue($name, $value, $decrypt = true)
     {
-        $actual = $this->plainCookie($name);
+        $actual = $decrypt ? $this->cookie($name) : $this->plainCookie($name);
         
         Assert::assertEquals(
             $value, $actual,
@@ -181,7 +181,7 @@ trait MakesAssertions
         
         try {
             // TODO implement retry safe "notContains" function or maybe provide ['negate' => true]?
-            $result = $element->contains($text, ['timeout' => -1]);
+            $result = $element->contains($text, ['timeout' => 0]);
         } catch (\Exception $exception) {
         };
         
@@ -202,7 +202,9 @@ trait MakesAssertions
      */
     public function assertSeeIn($selector, $text)
     {
-        return $this->assertSee($text, $this->puthPage->get($selector));
+        $element = $this->resolver->findOrFail($selector);
+        
+        return $this->assertSee($text, $element);
     }
     
     /**
@@ -214,7 +216,29 @@ trait MakesAssertions
      */
     public function assertDontSeeIn($selector, $text)
     {
-        return $this->assertDontSee($text, $this->puthPage->get($selector));
+        $element = $this->resolver->findOrFail($selector);
+        
+        return $this->assertDontSee($text, $element);
+    }
+    
+    /**
+     * Assert that any text is present within the selector.
+     *
+     * @param  string  $selector
+     * @return $this
+     */
+    public function assertSeeAnythingIn($selector)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        $element = $this->resolver->findOrFail($selector);
+        
+        Assert::assertTrue(
+            $element->innerText !== '',
+            "Saw unexpected text [''] within element [{$fullSelector}]."
+        );
+        
+        return $this;
     }
     
     /**
@@ -375,7 +399,7 @@ trait MakesAssertions
         $element = $this->resolveElement($element);
         
         Assert::assertTrue(
-            $element->getProperty('checked')->jsonValue(),
+            $element->checked,
             "Expected checkbox [{$element}] to be checked, but it wasn't."
         );
         
@@ -406,7 +430,7 @@ trait MakesAssertions
         $element = $this->resolveElement($element);
         
         Assert::assertFalse(
-            $element->getProperty('checked')->jsonValue(),
+            $element->checked,
             "Checkbox [{$element}] was unexpectedly checked."
         );
         
@@ -416,15 +440,16 @@ trait MakesAssertions
     /**
      * Assert that the given radio field is selected.
      *
-     * @param string $element
+     * @param  string  $field
+     * @param  string  $value
      * @return $this
      */
-    public function assertRadioSelected($element)
+    public function assertRadioSelected($field, $value)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForRadioSelection($field, $value);
         
         Assert::assertTrue(
-            $element->getProperty('checked')->jsonValue(),
+            $element->checked,
             "Expected radio [{$element}] to be selected, but it wasn't."
         );
         
@@ -437,12 +462,12 @@ trait MakesAssertions
      * @param string|GenericObject $element
      * @return $this
      */
-    public function assertRadioNotSelected($element)
+    public function assertRadioNotSelected($field, $value = null)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForRadioSelection($field, $value);
         
         Assert::assertFalse(
-            $element->getProperty('checked')->jsonValue(),
+            $element->checked,
             "Radio [{$element}] was unexpectedly selected."
         );
         
@@ -609,7 +634,7 @@ trait MakesAssertions
     {
         $element = $this->resolveElement($element);
         
-        $actual = $element->getProperty($attribute)->jsonValue();
+        $actual = $element->its($attribute);
         
         Assert::assertNotNull(
             $actual,
@@ -691,19 +716,18 @@ trait MakesAssertions
      * Assert that a JavaScript dialog with given message has been opened.
      * @param string $message
      * @return $this
-     * @todo change implementation
      */
-    // public function assertDialogOpened($message)
-    // {
-    //     $actualMessage = $this->driver->switchTo()->alert()->getText();
-    //
-    //     Assert::assertEquals(
-    //         $message, $actualMessage,
-    //         "Expected dialog message [{$message}] does not equal actual message [{$actualMessage}]."
-    //     );
-    //
-    //     return $this;
-    // }
+     public function assertDialogOpened($message)
+     {
+         $actualMessage = $this->driver->switchTo()->alert()->getText();
+    
+         Assert::assertEquals(
+             $message, $actualMessage,
+             "Expected dialog message [{$message}] does not equal actual message [{$actualMessage}]."
+         );
+    
+         return $this;
+     }
     
     /**
      * Assert that the given field is enabled.

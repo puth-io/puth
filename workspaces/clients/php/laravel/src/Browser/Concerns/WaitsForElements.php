@@ -286,14 +286,10 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitForDialog($seconds = null)
+    public function waitForDialog($seconds = 3)
     {
-        $seconds = is_null($seconds) ? static::$waitSeconds : $seconds;
-        
-        $this->driver->wait($seconds, 100)->until(
-            WebDriverExpectedCondition::alertIsPresent(), "Waited {$seconds} seconds for dialog."
-        );
-        
+        $this->puthPage->waitForDialog(['timeout' => $seconds * 1000]);
+    
         return $this;
     }
     

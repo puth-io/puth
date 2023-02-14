@@ -186,7 +186,11 @@ export const Preview = observer(() => {
         {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
       </div>
 
-      {WebsocketHandler.isConnected && <button className={'btn btn-sm btn-outline-success ms-2'}>Connected</button>}
+      {WebsocketHandler.isConnected ? (
+        <button className={'btn btn-sm btn-outline-success ms-2'}>Connected</button>
+      ) : (
+        <button className={'btn btn-sm btn-outline-danger ms-2'}>Disconnected</button>
+      )}
     </div>
   ));
 

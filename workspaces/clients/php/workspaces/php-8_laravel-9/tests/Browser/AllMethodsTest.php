@@ -14,14 +14,15 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->select('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
-                ->select('#actions-select-multiple', 'orange')
-                ->assertSelected('#actions-select-multiple', 'orange')
-                ->assertSelected('#actions-select', '')
-                ->select('#actions-select', 'orange')
-                ->assertSelected('#actions-select', 'orange')
+                ->puthPage->clickNoBlockDialog('#dialog-alert')
+                
+//                ->assertDisabled($browser->resolver->findOrFail('#actions-focus'))
+//                ->assertButtonEnabled
+//                ->assertButtonDisabled
             ;
+    
+            $browser->waitForDialog()
+                ->acceptDialog();
         });
     }
     
@@ -47,13 +48,14 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $next = 'https://puth.dev/';
+            $playground = 'https://playground.puth.dev/';
             
-            $browser->visit(new Playground)
-                ->assertUrlIs('https://playground.puth.dev/')
+            $browser->visit($playground)
+                ->assertUrlIs($playground)
                 ->visit($next)
                 ->assertUrlIs($next)
                 ->back()
-                ->assertUrlIs('https://playground.puth.dev/')
+                ->assertUrlIs($playground)
                 ->forward()
                 ->assertUrlIs($next)
                 ->refresh()
@@ -89,20 +91,36 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->assertTitle('Puth - Playground')
+                ->assertTitle('Playground - Puth')
                 ->assertTitleContains('Playground')
-                ->assertSee('Welcome to Puths Playground')
+                ->plainCookie('plain', '1234')
+                ->assertCookieValue('plain', '1234', false)
+                ->assertHasCookie('plain')
+                ->addCookie('test', '5678')
+                ->assertCookieValue('test', '5678')
+                ->assertCookieMissing('not-a-cookie')
+                ->assertSee('Welcome to Puth')
                 ->assertDontSee('This text does not exists')
                 ->assertSeeIn('body', 'Querying')
                 ->assertDontSeeIn('body', 'This text does not exists')
-                ->assertSourceHas('<title>Puth - Playground</title>')
+                ->assertSeeAnythingIn('body')
+                ->assertSourceHas('<title>Playground - Puth</title>')
                 ->assertSourceMissing('<div>__not in dom__</div>')
-                ->assertSeeLink('https://puth.dev')
+                ->assertSeeLink('https://puth.dev/')
                 ->assertDontSeeLink('https://notalink.io')
                 ->assertVisible('body')
-                ->assertVisible($browser->puthPage->get('body'))
-                ->assertInputValue($browser->puthPage->get('#properties-value input'), 'input with value')
-                ->assertInputValueIsNot($browser->puthPage->get('#properties-value input'), 'not the correct value')
+                ->assertVisible($browser->resolver->findOrFail('body'))
+                ->assertInputValue('#properties-value input', 'input with value')
+                ->assertInputValue($browser->resolver->findOrFail('#properties-value input'), 'input with value')
+                ->assertInputValueIsNot('#properties-value input', 'not the correct value')
+                ->assertInputValueIsNot($browser->resolver->findOrFail('#properties-value input'), 'not the correct value')
+                ->check('#action-checkbox')
+                ->assertChecked('#action-checkbox')
+                ->uncheck('#action-checkbox', 'test-1234')
+                ->assertNotChecked('#action-checkbox')
+                ->radio('action-radio', 'orange')
+                ->assertRadioSelected('action-radio', 'orange')
+                ->assertRadioNotSelected('action-radio', 'apple')
                 ->select('#actions-select-multiple', ['apple', 'orange'])
                 ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
                 ->assertNotSelected('#actions-select-multiple', 'not-selected')
@@ -113,13 +131,13 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->type('#actions-type input', 'test-1234')
                 ->assertValue('#actions-type input', 'test-1234')
                 ->assertAttribute('#actions-type input', 'type', 'text')
-//                ->assertDataAttribute
-//                ->assertArtiaAttribute
+                ->assertDataAttribute('#properties-attributes', 'test', '1234')
+                ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
                 ->assertPresent('body')
                 ->assertMissing('missingelement')
-//                ->assertDialogOpened
-                ->assertEnabled($browser->puthPage->get('#actions-focus'))
-//                ->assertDisabled($browser->puthPage->get('#actions-focus'))
+//                ->assertDialogOpened // https://github.com/puppeteer/puppeteer/issues/9666
+                ->assertEnabled($browser->resolver->findOrFail('#actions-focus'))
+//                ->assertDisabled($browser->resolver->findOrFail('#actions-focus'))
 //                ->assertButtonEnabled
 //                ->assertButtonDisabled
                 ->click('#actions-focus')
@@ -187,7 +205,7 @@ class AllMethodsTest extends PuthDuskTestCase
             
             $browser->visit(new Playground);
             
-            $element = $browser->puthPage->get('#actions-click > button');
+            $element = $browser->resolver->findOrFail('#actions-click > button');
             
             $element->scrollIntoView();
             

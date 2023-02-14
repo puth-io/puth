@@ -2,8 +2,9 @@ import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { Capability } from '../Context';
-import { capitalizeFirstLetter, retryFor } from '../Utils';
+import { capitalizeFirstLetter, retryFor, sleep } from '../Utils';
 import { ElementHandle } from 'puppeteer';
+import Return from '../Context/Return';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -60,9 +61,14 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           ]);
           return true;
         },
-        _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
+        // _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
         url: this.url,
         type: this.type,
+        getCookieByName: this.getCookieByName,
+        waitForDialog: this.waitForDialog,
+        clickNoBlockDialog: this.clickNoBlockDialog,
+        acceptDialog: this.acceptDialog,
+        dismissDialog: this.dismissDialog,
       },
       ElementHandle: {
         get: this.get,
@@ -87,7 +93,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
         rightClick: (el, options) => el.click({ ...options, button: 'right' }),
         selected: (el) => el.evaluate((s) => [...s.options].filter((o) => o.selected).map((o) => o.value)),
-        scrollIntoView: (el) => el.evaluateHandle((handle) => handle.scrollIntoView()),
+        scrollIntoView: this.scrollIntoView,
         // @ts-ignore
         scrollTo: (el, ...options) =>
           el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
@@ -401,5 +407,85 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
   url(element, options?) {
     return retryFor(this.getContext().getTimeout(options), async () => await element.url(), Expects.NotNull.test);
+  }
+
+  async getCookieByName(page, name, options?) {
+    let cookies = await page.cookies();
+
+    for (let idx in cookies) {
+      if (cookies[idx].name === name) {
+        return Return.Value(cookies[idx]);
+      }
+    }
+
+    return Return.Null();
+  }
+
+  waitForDialog(page, options: any = {}) {
+    return retryFor(
+      options.timeout ?? 5000,
+      () => this.getContext().caches.dialog.get(page),
+      (rv) => rv !== undefined,
+    );
+  }
+
+  // // TODO for fastest resolving: check if dialog exists in cache, if not register custom handler for page that resolves
+  // waitForDialog(page, options: any = {}) {
+  //   return retryFor(
+  //     5000,
+  //     () => {
+  //       console.log('checking...');
+  //
+  //       let idx = this.getContext().caches.dialog.waitingForUse.findIndex((item) => item[0] === page);
+  //
+  //       if (idx === -1) {
+  //         return;
+  //       }
+  //
+  //       return this.getContext().caches.dialog.waitingForUse.splice(idx, 1)[0];
+  //     },
+  //     (rv) => rv !== undefined,
+  //   );
+  // }
+
+  scrollIntoView(elementHandle) {
+    return elementHandle.evaluateHandle((handle) => handle.scrollIntoView());
+  }
+
+  async clickNoBlockDialog(page, selector, options: any = {}) {
+    let elementHandle = await page.$(selector);
+
+    await this.scrollIntoView(elementHandle);
+
+    await sleep(1000);
+
+    const { x, y } = await elementHandle.clickablePoint(options.offset);
+
+    const mouse = page.mouse;
+
+    await mouse.move(x, y);
+    await mouse.down(options);
+
+    if (options.delay) {
+      await new Promise((f) => {
+        return setTimeout(f, options.delay);
+      });
+    }
+
+    await Promise.race([new Promise((resolve) => page.once('dialog', resolve)), mouse.up(options)]);
+
+    return Return.Undefined();
+  }
+
+  acceptDialog(page, message = '', options = {}) {
+    return this.waitForDialog(page, options)
+      .then((dialog) => dialog.accept(message))
+      .finally(() => this.getContext().caches.dialog.delete(page));
+  }
+
+  dismissDialog(page, options = {}) {
+    return this.waitForDialog(page, options)
+      .then((dialog) => dialog.dismiss())
+      .finally(() => this.getContext().caches.dialog.delete(page));
   }
 }

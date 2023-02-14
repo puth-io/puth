@@ -114,7 +114,6 @@ export async function retryFor(time, func, test?: (v: any) => boolean, cycleTime
 
     // Break while immediately if retryFor should only try once
     if (once) {
-      console.log('___________only tried once');
       break;
     }
 

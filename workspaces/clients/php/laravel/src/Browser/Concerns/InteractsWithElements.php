@@ -261,7 +261,7 @@ trait InteractsWithElements
     {
         $element = $this->resolver->resolveForChecking($field, $value);
         
-        if (!$element->isSelected()) {
+        if (!$element->checked) {
             $element->click();
         }
         
@@ -279,7 +279,7 @@ trait InteractsWithElements
     {
         $element = $this->resolver->resolveForChecking($field, $value);
         
-        if ($element->isSelected()) {
+        if ($element->checked) {
             $element->click();
         }
         
@@ -420,25 +420,25 @@ trait InteractsWithElements
      *
      * @return $this
      */
-    public function acceptDialog()
+    public function acceptDialog($value = '')
     {
-        $this->driver->switchTo()->alert()->accept();
+        $this->puthPage->acceptDialog($value);
         
         return $this;
     }
     
-    /**
-     * Type the given value in an open JavaScript prompt dialog.
-     *
-     * @param string $value
-     * @return $this
-     */
-    public function typeInDialog($value)
-    {
-        $this->driver->switchTo()->alert()->sendKeys($value);
-        
-        return $this;
-    }
+//    /**
+//     * Type the given value in an open JavaScript prompt dialog.
+//     *
+//     * @param string $value
+//     * @return $this
+//     */
+//    public function typeInDialog($value)
+//    {
+//        $this->driver->switchTo()->alert()->sendKeys($value);
+//        
+//        return $this;
+//    }
     
     /**
      * Dismiss a JavaScript dialog.

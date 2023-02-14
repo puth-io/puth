@@ -99,6 +99,10 @@ class SnapshotHandler {
   private cache = new Map<Context, (ICommand | ILog | IResponse)[]>();
 
   pushToCache(context, item, { broadcast } = { broadcast: true }) {
+    if (item.cached) {
+      return;
+    }
+
     if (!this.cache.has(context)) {
       // cleanup cache to have at least some memory limit
       if (this.cache.size >= 100) {
@@ -110,6 +114,7 @@ class SnapshotHandler {
 
     // @ts-ignore
     this.cache.get(context).push(item);
+    item.cached = true;
 
     // TODO maybe implement a time buffer to send out multiple snapshots
     if (broadcast) {
@@ -152,6 +157,7 @@ class SnapshotHandler {
       }
     }
 
+    this.pushToCache(context, command, { broadcast: false });
     this.broadcast(command);
   }
 
