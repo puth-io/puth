@@ -4,15 +4,14 @@ namespace Tests\Browser;
 
 use App\Models\User;
 use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser\Concerns\LegacyBrowserHandling;
 use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
 use function PHPUnit\Framework\assertEquals;
 
 class AllMethodsTest extends PuthDuskTestCase
 {
-    // use LegacyBrowserHandling;
-    
-    public $legacyBrowserHandling = true;
+    use LegacyBrowserHandling;
     
     function test_wip()
     {
