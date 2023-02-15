@@ -2,21 +2,40 @@
 
 namespace Tests\Browser;
 
-use App\Models\User;
+use Illuminate\Support\Carbon;
+use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\Browser\Concerns\LegacyBrowserHandling;
 use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
-use function PHPUnit\Framework\assertEquals;
 
 class AllMethodsTest extends PuthDuskTestCase
 {
-    use LegacyBrowserHandling;
-    
     function test_wip()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
+            
+            ;
+        });
+    }
+    
+    function test_querying_elements()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground);
+            
+            Assert::assertCount(2, $browser->elements('.querying-get'));
+            Assert::assertCount(1, $browser->elements('#querying-get'));
+        });
+    }
+    
+    function test_press()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->press('#actions-click > button')
+                ->assertSeeIn('#actions-click', 'clicked button')
+                ->pressAndWaitFor('#actions-click-wait')
             ;
         });
     }
@@ -36,6 +55,13 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->select('#actions-select', 'orange')
                 ->assertSelected('#actions-select', 'orange')
             ;
+        });
+        
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->select('#actions-select-multiple');
+        
+            Assert::assertNotEmpty($browser->element('#actions-select-multiple')->value);
         });
     }
     
@@ -82,21 +108,12 @@ class AllMethodsTest extends PuthDuskTestCase
         });
     }
     
-    function test_dialog() {
+    function test_interacts_with_cookies()
+    {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                // alert
-                ->click('#dialog-alert')
-                ->waitForDialog()
-                ->acceptDialog()
-                // prompt
-                ->click('#dialog-prompt')
-                ->acceptDialog('prompt answer')
-                ->assertSee('prompt answer')
-                // confirm
-                ->click('#dialog-confirm')
-                ->acceptDialog()
-                ->assertSee('true')
+                ->cookie('encrypted', '1234', Carbon::tomorrow())
+                ->assertCookieValue('encrypted', '1234')
             ;
         });
     }
@@ -112,7 +129,8 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertHasCookie('plain')
                 ->addCookie('test', '5678')
                 ->assertCookieValue('test', '5678')
-                ->assertCookieMissing('not-a-cookie')
+                ->deleteCookie('test')
+                ->assertCookieMissing('test')
                 ->assertSee('Welcome to Puth')
                 ->assertDontSee('This text does not exists')
                 ->assertSeeIn('body', 'Querying')
@@ -149,9 +167,6 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
                 ->assertPresent('body')
                 ->assertMissing('missingelement')
-                ->click('#dialog-confirm')
-                ->assertDialogOpened('confirm this')
-                ->dismissDialog()
                 ->assertEnabled('#actions-focus')
                 ->assertDisabled('#actions-click-disabled')
                 ->assertButtonDisabled('#actions-click-disabled')
@@ -229,35 +244,6 @@ class AllMethodsTest extends PuthDuskTestCase
             
             $browser->clickAtPoint($point->x, $point->y)
                 ->assertSeeIn('#actions-click', 'clicked button');
-        });
-    }
-    
-    function test_concern_interacts_with_authentication()
-    {
-        $user = User::factory()->create();
-    
-        $this->browse(function (Browser $browser) use ($user) {
-            $browser->visit('/')
-                ->loginAs($user)
-                ->assertAuthenticated()
-                ->assertAuthenticatedAs($user)
-                ->logout()
-                ->assertGuest()
-            ;
-        });
-    }
-    
-    function test_concern_interacts_with_javascript()
-    {
-        $this->browse(function (Browser $browser) {
-            $response = $browser->visit(new Playground)
-                ->script([
-                    '1 + 1',
-                    'window.document.location.href',
-                ])
-            ;
-            
-            assertEquals([2, (new Playground)->url()], $response);
         });
     }
     

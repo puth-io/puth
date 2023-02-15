@@ -20,7 +20,7 @@
     "fastify": "^4.10.2",
     "meow": "^9.0.0",
     "mitt": "^3.0.0",
-    "puppeteer": "^19.4.0",
+    "puppeteer": "^19.7.0",
     "tmp-promise": "^2.1.1",
     "typedoc": "^0.23.22",
     "uuid": "^8.3.2"

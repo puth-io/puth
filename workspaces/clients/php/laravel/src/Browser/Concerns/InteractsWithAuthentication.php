@@ -2,7 +2,7 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Laravel\Dusk\Browser;
+use Puth\Laravel\Browser\Browser;
 use PHPUnit\Framework\Assert;
 
 trait InteractsWithAuthentication

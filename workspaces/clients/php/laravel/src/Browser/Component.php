@@ -14,7 +14,6 @@ abstract class Component
     /**
      * Assert that the current page contains this component.
      *
-     * @param \Laravel\Dusk\Browser $browser
      * @return void
      */
     public function assert(Browser $browser)

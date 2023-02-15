@@ -120,19 +120,12 @@ class ElementResolver
      */
     public function resolveSelectOptions($field, array $values)
     {
-        
         $options = $this->resolveForSelection($field)
             ->children('option');
         
         if (empty($options)) {
             return [];
         }
-        
-//        dump($options);
-//        dd(array_filter($options, function ($option) use ($values) {
-//            dump($option->value);
-//            return in_array($option->value, $values);
-//        }));
         
         return array_filter($options, function ($option) use ($values) {
             return in_array($option->value, $values);

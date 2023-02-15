@@ -88,8 +88,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         clear: this.clear,
         submit: this.submit,
         value: this.value,
-        click: (el, options: any = {}) =>
-          options?.unblockOnDialogOpen ? this.clickNoBlockDialog(el.frame.page(), el, options) : el.click(options),
+        click: this.click,
         doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
         leftClick: (el, options) => el.click(options),
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
@@ -117,6 +116,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           return t?.listeners;
         },
         tagName: async (el) => (await el.evaluateHandle((handle) => handle.tagName)).jsonValue(),
+        dragToOffset: this.dragToOffset,
       },
     });
   }
@@ -459,7 +459,15 @@ export class PuthStandardPlugin extends PuthContextPlugin {
   // }
 
   scrollIntoView(elementHandle) {
-    return elementHandle.evaluateHandle((handle) => handle.scrollIntoView());
+    return elementHandle.evaluateHandle((handle) => handle.scrollIntoViewIfNeeded(true));
+  }
+
+  click(elementHandle, options: any = {}) {
+    if (options?.unblockOnDialogOpen) {
+      return this.clickNoBlockDialog(elementHandle.frame.page(), elementHandle, options);
+    }
+
+    return elementHandle.click(options);
   }
 
   async clickNoBlockDialog(page, selectorOrElement, options: any = {}) {
@@ -467,26 +475,27 @@ export class PuthStandardPlugin extends PuthContextPlugin {
       selectorOrElement = await page.$(selectorOrElement);
     }
 
-    await this.scrollIntoView(selectorOrElement);
+    return await this.scrollIntoView(selectorOrElement)
+      .then(() => selectorOrElement.clickablePoint(options.offset))
+      .then(async ({ x, y }) => {
+        const mouse = page.mouse;
 
-    await sleep(1000);
+        await mouse.move(x, y);
+        await mouse.down(options);
 
-    const { x, y } = await selectorOrElement.clickablePoint(options.offset);
+        return mouse;
+      })
+      .then(async (mouse) => {
+        if (options.delay) {
+          await new Promise((f) => {
+            return setTimeout(f, options.delay);
+          });
+        }
 
-    const mouse = page.mouse;
-
-    await mouse.move(x, y);
-    await mouse.down(options);
-
-    if (options.delay) {
-      await new Promise((f) => {
-        return setTimeout(f, options.delay);
-      });
-    }
-
-    await Promise.race([new Promise((resolve) => page.once('dialog', resolve)), mouse.up(options)]);
-
-    return Return.Undefined();
+        return mouse;
+      })
+      .then((mouse) => Promise.race([new Promise((resolve) => page.once('dialog', resolve)), mouse.up()]))
+      .then(Return.Undefined());
   }
 
   acceptDialog(page, message = '', options = {}) {
@@ -499,5 +508,19 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return this.waitForDialog(page, options)
       .then((dialog) => dialog.dismiss())
       .finally(() => this.getContext().caches.dialog.delete(page));
+  }
+
+  async dragToOffset(elementHandle, point, options = {}) {
+    await this.scrollIntoView(elementHandle);
+
+    const startPoint = await elementHandle.clickablePoint();
+    const targetPoint = {
+      x: startPoint.x + point.x,
+      y: startPoint.y + point.y,
+    };
+
+    await elementHandle.frame.page().mouse.dragAndDrop(startPoint, targetPoint);
+
+    return Return.Undefined();
   }
 }

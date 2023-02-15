@@ -7,11 +7,12 @@ use Illuminate\Support\Arr;
 
 trait InteractsWithElements
 {
+    private $dragInterceptionEnabled = false;
+    
     /**
      * Get all of the elements matching the given selector.
      *
      * @param string $selector
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement[]
      */
     public function elements($selector)
     {
@@ -22,7 +23,6 @@ trait InteractsWithElements
      * Get the element matching the given selector.
      *
      * @param string $selector
-     * @return \Facebook\WebDriver\Remote\RemoteWebElement|null
      */
     public function element($selector)
     {
@@ -220,7 +220,7 @@ trait InteractsWithElements
         $select = $element->tagName === 'SELECT' ? $element : null;
         
         if (func_num_args() === 1) {
-            $element->select(array_rand($options));
+            $element->select($options[array_rand($options)]);
         } else {
             $values = collect(Arr::wrap($value))->transform(function ($value) {
                 if (is_bool($value)) {
@@ -330,8 +330,15 @@ trait InteractsWithElements
         $element->click();
         
         return $this->waitUsing($seconds, 100, function () use ($element) {
-            return $element->isEnabled();
+            return ! $element->disabled;
         });
+    }
+    
+    private function ensureDragInterceptionIsOn() {
+        if (!$this->dragInterceptionEnabled) {
+            $this->puthPage->setDragInterception(true);
+            $this->dragInterceptionEnabled = true;
+        }
     }
     
     /**
@@ -343,9 +350,11 @@ trait InteractsWithElements
      */
     public function drag($from, $to)
     {
-        (new WebDriverActions($this->driver))->dragAndDrop(
-            $this->resolver->findOrFail($from), $this->resolver->findOrFail($to)
-        )->perform();
+        $this->ensureDragInterceptionIsOn();
+        
+        $this->resolver->findOrFail($from)->dragAndDrop(
+            $this->resolver->findOrFail($to)
+        );
         
         return $this;
     }
@@ -408,9 +417,12 @@ trait InteractsWithElements
      */
     public function dragOffset($selector, $x = 0, $y = 0)
     {
-        (new WebDriverActions($this->driver))->dragAndDropBy(
-            $this->resolver->findOrFail($selector), $x, $y
-        )->perform();
+        $this->ensureDragInterceptionIsOn();
+        
+        $this->resolver->findOrFail($selector)->drag([
+            'x' => $x,
+            'y' => $y,
+        ]);
         
         return $this;
     }
