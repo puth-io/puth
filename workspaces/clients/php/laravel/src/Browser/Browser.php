@@ -2,6 +2,7 @@
 
 namespace Puth\Laravel\Browser;
 
+use Closure;
 use BadMethodCallException;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
@@ -523,8 +524,17 @@ class Browser
      */
     public function with($selector, Closure $callback)
     {
+//        $browser = new static(
+//            $this->driver, new ElementResolver($this->driver, $this->resolver->format($selector))
+//        );
+    
         $browser = new static(
-            $this->driver, new ElementResolver($this->driver, $this->resolver->format($selector))
+            $this->context,
+            $this->puthBrowser,
+            new ElementResolver(
+                $this->puthPage,
+                $this->resolver->format($selector),
+            ),
         );
         
         if ($this->page) {

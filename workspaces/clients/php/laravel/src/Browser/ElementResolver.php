@@ -418,6 +418,13 @@ class ElementResolver
             $selector = '[' . 'dusk' . '="' . explode('@', $selector)[1] . '"]';
         }
         
-        return trim($this->prefix . ' ' . $selector);
+        $trimmed = trim($this->prefix . ' ' . $selector);
+        
+        if ($trimmed === '') {
+            // TODO maybe return null and change all usages to return puthPage 
+            $trimmed = 'body';
+        }
+        
+        return $trimmed;
     }
 }

@@ -89,7 +89,13 @@ trait InteractsWithMouse
      */
     public function clickAtXPath($expression)
     {
-        $this->puthPage->getX($expression)->click();
+        $elements = $this->puthPage->getX($expression);
+        
+        if (count($elements) === 0) {
+            throw new Exception('No such element found');
+        }
+    
+        $elements[0]->click();
         
         return $this;
     }

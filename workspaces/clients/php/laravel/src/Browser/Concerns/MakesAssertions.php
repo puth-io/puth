@@ -2,6 +2,7 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
+use Exception;
 use Illuminate\Support\Arr;
 use PHPUnit\Framework\Assert;
 use Puth\GenericObject;
@@ -56,28 +57,31 @@ trait MakesAssertions
      * Assert that the given encrypted cookie is present.
      *
      * @param string $name
+     * @param bool $decrypt
      * @return $this
      */
-    public function assertHasCookie($name)
+    public function assertHasCookie($name, $decrypt = true)
     {
+        $cookie = $decrypt ? $this->cookie($name) : $this->plainCookie($name);
+        
         Assert::assertTrue(
-            !is_null($this->plainCookie($name)),
+            !is_null($cookie),
             "Did not find expected cookie [{$name}]."
         );
         
         return $this;
     }
     
-    // /**
-    //  * Assert that the given unencrypted cookie is present.
-    //  *
-    //  * @param string $name
-    //  * @return $this
-    //  */
-    // public function assertHasPlainCookie($name)
-    // {
-    //     return $this->assertHasCookie($name, false);
-    // }
+     /**
+      * Assert that the given unencrypted cookie is present.
+      *
+      * @param string $name
+      * @return $this
+      */
+     public function assertHasPlainCookie($name)
+     {
+         return $this->assertHasCookie($name, false);
+     }
     
     /**
      * Assert that the given encrypted cookie is not present.
@@ -125,44 +129,27 @@ trait MakesAssertions
         return $this;
     }
     
-    // /**
-    //  * Assert that an unencrypted cookie has a given value.
-    //  *
-    //  * @param string $name
-    //  * @param string $value
-    //  * @return $this
-    //  */
-    // public function assertPlainCookieValue($name, $value)
-    // {
-    //     return $this->assertCookieValue($name, $value, false);
-    // }
+     /**
+      * Assert that an unencrypted cookie has a given value.
+      *
+      * @param string $name
+      * @param string $value
+      * @return $this
+      */
+     public function assertPlainCookieValue($name, $value)
+     {
+         return $this->assertCookieValue($name, $value, false);
+     }
     
     /**
      * Assert that the given text appears on the page.
      *
      * @param string $text
-     * @param $element
      * @return $this
      */
-    public function assertSee($text, $element = null)
+    public function assertSee($text)
     {
-        if (!$element) {
-            $element = $this->puthPage;
-        }
-        
-        $result = [];
-        
-        try {
-            $result = $element->contains($text);
-        } catch (\Exception $exception) {
-        };
-        
-        Assert::assertTrue(
-            count($result) > 0,
-            "Did not see expected text [{$text}] within element [" . get_class($element) . "]."
-        );
-        
-        return $this;
+        return $this->assertSeeIn('', $text);
     }
     
     /**
@@ -171,26 +158,9 @@ trait MakesAssertions
      * @param string $text
      * @return $this
      */
-    public function assertDontSee($text, $element = null)
+    public function assertDontSee($text)
     {
-        if (!$element) {
-            $element = $this->puthPage;
-        }
-        
-        $result = [];
-        
-        try {
-            // TODO implement retry safe "notContains" function or maybe provide ['negate' => true]?
-            $result = $element->contains($text, ['timeout' => 0]);
-        } catch (\Exception $exception) {
-        };
-        
-        Assert::assertTrue(
-            count($result) === 0,
-            "Saw unexpected text [{$text}] within element [" . get_class($element) . "]."
-        );
-        
-        return $this;
+        return $this->assertDontSeeIn('', $text);
     }
     
     /**
@@ -202,9 +172,22 @@ trait MakesAssertions
      */
     public function assertSeeIn($selector, $text)
     {
+        $fullSelector = $this->resolver->format($selector);
+    
         $element = $this->resolver->findOrFail($selector);
+    
+        try {
+            // TODO implement retry safe "notContains" function or maybe provide ['negate' => true]?
+            $result = $element->contains($text, ['timeout' => 0]);
+        } catch (\Exception $exception) {
+        };
         
-        return $this->assertSee($text, $element);
+        Assert::assertNotEmpty(
+            $result ?? [],
+            "Did not see expected text [{$text}] within element [{$fullSelector}].",
+        );
+    
+        return $this;
     }
     
     /**
@@ -216,9 +199,22 @@ trait MakesAssertions
      */
     public function assertDontSeeIn($selector, $text)
     {
+        $fullSelector = $this->resolver->format($selector);
+    
         $element = $this->resolver->findOrFail($selector);
-        
-        return $this->assertDontSee($text, $element);
+    
+        try {
+            // TODO implement retry safe "notContains" function or maybe provide ['negate' => true]?
+            $result = $element->contains($text, ['timeout' => 0]);
+        } catch (\Exception $exception) {
+        };
+    
+        Assert::assertEmpty(
+            $result ?? [],
+            "Saw unexpected text [{$text}] within element [{$fullSelector}].",
+        );
+    
+        return $this;
     }
     
     /**
@@ -326,22 +322,6 @@ trait MakesAssertions
     }
     
     /**
-     * Assert that the given element or selector is visible.
-     *
-     * @param $element GenericObject|string
-     * @return $this
-     */
-    public function assertVisible($element)
-    {
-        Assert::assertTrue(
-            $this->puthPage->visible($element),
-            "Element [{$element}] is not visible."
-        );
-        
-        return $this;
-    }
-    
-    /**
      * Assert that the given input or text area contains the given value.
      *
      * @param string|GenericObject $field
@@ -378,12 +358,12 @@ trait MakesAssertions
     /**
      * Get the value of the given input or text area field.
      *
-     * @param string|GenericObject $element
+     * @param string $element
      * @return string
      */
-    public function inputValue($element)
+    public function inputValue($field)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForTyping($field);
         
         return $element->value();
     }
@@ -391,12 +371,11 @@ trait MakesAssertions
     /**
      * Assert that the given checkbox field is checked.
      *
-     * @param string|GenericObject $element
      * @return $this
      */
-    public function assertChecked($element)
+    public function assertChecked($field, $value = null)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForChecking($field, $value);
         
         Assert::assertTrue(
             $element->checked,
@@ -406,28 +385,14 @@ trait MakesAssertions
         return $this;
     }
     
-    function resolveElement($element, $options = [])
-    {
-        if (is_string($element)) {
-            try {
-                return $this->puthPage->get($element, $options);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-        
-        return $element;
-    }
-    
     /**
      * Assert that the given checkbox field is not checked.
      *
-     * @param string|GenericObject $element
      * @return $this
      */
-    public function assertNotChecked($element)
+    public function assertNotChecked($field, $value = null)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForChecking($field, $value);
         
         Assert::assertFalse(
             $element->checked,
@@ -481,14 +446,13 @@ trait MakesAssertions
      * @param array|string $value
      * @return $this
      */
-    public function assertSelected($element, $value)
+    public function assertSelected($field, $value)
     {
-        $element = $this->resolveElement($element);
+        $value = Arr::wrap($value);
         
-        Assert::assertEqualsCanonicalizing(
-            Arr::wrap($value),
-            $element->selected(),
-            "Expected given value to be selected for element, but it wasn't.",
+        Assert::assertTrue(
+            $this->selected($field, $value),
+            "Expected value [" . implode(',', $value) . "] to be selected for [{$field}], but it wasn't."
         );
         
         return $this;
@@ -503,9 +467,11 @@ trait MakesAssertions
      */
     public function assertNotSelected($field, $value)
     {
+        $value = Arr::wrap($value);
+        
         Assert::assertFalse(
             $this->selected($field, $value),
-            "Unexpected value [{$value}] selected for [{$field}]."
+            "Unexpected value [" . implode(',', $value) . "] selected for [{$field}]."
         );
         
         return $this;
@@ -514,27 +480,23 @@ trait MakesAssertions
     /**
      * Assert that the given array of values are available to be selected.
      *
-     * @param string|GenericObject $element
+     * @param string $field
      * @param mixed $values
      * @return $this
      */
-    public function assertSelectHasOptions($element, $values)
+    public function assertSelectHasOptions($field, array $values)
     {
-        if (!is_array($values)) {
-            $values = [$values];
-        }
-        
-        $element = $this->resolveElement($element);
-        $options = array_map(function ($option) {
-            return $option->value();
-        }, $element->getAll('option'));
-        
-        foreach ($values as $value) {
-            Assert::assertTrue(
-                in_array($value, $options),
-                'Expected options [' . implode(',', $values) . "] for selection field [{$element}] to be available."
-            );
-        }
+        $options = $this->resolver->resolveSelectOptions($field, $values);
+    
+        $options = collect($options)->unique(function ($option) {
+            return $option->value;
+        })->all();
+    
+        Assert::assertCount(
+            count($values),
+            $options,
+            'Expected options ['.implode(',', $values)."] for selection field [{$field}] to be available."
+        );
         
         return $this;
     }
@@ -587,79 +549,148 @@ trait MakesAssertions
     /**
      * Determine if the given value is selected for the given select field.
      *
-     * @param string|GenericObject $element
-     * @param string $value
+     * @param string $field
+     * @param string|array $value
      * @return bool
      */
-    public function selected($element, $value)
+    public function selected($field, $value)
     {
-        $element = $this->resolveElement($element);
-        $options = $element->value();
+        $selected = $this->resolver->resolveForSelection($field)?->selected();
         
-        if (!is_array($options)) {
-            $options = [$options];
-        }
-        
-        return in_array($value, $options);
+        return !array_diff(Arr::wrap($value), $selected);
     }
     
     /**
      * Assert that the element at the given selector has the given value.
      *
-     * @param string|GenericObject $element
+     * @param string $element
      * @param string $value
      * @return $this
      */
-    public function assertValue($element, $value)
+    public function assertValue($selector, $value)
     {
-        $element = $this->resolveElement($element);
-        
+        $fullSelector = $this->resolver->format($selector);
+    
+        $this->ensureElementSupportsValueAttribute(
+            $element = $this->resolver->findOrFail($selector),
+            $fullSelector
+        );
+    
+        $actual = $element->value;
+    
         Assert::assertEquals(
             $value,
-            $element->value()
+            $actual,
+            "Did not see expected value [{$value}] within element [{$fullSelector}]."
         );
         
         return $this;
+    }
+    
+    /**
+     * Assert that the element matching the given selector does not have the given value.
+     *
+     * @param  string  $selector
+     * @param  string  $value
+     * @return $this
+     */
+    public function assertValueIsNot($selector, $value)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        $this->ensureElementSupportsValueAttribute(
+            $element = $this->resolver->findOrFail($selector),
+            $fullSelector
+        );
+        
+        $actual = $element->value;
+        
+        Assert::assertNotEquals(
+            $value,
+            $actual,
+            "Saw unexpected value [{$value}] within element [{$fullSelector}]."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Ensure the given element supports the 'value' attribute.
+     *
+     * @param  mixed  $element
+     * @param  string  $fullSelector
+     * @return void
+     */
+    public function ensureElementSupportsValueAttribute($element, $fullSelector)
+    {
+        dump(strtolower($element->tagName), $fullSelector);
+        
+        Assert::assertTrue(in_array(strtolower($element->tagName), [
+            'textarea',
+            'select',
+            'button',
+            'input',
+            'li',
+            'meter',
+            'option',
+            'param',
+            'progress',
+        ]), "This assertion cannot be used with the element [{$fullSelector}].");
     }
     
     /**
      * Assert that the element at the given selector has the given attribute value.
-     *
-     * @param string|GenericObject $element
-     * @param string $attribute
-     * @param string $value
-     * @return $this
-     */
-    public function assertAttribute($element, $attribute, $value)
-    {
-        $element = $this->resolveElement($element);
-        
-        $actual = $element->its($attribute);
-        
-        Assert::assertNotNull(
-            $actual,
-            "Did not see expected attribute [{$attribute}] within element [{$element}]."
-        );
-        
-        Assert::assertEquals(
-            $value, $actual,
-            "Expected '$attribute' attribute [{$actual}] does not equal expected value [$value]."
-        );
-        
-        return $this;
-    }
-    
-    /**
-     * Assert that the element at the given selector has the given data attribute value.
      *
      * @param string $selector
      * @param string $attribute
      * @param string $value
      * @return $this
      */
-    public function assertDataAttribute($selector, $attribute, $value)
+    public function assertAttribute($selector, $attribute, $value)
     {
-        return $this->assertAttribute($selector, 'data-' . $attribute, $value);
+        $fullSelector = $this->resolver->format($selector);
+        
+        $actual = $this->resolver->findOrFail($selector)->its($attribute);
+        
+        Assert::assertNotNull(
+            $actual,
+            "Did not see expected attribute [{$attribute}] within element [{$fullSelector}]."
+        );
+        
+        Assert::assertEquals(
+            $value, $actual,
+            "Expected '$attribute' attribute [{$value}] does not equal actual value [$actual]."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the element matching the given selector contains the given value in the provided attribute.
+     *
+     * @param  string  $selector
+     * @param  string  $attribute
+     * @param  string  $value
+     * @return $this
+     */
+    public function assertAttributeContains($selector, $attribute, $value)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        $actual = $this->resolver->findOrFail($selector)->its($attribute);
+        
+        Assert::assertNotNull(
+            $actual,
+            "Did not see expected attribute [{$attribute}] within element [{$fullSelector}]."
+        );
+    
+        Assert::assertStringContainsString(
+            $value,
+            $actual,
+            "Attribute '$attribute' does not contain [{$value}]. Full attribute value was [$actual]."
+        );
+        
+        return $this;
     }
     
     /**
@@ -676,18 +707,67 @@ trait MakesAssertions
     }
     
     /**
-     * Assert that the element with the given selector is present in the DOM.
+     * Assert that the element at the given selector has the given data attribute value.
      *
-     * @param string|GenericObject $element
+     * @param string $selector
+     * @param string $attribute
+     * @param string $value
      * @return $this
      */
-    public function assertPresent($element)
+    public function assertDataAttribute($selector, $attribute, $value)
     {
-        $element = $this->resolveElement($element);
+        return $this->assertAttribute($selector, 'data-' . $attribute, $value);
+    }
+    
+    /**
+     * Assert that the given element or selector is visible.
+     *
+     * @param string $selector
+     * @return $this
+     */
+    public function assertVisible($selector)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        Assert::assertTrue(
+            $this->puthPage->visible($this->resolver->format($selector)),
+            "Element [{$fullSelector}] is not visible."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the element with the given selector is present in the DOM.
+     *
+     * @param string $element
+     * @return $this
+     */
+    public function assertPresent($selector)
+    {
+        $fullSelector = $this->resolver->format($selector);
         
         Assert::assertNotNull(
-            $element,
-            "Element [{$element}] is not present."
+            $this->resolver->find($selector),
+            "Element [{$fullSelector}] is not present."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the element matching the given selector is not present in the source.
+     *
+     * @param  string  $selector
+     * @return $this
+     */
+    public function assertNotPresent($selector)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        Assert::assertNull(
+            $this->resolver->find($selector),
+            "Element [{$fullSelector}] is present."
         );
         
         return $this;
@@ -696,17 +776,26 @@ trait MakesAssertions
     /**
      * Assert that the element with the given selector is not on the page.
      *
-     * @param string|GenericObject $element
+     * @param string $selector
      * @return $this
      */
-    public function assertMissing($element)
+    public function assertMissing($selector)
     {
-        $this->puthPage->waitForSelector($element, ['hidden' => true]);
-        $element = $this->resolveElement($element, ['timeout' => 0]);
-        
-        Assert::assertNull(
-            $element,
-            "Saw unexpected element [{$element}]."
+        $fullSelector = $this->resolver->format($selector);
+    
+        try {
+            // TODO improve assertions with waits
+//            $this->puthPage->waitForSelector($fullSelector, ['hidden' => true]);
+            $this->resolver->findOrFail($selector);
+    
+            $missing = false;
+        } catch (Exception $e) {
+            $missing = true;
+        }
+    
+        Assert::assertTrue(
+            $missing,
+            "Saw unexpected element [{$fullSelector}]."
         );
         
         return $this;
@@ -804,12 +893,12 @@ trait MakesAssertions
     /**
      * Assert that the given field is focused.
      *
-     * @param string|GenericObject $element
+     * @param string $field
      * @return $this
      */
-    public function assertFocused($element)
+    public function assertFocused($field)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForField($field);
         
         $this->assertElementEquals($this->puthPage->focused(), $element);
         
@@ -819,12 +908,12 @@ trait MakesAssertions
     /**
      * Assert that the given field is not focused.
      *
-     * @param string $element
+     * @param string $field
      * @return $this
      */
-    public function assertNotFocused($element)
+    public function assertNotFocused($field)
     {
-        $element = $this->resolveElement($element);
+        $element = $this->resolver->resolveForField($field);
         
         $this->assertElementNotEquals($this->puthPage->focused(), $element);
         

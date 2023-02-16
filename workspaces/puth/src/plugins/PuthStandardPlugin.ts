@@ -226,15 +226,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
   contains(element, search, options?) {
     return retryFor(
       this.getContext().getTimeout(options),
-      async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
-      // // async () => await element.$x('.//*[contains(text(), "' + search + '")]'),
-      // async () =>
-      //   await Promise.any([
-      //     element.$x('.//*[contains(text(), "' + search + '")]'),
-      //     element.$x('.[contains(text(), "' + search + '")]'),
-      //     // element.$x('//*[contains(text(), "' + search + '")]'),
-      //     element.$x('.[text()[contains(., "' + search + '")]]'),
-      //   ]),
+      () => element.$x("//text()[contains(., '" + search + "')]"),
       (v) => v.length > 0,
     );
   }

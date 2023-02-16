@@ -14,7 +14,14 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-            
+//                ->with('#querying-contains', function (Browser $browser) {
+//                    $browser->assertDontSee('Puth')
+//                        ->assertMissing('missingelement')
+//                        ;
+//                })
+    
+                ->mouseover('#actions-hover')
+                ->assertSeeIn('#actions-hover', 'hovering')
             ;
         });
     }
@@ -33,8 +40,8 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->press('#actions-click > button')
-                ->assertSeeIn('#actions-click', 'clicked button')
+                ->press('#actions-click-button')
+                ->assertSeeIn('#actions-click-verify', 'clicked button')
                 ->pressAndWaitFor('#actions-click-wait')
             ;
         });
@@ -124,28 +131,33 @@ class AllMethodsTest extends PuthDuskTestCase
             $browser->visit(new Playground)
                 ->assertTitle('Playground - Puth')
                 ->assertTitleContains('Playground')
+                
                 ->plainCookie('plain', '1234')
                 ->assertCookieValue('plain', '1234', false)
-                ->assertHasCookie('plain')
+                ->assertHasPlainCookie('plain')
+                ->assertPlainCookieValue('plain', '1234')
                 ->addCookie('test', '5678')
+                ->assertHasCookie('test')
                 ->assertCookieValue('test', '5678')
                 ->deleteCookie('test')
                 ->assertCookieMissing('test')
+                
                 ->assertSee('Welcome to Puth')
+                ->assertSeeIn('.querying-get', 'Div')
+                ->assertSeeIn('.example', 'Div')
                 ->assertDontSee('This text does not exists')
-                ->assertSeeIn('body', 'Querying')
-                ->assertDontSeeIn('body', 'This text does not exists')
-                ->assertSeeAnythingIn('body')
+                ->assertDontSeeIn('.querying-get', 'This text does not exists')
+                ->assertSeeAnythingIn('.querying-get')
+                
                 ->assertSourceHas('<title>Playground - Puth</title>')
                 ->assertSourceMissing('<div>__not in dom__</div>')
                 ->assertSeeLink('https://puth.dev/')
                 ->assertDontSeeLink('https://notalink.io')
                 ->assertVisible('body')
-                ->assertVisible($browser->resolver->findOrFail('body'))
+                
                 ->assertInputValue('#properties-value input', 'input with value')
-                ->assertInputValue($browser->resolver->findOrFail('#properties-value input'), 'input with value')
                 ->assertInputValueIsNot('#properties-value input', 'not the correct value')
-                ->assertInputValueIsNot($browser->resolver->findOrFail('#properties-value input'), 'not the correct value')
+                
                 ->check('#action-checkbox')
                 ->assertChecked('#action-checkbox')
                 ->uncheck('#action-checkbox', 'test-1234')
@@ -153,6 +165,7 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->radio('action-radio', 'orange')
                 ->assertRadioSelected('action-radio', 'orange')
                 ->assertRadioNotSelected('action-radio', 'apple')
+                
                 ->select('#actions-select-multiple', ['apple', 'orange'])
                 ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
                 ->assertNotSelected('#actions-select-multiple', 'not-selected')
@@ -160,12 +173,18 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertSelectMissingOptions('#actions-select-multiple', 'not-an-options')
                 ->assertSelectHasOption('#actions-select-multiple', 'orange')
                 ->assertSelectMissingOption('#actions-select-multiple', 'not-an-options')
+                
                 ->type('#actions-type input', 'test-1234')
                 ->assertValue('#actions-type input', 'test-1234')
+                ->append('#actions-type input', '-')
+                ->assertValueIsNot('#actions-type input', 'test-1234')
                 ->assertAttribute('#actions-type input', 'type', 'text')
                 ->assertDataAttribute('#properties-attributes', 'test', '1234')
                 ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
+                
                 ->assertPresent('body')
+                ->assertNotPresent('body #not-existing-element')
+                
                 ->assertMissing('missingelement')
                 ->assertEnabled('#actions-focus')
                 ->assertDisabled('#actions-click-disabled')
@@ -181,6 +200,9 @@ class AllMethodsTest extends PuthDuskTestCase
 //                ->vueAttribute
                 ->assertScript('1+1', 2)
             ;
+    
+            $this->expectException('PHPUnit\Framework\ExpectationFailedException');
+            $browser->assertSeeAnythingIn('#querying-empty-div');
         });
     }
     
@@ -223,7 +245,18 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertSeeIn('#actions-click', 'double clicked button')
                 ->rightClick('#actions-click-mousedown')
                 ->assertSeeIn('#actions-click', 'mousedown: 3')
+                ->mouseover('#actions-hover')
+                ->assertSeeIn('#actions-hover', 'hovering')
             ;
+        });
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->clickAtXPath('//*[@id="actions-click"]/*')
+                ->assertSeeIn('#actions-click', 'clicked button')
+            ;
+    
+            $this->expectException('Exception');
+            $browser->clickAtXPath('//*[@id="non-existing-element-id"]');
         });
     
         $this->browse(function (Browser $browser) {
@@ -256,12 +289,13 @@ class AllMethodsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->value('#actions-type', 'test-1234')
-                ->assertValue('#actions-type', 'test-1234')
+                ->value('#actions-type input', 'test-1234')
+                ->assertValue('#actions-type input', 'test-1234')
                 ->assertAttribute('#actions-focus', 'type', 'text')
+                ->assertAttributeContains('#actions-focus', 'type', 'xt')
             ;
         
-            static::assertEquals('test-1234', $browser->value('#actions-type'));
+            static::assertEquals('test-1234', $browser->value('#actions-type input'));
             static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
             static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));
         
