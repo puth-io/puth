@@ -201,10 +201,15 @@ class AllMethodsTest extends PuthDuskTestCase
                 ->assertFragmentIs('starts-1234')
                 ->assertFragmentBeginsWith('starts')
                 ->assertFragmentIsNot('test-not')
+                ->assertQueryStringHas('param1')
                 ->assertQueryStringHas('param1', 'abc')
                 ->assertQueryStringMissing('test')
                 ->assertHasQueryStringParameter('param1')
             ;
+            
+            $browser->visit('/sub/path')
+                ->assertRouteIs('sub.path')
+                ->assertQueryStringMissing('no-query');
         });
     }
     
