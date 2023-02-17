@@ -23,13 +23,16 @@ jobs:
       - name: 'Cache'
         uses: actions/cache@v3
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            workspaces/puth/.cache
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
             ${{ runner.os }}-node-
       - name: yarn build
         run: |
+          yarn cache dir
           yarn
           lerna run build
           lerna run postbuild

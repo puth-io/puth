@@ -1877,6 +1877,7 @@ __metadata:
     "@types/prismjs": ^1.26.0
     "@types/react": ^18.0.27
     "@types/react-dom": ^18.0.10
+    "@types/react-transition-group": ^4.4.5
     "@vitejs/plugin-react": ^3.1.0
     bootstrap: ^5.1.0
     diff-match-patch: ^1.0.5
@@ -2031,6 +2032,15 @@ __metadata:
   dependencies:
     "@types/react": "*"
   checksum: ff8282d5005a0b1cd95fb65bf79d3d8485e4cfe2aaf052129033a178684b940014a3f4536bc20d573f8a01cf4c6f4770c74988cef7c2b5cac3041d9f172647e3
+  languageName: node
+  linkType: hard
+
+"@types/react-transition-group@npm:^4.4.5":
+  version: 4.4.5
+  resolution: "@types/react-transition-group@npm:4.4.5"
+  dependencies:
+    "@types/react": "*"
+  checksum: 265f1c74061556708ffe8d15559e35c60d6c11478c9950d3735575d2c116ca69f461d85effa06d73a613eb8b73c84fd32682feb57cf7c5f9e4284021dbca25b0
   languageName: node
   linkType: hard
 
