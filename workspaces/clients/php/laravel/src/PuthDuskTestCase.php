@@ -29,6 +29,8 @@ abstract class PuthDuskTestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        static::$debug = config('puth.debug', false);
     
         $this->context = new Context(Puth::instanceUrl(), [
             'test' => [

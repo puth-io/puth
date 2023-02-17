@@ -198,7 +198,7 @@ class Browser
      */
     public function blank()
     {
-        $this->puthPage->goto('about:blank');
+        $this->puthPage->visit('about:blank');
         
         return $this;
     }
@@ -274,20 +274,6 @@ class Browser
         return $this;
     }
 
-///// There is no equivalent in puppeteer to do this
-//
-//    /**
-//     * Maximize the browser window.
-//     *
-//     * @return $this
-//     */
-//    public function maximize()
-//    {
-//        $this->driver->manage()->window()->maximize();
-//        
-//        return $this;
-//    }
-    
     /**
      * Resize the browser window.
      *
@@ -350,24 +336,6 @@ class Browser
         return $this;
     }
 
-///// pptr can not move window
-//
-//    /**
-//     * Move the browser window.
-//     *
-//     * @param  int  $x
-//     * @param  int  $y
-//     * @return $this
-//     */
-//    public function move($x, $y)
-//    {
-//        $this->driver->manage()->window()->setPosition(
-//            new WebDriverPoint($x, $y)
-//        );
-//        
-//        return $this;
-//    }
-    
     /**
      * Scroll element into view at the given selector.
      *
@@ -389,16 +357,7 @@ class Browser
      */
     public function scrollTo($selector)
     {
-//        $this->ensurejQueryIsAvailable();
-//        
-//        $selector = addslashes($this->resolver->format($selector));
-//        
-//        $this->driver->executeScript("jQuery(\"html, body\").animate({scrollTop: jQuery(\"$selector\").offset().top}, 0);");
-        
-        // TODO add scrollToElement function in PuthStandardPlugin
-        $this->scrollIntoView($selector);
-        
-        return $this;
+        return $this->scrollIntoView($selector);
     }
     
     /**
@@ -505,16 +464,16 @@ class Browser
 //        return $this;
 //    }
 //    
-//    /**
-//     * Execute a Closure with a scoped browser instance.
-//     *
-//     * @param  \Closure  $callback
-//     * @return $this
-//     */
-//    public function within($selector, Closure $callback)
-//    {
-//        return $this->with($selector, $callback);
-//    }
+    /**
+     * Execute a Closure with a scoped browser instance.
+     *
+     * @param  \Closure  $callback
+     * @return $this
+     */
+    public function within($selector, Closure $callback)
+    {
+        return $this->with($selector, $callback);
+    }
     
     /**
      * Execute a Closure with a scoped browser instance.
@@ -524,10 +483,6 @@ class Browser
      */
     public function with($selector, Closure $callback)
     {
-//        $browser = new static(
-//            $this->driver, new ElementResolver($this->driver, $this->resolver->format($selector))
-//        );
-    
         $browser = new static(
             $this->context,
             $this->puthBrowser,
@@ -550,45 +505,50 @@ class Browser
         return $this;
     }
 
-//    /**
-//     * Execute a Closure outside of the current browser scope.
-//     *
-//     * @param  \Closure  $callback
-//     * @return $this
-//     */
-//    public function elsewhere($selector, Closure $callback)
-//    {
-//        $browser = new static(
-//            $this->driver, new ElementResolver($this->driver, 'body '.$selector)
-//        );
-//        
-//        if ($this->page) {
-//            $browser->onWithoutAssert($this->page);
-//        }
-//        
-//        if ($selector instanceof Component) {
-//            $browser->onComponent($selector, $this->resolver);
-//        }
-//        
-//        call_user_func($callback, $browser);
-//        
-//        return $this;
-//    }
-//    
-//    /**
-//     * Execute a Closure outside of the current browser scope when the selector is available.
-//     *
-//     * @param  string  $selector
-//     * @param  \Closure  $callback
-//     * @param  int|null  $seconds
-//     * @return $this
-//     */
-//    public function elsewhereWhenAvailable($selector, Closure $callback, $seconds = null)
-//    {
-//        return $this->elsewhere('', function ($browser) use ($selector, $callback, $seconds) {
-//            $browser->whenAvailable($selector, $callback, $seconds);
-//        });
-//    }
+    /**
+     * Execute a Closure outside of the current browser scope.
+     *
+     * @param  \Closure  $callback
+     * @return $this
+     */
+    public function elsewhere($selector, Closure $callback)
+    {
+        $browser = new static(
+            $this->context,
+            $this->puthBrowser,
+            new ElementResolver(
+                $this->puthPage,
+                $selector,
+            ),
+        );
+        
+        if ($this->page) {
+            $browser->onWithoutAssert($this->page);
+        }
+        
+        if ($selector instanceof Component) {
+            $browser->onComponent($selector, $this->resolver);
+        }
+        
+        call_user_func($callback, $browser);
+        
+        return $this;
+    }
+    
+    /**
+     * Execute a Closure outside of the current browser scope when the selector is available.
+     *
+     * @param  string  $selector
+     * @param  \Closure  $callback
+     * @param  int|null  $seconds
+     * @return $this
+     */
+    public function elsewhereWhenAvailable($selector, Closure $callback, $seconds = null)
+    {
+        return $this->elsewhere('', function ($browser) use ($selector, $callback, $seconds) {
+            $browser->whenAvailable($selector, $callback, $seconds);
+        });
+    }
     
     /**
      * Set the current component state.

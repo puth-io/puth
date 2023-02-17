@@ -4,7 +4,9 @@ namespace Puth\Laravel\Browser\Concerns;
 
 use Closure;
 use Exception;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 trait WaitsForElements
 {
@@ -37,7 +39,7 @@ trait WaitsForElements
         $message = $this->formatTimeOutMessage('Waited %s seconds for selector', $selector);
         
         return $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->isDisplayed();
+            return $this->resolver->findOrFail($selector)->visible();
         }, $message);
     }
     
@@ -56,8 +58,8 @@ trait WaitsForElements
         
         return $this->waitUsing($seconds, 100, function () use ($selector) {
             try {
-                $missing = !$this->resolver->findOrFail($selector)->isDisplayed();
-            } catch (NoSuchElementException $e) {
+                $missing = !$this->resolver->findOrFail($selector)->visible();
+            } catch (Exception $e) {
                 $missing = true;
             }
             
@@ -81,7 +83,7 @@ trait WaitsForElements
         $message = $this->formatTimeOutMessage('Waited %s seconds for removal of text', implode("', '", $text));
         
         return $this->waitUsing($seconds, 100, function () use ($text) {
-            return !Str::contains($this->resolver->findOrFail('')->getText(), $text);
+            return !Str::contains($this->resolver->findOrFail('')->innerText, $text);
         }, $message);
     }
     
@@ -101,7 +103,7 @@ trait WaitsForElements
         $message = $this->formatTimeOutMessage('Waited %s seconds for text', implode("', '", $text));
         
         return $this->waitUsing($seconds, 100, function () use ($text) {
-            return Str::contains($this->resolver->findOrFail('')->getText(), $text);
+            return Str::contains($this->resolver->findOrFail('')->innerText, $text);
         }, $message);
     }
     
@@ -199,7 +201,7 @@ trait WaitsForElements
         $message = $this->formatTimeOutMessage('Waited %s seconds for element to be enabled', $selector);
         
         $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->isEnabled();
+            return !$this->resolver->findOrFail($selector)->disabled;
         }, $message);
         
         return $this;
@@ -217,7 +219,7 @@ trait WaitsForElements
         $message = $this->formatTimeOutMessage('Waited %s seconds for element to be disabled', $selector);
         
         $this->waitUsing($seconds, 100, function () use ($selector) {
-            return !$this->resolver->findOrFail($selector)->isEnabled();
+            return $this->resolver->findOrFail($selector)->disabled;
         }, $message);
         
         return $this;
@@ -235,16 +237,12 @@ trait WaitsForElements
      */
     public function waitUntil($script, $seconds = null, $message = null)
     {
-        if (!Str::startsWith($script, 'return ')) {
-            $script = 'return ' . $script;
-        }
-        
         if (!Str::endsWith($script, ';')) {
             $script = $script . ';';
         }
         
         return $this->waitUsing($seconds, 100, function () use ($script) {
-            return $this->driver->executeScript($script);
+            return $this->puthPage->evaluateRaw($script);
         }, $message);
     }
     
@@ -310,14 +308,14 @@ trait WaitsForElements
     {
         $token = Str::random();
         
-        $this->driver->executeScript("window['{$token}'] = {};");
+        $this->puthPage->evaluate("window['{$token}'] = {};");
         
         if ($callback) {
             $callback($this);
         }
         
         return $this->waitUsing($seconds, 100, function () use ($token) {
-            return $this->driver->executeScript("return typeof window['{$token}'] === 'undefined';");
+            return $this->puthPage->evaluate("typeof window['{$token}'] === 'undefined';");
         }, 'Waited %s seconds for page reload.');
     }
     
@@ -335,37 +333,35 @@ trait WaitsForElements
         }, $seconds);
     }
     
-    /**
-     * Wait for the given event type to occur on a target.
-     *
-     * @param string $type
-     * @param string|null $target
-     * @param int|null $seconds
-     * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
-     */
-    public function waitForEvent($type, $target = null, $seconds = null)
-    {
-        $seconds = is_null($seconds) ? static::$waitSeconds : $seconds;
-        
-        if ($target !== 'document' && $target !== 'window') {
-            $target = $this->resolver->findOrFail($target ?? '');
-        }
-        
-        $this->driver->manage()->timeouts()->setScriptTimeout($seconds);
-        
-        try {
-            $this->driver->executeAsyncScript(
-                'eval(arguments[0]).addEventListener(arguments[1], () => arguments[2](), { once: true });',
-                [$target, $type]
-            );
-        } catch (ScriptTimeoutException $e) {
-            throw new TimeoutException("Waited {$seconds} seconds for event [{$type}].");
-        }
-        
-        return $this;
-    }
+//    /**
+//     * Wait for the given event type to occur on a target.
+//     *
+//     * @param string $type
+//     * @param string|null $target
+//     * @param int|null $seconds
+//     * @return $this
+//     */
+//    public function waitForEvent($type, $target = null, $seconds = null)
+//    {
+//        $seconds = is_null($seconds) ? static::$waitSeconds : $seconds;
+//        
+//        if ($target !== 'document' && $target !== 'window') {
+//            $target = $this->resolver->findOrFail($target ?? '');
+//        }
+//        
+//        $this->driver->manage()->timeouts()->setScriptTimeout($seconds);
+//        
+//        try {
+//            $this->driver->executeAsyncScript(
+//                'eval(arguments[0]).addEventListener(arguments[1], () => arguments[2](), { once: true });',
+//                [$target, $type]
+//            );
+//        } catch (ScriptTimeoutException $e) {
+//            throw new TimeoutException("Waited {$seconds} seconds for event [{$type}].");
+//        }
+//        
+//        return $this;
+//    }
     
     /**
      * Wait for the given callback to be true.
@@ -396,7 +392,7 @@ trait WaitsForElements
             }
             
             if ($started->lt(Carbon::now()->subSeconds($seconds))) {
-                throw new \Exception($message
+                throw new Exception($message
                     ? sprintf($message, $seconds)
                     : "Waited {$seconds} seconds for callback."
                 );

@@ -6,29 +6,6 @@ use Exception;
 
 trait InteractsWithMouse
 {
-//    public int $mouseX = 0;
-//    public int $mouseY = 0;
-  
-///// Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y
-///// location but then we need to update it on $page->click, $element->click, ...
-//
-//    /**
-//     * Move the mouse by offset X and Y.
-//     *
-//     * @param int $xOffset
-//     * @param int $yOffset
-//     * @return $this
-//     */
-//    public function moveMouse($xOffset, $yOffset)
-//    {
-//        $this->mouseX += $xOffset;
-//        $this->mouseY += $yOffset;
-//        
-//        $this->puthPage->mouse->move($this->mouseX, $this->mouseY);
-//        
-//        return $this;
-//    }
-    
     /**
      * Move the mouse over the given selector.
      *
@@ -64,7 +41,7 @@ trait InteractsWithMouse
             }
         }
         
-        throw $e;
+        throw $e ?? new Exception("Unable to locate element with selector [{$selector}].");
     }
     
     /**
@@ -108,10 +85,11 @@ trait InteractsWithMouse
      */
     public function clickAndHold($selector)
     {
-        $point = $this->resolver->findOrFail($selector)->clickablePoint();
+        $element = $this->resolver->findOrFail($selector);
+        $element->scrollIntoView();
+        $point = $element->clickablePoint();
         $this->puthPage->mouse->move($point->x, $point->y);
         $this->puthPage->mouse->down();
-        
         
         return $this;
     }

@@ -623,8 +623,6 @@ trait MakesAssertions
      */
     public function ensureElementSupportsValueAttribute($element, $fullSelector)
     {
-        dump(strtolower($element->tagName), $fullSelector);
-        
         Assert::assertTrue(in_array(strtolower($element->tagName), [
             'textarea',
             'select',

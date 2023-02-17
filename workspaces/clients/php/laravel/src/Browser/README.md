@@ -31,19 +31,10 @@ but I don't think enough people would use this feature so I removed it.
 
 ### Unsupported methods
 
-#### Browser
-
 - `$browser->maximize()`: Puppeteer has no way of controlling the actual browser window
 - `$browser->move($x = 100, $y = 100)`: Puppeteer has no way of controlling the actual browser window
 - `$browser->typeInDialog(selector, value)`: Please use the accept function which now takes a value `$browser->acceptDialog(value)`
-
-#### Mouse
-- `moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
-- ``: 
-- ``: 
-- ``: 
-- ``: 
-- ``: 
+- `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
 
 ### Implementation needed
 
@@ -51,3 +42,5 @@ but I don't think enough people would use this feature so I removed it.
 - `$browser->storeConsoleLog('filename')`: There is no exact equivalent for console logs but we can provide better ones
 - `$browser->attach('photo', __DIR__.'/photos/mountains.png');`:
 - `$browser->keys('selector', ['{shift}', 'taylor'], 'swift');`:
+- `$browser->waitForEvent`: 
+- `$browser->withinFrame`:
