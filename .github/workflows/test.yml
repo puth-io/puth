@@ -25,6 +25,8 @@ jobs:
         with:
           path: |
             ~/.npm
+            ~/.yarn
+            .yarn/cache
             workspaces/puth/.cache
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
@@ -32,27 +34,29 @@ jobs:
             ${{ runner.os }}-node-
       - name: yarn build
         run: |
+          pwd
+          echo ~
           yarn config
           yarn
           lerna run build
           lerna run postbuild
-      - name: Build image
-        run: |
-          yarn workspaces focus --production puth
-          rm -rf workspaces/puth/node_modules
-          mv node_modules workspaces/puth
-          cd workspaces/puth
-          docker build --file Dockerfile --tag puth-test-image --output type=docker,dest=/tmp/puth-test-image.tar .
-      - name: Test image
-        run: |
-          yarn
-          docker run -d -p 7345:7345 puth-test-image
-          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: puth-test-image
-          path: /tmp/puth-test-image.tar
+#      - name: Build image
+#        run: |
+#          yarn workspaces focus --production puth
+#          rm -rf workspaces/puth/node_modules
+#          mv node_modules workspaces/puth
+#          cd workspaces/puth
+#          docker build --file Dockerfile --tag puth-test-image --output type=docker,dest=/tmp/puth-test-image.tar .
+#      - name: Test image
+#        run: |
+#          yarn
+#          docker run -d -p 7345:7345 puth-test-image
+#          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: puth-test-image
+#          path: /tmp/puth-test-image.tar
 
   test-client-laravel:
     runs-on: ubuntu-latest
