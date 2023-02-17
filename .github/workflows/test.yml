@@ -32,7 +32,7 @@ jobs:
             ${{ runner.os }}-node-
       - name: yarn build
         run: |
-          yarn cache dir
+          yarn config
           yarn
           lerna run build
           lerna run postbuild
