@@ -13,7 +13,7 @@ class Playground extends Page
      */
     public function url()
     {
-        return config('puth.playground');
+        return config('puth.playground', 'https://playground.puth.dev/');
     }
     
     /**
