@@ -31,9 +31,6 @@ jobs:
             ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
       - name: yarn build
         run: |
-          pwd
-          echo ~
-          yarn config
           yarn
           lerna run build
           lerna run postbuild

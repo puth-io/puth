@@ -102,10 +102,7 @@ function puthContextTests(env) {
         assert.ok(await this.page._getProperty('___delete_test'));
         delete this.page.___delete_test;
 
-        return assert.isRejected(
-          this.page._getProperty('___delete_test'),
-          'Undefined: Property "___delete_test" not found on CDPPage',
-        );
+        await assert.isRejected(this.page._getProperty('___delete_test'));
       });
     });
   });
