@@ -43,17 +43,19 @@ jobs:
           rm -rf workspaces/puth/node_modules
           mv node_modules workspaces/puth
           cd workspaces/puth
-          docker build --file Dockerfile --tag puth-test-image --output type=docker,dest=puth-test-image.tar .
+          docker build --file Dockerfile --tag puth-test-image .
       - name: Test image
         run: |
           yarn
           docker run -d -p 7345:7345 puth-test-image
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
+          docker save --output=/tmp/puth-test-image.tar
+          ls -lah /tmp
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: puth-test-image
-          path: puth-test-image.tar
+          path: /tmp/puth-test-image.tar
 
   test-client-laravel:
     runs-on: ubuntu-latest
@@ -65,10 +67,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: puth-test-image
-#          path: /tmp
+          path: /tmp/puth-test-image.tar
       - name: Load Docker image
         run: |
-          docker load --input puth-test-image.tar
+          docker load --input /tmp/puth-test-image.tar
           docker image ls -a
 
 #  test-puth-node:
