@@ -26,10 +26,9 @@ jobs:
           path: |
             .yarn/cache
             workspaces/puth/.cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
       - name: yarn build
         run: |
           pwd
