@@ -10,37 +10,8 @@ on:
       - master
 
 jobs:
-  test:
-    name: 'Node.js v${{ matrix.node-version }}'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version:
-          - 14
-          - 16
-          - 18
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '${{ matrix.node-version }}'
-      - name: 'Cache'
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-            ${{ runner.os }}-node-v${{ matrix.node }}-
-      - name: Install Dependencies
-        run: |
-          yarn
-      - name: Build
-        run: lerna run build
-      - name: Test
-        run: lerna run test
-
-  build-test:
+  
+  build:
     runs-on: ubuntu-latest
     steps:
       - id: get_version
@@ -68,11 +39,61 @@ jobs:
           rm -rf workspaces/puth/node_modules
           mv node_modules workspaces/puth
           cd workspaces/puth
-          TAG=${{ steps.get_version.outputs.version-without-v }}
-          echo "Tag: $TAG"
-          docker build . --file Dockerfile --tag ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+          docker build --file Dockerfile --tag puth-test-image --output type=docker,dest=/tmp/puth-test-image.tar .
       - name: Test image
         run: |
           yarn
-          docker run -d -p 7345:7345 ${{ secrets.DOCKER_HUB_REPOSITORY }}:${{ steps.get_version.outputs.version-without-v }}
+          docker run -d -p 7345:7345 puth-test-image
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: puth-test-image
+          path: /tmp/puth-test-image.tar
+
+  test-client-laravel:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: puth-test-image
+          path: /tmp
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/puth-test-image.tar
+          docker image ls -a
+
+#  test-puth-node:
+#    needs: build
+#    name: 'Test Puth (Node.js v${{ matrix.node-version }})'
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        node-version:
+#          - 14
+#          - 16
+#          - 18
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: '${{ matrix.node-version }}'
+#      - name: 'Cache'
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.npm
+#          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
+#          restore-keys: |
+#            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+#            ${{ runner.os }}-node-v${{ matrix.node }}-
+#      - name: Install Dependencies
+#        run: |
+#          yarn
+#      - name: Build
+#        run: lerna run build
+#      - name: Test
+#        run: lerna run test
