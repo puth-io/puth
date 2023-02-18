@@ -184,6 +184,7 @@ jobs:
           RUNNING_IN_CI: true
 
       - name: Collect logs
+        if: always()
         run: docker logs puth-test-image > storage/logs/puth.log
       - name: Upload logs
         if: always()
@@ -191,9 +192,9 @@ jobs:
         with:
           name: test-logs
           path: |
-            storage/logs/laravel.log
-            storage/logs/server.log
-            storage/logs/puth.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/server.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/puth.log
 #  
 #  publish-docker:
 #    name: 'Publish image seuh/puth'
