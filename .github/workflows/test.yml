@@ -154,17 +154,15 @@ jobs:
           restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
 
       - name: Install Composer dependencies
-        run: |
+        run: composer update --prefer-stable --no-interaction --no-suggest
 #            composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update --dev
-          composer update --prefer-stable --no-interaction --no-suggest
+#          composer update --prefer-stable --no-interaction --no-suggest
 #        - name: Run Unit tests
 #          run: vendor/bin/phpunit --testsuite Unit
 #          env:
 #            RUNNING_IN_CI: true
-
 #        - name: Setup dusk/chrome
 #          run: vendor/bin/dusk-updater detect --no-interaction
-
       - name: Run tests
         run: php artisan test
         env:
