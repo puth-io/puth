@@ -10,31 +10,66 @@ on:
       - master
 
 jobs:
-  
-  build:
+  install:
     runs-on: ubuntu-latest
     steps:
-      - id: get_version
-        uses: battila7/get-version-action@v2
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: 'Cache'
-        uses: actions/cache@v3
+      - uses: actions/cache@v3
         with:
           path: |
             .yarn/cache
             workspaces/puth/.cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
-      - name: yarn build
-        run: |
-          yarn
-          lerna run build
-          lerna run postbuild
-      - name: Build image
+          key: node-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: node
+      - name: yarn install
+        run: yarn
+
+  test-puth-node:
+    needs: build
+    name: 'Test Puth (Node.js v${{ matrix.node-version }})'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version:
+          - 14
+          - 16
+          - 18
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '${{ matrix.node-version }}'
+      - name: 'Cache'
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            .yarn/cache
+            workspaces/puth/.cache
+          key: node-${{ hashFiles('**/yarn.lock') }}
+      - run: yarn
+      - run: lerna run build && lerna run postbuild
+      - run: lerna run test
+
+  build-test-image:
+    runs-on: ubuntu-latest
+    name: 'Build test image'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - uses: actions/cache/restore@v3
+        with:
+          path: |
+            .yarn/cache
+            workspaces/puth/.cache
+          key: node-${{ hashFiles('**/yarn.lock') }}
+      - run: yarn
+      - run: lerna run build && lerna run postbuild
+      - name: Image
         run: |
           yarn workspaces focus --production puth
           rm -rf workspaces/puth/node_modules
@@ -48,8 +83,7 @@ jobs:
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
           docker save --output=/tmp/puth-test-image.tar puth-test-image
           ls -lah /tmp
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
           name: puth-test-image
           path: /tmp/puth-test-image.tar
@@ -69,34 +103,3 @@ jobs:
         run: |
           docker load --input /tmp/puth-test-image.tar
           docker image ls -a
-
-#  test-puth-node:
-#    needs: build
-#    name: 'Test Puth (Node.js v${{ matrix.node-version }})'
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        node-version:
-#          - 14
-#          - 16
-#          - 18
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: actions/setup-node@v3
-#        with:
-#          node-version: '${{ matrix.node-version }}'
-#      - name: 'Cache'
-#        uses: actions/cache@v3
-#        with:
-#          path: ~/.npm
-#          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package-lock.json') }}
-#          restore-keys: |
-#            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-#            ${{ runner.os }}-node-v${{ matrix.node }}-
-#      - name: Install Dependencies
-#        run: |
-#          yarn
-#      - name: Build
-#        run: lerna run build
-#      - name: Test
-#        run: lerna run test
