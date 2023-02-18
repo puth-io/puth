@@ -186,18 +186,18 @@ jobs:
       - name: Collect logs
         if: always()
         run: |
-          mv storage/logs/puth.log storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log || true
-          mv storage/logs/server.log storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log || true
           docker logs puth-test-image > storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log || true
+          mv storage/logs/server.log storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log || true
+          mv storage/logs/laravel.log storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log || true
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: test-logs
           path: |
-            workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/server.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/puth.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log
 #  
 #  publish-docker:
 #    name: 'Publish image seuh/puth'
