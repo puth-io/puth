@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        
         node-version:
           - 14
           - 16
@@ -82,12 +83,12 @@ jobs:
           yarn
           docker run -d -p 7345:7345 puth-test-image
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
-          docker save --output=/tmp/puth-test-image.tar puth-test-image
-#          docker save puth-test-image | gzip > /tmp/puth-test-image.tar.gz
+#          docker save --output=/tmp/puth-test-image.tar puth-test-image
+          docker save puth-test-image | gzip > /tmp/puth-test-image.tar
       - uses: actions/upload-artifact@v2
         with:
           name: puth-test-image
-          path: /tmp/puth-test-image.tar.gz
+          path: /tmp/puth-test-image.tar
 
   php-client:
     needs: build-test-image
