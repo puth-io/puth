@@ -81,7 +81,7 @@ jobs:
       - name: Test image
         run: |
           yarn
-          docker run -d -p 7345:7345 puth-test-image
+          docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
           docker save puth-test-image | gzip > /tmp/puth-test-image.tar
@@ -123,7 +123,7 @@ jobs:
 
       - run: composer update --prefer-stable --no-interaction --no-suggest
       - run: |
-          docker run --name puth-test-image -d -p 7345:7345 puth-test-image
+          docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           ./vendor/bin/phpunit
     
@@ -176,7 +176,7 @@ jobs:
         run: |
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &
-          docker run --name puth-test-image -d -p 7345:7345 puth-test-image
+          docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           php artisan migrate --force
           php artisan test
