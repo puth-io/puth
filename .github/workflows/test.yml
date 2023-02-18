@@ -128,7 +128,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: docker save seuh/puth:0.6.2 | gzip > /tmp/puth-test-image.tar.gz
+      - run: |
+          docker pull seuh/puth:0.6.2
+          docker save seuh/puth:0.6.2 | gzip > /tmp/puth-test-image.tar.gz
       - uses: actions/upload-artifact@v2
         with:
           name: puth-test-image
