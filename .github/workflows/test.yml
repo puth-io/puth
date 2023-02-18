@@ -182,6 +182,18 @@ jobs:
           php artisan test
         env:
           RUNNING_IN_CI: true
+
+      - name: Collect logs
+        run: docker logs puth-test-image > storage/logs/puth.log
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: |
+            storage/logs/laravel.log
+            storage/logs/server.log
+            storage/logs/puth.log
 #  
 #  publish-docker:
 #    name: 'Publish image seuh/puth'

@@ -18,5 +18,5 @@ Route::get('/', function () {
 });
 
 Route::get('/sub/path', function () {
-    return response();
+    return response('');
 })->name('sub.path');
