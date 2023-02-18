@@ -125,7 +125,17 @@ jobs:
 #          docker run -d -p 7345:7345 puth-test-image
 #          ./vendor/bin/phpunit
     
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker save seuh/puth:0.6.2 | gzip > /tmp/puth-test-image.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: puth-test-image
+          path: /tmp/puth-test-image.tar.gz
+    
   composer-laravel:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -141,6 +151,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        
+      - uses: actions/download-artifact@v2
+        with:
+          name: puth-test-image
+          path: /tmp
+      - run: docker load --input /tmp/puth-test-image.tar.gz
 
       - name: Setup PHP, with composer and extensions
         uses: shivammathur/setup-php@v2
