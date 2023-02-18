@@ -10,97 +10,192 @@ on:
       - master
 
 jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - uses: actions/cache@v3
-        with:
-          path: |
-            .yarn/cache
-            workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: node
-      - name: yarn install
-        run: yarn
+#  yarn:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: 18
+#      - uses: actions/cache@v3
+#        with:
+#          path: |
+#            .yarn/cache
+#            workspaces/puth/.cache
+#          key: node-${{ hashFiles('**/yarn.lock') }}
+#          restore-keys: node
+#      - name: yarn install
+#        run: yarn
+#
+#  test-puth-node:
+#    needs: yarn
+#    name: 'Test Puth (Node.js v${{ matrix.node-version }})'
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        node-version:
+#          - 14
+#          - 16
+#          - 18
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: '${{ matrix.node-version }}'
+#      - name: 'Cache'
+#        uses: actions/cache/restore@v3
+#        with:
+#          path: |
+#            .yarn/cache
+#            workspaces/puth/.cache
+#          key: node-${{ hashFiles('**/yarn.lock') }}
+#      - run: yarn
+#      - run: lerna run build && lerna run postbuild
+#      - run: lerna run test
+#
+#  build-test-image:
+#    needs: yarn
+#    name: 'Build test image'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: 18
+#      - uses: actions/cache/restore@v3
+#        with:
+#          path: |
+#            .yarn/cache
+#            workspaces/puth/.cache
+#          key: node-${{ hashFiles('**/yarn.lock') }}
+#      - run: yarn
+#      - run: lerna run build && lerna run postbuild
+#      - name: Image
+#        run: |
+#          yarn workspaces focus --production puth
+#          rm -rf workspaces/puth/node_modules
+#          mv node_modules workspaces/puth
+#          cd workspaces/puth
+#          docker build --file Dockerfile --tag puth-test-image .
+#      - name: Test image
+#        run: |
+#          yarn
+#          docker run -d -p 7345:7345 puth-test-image
+#          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
+#          docker save --output=/tmp/puth-test-image.tar puth-test-image
+#          ls -lah /tmp
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: puth-test-image
+#          path: /tmp/puth-test-image.tar
 
-  test-puth-node:
-    needs: install
-    name: 'Test Puth (Node.js v${{ matrix.node-version }})'
+  composer:
+#    needs: build-test-image
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
-        node-version:
-          - 14
-          - 16
-          - 18
+#        php: [ 8.0, 8.1, 8.2 ]
+        php: [ 8.1 ]
+    defaults:
+      run:
+        working-directory: workspaces/clients/php/client
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+        
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+        
+      - name: Cache composer dependencies
+        uses: actions/cache@v3
         with:
-          node-version: '${{ matrix.node-version }}'
-      - name: 'Cache'
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            .yarn/cache
-            workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-      - run: yarn
-      - run: lerna run build && lerna run postbuild
-      - run: lerna run test
-
-  build-test-image:
-    needs: install
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/laravel/composer.json') }}
+          restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
+          
+      - run: composer update --prefer-stable --no-interaction --no-suggest
+      - run: ./vendor/bin/phpunit
+    
+  composer-laravel:
     runs-on: ubuntu-latest
-    name: 'Build test image'
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ 8.1 ]
+        laravel: [ 9.* ]
+    defaults:
+      run:
+        working-directory: workspaces/clients/php/laravel
+      
+    name: PHP:${{ matrix.php }} / Laravel:${{ matrix.laravel }}
+    
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - uses: actions/cache/restore@v3
-        with:
-          path: |
-            .yarn/cache
-            workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-      - run: yarn
-      - run: lerna run build && lerna run postbuild
-      - name: Image
-        run: |
-          yarn workspaces focus --production puth
-          rm -rf workspaces/puth/node_modules
-          mv node_modules workspaces/puth
-          cd workspaces/puth
-          docker build --file Dockerfile --tag puth-test-image .
-      - name: Test image
-        run: |
-          yarn
-          docker run -d -p 7345:7345 puth-test-image
-          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
-          docker save --output=/tmp/puth-test-image.tar puth-test-image
-          ls -lah /tmp
-      - uses: actions/upload-artifact@v2
-        with:
-          name: puth-test-image
-          path: /tmp/puth-test-image.tar
+      - name: Checkout
+        uses: actions/checkout@v2
 
-  test-client-laravel:
-    needs: build-test-image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Download artifact
-        uses: actions/download-artifact@v2
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2
         with:
-          name: puth-test-image
-          path: /tmp
-      - name: Load Docker image
+          php-version: ${{ matrix.php }}
+          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
+          tools: composer:v2
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/laravel/composer.json') }}
+          restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
+
+      - name: Install Composer dependencies
         run: |
-          docker load --input /tmp/puth-test-image.tar
-          docker image ls -a
+#            composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update --dev
+          composer update --prefer-stable --no-interaction --no-suggest
+#        - name: Run Unit tests
+#          run: vendor/bin/phpunit --testsuite Unit
+#          env:
+#            RUNNING_IN_CI: true
+
+#        - name: Setup dusk/chrome
+#          run: vendor/bin/dusk-updater detect --no-interaction
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          RUNNING_IN_CI: true
+    
+#  php-client:
+#    name: 'php/client'
+#    needs: php
+#    steps:
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: puth-test-image
+#          path: /tmp
+#      - run: |
+#          docker load --input /tmp/puth-test-image.tar
+#          docker image ls -a
+#
+#  php-laravel:
+#    name: 'php/laravel'
+#    needs: php
+#
+#  test-client-laravel:
+#    needs: build-test-image
+#    runs-on: ubuntu-latest
+#    steps:
+##      - name: Set up Docker Buildx
+##        uses: docker/setup-buildx-action@v1
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: puth-test-image
+#          path: /tmp
+#      - run: |
+#          docker load --input /tmp/puth-test-image.tar
+#          docker image ls -a

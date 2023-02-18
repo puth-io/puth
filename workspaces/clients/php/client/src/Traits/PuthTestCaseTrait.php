@@ -3,8 +3,8 @@
 namespace Puth\Traits;
 
 use Puth\Context;
-use Puth\Objects\Browser;
-use Puth\Objects\Page;
+//use Puth\Objects\Browser;
+//use Puth\Objects\Page;
 use Symfony\Component\Process\Process;
 
 /**
@@ -20,8 +20,8 @@ use Symfony\Component\Process\Process;
 trait PuthTestCaseTrait
 {
     public Context $context;
-    public Browser $browser;
-    public Page $page;
+    public $browser;
+    public $page;
 
     /**
      * The Puth process instance.
@@ -37,7 +37,7 @@ trait PuthTestCaseTrait
      *
      * @var int
      */
-    protected static int $puthPort;
+    protected static int $puthPort = 7345;
 
     /**
      * Set to connect to custom browser ws endpoint instead of the puth server creating a new one.
@@ -67,7 +67,7 @@ trait PuthTestCaseTrait
     {
         parent::setUpBeforeClass();
 
-        if (!method_exists(__CLASS__, 'shouldCreatePuthProcess') || static::shouldCreatePuthProcess()) {
+        if (method_exists(__CLASS__, 'shouldCreatePuthProcess') && static::shouldCreatePuthProcess()) {
             static::startPuthProcess();
         }
     }
@@ -192,7 +192,7 @@ trait PuthTestCaseTrait
 
     public function getPuthInstanceUrl(): string
     {
-        return 'http://localhost:' . static::getPuthPort();
+        return 'http://127.0.0.1:' . static::getPuthPort();
     }
 
     public function getBaseUrl(): ?string
