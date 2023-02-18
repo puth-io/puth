@@ -64,7 +64,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: puth-test-image
-          path: /tmp/puth-test-image.tar
+          path: /tmp
       - name: Load Docker image
         run: |
           docker load --input /tmp/puth-test-image.tar
