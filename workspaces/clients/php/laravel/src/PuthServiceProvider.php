@@ -21,17 +21,17 @@ class PuthServiceProvider extends ServiceProvider
                 'middleware' => config('dusk.middleware', config('puth.dusk.middleware', 'web')),
             ]), function () {
                 Route::get('/login/{userId}/{guard?}', [
-                    'uses' => 'Laravel\Dusk\Http\Controllers\UserController@login',
+                    'uses' => 'Puth\Laravel\Http\Controllers\UserController@login',
                     'as' => 'puth.dusk.login',
                 ]);
                 
                 Route::get('/logout/{guard?}', [
-                    'uses' => 'Laravel\Dusk\Http\Controllers\UserController@logout',
+                    'uses' => 'Puth\Laravel\Http\Controllers\UserController@logout',
                     'as' => 'puth.dusk.logout',
                 ]);
                 
                 Route::get('/user/{guard?}', [
-                    'uses' => 'Laravel\Dusk\Http\Controllers\UserController@user',
+                    'uses' => 'Puth\Laravel\Http\Controllers\UserController@user',
                     'as' => 'puth.dusk.user',
                 ]);
             });
