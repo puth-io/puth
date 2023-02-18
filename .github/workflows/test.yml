@@ -175,7 +175,6 @@ jobs:
         run: |
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &
-          curl 127.0.0.1:8000
           php artisan test
         env:
           RUNNING_IN_CI: true
