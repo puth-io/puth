@@ -84,7 +84,7 @@ jobs:
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
-          docker save puth-test-image | gzip > /tmp/puth-test-image.tar
+          docker save -o /tmp/puth-test-image.tar puth-test-image
       - uses: actions/upload-artifact@v3
         with:
           name: puth-test-image
