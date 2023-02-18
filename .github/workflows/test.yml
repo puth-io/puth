@@ -171,11 +171,9 @@ jobs:
 #            RUNNING_IN_CI: true
 #        - name: Setup dusk/chrome
 #          run: vendor/bin/dusk-updater detect --no-interaction
-      
       - name: Run tests
         run: |
           cp .env.example .env
-#          touch storage/logs/laravel.log
           php artisan serve > storage/logs/server.log 2>&1 &
           curl 127.0.0.1:8000
           php artisan test
