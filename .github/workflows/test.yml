@@ -175,6 +175,7 @@ jobs:
         run: |
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &
+          docker run -d -p 7345:7345 seuh/puth
           php artisan test
         env:
           RUNNING_IN_CI: true
