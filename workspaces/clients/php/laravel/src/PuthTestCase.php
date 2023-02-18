@@ -5,8 +5,6 @@ namespace Puth\Laravel;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;
-use Puth\Traits\PuthDuskAssertions;
-use Puth\Traits\PuthDuskUrlAssertions;
 use Puth\Traits\PuthTestCaseTrait;
 use Tests\CreatesApplication;
 
@@ -14,8 +12,6 @@ abstract class PuthTestCase extends BaseTestCase
 {
     use CreatesApplication;
     use PuthAssertions;
-    use PuthDuskAssertions;
-    use PuthDuskUrlAssertions;
     
     use PuthTestCaseTrait {
         PuthTestCaseTrait::setUp as protected setUpPuth;

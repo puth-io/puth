@@ -9,8 +9,6 @@ use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\Browser\Concerns\ProvidesBrowser;
 use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;
-use Puth\Traits\PuthDuskAssertions;
-use Puth\Traits\PuthDuskUrlAssertions;
 use Puth\Utils\BackTrace;
 use Tests\CreatesApplication;
 
@@ -19,8 +17,6 @@ abstract class PuthDuskTestCase extends BaseTestCase
     use ProvidesBrowser;
     use CreatesApplication;
     use PuthAssertions;
-    use PuthDuskAssertions;
-    use PuthDuskUrlAssertions;
     
     public Context $context;
     
