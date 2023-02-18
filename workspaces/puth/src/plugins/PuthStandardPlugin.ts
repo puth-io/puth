@@ -5,6 +5,7 @@ import { Capability } from '../Context';
 import { capitalizeFirstLetter, retryFor, sleep } from '../Utils';
 import { ElementHandle } from 'puppeteer';
 import Return from '../Context/Return';
+import Constructors from '../Context/Constructors';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -30,13 +31,13 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           func: (puth, expected, actual) => PuthAssert.strictEqual(expected, actual),
         },
       },
-      CDPBrowser: {
+      [Constructors.Browser]: {
         pages: async (browser, index?) => {
           let pages = browser.pages();
           return index != null ? (await pages)[index] : pages;
         },
       },
-      CDPPage: {
+      [Constructors.Page]: {
         get: this.get,
         contains: {
           func: this.contains,
@@ -51,7 +52,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         scrollTo: (el, ...options) => el.evaluate((o) => window.scrollTo(...o), options),
         window: (page) => page.evaluateHandle('window'),
         document: (page) => page.evaluateHandle('document'),
-        focused: async (el) => await el.evaluateHandle('document.activeElement'),
+        focused: (el) => el.evaluateHandle('document.activeElement'),
         prefersReducedMotion: async (el, value = 'reduce') => {
           await el.emulateMediaFeatures([
             {
@@ -63,14 +64,14 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         },
         // _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
         url: this.url,
-        type: this.type,
         getCookieByName: this.getCookieByName,
         waitForDialog: this.waitForDialog,
         clickNoBlockDialog: this.clickNoBlockDialog,
         acceptDialog: this.acceptDialog,
         dismissDialog: this.dismissDialog,
+        type: async (page, selector, chars, options = {}) => await this.type(await page.$(selector), chars, options),
       },
-      ElementHandle: {
+      [Constructors.ElementHandle]: {
         get: this.get,
         contains: {
           func: this.contains,
@@ -89,6 +90,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         submit: this.submit,
         value: this.value,
         click: this.click,
+        type: this.type,
         doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
         leftClick: (el, options) => el.click(options),
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),

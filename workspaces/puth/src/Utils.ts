@@ -1,3 +1,5 @@
+import Constructors from './Context/Constructors';
+
 export async function getAbsolutePaths(on: any): Promise<[[string, number][] | string][]> {
   if (!Array.isArray(on)) {
     on = [on];
@@ -9,7 +11,7 @@ export async function getAbsolutePaths(on: any): Promise<[[string, number][] | s
 export async function getAbsolutePath(on: any): Promise<[string, number][] | string> {
   let onType = resolveConstructorName(on);
 
-  if (onType === 'CDPPage') {
+  if (onType === Constructors.Page) {
     return 'CDPPage';
   }
 
@@ -17,7 +19,7 @@ export async function getAbsolutePath(on: any): Promise<[string, number][] | str
     return 'Frame';
   }
 
-  if (onType !== 'ElementHandle' && onType !== 'JSHandle') {
+  if (onType !== Constructors.ElementHandle && onType !== Constructors.JSHandle) {
     return 'Unknown';
   }
 

@@ -54,8 +54,8 @@ describe('Actions', function () {
   it('.type() - type into a DOM element', async function () {
     // https://on.cypress.io/type
     await this.page
+      .type('#actions-type input', 'fake@email.com')
       .get('#actions-type input')
-      .type('fake@email.com')
       .should('have.value', 'fake@email.com')
 
       // .type() with special character sequences

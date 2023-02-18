@@ -3,6 +3,7 @@ import './Command.scss';
 import { Events, PreviewStore } from '../../../main';
 import { IContext } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
+import Constructors from 'puth/src/Context/Constructors';
 
 export type IViewport = {
   width: number;
@@ -56,11 +57,11 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   let mouseLeave = useCallback(() => Events.emit('preview:highlight:hide', command), [command]);
 
   let displayType: any = on.type;
-  if (on.type === 'ElementHandle') {
+  if (on.type === Constructors.ElementHandle) {
     displayType = 'Element';
-  } else if (on.type === 'CDPPage') {
+  } else if (on.type === Constructors.Page) {
     displayType = 'Page';
-  } else if (on.type === 'CDPBrowser') {
+  } else if (on.type === Constructors.Browser) {
     displayType = 'Browser';
   }
 

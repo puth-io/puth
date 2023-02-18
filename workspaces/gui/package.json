@@ -19,6 +19,7 @@
     "postcss-nesting": "^11.1.0",
     "postcss-overflow-shorthand": "^4.0.1",
     "prismjs": "^1.29.0",
+    "puth": "*",
     "re-resizable": "^6.9.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

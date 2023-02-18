@@ -16,6 +16,7 @@ import { encode } from '@msgpack/msgpack';
 
 import { promises as fsPromise } from 'fs';
 import Return from './Context/Return';
+import Constructors from './Context/Constructors';
 const { writeFile } = fsPromise;
 
 export enum Capability {
@@ -492,7 +493,7 @@ class Context extends Generic {
     let on = this.resolveOn(packet);
 
     // resolve page object
-    let page = Utils.resolveConstructorName(on) === 'CDPPage' ? on : on?.frame?.page();
+    let page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
 
     // Create command
     const command: ICommand | undefined = await this.createCommandInstance(packet, on);
@@ -690,7 +691,7 @@ class Context extends Generic {
     let resolvedTo = on[action.property];
 
     if (resolvedTo === undefined) {
-      if (Utils.resolveConstructorName(on) === 'ElementHandle') {
+      if ([Constructors.ElementHandle, Constructors.JSHandle].includes(Utils.resolveConstructorName(on))) {
         resolvedTo = await (
           await on.evaluateHandle((handle, property) => handle[property], action.property)
         ).jsonValue();
