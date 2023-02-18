@@ -12,6 +12,7 @@ on:
 jobs:
   yarn:
     runs-on: ubuntu-latest
+    name: 'yarn cache'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -29,15 +30,14 @@ jobs:
 
   test-puth-node:
     needs: yarn
-    name: 'Test Puth (Node.js v${{ matrix.node-version }})'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        
         node-version:
           - 14
           - 16
           - 18
+    name: puth | Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -96,11 +96,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ 8.0, 8.1, 8.2 ]
-#        php: [ 8.1 ]
+        php: [ '8.0', 8.1, 8.2 ]
     defaults:
       run:
         working-directory: workspaces/clients/php/client
+    name: php/client | PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v3
 
@@ -133,13 +133,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ 8.0, 8.1, 8.2 ]
+        php: [ '8.0', 8.1, 8.2 ]
         laravel: [ 9.* ]
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
       
-    name: PHP:${{ matrix.php }} / Laravel:${{ matrix.laravel }}
+    name: php/laravel | PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}
     
     steps:
       - name: Checkout
@@ -178,7 +178,7 @@ jobs:
           php artisan serve > storage/logs/server.log 2>&1 &
           docker run -d -p 7345:7345 puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          php artisan migrate
+          php artisan migrate --force
           php artisan test
         env:
           RUNNING_IN_CI: true
