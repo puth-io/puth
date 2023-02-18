@@ -83,10 +83,11 @@ jobs:
 #          docker run -d -p 7345:7345 puth-test-image
 #          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
 #          docker save --output=/tmp/puth-test-image.tar puth-test-image
+##          docker save puth-test-image | gzip > /tmp/puth-test-image.tar.gz
 #      - uses: actions/upload-artifact@v2
 #        with:
 #          name: puth-test-image
-#          path: /tmp/puth-test-image.tar
+#          path: /tmp/puth-test-image.tar.gz
 #
 #  php-client:
 #    needs: build-test-image
@@ -106,7 +107,7 @@ jobs:
 #        with:
 #          name: puth-test-image
 #          path: /tmp
-#      - run: docker load --input /tmp/puth-test-image.tar
+#      - run: docker load --input /tmp/puth-test-image.tar.gz
 #        
 #      - name: Get composer cache directory
 #        id: composer-cache
@@ -174,7 +175,7 @@ jobs:
       - name: Run tests
         run: |
           cp .env.example .env
-          echo '' > storage/logs/laravel.log
+#          touch storage/logs/laravel.log
           php artisan serve > storage/logs/server.log 2>&1 &
           curl 127.0.0.1:8000
           php artisan test
