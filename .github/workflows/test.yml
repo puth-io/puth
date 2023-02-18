@@ -96,8 +96,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-#        php: [ 8.0, 8.1, 8.2 ]
-        php: [ 8.1 ]
+        php: [ 8.0, 8.1, 8.2 ]
+#        php: [ 8.1 ]
     defaults:
       run:
         working-directory: workspaces/clients/php/client
@@ -133,7 +133,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ 8.1 ]
+        php: [ 8.0, 8.1, 8.2 ]
         laravel: [ 9.* ]
     defaults:
       run:
@@ -178,6 +178,7 @@ jobs:
           php artisan serve > storage/logs/server.log 2>&1 &
           docker run -d -p 7345:7345 puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          php artisan migrate
           php artisan test
         env:
           RUNNING_IN_CI: true
