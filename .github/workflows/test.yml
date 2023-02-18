@@ -134,12 +134,12 @@ jobs:
       fail-fast: true
       matrix:
         php: [ '8.0', 8.1, 8.2 ]
-        laravel: [ 9.* ]
+        laravel: [ 9 ]
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
       
-    name: php/laravel | PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}
+    name: php/laravel | PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}.*
     
     steps:
       - name: Checkout
