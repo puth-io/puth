@@ -123,7 +123,7 @@ jobs:
 
       - run: composer update --prefer-stable --no-interaction --no-suggest
       - run: |
-          docker run -d -p 7345:7345 puth-test-image
+          docker run --name puth-test-image -d -p 7345:7345 puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           ./vendor/bin/phpunit
     
@@ -176,7 +176,7 @@ jobs:
         run: |
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &
-          docker run -d -p 7345:7345 puth-test-image
+          docker run --name puth-test-image -d -p 7345:7345 puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           php artisan migrate --force
           php artisan test
@@ -185,7 +185,10 @@ jobs:
 
       - name: Collect logs
         if: always()
-        run: docker logs puth-test-image > storage/logs/puth.log
+        run: |
+          mv storage/logs/puth.log storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log || true
+          mv storage/logs/server.log storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log || true
+          docker logs puth-test-image > storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log || true
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@v3
