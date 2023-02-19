@@ -11,12 +11,18 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - id: get_version
-        uses: battila7/get-version-action@v2
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+          
+      - id: get_version
+        uses: battila7/get-version-action@v2
+        
+      - name: Test
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: ./.github/workflows/test.yml
+        
       - uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -33,7 +39,7 @@ jobs:
         run: |
           git config user.email "release@puth.io"
           git config user.name "Puth Release"
-          git commit -am "Make automatic release"
+          git commit -am "Make release ${{ steps.get_version.outputs.version }}"
 
       - name: Split php repo
         run: ./bin/php-split.sh
