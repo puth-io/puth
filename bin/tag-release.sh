@@ -25,7 +25,7 @@ do
     rm -rf $TMP_DIR;
     mkdir $TMP_DIR;
 
-    (
+#    (
         cd $TMP_DIR;
 
         git clone $REMOTE_URL .
@@ -33,5 +33,5 @@ do
 
         git tag "$VERSION"
         git push origin --tags
-    )
+#    )
 done
