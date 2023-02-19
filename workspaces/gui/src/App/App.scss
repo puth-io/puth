@@ -1,8 +1,10 @@
+$font-size-root: 14px;
+
 @import "./Style/prism/prism-darcula.css";
 
-html {
-  font-size: 15px;
-}
+//html {
+//  font-size: 16px;
+//}
 
 @import 'Misc/colors';
 @import '../../node_modules/bootstrap/scss/bootstrap';
@@ -15,10 +17,6 @@ html {
   &[data-connected="false"] {
     color: $danger;
   }
-}
-
-button {
-  margin-right: 0.5rem;
 }
 
 #snapshotFrame {
@@ -133,3 +131,29 @@ input[type="checkbox"]:focus {
 .fs-small {
   font-size: 0.875rem;
 }
+
+.text-ellipsis {
+  text-overflow: ellipsis;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.modal-enter {
+  opacity: 0;
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transition: opacity 200ms;
+}
+
+.modal-exit {
+  opacity: 1;
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transition: opacity 200ms;
+}
+

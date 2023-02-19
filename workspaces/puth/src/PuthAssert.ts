@@ -1,4 +1,5 @@
 import * as Utils from './Utils';
+import Constructors from './Context/Constructors';
 
 export const Assertion = (name, actual, expected, result, message) => {
   return {
@@ -23,7 +24,7 @@ export class PuthAssert {
       );
     }
 
-    if (['ElementHandle', 'JSHandle'].includes(Utils.resolveConstructorName(expected))) {
+    if ([Constructors.ElementHandle, Constructors.JSHandle].includes(Utils.resolveConstructorName(expected))) {
       return Assertion(
         'strictEquals',
         'Handle1',

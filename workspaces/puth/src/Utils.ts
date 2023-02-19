@@ -1,3 +1,5 @@
+import Constructors from './Context/Constructors';
+
 export async function getAbsolutePaths(on: any): Promise<[[string, number][] | string][]> {
   if (!Array.isArray(on)) {
     on = [on];
@@ -9,7 +11,7 @@ export async function getAbsolutePaths(on: any): Promise<[[string, number][] | s
 export async function getAbsolutePath(on: any): Promise<[string, number][] | string> {
   let onType = resolveConstructorName(on);
 
-  if (onType === 'CDPPage') {
+  if (onType === Constructors.Page) {
     return 'CDPPage';
   }
 
@@ -17,7 +19,7 @@ export async function getAbsolutePath(on: any): Promise<[string, number][] | str
     return 'Frame';
   }
 
-  if (onType !== 'ElementHandle' && onType !== 'JSHandle') {
+  if (onType !== Constructors.ElementHandle && onType !== Constructors.JSHandle) {
     return 'Unknown';
   }
 
@@ -83,8 +85,9 @@ export async function retryFor(time, func, test?: (v: any) => boolean, cycleTime
   let error;
   let delta = 0;
   let first = true;
+  let once = time === 0;
 
-  while (Date.now() < until) {
+  while (Date.now() < until || once) {
     if (!first) {
       if (delta < cycleTime) {
         await sleep(cycleTime - delta);
@@ -109,6 +112,11 @@ export async function retryFor(time, func, test?: (v: any) => boolean, cycleTime
       }
     } catch (e) {
       error = e;
+    }
+
+    // Break while immediately if retryFor should only try once
+    if (once) {
+      break;
     }
 
     // Async sleep so while doesn't eat the CPU

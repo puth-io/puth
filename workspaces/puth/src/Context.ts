@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage } from 'puppeteer';
+import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
 import mitt from 'mitt';
 
 import { createBrowser } from './Browser';
@@ -15,23 +15,9 @@ import path from 'path';
 import { encode } from '@msgpack/msgpack';
 
 import { promises as fsPromise } from 'fs';
+import Return from './Context/Return';
+import Constructors from './Context/Constructors';
 const { writeFile } = fsPromise;
-
-const Response = {
-  EMPTY: '',
-  GenericValue: (val) => ({
-    type: 'GenericValue',
-    value: val,
-  }),
-  GenericValues: (val) => ({
-    type: 'GenericValues',
-    value: val,
-  }),
-  GenericObjects: (val) => ({
-    type: 'GenericObjects',
-    value: val,
-  }),
-};
 
 export enum Capability {
   EVAL = 'EVAL',
@@ -62,27 +48,29 @@ class Context extends Generic {
 
   private plugins: PuthContextPlugin[] = [];
 
-  private instance: {
+  private instances: {
     daemon?: boolean;
     browser?: puppeteer.Browser;
     browserCleanup?: () => {};
     external?: boolean;
-  } = {};
+  }[] = [];
 
   private eventFunctions: [any, string, () => {}][] = [];
 
   private capabilities = {};
 
-  public tracked = {
-    dialogs: new Map<Page, [string, string]>(),
-  };
-
   private readonly createdAt;
 
-  public caches = {
+  public caches: {
+    snapshot: {
+      lastHtml: string;
+    };
+    dialog: Map<Page, Dialog>;
+  } = {
     snapshot: {
       lastHtml: '',
     },
+    dialog: new Map<Page, Dialog>(),
   };
 
   constructor(puth: Puth, options: any = {}) {
@@ -115,43 +103,58 @@ class Context extends Generic {
   }
 
   async connectBrowser(options) {
-    this.instance.browser = await puppeteer.connect(options);
-    this.instance.external = true;
+    let browser = await puppeteer.connect(options);
 
-    await this._trackBrowser(this.instance.browser);
+    await this._trackBrowser(browser);
 
-    return this.instance.browser;
+    let instance = {
+      browser,
+      external: true,
+    };
+
+    this.instances.push(instance);
+
+    return browser;
   }
 
   async createBrowser(options = {}) {
-    if (this.puth.isDev() || this.isDev()) {
-      return await this.getDaemonBrowser();
-    }
+    // TODO remove daemon browser code
+    // if (this.puth.isDev() || this.isDev()) {
+    //   return await this.getDaemonBrowser();
+    // }
 
-    this.instance = await createBrowser({
+    let { browser, browserCleanup } = await createBrowser({
       launchOptions: options,
       args: ['--no-sandbox'],
     });
-    this.instance.external = false;
 
-    await this._trackBrowser(this.instance.browser);
+    await this._trackBrowser(browser);
 
-    return this.instance.browser;
+    let instance = {
+      browser,
+      browserCleanup,
+      external: false,
+    };
+
+    this.instances.push(instance);
+
+    return browser;
   }
 
   isDev() {
     return this.options?.dev === true;
   }
 
-  async getDaemonBrowser(options?) {
-    this.instance.browser = await DaemonBrowser.getBrowser(options);
-    this.instance.external = true;
-    this.instance.daemon = true;
-
-    await this._trackBrowser(this.instance.browser);
-
-    return this.instance.browser;
-  }
+  // TODO remove daemon browser code
+  // async getDaemonBrowser(options?) {
+  //   this.instance.browser = await DaemonBrowser.getBrowser(options);
+  //   this.instance.external = true;
+  //   this.instance.daemon = true;
+  //
+  //   await this._trackBrowser(this.instance.browser);
+  //
+  //   return this.instance.browser;
+  // }
 
   async _trackBrowser(browser: Browser | undefined) {
     if (browser === undefined) {
@@ -183,19 +186,46 @@ class Context extends Generic {
 
     this.unregisterAllEventListeners();
 
-    if (this.instance.browser && !this.instance.daemon) {
-      if (this.instance.external) {
-        await this.instance.browser.disconnect();
-      } else {
-        await this.instance.browser.close();
-      }
-
-      if (this.instance.browserCleanup) {
-        await this.instance.browserCleanup();
-      }
-    }
+    await Promise.all(this.instances.map((instance) => this.destroyBrowserByInstance(instance)));
 
     return true;
+  }
+
+  async destroyBrowserByBrowser(browser) {
+    return this.destroyBrowserByInstance(this.instances.find((instance) => instance.browser === browser));
+  }
+
+  async destroyBrowserByInstance(instance) {
+    if (!instance.browser) {
+      return this.removeBrowserInstance(instance);
+    }
+
+    if (instance.daemon) {
+      return this.removeBrowserInstance(instance);
+    }
+
+    if (instance.external) {
+      await instance.browser.disconnect();
+    } else {
+      await instance.browser.close();
+    }
+
+    if (instance.browserCleanup) {
+      await instance.browserCleanup();
+    }
+
+    this.removeBrowserInstance(instance);
+  }
+
+  private removeBrowserInstance(instance) {
+    this.instances.splice(
+      this.instances.findIndex((i) => i === instance),
+      1,
+    );
+  }
+
+  isPageBlockedByDialog(page) {
+    return this.caches.dialog.has(page);
   }
 
   /**
@@ -204,6 +234,7 @@ class Context extends Generic {
    */
   _trackPage(page) {
     page.on('close', () => this.removeEventListenersFrom(page));
+    page.on('dialog', (dialog) => this.caches.dialog.set(page, dialog));
 
     if (this.shouldSnapshot()) {
       let trackable = (request: HTTPRequest) =>
@@ -310,22 +341,22 @@ class Context extends Generic {
     // });
   }
 
-  // TODO write _untrackDialogs
-  async _trackDialogs(page) {
-    this.registerEventListenerOn(page, 'dialog', async (dialog) => {
-      let action = this.tracked.dialogs.get(page);
-
-      if (!action) {
-        return;
-      }
-
-      await dialog[action[0]](action.length > 1 ? action[1] : undefined);
-
-      if (action[0] === 'type') {
-        await dialog.accept();
-      }
-    });
-  }
+  // // TODO write _untrackDialogs
+  // async _trackDialogs(page) {
+  //   this.registerEventListenerOn(page, 'dialog', async (dialog) => {
+  //     let action = this.tracked.dialogs.get(page);
+  //
+  //     if (!action) {
+  //       return;
+  //     }
+  //
+  //     await dialog[action[0]](action.length > 1 ? action[1] : undefined);
+  //
+  //     if (action[0] === 'type') {
+  //       await dialog.accept();
+  //     }
+  //   });
+  // }
 
   registerEventListenerOn(object, event, func) {
     this.eventFunctions.push([object, event, func]);
@@ -462,13 +493,15 @@ class Context extends Generic {
     let on = this.resolveOn(packet);
 
     // resolve page object
-    let page = Utils.resolveConstructorName(on) === 'CDPPage' ? on : on?._page;
+    let page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
 
     // Create command
     const command: ICommand | undefined = await this.createCommandInstance(packet, on);
 
     // Create snapshot before command
-    await Snapshots.createBefore(this, page, command);
+    if (!this.isPageBlockedByDialog(page)) {
+      await Snapshots.createBefore(this, page, command);
+    }
 
     // Turn object representations into the actual object
     packet.parameters = packet.parameters ? packet.parameters.map((item) => this.resolveIfCached(item)) : [];
@@ -550,6 +583,10 @@ class Context extends Generic {
 
   async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
     let beforeReturn = async () => {
+      if (this.isPageBlockedByDialog(page)) {
+        return;
+      }
+
       // TODO Implement this in events. Event: 'function:call:return'
       await Snapshots.createAfter(this, page, command);
     };
@@ -586,14 +623,32 @@ class Context extends Generic {
     }
 
     await beforeReturn();
-    return this.resolveReturnValue(packet, returnValue);
+
+    // TODO refactor "resolveReturnValue" to "handleValueForReturn"
+    if (returnValue instanceof Return) {
+      return returnValue.serialize();
+    }
+
+    if (!(returnValue instanceof Return)) {
+      returnValue = this.resolveReturnValue(packet, returnValue);
+    }
+
+    if (returnValue instanceof Return) {
+      return returnValue.serialize();
+    }
+
+    return returnValue;
   }
 
   // TODO add return value resolver structure
   resolveReturnValue(action, returnValue) {
+    if (Buffer.isBuffer(returnValue)) {
+      return returnValue;
+    }
+
     if (Array.isArray(returnValue)) {
       if (returnValue.length === 0) {
-        return Response.GenericValues(returnValue);
+        return Return.Values(returnValue);
       }
 
       // This is also true if the return value content is an associative array
@@ -601,17 +656,18 @@ class Context extends Generic {
       //      problem is, if you return mixed content, values and reference objects together,
       //      then the content is not naturally resolvable for the client
       if (Utils.resolveConstructorName(returnValue[0]) === 'Object') {
-        return Response.GenericValue(returnValue);
-      }
-      if (typeof returnValue[0] === 'object') {
-        return Response.GenericObjects(returnValue.map((item) => this.returnCached(item)));
+        return Return.Value(returnValue);
       }
 
-      return Response.GenericValue(returnValue);
+      if (typeof returnValue[0] === 'object') {
+        return Return.Objects(returnValue.map((item) => this.returnCached(item)));
+      }
+
+      return Return.Value(returnValue);
     }
 
     if (typeof returnValue === 'string' || typeof returnValue === 'boolean' || typeof returnValue === 'number') {
-      return Response.GenericValue(returnValue);
+      return Return.Value(returnValue);
     }
 
     if (returnValue?.type === 'PuthAssertion') {
@@ -622,15 +678,28 @@ class Context extends Generic {
       return this.returnCached(returnValue);
     }
 
-    // Fallback to returning null because undefined gets
-    // ignored by Fastify so no response would be sent
-    return null;
+    if (returnValue === null) {
+      return Return.Null();
+    }
+
+    return Return.Undefined();
   }
 
   async get(action) {
     let on = this.resolveOn(action);
 
-    if (on[action.property] === undefined) {
+    let resolvedTo = on[action.property];
+
+    if (resolvedTo === undefined) {
+      if ([Constructors.ElementHandle, Constructors.JSHandle].includes(Utils.resolveConstructorName(on))) {
+        resolvedTo = await (
+          await on.evaluateHandle((handle, property) => handle[property], action.property)
+        ).jsonValue();
+      }
+    }
+
+    // If still undefined, return undefined exception
+    if (resolvedTo === undefined) {
       return {
         type: 'error',
         code: 'Undefined',
@@ -638,7 +707,12 @@ class Context extends Generic {
       };
     }
 
-    return Response.GenericValue(on[action.property]);
+    // TODO check for other types which are actual instances and not serializable objects
+    if (['Mouse'].includes(Utils.resolveConstructorName(resolvedTo))) {
+      return this.returnCached(resolvedTo);
+    }
+
+    return Return.Value(resolvedTo);
   }
 
   async set(action) {
@@ -750,9 +824,10 @@ class Context extends Generic {
   }
 
   getTimeout(options?) {
-    if (options?.timeout) {
+    if (options?.timeout != null) {
       return options.timeout;
     }
+
     return this.options?.timeouts?.command ?? 30 * 1000;
   }
 }

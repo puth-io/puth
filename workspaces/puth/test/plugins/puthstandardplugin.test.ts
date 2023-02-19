@@ -39,7 +39,7 @@ describe(`PuthStandardPlugin`, function () {
   });
 
   it('should get page title', async function () {
-    assert.strictEqual(await this.page.title(), 'Puth - Playground');
+    assert.strictEqual(await this.page.title(), 'Playground - Puth');
   });
 
   it('should get page url', async function () {

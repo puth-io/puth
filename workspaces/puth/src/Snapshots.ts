@@ -99,6 +99,10 @@ class SnapshotHandler {
   private cache = new Map<Context, (ICommand | ILog | IResponse)[]>();
 
   pushToCache(context, item, { broadcast } = { broadcast: true }) {
+    if (item.cached) {
+      return;
+    }
+
     if (!this.cache.has(context)) {
       // cleanup cache to have at least some memory limit
       if (this.cache.size >= 100) {
@@ -110,6 +114,7 @@ class SnapshotHandler {
 
     // @ts-ignore
     this.cache.get(context).push(item);
+    item.cached = true;
 
     // TODO maybe implement a time buffer to send out multiple snapshots
     if (broadcast) {
@@ -152,6 +157,7 @@ class SnapshotHandler {
       }
     }
 
+    this.pushToCache(context, command, { broadcast: false });
     this.broadcast(command);
   }
 
@@ -179,7 +185,6 @@ class SnapshotHandler {
 
     let pageSnapshot = await this.createPageSnapshot(page);
 
-    // TODO cache latest context html snapshot so we don't need to resolve
     // TODO when page changes, diff will have both the old page content and the new content. We do not need
     //      the old page content because we do not visualize the diff. Therefore we should add an indicator
     //      that sets the beginning to the current page content (stops backtrace and starts from indicator)

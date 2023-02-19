@@ -92,6 +92,10 @@ class WebsocketHandlerSingleton {
     });
   }
 
+  get hasNoContexts() {
+    return this.contexts.size === 0;
+  }
+
   connect(
     uri: string = 'ws://127.0.0.1:7345/websocket',
     options: {

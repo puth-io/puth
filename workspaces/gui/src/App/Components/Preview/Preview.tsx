@@ -65,10 +65,10 @@ export const PreviewFooter = observer(() => {
   return (
     <div className={'footer border-left border-default z-10'}>
       <FooterMetrics />
-      <div className={'ml-auto'}>
+      <div className={'ml-auto checkbox-container'}>
         <input
           type="checkbox"
-          className="form-check-input me-2"
+          className="form-check-input me-1"
           id="remove-script-tags-checkbox"
           checked={PreviewStore.removeScriptTags}
           onChange={() => (PreviewStore.removeScriptTags = !PreviewStore.removeScriptTags)}
@@ -77,10 +77,10 @@ export const PreviewFooter = observer(() => {
           Remove script tags
         </label>
       </div>
-      <div>
+      <div className={'checkbox-container'}>
         <input
           type="checkbox"
-          className="form-check-input me-2"
+          className="form-check-input me-1"
           id="darken-preview-checkbox"
           checked={PreviewStore.darken}
           onChange={() => (PreviewStore.darken = !PreviewStore.darken)}
@@ -89,10 +89,10 @@ export const PreviewFooter = observer(() => {
           Darken preview
         </label>
       </div>
-      <div>
+      <div className={'checkbox-container'}>
         <input
           type="checkbox"
-          className="form-check-input me-2"
+          className="form-check-input me-1"
           id="connect-automatically-checkbox"
           checked={DevStore.connectAutomatically}
           onChange={() => (DevStore.connectAutomatically = !DevStore.connectAutomatically)}
@@ -101,10 +101,10 @@ export const PreviewFooter = observer(() => {
           Connect automatically
         </label>
       </div>
-      <div>
+      <div className={'checkbox-container'}>
         <input
           type="checkbox"
-          className="form-check-input me-2"
+          className="form-check-input me-1"
           id="debug-checkbox"
           checked={DevStore.debug}
           onChange={() => (DevStore.debug = !DevStore.debug)}
@@ -154,7 +154,7 @@ export const Preview = observer(() => {
     iframe.src = '';
   }
 
-  const PreviewInfo = () => (
+  const PreviewInfo = observer(() => (
     <div className="d-flex flex-1 info me-2">
       <div className="btn-group btn-group-sm" role="group">
         <button
@@ -185,8 +185,14 @@ export const Preview = observer(() => {
       <div className={'element ms-2'}>
         {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
       </div>
+
+      {WebsocketHandler.isConnected ? (
+        <button className={'btn btn-sm btn-outline-success ms-2'}>Connected</button>
+      ) : (
+        <button className={'btn btn-sm btn-outline-danger ms-2'}>Disconnected</button>
+      )}
     </div>
-  );
+  ));
 
   // TODO to optimize this, always have 2 iframes, one with the before state and one with the after.
   //      If the preview switches, just change the z-index and the visibility. This prevents the

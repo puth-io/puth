@@ -1,5 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
+import Constructors from 'puth/src/Context/Constructors';
 
 export default class ContextStore {
   id;
@@ -49,7 +50,7 @@ export default class ContextStore {
 
   getRenderedTypesFilter() {
     return (command: ICommand) => {
-      return ['CDPPage', 'ElementHandle'].includes(command.on.type);
+      return [Constructors.Page, Constructors.ElementHandle].includes(command.on.type);
     };
   }
 

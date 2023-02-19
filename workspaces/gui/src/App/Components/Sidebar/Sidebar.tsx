@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { WebsocketHandler } from '../../Misc/WebsocketHandler';
 import { Resizable } from 're-resizable';
 import { Events, PreviewStore } from '../../../main';
+import puthLogoNew from '../../../assets/puth-logo-new.png';
 
 const SidebarAction = observer(() => {
   let clear = () => {
@@ -13,10 +14,12 @@ const SidebarAction = observer(() => {
   };
 
   return (
-    <div className={'height-3 d-flex align-items-center px-2 pt-2 pb-2'}>
-      <button className={'btn btn-sm btn-outline-primary'} onClick={clear}>
-        Clear
-      </button>
+    <div className={'height-3 d-flex align-items-center ps-2 pt-2 pb-2'}>
+      {!WebsocketHandler.hasNoContexts && (
+        <button className={'btn btn-sm btn-outline-primary'} onClick={clear}>
+          Clear
+        </button>
+      )}
     </div>
   );
 });
@@ -33,7 +36,15 @@ export default observer(function Sidebar() {
       enable={{ right: true }}
       onResizeStop={() => Events.emit('layout:resize')}
     >
-      <SidebarAction />
+      <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center ms-2 me-auto">
+          <img src={puthLogoNew} className={'align-self-center'} style={{ height: '18px' }} alt="" />
+          <span className={'ms-2 text-accent'} style={{ fontSize: '1.2rem' }}>
+            Puth
+          </span>
+        </div>
+        <SidebarAction />
+      </div>
       <div className={'sidebar px-2'}>
         {WebsocketHandler.contextArray.map((context, idx) => {
           return <Context key={context.id} context={context} />;

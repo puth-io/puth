@@ -2,8 +2,10 @@ import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { Capability } from '../Context';
-import { capitalizeFirstLetter, retryFor } from '../Utils';
+import { capitalizeFirstLetter, retryFor, sleep } from '../Utils';
 import { ElementHandle } from 'puppeteer';
+import Return from '../Context/Return';
+import Constructors from '../Context/Constructors';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -20,7 +22,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           expects: Expects.Element,
         },
         should: this.should,
-        type: this.type,
       },
       // resolver: {
       //     Page: {}
@@ -30,13 +31,13 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           func: (puth, expected, actual) => PuthAssert.strictEqual(expected, actual),
         },
       },
-      CDPBrowser: {
+      [Constructors.Browser]: {
         pages: async (browser, index?) => {
           let pages = browser.pages();
           return index != null ? (await pages)[index] : pages;
         },
       },
-      CDPPage: {
+      [Constructors.Page]: {
         get: this.get,
         contains: {
           func: this.contains,
@@ -51,7 +52,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         scrollTo: (el, ...options) => el.evaluate((o) => window.scrollTo(...o), options),
         window: (page) => page.evaluateHandle('window'),
         document: (page) => page.evaluateHandle('document'),
-        focused: async (el) => await el.evaluateHandle('document.activeElement'),
+        focused: (el) => el.evaluateHandle('document.activeElement'),
         prefersReducedMotion: async (el, value = 'reduce') => {
           await el.emulateMediaFeatures([
             {
@@ -61,10 +62,16 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           ]);
           return true;
         },
-        _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
+        // _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
         url: this.url,
+        getCookieByName: this.getCookieByName,
+        waitForDialog: this.waitForDialog,
+        clickNoBlockDialog: this.clickNoBlockDialog,
+        acceptDialog: this.acceptDialog,
+        dismissDialog: this.dismissDialog,
+        type: async (page, selector, chars, options = {}) => await this.type(await page.$(selector), chars, options),
       },
-      ElementHandle: {
+      [Constructors.ElementHandle]: {
         get: this.get,
         contains: {
           func: this.contains,
@@ -81,13 +88,15 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         blur: this.blur,
         clear: this.clear,
         submit: this.submit,
-        value: async (el) => await (await el.getProperty('value')).jsonValue(),
+        value: this.value,
+        click: this.click,
+        type: this.type,
         doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
         leftClick: (el, options) => el.click(options),
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
         rightClick: (el, options) => el.click({ ...options, button: 'right' }),
         selected: (el) => el.evaluate((s) => [...s.options].filter((o) => o.selected).map((o) => o.value)),
-        scrollIntoView: (el) => el._scrollIntoViewIfNeeded(),
+        scrollIntoView: this.scrollIntoView,
         // @ts-ignore
         scrollTo: (el, ...options) =>
           el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
@@ -108,6 +117,8 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
           return t?.listeners;
         },
+        tagName: async (el) => (await el.evaluateHandle((handle) => handle.tagName)).jsonValue(),
+        dragToOffset: this.dragToOffset,
       },
     });
   }
@@ -182,8 +193,12 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return (await element.getProperty('innerHTML')).jsonValue();
   }
 
-  async value(element) {
-    return (await element.getProperty('value')).jsonValue();
+  async value(element, val = null) {
+    if (val == null) {
+      return (await element.getProperty('value')).jsonValue();
+    }
+
+    await element.evaluateHandle((handle, innerVal) => (handle.value = innerVal), val);
   }
 
   async its(element, property) {
@@ -213,7 +228,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
   contains(element, search, options?) {
     return retryFor(
       this.getContext().getTimeout(options),
-      async (_) => await element.$x('.//*[contains(text(), "' + search + '")]'),
+      () => element.$x("//text()[contains(., '" + search + "')]"),
       (v) => v.length > 0,
     );
   }
@@ -396,5 +411,110 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
   url(element, options?) {
     return retryFor(this.getContext().getTimeout(options), async () => await element.url(), Expects.NotNull.test);
+  }
+
+  async getCookieByName(page, name, options?) {
+    let cookies = await page.cookies();
+
+    for (let idx in cookies) {
+      if (cookies[idx].name === name) {
+        return Return.Value(cookies[idx]);
+      }
+    }
+
+    return Return.Null();
+  }
+
+  waitForDialog(page, options: any = {}) {
+    return retryFor(
+      options.timeout ?? 5000,
+      () => this.getContext().caches.dialog.get(page),
+      (rv) => rv !== undefined,
+    );
+  }
+
+  // // TODO for fastest resolving: check if dialog exists in cache, if not register custom handler for page that resolves
+  // waitForDialog(page, options: any = {}) {
+  //   return retryFor(
+  //     5000,
+  //     () => {
+  //       console.log('checking...');
+  //
+  //       let idx = this.getContext().caches.dialog.waitingForUse.findIndex((item) => item[0] === page);
+  //
+  //       if (idx === -1) {
+  //         return;
+  //       }
+  //
+  //       return this.getContext().caches.dialog.waitingForUse.splice(idx, 1)[0];
+  //     },
+  //     (rv) => rv !== undefined,
+  //   );
+  // }
+
+  scrollIntoView(elementHandle) {
+    return elementHandle.evaluateHandle((handle) => handle.scrollIntoViewIfNeeded(true));
+  }
+
+  click(elementHandle, options: any = {}) {
+    if (options?.unblockOnDialogOpen) {
+      return this.clickNoBlockDialog(elementHandle.frame.page(), elementHandle, options);
+    }
+
+    return elementHandle.click(options);
+  }
+
+  async clickNoBlockDialog(page, selectorOrElement, options: any = {}) {
+    if (!(selectorOrElement instanceof ElementHandle)) {
+      selectorOrElement = await page.$(selectorOrElement);
+    }
+
+    return await this.scrollIntoView(selectorOrElement)
+      .then(() => selectorOrElement.clickablePoint(options.offset))
+      .then(async ({ x, y }) => {
+        const mouse = page.mouse;
+
+        await mouse.move(x, y);
+        await mouse.down(options);
+
+        return mouse;
+      })
+      .then(async (mouse) => {
+        if (options.delay) {
+          await new Promise((f) => {
+            return setTimeout(f, options.delay);
+          });
+        }
+
+        return mouse;
+      })
+      .then((mouse) => Promise.race([new Promise((resolve) => page.once('dialog', resolve)), mouse.up()]))
+      .then(Return.Undefined());
+  }
+
+  acceptDialog(page, message = '', options = {}) {
+    return this.waitForDialog(page, options)
+      .then((dialog) => dialog.accept(message))
+      .finally(() => this.getContext().caches.dialog.delete(page));
+  }
+
+  dismissDialog(page, options = {}) {
+    return this.waitForDialog(page, options)
+      .then((dialog) => dialog.dismiss())
+      .finally(() => this.getContext().caches.dialog.delete(page));
+  }
+
+  async dragToOffset(elementHandle, point, options = {}) {
+    await this.scrollIntoView(elementHandle);
+
+    const startPoint = await elementHandle.clickablePoint();
+    const targetPoint = {
+      x: startPoint.x + point.x,
+      y: startPoint.y + point.y,
+    };
+
+    await elementHandle.frame.page().mouse.dragAndDrop(startPoint, targetPoint);
+
+    return Return.Undefined();
   }
 }

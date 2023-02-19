@@ -1,0 +1,31 @@
+name: Sync master branches
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 'Make dev release'
+        run: ./bin/make-release.js version dev-master
+
+      - name: 'Commit release'
+        run: |
+          git config user.email "release@puth.io"
+          git config user.name "Puth Release"
+          git commit -am "Sync release dev-master"
+
+      - name: Split php repo
+        run: ./bin/php-split.sh
