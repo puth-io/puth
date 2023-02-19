@@ -20,7 +20,7 @@ do
     echo "Releasing puth $REMOTE";
 
     TMP_DIR="/tmp/puth-split"
-    REMOTE_URL="https://github.com/puth-io/$REMOTE.git"
+    REMOTE_URL="https://$GITHUB_TOKEN@github.com/puth-io/$REMOTE.git"
 
     rm -rf $TMP_DIR;
     mkdir $TMP_DIR;
