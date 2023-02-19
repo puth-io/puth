@@ -16,8 +16,6 @@ function remote()
     git remote add $1 "https://github.com/$2" || true
 }
 
-#git pull origin $CURRENT_BRANCH
-
 remote php puth-io/php.git
 remote laravel puth-io/laravel.git
 
