@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.PUTH_PUSH_SPLIT_TOKEN }}
       - uses: actions/setup-node@v3
         with:
           node-version: 18
