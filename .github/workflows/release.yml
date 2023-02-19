@@ -28,6 +28,9 @@ jobs:
       - name: 'Make dev release'
         if: github.ref == 'refs/heads/master'
         run: ./bin/make-release.js version dev-master
+        
+      - name: 'Commit release'
+        run: git commit -am "Make automatic release"
 
       - name: Split php repo
         run: ./bin/php-split.sh
