@@ -20,7 +20,6 @@ function remote()
 
 #remote php git@github.com:SEUH/puth-laravel.git
 remote laravel SEUH/puth-laravel.git
-https://github.com/SEUH/puth-laravel.git
 
 #split 'workspaces/clients/php/php' php
 split 'workspaces/clients/php/laravel' laravel
