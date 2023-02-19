@@ -8,7 +8,7 @@ CURRENT_BRANCH="master"
 function split()
 {
     SHA1=`./bin/splitsh-lite --prefix=$1`
-    git push $2 "$SHA1:refs/heads/$CURRENT_BRANCH" -f
+    git push "https://$PUTH_PUSH_SPLIT_TOKEN@github.com/SEUH/puth-laravel.git" "$SHA1:refs/heads/$CURRENT_BRANCH" -f
 }
 
 function remote()
