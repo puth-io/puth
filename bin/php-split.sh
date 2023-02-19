@@ -13,7 +13,7 @@ function split()
 
 function remote()
 {
-    git remote add $1 https://$github_push_token@github.com/$2 || true
+    git remote add $1 https://$PUTH_PUSH_SPLIT_TOKEN@github.com/$2 || true
 }
 
 git pull origin $CURRENT_BRANCH
