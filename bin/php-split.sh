@@ -18,8 +18,8 @@ function remote()
 
 #git pull origin $CURRENT_BRANCH
 
-#remote php git@github.com:SEUH/puth-laravel.git
-remote laravel SEUH/puth-laravel.git
+remote php puth-io/php.git
+remote laravel puth-io/laravel.git
 
-#split 'workspaces/clients/php/php' php
+split 'workspaces/clients/php/client' php
 split 'workspaces/clients/php/laravel' laravel
