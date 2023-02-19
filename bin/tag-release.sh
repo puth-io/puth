@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 # Make sure the release tag is provided.
 if (( "$#" != 1 ))
@@ -20,7 +21,7 @@ do
     echo "Releasing puth $REMOTE";
 
     TMP_DIR="/tmp/puth-split"
-    REMOTE_URL="https://$GITHUB_TOKEN@github.com/puth-io/$REMOTE.git"
+    REMOTE_URL="https://SEUH:$GITHUB_TOKEN@github.com/puth-io/$REMOTE.git"
 
     rm -rf $TMP_DIR;
     mkdir $TMP_DIR;
