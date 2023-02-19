@@ -25,4 +25,4 @@ jobs:
 
       - name: Split php repo
         run: |
-          PUTH_PUSH_SPLIT_TOKEN=${{ secrets.PUTH_PUSH_SPLIT_TOKEN }} ./bin/php-split.sh
+          PUTH_PUSH_SPLIT_TOKEN="${{ secrets.PUTH_PUSH_SPLIT_TOKEN }}" ./bin/php-split.sh
