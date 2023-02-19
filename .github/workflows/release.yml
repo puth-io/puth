@@ -25,3 +25,5 @@ jobs:
 
       - name: Split php repo
         run: ./bin/php-split.sh
+        env:
+          github_push_token: ${{ secrets.PUSH_PUSH_SPLIT }}
