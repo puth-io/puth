@@ -3,17 +3,17 @@
 set -e
 set -x
 
-CURRENT_BRANCH="client/php-test"
+CURRENT_BRANCH="master"
 
 function split()
 {
     SHA1=`./bin/splitsh-lite --prefix=$1`
-    git push "https://$PUTH_PUSH_SPLIT_TOKEN@github.com/SEUH/puth-laravel.git" "$SHA1:refs/heads/$CURRENT_BRANCH" -f
+    git push $2 "$SHA1:refs/heads/$CURRENT_BRANCH" -f
 }
 
 function remote()
 {
-    git remote add $1 "https://$PUTH_PUSH_SPLIT_TOKEN@github.com/$2" || true
+    git remote add $1 "https://github.com/$2" || true
 }
 
 #git pull origin $CURRENT_BRANCH
