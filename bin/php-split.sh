@@ -3,7 +3,7 @@
 set -e
 set -x
 
-CURRENT_BRANCH="client/php"
+CURRENT_BRANCH="master"
 
 function split()
 {
@@ -16,7 +16,7 @@ function remote()
     git remote add $1 https://$PUTH_PUSH_SPLIT_TOKEN@github.com/$2 || true
 }
 
-git pull origin $CURRENT_BRANCH
+#git pull origin $CURRENT_BRANCH
 
 #remote php git@github.com:SEUH/puth-laravel.git
 remote laravel SEUH/puth-laravel.git
