@@ -13,13 +13,14 @@ function split()
 
 function remote()
 {
-    git remote add $1 https://$PUTH_PUSH_SPLIT_TOKEN@github.com/$2 || true
+    git remote add $1 "https://$PUTH_PUSH_SPLIT_TOKEN@github.com/$2" || true
 }
 
 #git pull origin $CURRENT_BRANCH
 
 #remote php git@github.com:SEUH/puth-laravel.git
 remote laravel SEUH/puth-laravel.git
+https://github.com/SEUH/puth-laravel.git
 
 #split 'workspaces/clients/php/php' php
 split 'workspaces/clients/php/laravel' laravel
