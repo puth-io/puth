@@ -3,9 +3,9 @@ name: Release
 on:
   push:
     branches:
-      - client/php
-#    tags:
-#      - 'v*'
+      - master
+    tags:
+      - 'v*'
 
 jobs:
   release:
@@ -25,5 +25,4 @@ jobs:
         run: ./bin/make-release.js version 0.0.1
 
       - name: Split php repo
-        run: |
-          ./bin/php-split.sh
+        run: ./bin/php-split.sh
