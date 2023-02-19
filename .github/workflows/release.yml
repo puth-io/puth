@@ -21,8 +21,13 @@ jobs:
         with:
           node-version: 18
 
-      - name: 'Make release'
-        run: ./bin/make-release.js version 0.0.1
+      - name: 'Make tag release'
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: ./bin/make-release.js version ${{ steps.get_version.outputs.version-without-v }}
+        
+      - name: 'Make dev release'
+        if: github.ref == 'refs/heads/master'
+        run: ./bin/make-release.js version dev-master
 
       - name: Split php repo
         run: ./bin/php-split.sh
