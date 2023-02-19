@@ -30,7 +30,7 @@ jobs:
         run: ./bin/make-release.js version dev-master
         
       - name: 'Commit release'
-        run: git commit -am "Make automatic release"
+        run: git commit -am "Make automatic release" --author="Puth Release <release@puth.io>"
 
       - name: Split php repo
         run: ./bin/php-split.sh
