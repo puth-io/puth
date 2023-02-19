@@ -8,7 +8,7 @@ CURRENT_BRANCH="master"
 function split()
 {
     SHA1=`./bin/splitsh-lite --prefix=$1`
-    git push --tags -f $2 "$SHA1:refs/heads/$CURRENT_BRANCH"
+    git push -f $2 "$SHA1:refs/heads/$CURRENT_BRANCH"
 }
 
 function remote()
