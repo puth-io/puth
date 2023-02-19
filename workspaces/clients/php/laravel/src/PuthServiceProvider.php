@@ -14,6 +14,10 @@ class PuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->publishes([
+            __DIR__.'/../config/puth.php' => config_path('puth.php'),
+        ]);
+        
         if (! $this->app->environment('production')) {
             Route::group(array_filter([
                 'prefix' => config('dusk.path', config('puth.dusk.path', '_dusk')),
