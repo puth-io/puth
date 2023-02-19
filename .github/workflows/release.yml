@@ -24,5 +24,7 @@ jobs:
         run: ./bin/make-release.js version 0.0.1
 
       - name: Split php repo
+        env:
+          PUTH_PUSH_SPLIT_TOKEN: ${{ secrets.PUTH_PUSH_SPLIT_TOKEN }}
         run: |
-          PUTH_PUSH_SPLIT_TOKEN="${{ secrets.PUTH_PUSH_SPLIT_TOKEN }}" ./bin/php-split.sh
+          ./bin/php-split.sh
