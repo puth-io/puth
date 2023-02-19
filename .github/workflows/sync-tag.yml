@@ -1,13 +1,14 @@
-name: Tests
+name: Release
+
 on:
   push:
-    branches:
-      - master
-  pull_request:
-    branches: 
-      - master
+    tags:
+      - 'v*'
 
 jobs:
+  
+###### TEST ############################################################################################################
+
   yarn:
     runs-on: ubuntu-latest
     name: 'yarn cache'
@@ -198,4 +199,52 @@ jobs:
           path: |
             workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
             workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log      
+            
+###### RELEASE #########################################################################################################
+  
+  release:
+    needs: [ test-puth-node, build-test-image, php-client, php-laravel ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      # Push docker image
+      - uses: actions/download-artifact@v3
+        with:
+          name: puth-test-image
+          path: /tmp
+      - run: docker load --input /tmp/puth-test-image.tar
+        
+      - name: Push image
+        run: |
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
+          docker tag puth-test-image ${{ secrets.DOCKER_HUB_REPOSITORY }}:${{ steps.get_version.outputs.version-without-v }}
+          docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:${{ steps.get_version.outputs.version-without-v }}
+      # Sync split repos
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 'Make tag release'
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: ./bin/make-release.js version ${{ steps.get_version.outputs.version-without-v }}
+
+      - name: 'Commit release'
+        run: |
+          git config user.email "release@puth.io"
+          git config user.name "Puth Release"
+          git commit -am "Sync release ${{ steps.get_version.outputs.version }}"
+
+      - name: Split php repo
+        run: ./bin/php-split.sh
+
+      - name: 'Tag splits'
+        env:
+          PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+        run: ./bin/tag-release.sh ${{ steps.get_version.outputs.version }}
