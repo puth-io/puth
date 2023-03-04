@@ -158,7 +158,10 @@ class Context extends Generic {
       return;
     }
 
-    browser.on('disconnected', () => this.removeEventListenersFrom(browser));
+    browser.on('disconnected', async () => {
+      this.removeEventListenersFrom(browser);
+      await this.destroyBrowserByBrowser(browser);
+    });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
     this._trackPage((await browser.pages())[0]);
@@ -203,10 +206,12 @@ class Context extends Generic {
       return this.removeBrowserInstance(instance);
     }
 
-    if (instance.external) {
-      await instance.browser.disconnect();
-    } else {
-      await instance.browser.close();
+    if (instance.browser.isConnected()) {
+      if (instance.external) {
+        await instance.browser.disconnect();
+      } else {
+        await instance.browser.close();
+      }
     }
 
     if (instance.browserCleanup) {

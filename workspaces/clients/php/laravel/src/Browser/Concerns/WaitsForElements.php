@@ -222,7 +222,7 @@ trait WaitsForElements
         }
         
         return $this->waitUsing($seconds, 100, function () use ($script) {
-            return $this->puthPage->evaluate($script);
+            return $this->site->evaluate($script);
         }, $message);
     }
     
@@ -270,7 +270,7 @@ trait WaitsForElements
      */
     public function waitForDialog($seconds = 3)
     {
-        $this->puthPage->waitForDialog(['timeout' => $seconds * 1000]);
+        $this->site->waitForDialog(['timeout' => $seconds * 1000]);
     
         return $this;
     }
@@ -286,14 +286,14 @@ trait WaitsForElements
     {
         $token = Str::random();
         
-        $this->puthPage->evaluate("window['{$token}'] = {};");
+        $this->site->evaluate("window['{$token}'] = {};");
         
         if ($callback) {
             $callback($this);
         }
         
         return $this->waitUsing($seconds, 100, function () use ($token) {
-            return $this->puthPage->evaluate("typeof window['{$token}'] === 'undefined';");
+            return $this->site->evaluate("typeof window['{$token}'] === 'undefined';");
         }, 'Waited %s seconds for page reload.');
     }
     

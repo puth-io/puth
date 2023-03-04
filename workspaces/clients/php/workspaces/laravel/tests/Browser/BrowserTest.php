@@ -5,13 +5,14 @@ namespace Browser;
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\PuthDuskTestCase;
+use Tests\Browser\Pages\Playground;
 
 class BrowserTest extends PuthDuskTestCase
 {
     function test_fit_content()
     {
         $this->browse(function (Browser $browser) {
-            $page = $browser->puthPage;
+            $page = $browser->site;
             
             $browser->resize(800, 600);
             
@@ -21,7 +22,7 @@ class BrowserTest extends PuthDuskTestCase
             
             $browser->waitFor('#test')
                 ->fitContent();
-    
+            
             Assert::assertEquals(['width' => 2000, 'height' => 3000], (array)$page->viewport());
         });
     }

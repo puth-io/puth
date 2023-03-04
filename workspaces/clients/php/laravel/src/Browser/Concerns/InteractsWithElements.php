@@ -323,7 +323,7 @@ trait InteractsWithElements
     
     private function ensureDragInterceptionIsOn() {
         if (!$this->dragInterceptionEnabled) {
-            $this->puthPage->setDragInterception(true);
+            $this->site->setDragInterception(true);
             $this->dragInterceptionEnabled = true;
         }
     }
@@ -421,7 +421,7 @@ trait InteractsWithElements
      */
     public function acceptDialog($value = '')
     {
-        $this->puthPage->acceptDialog($value);
+        $this->site->acceptDialog($value);
         
         return $this;
     }
@@ -433,7 +433,7 @@ trait InteractsWithElements
      */
     public function dismissDialog()
     {
-        $this->puthPage->dismissDialog();
+        $this->site->dismissDialog();
     
         return $this;
     }

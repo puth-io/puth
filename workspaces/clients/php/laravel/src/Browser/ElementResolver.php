@@ -16,7 +16,7 @@ class ElementResolver
      *
      * @var mixed
      */
-    public $puthPage;
+    public $site;
     
     /**
      * The selector prefix for the resolver.
@@ -48,13 +48,13 @@ class ElementResolver
     /**
      * Create a new element resolver instance.
      *
-     * @param mixed $puthPage
+     * @param mixed $site
      * @param string $prefix
      * @return void
      */
-    public function __construct($puthPage, $prefix = '')
+    public function __construct($site, $prefix = '')
     {
-        $this->puthPage = $puthPage;
+        $this->site = $site;
         $this->prefix = trim($prefix);
     }
     
@@ -316,7 +316,7 @@ class ElementResolver
     protected function findById($selector)
     {
         if (preg_match('/^#[\w\-:]+$/', $selector)) {
-            return $this->puthPage->get(
+            return $this->site->get(
                 '#' . substr($selector, 1),
                 ['timeout' => 0],
             );
@@ -371,7 +371,7 @@ class ElementResolver
             return $element;
         }
         
-        return $this->puthPage->get(
+        return $this->site->get(
             $this->format($selector),
             ['timeout' => 0],
         );
@@ -386,7 +386,7 @@ class ElementResolver
     public function all($selector)
     {
         try {
-            return $this->puthPage->getAll(
+            return $this->site->getAll(
                 $this->format($selector),
                 ['timeout' => 0],
             );

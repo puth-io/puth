@@ -108,11 +108,14 @@ trait ProvidesBrowser
      */
     protected function newBrowser()
     {
+        $browser = $this->context->createBrowser([
+            'headless' => true,
+        ]);
+        
         return new Browser(
             $this->context,
-            $this->context->createBrowser([
-                'headless' => true,
-            ]),
+            $browser,
+            $browser->pages()[0],
             options: [
                 'legacyBrowserHandling' => $this->legacyBrowserHandling ?? false,
             ],

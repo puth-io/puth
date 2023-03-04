@@ -111,7 +111,7 @@ class BrowserTest extends PuthDuskTestCase
                 ->assertUrlIs((new Playground)->url())
                 ->blank();
             
-            Assert::assertEquals('about:blank', $browser->puthPage->url());
+            Assert::assertEquals('about:blank', $browser->site->url());
         });
     }
     

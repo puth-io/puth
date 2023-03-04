@@ -23,7 +23,7 @@ trait InteractsWithCookies
              return $this->addCookie($name, $value, $expiry, $options);
          }
     
-         $cookie = $this->puthPage->getCookieByName($name);
+         $cookie = $this->site->getCookieByName($name);
     
          if ($cookie) {
              $decryptedValue = decrypt(rawurldecode($cookie->value), $unserialize = false);
@@ -49,7 +49,7 @@ trait InteractsWithCookies
             return $this->addCookie($name, $value, $expiry, $options, false);
         }
         
-        $cookie = $this->puthPage->getCookieByName($name);
+        $cookie = $this->site->getCookieByName($name);
         
         if ($cookie) {
             return rawurldecode($cookie->value);
@@ -77,7 +77,7 @@ trait InteractsWithCookies
             $expiry = $expiry->getTimestamp();
         }
         
-        $this->puthPage->setCookie(array_merge($options, compact('expiry', 'name', 'value')));
+        $this->site->setCookie(array_merge($options, compact('expiry', 'name', 'value')));
         
         return $this;
     }
@@ -90,7 +90,7 @@ trait InteractsWithCookies
      */
     public function deleteCookie($name)
     {
-        $this->puthPage->deleteCookie(['name' => $name]);
+        $this->site->deleteCookie(['name' => $name]);
         
         return $this;
     }

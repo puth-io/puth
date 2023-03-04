@@ -36,6 +36,14 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           return index != null ? (await pages)[index] : pages;
         },
       },
+      [Constructors.Frame]: {
+        get: this.get,
+        contains: {
+          func: this.contains,
+          expects: Expects.Array,
+        },
+        visit: (page, url) => page.goto(url),
+      },
       [Constructors.Page]: {
         get: this.get,
         contains: {

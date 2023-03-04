@@ -30,8 +30,8 @@ trait MakesAssertions
     public function assertTitle($title)
     {
         Assert::assertEquals(
-            $title, $this->puthPage->title(),
-            "Expected title [{$title}] does not equal actual title [{$this->puthPage->title()}]."
+            $title, $this->site->title(),
+            "Expected title [{$title}] does not equal actual title [{$this->site->title()}]."
         );
         
         return $this;
@@ -46,8 +46,8 @@ trait MakesAssertions
     public function assertTitleContains($title)
     {
         Assert::assertTrue(
-            strpos($this->puthPage->title(), $title) !== false,
-            "Did not see expected value [{$title}] within title [{$this->puthPage->title()}]."
+            strpos($this->site->title(), $title) !== false,
+            "Did not see expected value [{$title}] within title [{$this->site->title()}]."
         );
         
         return $this;
@@ -248,7 +248,7 @@ trait MakesAssertions
         $this->madeSourceAssertion = true;
         
         Assert::assertTrue(
-            strpos($this->puthPage->content(), $code) !== false,
+            strpos($this->site->content(), $code) !== false,
             "Did not find expected source code [{$code}]"
         );
         
@@ -266,7 +266,7 @@ trait MakesAssertions
         $this->madeSourceAssertion = true;
         
         Assert::assertFalse(
-            strpos($this->puthPage->content(), $code) !== false,
+            strpos($this->site->content(), $code) !== false,
             "Found unexpected source code [{$code}]"
         );
         
@@ -318,7 +318,7 @@ trait MakesAssertions
     
     public function visible($selector)
     {
-        return $this->puthPage->visible($selector);
+        return $this->site->visible($selector);
     }
     
     /**
@@ -728,7 +728,7 @@ trait MakesAssertions
         $fullSelector = $this->resolver->format($selector);
         
         Assert::assertTrue(
-            $this->puthPage->visible($this->resolver->format($selector)),
+            $this->site->visible($this->resolver->format($selector)),
             "Element [{$fullSelector}] is not visible."
         );
         
@@ -783,7 +783,7 @@ trait MakesAssertions
     
         try {
             // TODO improve assertions with waits
-//            $this->puthPage->waitForSelector($fullSelector, ['hidden' => true]);
+//            $this->site->waitForSelector($fullSelector, ['hidden' => true]);
             $this->resolver->findOrFail($selector);
     
             $missing = false;
@@ -806,7 +806,7 @@ trait MakesAssertions
      */
      public function assertDialogOpened($message)
      {
-         $actualMessage = $this->puthPage->waitForDialog()?->message();
+         $actualMessage = $this->site->waitForDialog()?->message();
     
          Assert::assertEquals(
              $message, $actualMessage,
@@ -898,7 +898,7 @@ trait MakesAssertions
     {
         $element = $this->resolver->resolveForField($field);
         
-        $this->assertElementEquals($this->puthPage->focused(), $element);
+        $this->assertElementEquals($this->site->focused(), $element);
         
         return $this;
     }
@@ -913,7 +913,7 @@ trait MakesAssertions
     {
         $element = $this->resolver->resolveForField($field);
         
-        $this->assertElementNotEquals($this->puthPage->focused(), $element);
+        $this->assertElementNotEquals($this->site->focused(), $element);
         
         return $this;
     }
@@ -998,7 +998,7 @@ trait MakesAssertions
     {
         $fullSelector = $this->resolver->format($componentSelector);
         
-        return $this->puthPage->evaluate(
+        return $this->site->evaluate(
             "var el = document.querySelector('" . $fullSelector . "');" .
             "return typeof el.__vue__ === 'undefined' " .
             '? JSON.parse(JSON.stringify(el.__vueParentComponent.ctx)).' . $key .
@@ -1016,7 +1016,7 @@ trait MakesAssertions
     public function assertScript($expression, $expected = true)
     {
         Assert::assertEquals(
-            $expected, $this->puthPage->evaluate($expression),
+            $expected, $this->site->evaluate($expression),
             "JavaScript expression [{$expression}] mismatched."
         );
         

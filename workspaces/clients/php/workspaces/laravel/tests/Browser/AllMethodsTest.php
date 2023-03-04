@@ -77,7 +77,7 @@ class AllMethodsTest extends PuthDuskTestCase
             $browser->visit(new Playground);
             
             $browser->resize(300, 400);
-            $viewport = $browser->puthPage->viewport();
+            $viewport = $browser->site->viewport();
             
             static::assertEquals([300, 400], [
                 $viewport->width,
@@ -85,7 +85,7 @@ class AllMethodsTest extends PuthDuskTestCase
             ]);
             
             $browser->resize(600, 800);
-            $viewport = $browser->puthPage->viewport();
+            $viewport = $browser->site->viewport();
             
             static::assertEquals([600, 800], [
                 $viewport->width,

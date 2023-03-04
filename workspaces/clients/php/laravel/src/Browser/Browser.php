@@ -24,9 +24,12 @@ class Browser
     
     public $context;
     
-    public $puthBrowser;
+    public $browser;
     
-    public $puthPage;
+    /**
+     * @var CDPPage|Frame
+     */
+    public $site;
     
     /**
      * The base URL for all URLs.
@@ -132,13 +135,13 @@ class Browser
     
     public $legacyBrowserHandling = true;
     
-    public function __construct($context, $browser, $resolver = null, $options = [])
+    public function __construct($context, $browser, $site, $resolver = null, $options = [])
     {
         $this->context = $context;
-        $this->puthBrowser = $browser;
-        $this->puthPage = $this->puthBrowser->pages()[0];
+        $this->browser = $browser;
+        $this->site = $site;
         
-        $this->resolver = $resolver ?: new ElementResolver($this->puthPage);
+        $this->resolver = $resolver ?: new ElementResolver($this->site);
         
         $this->legacyBrowserHandling = $options['legacyBrowserHandling'] ?? false;
     }
@@ -167,7 +170,7 @@ class Browser
             $url = static::$baseUrl . '/' . ltrim($url, '/');
         }
         
-        $this->puthPage->visit($url);
+        $this->site->visit($url);
         
         // If the page variable was set, we will call the "on" method which will set a
         // page instance variable and call an assert method on the page so that the
@@ -198,7 +201,7 @@ class Browser
      */
     public function blank()
     {
-        $this->puthPage->visit('about:blank');
+        $this->site->visit('about:blank');
         
         return $this;
     }
@@ -245,7 +248,7 @@ class Browser
      */
     public function refresh($options = [])
     {
-        $this->puthPage->reload($options);
+        $this->site->reload($options);
         
         return $this;
     }
@@ -257,7 +260,7 @@ class Browser
      */
     public function back($options = [])
     {
-        $this->puthPage->goBack($options);
+        $this->site->goBack($options);
         
         return $this;
     }
@@ -269,7 +272,7 @@ class Browser
      */
     public function forward($options = [])
     {
-        $this->puthPage->goForward($options);
+        $this->site->goForward($options);
         
         return $this;
     }
@@ -283,7 +286,7 @@ class Browser
      */
     public function resize($width, $height)
     {
-        $this->puthPage->setViewport([
+        $this->site->setViewport([
             'width' => $width,
             'height' => $height,
         ]);
@@ -298,7 +301,7 @@ class Browser
      */
     public function fitContent()
     {
-        $html = $this->puthPage->get('html');
+        $html = $this->site->get('html');
         
         $boundingBox = (array) $html->boundingBox();
         
@@ -381,7 +384,7 @@ class Browser
         
         file_put_contents(
             $filePath,
-            $this->puthPage->screenshot($options),
+            $this->site->screenshot($options),
         );
         
         return $this;
@@ -438,7 +441,7 @@ class Browser
      */
     public function storeSource($name)
     {
-        $source = $this->puthPage->content();
+        $source = $this->site->content();
         
         if (!empty($source)) {
             file_put_contents(
@@ -488,9 +491,10 @@ class Browser
     {
         $browser = new static(
             $this->context,
-            $this->puthBrowser,
+            $this->browser,
+            $this->site,
             new ElementResolver(
-                $this->puthPage,
+                $this->site,
                 $this->resolver->format($selector),
             ),
         );
@@ -518,9 +522,10 @@ class Browser
     {
         $browser = new static(
             $this->context,
-            $this->puthBrowser,
+            $this->browser,
+            $this->site,
             new ElementResolver(
-                $this->puthPage,
+                $this->site,
                 $selector,
             ),
         );
@@ -578,18 +583,6 @@ class Browser
         );
     }
 
-//    /**
-//     * Ensure that jQuery is available on the page.
-//     *
-//     * @return void
-//     */
-//    public function ensurejQueryIsAvailable()
-//    {
-//        if ($this->driver->executeScript('return window.jQuery == null')) {
-//            $this->driver->executeScript(file_get_contents(__DIR__.'/../bin/jquery.js'));
-//        }
-//    }
-    
     /**
      * Pause for the given amount of milliseconds.
      *
@@ -642,7 +635,10 @@ class Browser
      */
     public function quit()
     {
-        $this->context->destroyBrowserByBrowser($this->puthBrowser);
+//        if ($this->site->getRepresents() === 'CDPPage') {
+//            $this->site->close();
+//        }
+        $this->context->destroyBrowserByBrowser($this->browser);
     }
     
     /**
@@ -665,7 +661,7 @@ class Browser
      */
     public function dump()
     {
-        dd($this->puthPage->content());
+        dd($this->site->content());
     }
     
     /**
@@ -680,8 +676,8 @@ class Browser
             'resolver' => $this->resolver,
             'page' => $this->page,
             'context' => $this->context,
-            'puthBrowser' => $this->puthBrowser,
-            'puthPage' => $this->puthPage,
+            'puthBrowser' => $this->browser,
+            'site' => $this->site,
         ], $this);
         
         return $this;

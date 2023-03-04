@@ -20,7 +20,7 @@ trait MakesUrlAssertions
     {
         $pattern = str_replace('\*', '.*', preg_quote($url, '/'));
         
-        $segments = parse_url($this->puthPage->url());
+        $segments = parse_url($this->site->url());
         
         $currentUrl = sprintf(
             '%s://%s%s%s',
@@ -32,7 +32,7 @@ trait MakesUrlAssertions
         
         Assert::assertThat(
             $currentUrl, new RegularExpression('/^' . $pattern . '$/u'),
-            "Actual URL [{$this->puthPage->url()}] does not equal expected URL [{$url}]."
+            "Actual URL [{$this->site->url()}] does not equal expected URL [{$url}]."
         );
         
         return $this;
@@ -48,7 +48,7 @@ trait MakesUrlAssertions
     {
         $pattern = str_replace('\*', '.*', preg_quote($scheme, '/'));
         
-        $actual = parse_url($this->puthPage->url(), PHP_URL_SCHEME) ?? '';
+        $actual = parse_url($this->site->url(), PHP_URL_SCHEME) ?? '';
         
         Assert::assertThat(
             $actual, new RegularExpression('/^' . $pattern . '$/u'),
@@ -66,7 +66,7 @@ trait MakesUrlAssertions
      */
     public function assertSchemeIsNot($scheme)
     {
-        $actual = parse_url($this->puthPage->url(), PHP_URL_SCHEME) ?? '';
+        $actual = parse_url($this->site->url(), PHP_URL_SCHEME) ?? '';
         
         Assert::assertNotEquals(
             $scheme, $actual,
@@ -86,7 +86,7 @@ trait MakesUrlAssertions
     {
         $pattern = str_replace('\*', '.*', preg_quote($host, '/'));
         
-        $actual = parse_url($this->puthPage->url(), PHP_URL_HOST) ?? '';
+        $actual = parse_url($this->site->url(), PHP_URL_HOST) ?? '';
         
         Assert::assertThat(
             $actual, new RegularExpression('/^' . $pattern . '$/u'),
@@ -104,7 +104,7 @@ trait MakesUrlAssertions
      */
     public function assertHostIsNot($host)
     {
-        $actual = parse_url($this->puthPage->url(), PHP_URL_HOST) ?? '';
+        $actual = parse_url($this->site->url(), PHP_URL_HOST) ?? '';
         
         Assert::assertNotEquals(
             $host, $actual,
@@ -124,10 +124,10 @@ trait MakesUrlAssertions
     {
         $pattern = str_replace('\*', '.*', preg_quote($port, '/'));
         
-        $actual = (string)parse_url($this->puthPage->url(), PHP_URL_PORT) ?? '';
+        $actual = (string)parse_url($this->site->url(), PHP_URL_PORT) ?? '';
 
         if (empty($actual)) {
-            $scheme = parse_url($this->puthPage->url(), PHP_URL_SCHEME);
+            $scheme = parse_url($this->site->url(), PHP_URL_SCHEME);
 
             if ($scheme === 'http') {
                 $actual = '80';
@@ -153,7 +153,7 @@ trait MakesUrlAssertions
      */
     public function assertPortIsNot($port)
     {
-        $actual = parse_url($this->puthPage->url(), PHP_URL_PORT) ?? '';
+        $actual = parse_url($this->site->url(), PHP_URL_PORT) ?? '';
         
         Assert::assertNotEquals(
             $port, $actual,
@@ -174,7 +174,7 @@ trait MakesUrlAssertions
         $pattern = str_replace('\*', '.*', preg_quote($path, '/'));
         
         $this->retryFunc(function () use ($path, $pattern) {
-            $actualPath = parse_url($this->puthPage->url(), PHP_URL_PATH) ?? '';
+            $actualPath = parse_url($this->site->url(), PHP_URL_PATH) ?? '';
 
             Assert::assertThat(
                 $actualPath, new RegularExpression('/^' . $pattern . '$/u'),
@@ -193,7 +193,7 @@ trait MakesUrlAssertions
      */
     public function assertPathBeginsWith($path)
     {
-        $actualPath = parse_url($this->puthPage->url(), PHP_URL_PATH) ?? '';
+        $actualPath = parse_url($this->site->url(), PHP_URL_PATH) ?? '';
         
         Assert::assertStringStartsWith(
             $path, $actualPath,
@@ -211,7 +211,7 @@ trait MakesUrlAssertions
      */
     public function assertPathIsNot($path)
     {
-        $actualPath = parse_url($this->puthPage->url(), PHP_URL_PATH) ?? '';
+        $actualPath = parse_url($this->site->url(), PHP_URL_PATH) ?? '';
         
         Assert::assertNotEquals(
             $path, $actualPath,
@@ -231,7 +231,7 @@ trait MakesUrlAssertions
     {
         $pattern = preg_quote($fragment, '/');
 
-        $actualFragment = (string)parse_url($this->puthPage->evaluate('window.location.href'), PHP_URL_FRAGMENT);
+        $actualFragment = (string)parse_url($this->site->evaluate('window.location.href'), PHP_URL_FRAGMENT);
 
         Assert::assertThat(
             $actualFragment, new RegularExpression('/^' . str_replace('\*', '.*', $pattern) . '$/u'),
@@ -249,7 +249,7 @@ trait MakesUrlAssertions
      */
     public function assertFragmentBeginsWith($fragment)
     {
-        $actualFragment = (string)parse_url($this->puthPage->evaluate('window.location.href'), PHP_URL_FRAGMENT);
+        $actualFragment = (string)parse_url($this->site->evaluate('window.location.href'), PHP_URL_FRAGMENT);
         
         Assert::assertStringStartsWith(
             $fragment, $actualFragment,
@@ -267,7 +267,7 @@ trait MakesUrlAssertions
      */
     public function assertFragmentIsNot($fragment)
     {
-        $actualFragment = (string)parse_url($this->puthPage->evaluate('window.location.href'), PHP_URL_FRAGMENT);
+        $actualFragment = (string)parse_url($this->site->evaluate('window.location.href'), PHP_URL_FRAGMENT);
         
         Assert::assertNotEquals(
             $fragment, $actualFragment,
@@ -324,7 +324,7 @@ trait MakesUrlAssertions
      */
     public function assertQueryStringMissing($name)
     {
-        $parsedUrl = parse_url($this->puthPage->url());
+        $parsedUrl = parse_url($this->site->url());
         
         if (!array_key_exists('query', $parsedUrl)) {
             Assert::assertTrue(true);
@@ -336,7 +336,7 @@ trait MakesUrlAssertions
         
         Assert::assertArrayNotHasKey(
             $name, $output,
-            "Found unexpected query string parameter [{$name}] in [" . $this->puthPage->url() . '].'
+            "Found unexpected query string parameter [{$name}] in [" . $this->site->url() . '].'
         );
         
         return $this;
@@ -350,18 +350,18 @@ trait MakesUrlAssertions
      */
     public function assertHasQueryStringParameter($name)
     {
-        $parsedUrl = parse_url($this->puthPage->url());
+        $parsedUrl = parse_url($this->site->url());
         
         Assert::assertArrayHasKey(
             'query', $parsedUrl,
-            'Did not see expected query string in [' . $this->puthPage->url() . '].'
+            'Did not see expected query string in [' . $this->site->url() . '].'
         );
         
         parse_str($parsedUrl['query'], $output);
         
         Assert::assertArrayHasKey(
             $name, $output,
-            "Did not see expected query string parameter [{$name}] in [" . $this->puthPage->url() . '].'
+            "Did not see expected query string parameter [{$name}] in [" . $this->site->url() . '].'
         );
         
         return $output;

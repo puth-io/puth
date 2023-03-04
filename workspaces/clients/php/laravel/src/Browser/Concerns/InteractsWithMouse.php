@@ -53,7 +53,7 @@ trait InteractsWithMouse
      */
     public function clickAtPoint($x, $y)
     {
-        $this->puthPage->mouse->click($x, $y);
+        $this->site->mouse->click($x, $y);
         
         return $this;
     }
@@ -66,7 +66,7 @@ trait InteractsWithMouse
      */
     public function clickAtXPath($expression)
     {
-        $elements = $this->puthPage->getX($expression);
+        $elements = $this->site->getX($expression);
         
         if (count($elements) === 0) {
             throw new Exception('No such element found');
@@ -88,8 +88,8 @@ trait InteractsWithMouse
         $element = $this->resolver->findOrFail($selector);
         $element->scrollIntoView();
         $point = $element->clickablePoint();
-        $this->puthPage->mouse->move($point->x, $point->y);
-        $this->puthPage->mouse->down();
+        $this->site->mouse->move($point->x, $point->y);
+        $this->site->mouse->down();
         
         return $this;
     }
@@ -127,7 +127,7 @@ trait InteractsWithMouse
      */
     public function releaseMouse()
     {
-        $this->puthPage->mouse->up();
+        $this->site->mouse->up();
         
         return $this;
     }

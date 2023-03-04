@@ -1,5 +1,6 @@
 const Constructors = {
   Page: 'CDPPage',
+  Frame: 'Frame',
   Browser: 'CDPBrowser',
   BrowserContext: 'CDPBrowserContext',
   JSHandle: 'CDPJSHandle',
