@@ -241,6 +241,16 @@ class Browser
         return $this;
     }
     
+//    TODO
+//    public function parallel(Closure $closure)
+//    {
+//        // capture calls
+//        dd($closure());
+//        // end capture
+//        
+//        // send all captured calls at once
+//    }
+    
     /**
      * Refresh the page.
      *
@@ -452,24 +462,28 @@ class Browser
         return $this;
     }
 
-//    /**
-//     * Switch to a specified frame in the browser and execute the given callback.
-//     *
-//     * @param  string  $selector
-//     * @param  \Closure  $callback
-//     * @return $this
-//     */
-//    public function withinFrame($selector, Closure $callback)
-//    {
-//        $this->driver->switchTo()->frame($this->resolver->findOrFail($selector));
-//        
-//        $callback($this);
-//        
-//        $this->driver->switchTo()->defaultContent();
-//        
-//        return $this;
-//    }
-//    
+    /**
+     * Switch to a specified frame in the browser and execute the given callback.
+     *
+     * @param  string  $selector
+     * @param  \Closure  $callback
+     * @return $this
+     */
+    public function withinFrame($selector, Closure $callback)
+    {
+        $iframe = $this->resolver->findOrFail($selector)->contentFrame();
+    
+        $browser = new static(
+            $this->context,
+            $this->browser,
+            $iframe,
+        );
+        
+        $callback($browser);
+        
+        return $this;
+    }
+    
     /**
      * Execute a Closure with a scoped browser instance.
      *

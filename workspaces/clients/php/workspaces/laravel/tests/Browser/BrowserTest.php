@@ -26,4 +26,25 @@ class BrowserTest extends PuthDuskTestCase
             Assert::assertEquals(['width' => 2000, 'height' => 3000], (array)$page->viewport());
         });
     }
+    
+    function test_within_iframe()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->withinFrame('#iframe-example', function (Browser $iframe) {
+                    $iframe->assertUrlIs('https://puth.dev/');
+                });
+        });
+    }
+    
+//    function test_parallel()
+//    {
+//        $this->browse(function (Browser $browser) {
+//            $browser->visit(new Playground)
+//                ->parallel(fn() => [
+//                    $browser->waitForEvent('event'),
+//                    $browser->click('#test'),
+//                ]);
+//        });
+//    }
 }

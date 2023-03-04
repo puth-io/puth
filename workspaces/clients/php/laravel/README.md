@@ -41,10 +41,16 @@ Another difference is that `puth/laravel` does not start the browser process. Fo
 Docker) and point the client to the instance of `puth`. `puth/laravel` once contained code to start the `puth` process
 but I don't think enough people would use this feature so I removed it.
 
+Iframes (`withinFrame()`) are only partially supported at the moment.
+
 ### Changed methods
 
 - `$browser->keys()`: The keys method doesn't use the php-webdriver keymap. **Instead** the
   [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) is used and it is **case sensitive**!
+
+### Partially supported methods
+
+- `$browser->withinFrame`: Puppeteers Frame object misses many functions from Page. Need to implement missing functions in PuthStandardPlugin.
 
 ### Unsupported methods
 
@@ -58,4 +64,3 @@ but I don't think enough people would use this feature so I removed it.
 
 - `$browser->storeConsoleLog('filename')`: There is no exact equivalent for console logs but we can provide better ones
 - `$browser->waitForEvent`:
-- `$browser->withinFrame`:
