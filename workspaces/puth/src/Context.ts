@@ -14,9 +14,11 @@ import { DaemonBrowser } from './DaemonBrowser';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
 
-import { promises as fsPromise } from 'fs';
+import {mkdtempSync, promises as fsPromise} from 'fs';
+import { mkdtemp } from 'node:fs/promises';
 import Return from './Context/Return';
 import Constructors from './Context/Constructors';
+import {tmpdir} from "os";
 const { writeFile } = fsPromise;
 
 export enum Capability {
@@ -72,6 +74,8 @@ class Context extends Generic {
     },
     dialog: new Map<Page, Dialog>(),
   };
+  
+  private cleanupCallbacks: any = [];
 
   constructor(puth: Puth, options: any = {}) {
     super();
@@ -187,6 +191,8 @@ class Context extends Generic {
     this.unregisterAllEventListeners();
 
     await Promise.all(this.instances.map((instance) => this.destroyBrowserByInstance(instance)));
+    
+    await Promise.all(this.cleanupCallbacks);
 
     return true;
   }
@@ -646,6 +652,10 @@ class Context extends Generic {
       return returnValue;
     }
 
+    if (returnValue === null) {
+      return Return.Null();
+    }
+
     if (Array.isArray(returnValue)) {
       if (returnValue.length === 0) {
         return Return.Values(returnValue);
@@ -659,11 +669,19 @@ class Context extends Generic {
         return Return.Value(returnValue);
       }
 
-      if (typeof returnValue[0] === 'object') {
-        return Return.Objects(returnValue.map((item) => this.returnCached(item)));
-      }
+      // if (typeof returnValue[0] === 'object') {
+      //   return Return.Objects(returnValue.map((item) => {
+      //     if (item === undefined) {
+      //       return Return.Undefined();
+      //     }
+      //    
+      //     return this.returnCached(item);
+      //   }));
+      // }
+      
+      return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv)));
 
-      return Return.Value(returnValue);
+      // return Return.Value(returnValue);
     }
 
     if (typeof returnValue === 'string' || typeof returnValue === 'boolean' || typeof returnValue === 'number') {
@@ -676,10 +694,6 @@ class Context extends Generic {
 
     if (Utils.resolveConstructorName(returnValue)) {
       return this.returnCached(returnValue);
-    }
-
-    if (returnValue === null) {
-      return Return.Null();
     }
 
     return Return.Undefined();
@@ -743,6 +757,17 @@ class Context extends Generic {
         message: `Property ${action.property} could not be deleted ${on.constructor ? on.constructor.name : 'object'}`,
       };
     }
+  }
+
+  async saveTemporaryFile(name, content) {
+    let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
+    let tmpFilePath = path.join(tmpPath, name);
+    
+    await writeFile(tmpFilePath, content);
+
+    this.cleanupCallbacks.push(async () => fsPromise.rm(tmpPath, {force: true, recursive: true}));
+    
+    return Return.Value(tmpFilePath);
   }
 
   resolveOn(representation): Context | any {

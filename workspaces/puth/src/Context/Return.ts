@@ -23,6 +23,10 @@ export default class Return {
     return Return.make('GenericValue', value);
   }
 
+  static Array(value) {
+    return Return.make('GenericArray', value);
+  }
+
   static Values(value) {
     return Return.make('GenericValues', value);
   }

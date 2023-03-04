@@ -79,6 +79,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         },
         its: this.its,
         clickAndWait: this.clickAndWait,
+        clickAndFile: this.clickAndFile,
         visible: this.visible,
         children: this.children,
         siblings: this.siblings,
@@ -304,6 +305,10 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
   async clickAndWait(element, options, waitOptions) {
     await Promise.all([element?.frame.page().waitForNavigation(waitOptions), element.click(options)]);
+  }
+
+  async clickAndFile(element, options, waitOptions) {
+    return await Promise.all([element?.frame.page().waitForFileChooser(waitOptions), element.click(options)]);
   }
 
   async evaluate(page, func) {

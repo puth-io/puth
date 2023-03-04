@@ -83,35 +83,32 @@ trait PerformsActionsTrait
             return $this;
         }
 
-        if (!property_exists($body, 'type')) {
+        return $this->parseGeneric($body, $arguments, $onError);
+    }
+    
+    private function parseGeneric($generic, $arguments, $onError)
+    {
+        if (!property_exists($generic, 'type')) {
             throw new \Exception('Puth server response: $body->type not defined!');
         }
-
-        if ($body->type === 'error') {
-            return $onError($body, $arguments);
-        } else if ($body->type === 'GenericObject') {
-            return new GenericObject($body->id, $body->type, $body->represents, $this);
-        } else if ($body->type === 'GenericObjects') {
-            return array_map(function ($item) {
-                return new GenericObject($item->id, $item->type, $item->represents, $this);
-            }, $body->value);
-        } else if ($body->type === 'GenericValue') {
-            return $body->value;
-        } else if ($body->type === 'GenericValues') {
-            return $body->value;
-        } else if ($body->type === 'GenericNull') {
-            return null;
-        } else if ($body->type === 'GenericSelf') {
-            return $this;
-        } else if ($body->type === 'GenericUndefined') {
-            return $this;
-        } else if ($body->type === 'PuthAssertion') {
-            return $body;
-        } else {
-            $this->log('unhandled body type: ' . $body->type);
-        }
-
-        return $this;
+        
+        return match ($generic->type) {
+            'GenericValue', 'GenericValues' => $generic->value,
+            'GenericObject' => new GenericObject($generic->id, $generic->type, $generic->represents, $this),
+            'GenericObjects' => array_map(
+                fn($item) => new GenericObject($item->id, $item->type, $item->represents, $this),
+                $generic->value
+            ),
+            'GenericArray' => array_map(
+                fn($item) => $this->parseGeneric($item, $arguments, $onError),
+                $generic->value
+            ),
+            'GenericNull' => null,
+            'GenericSelf', 'GenericUndefined' => $this,
+            'PuthAssertion' => $generic,
+            'error' => $onError($generic, $arguments),
+            default => $this,
+        };
     }
 
     private function toJson($response)

@@ -22,7 +22,7 @@ class Browser
         Macroable::__call as macroCall;
     }
     
-    public $puthContext;
+    public $context;
     
     public $puthBrowser;
     

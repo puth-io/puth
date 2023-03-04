@@ -2,7 +2,6 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Facebook\WebDriver\WebDriverKeys;
 use Illuminate\Support\Arr;
 
 trait InteractsWithElements
@@ -29,27 +28,21 @@ trait InteractsWithElements
         return $this->resolver->find($selector);
     }
     
-//    TODO maan...what is this, why do we need this
-//
-//    /**
-//     * Click the link with the given text.
-//     *
-//     * @param string $link
-//     * @param string $element
-//     * @return $this
-//     */
-//    public function clickLink($link, $element = 'a')
-//    {
-//        $this->ensurejQueryIsAvailable();
-//        
-//        $selector = addslashes(trim($this->resolver->format("{$element}")));
-//        
-//        $link = str_replace("'", "\\\\'", $link);
-//        
-//        $this->driver->executeScript("jQuery.find(`{$selector}:contains('{$link}'):visible`)[0].click();");
-//        
-//        return $this;
-//    }
+    /**
+     * Click the link with the given text.
+     *
+     * @param string $link
+     * @param string $element
+     * @return $this
+     */
+    public function clickLink($link, $element = 'a')
+    {
+        $selector = $this->resolver->format($element) . "[href='{$link}']";
+        
+        $this->resolver->findOrFail($selector)->click();
+        
+        return $this;
+    }
     
     /**
      * Directly get or set the value attribute of an input field.
@@ -290,14 +283,23 @@ trait InteractsWithElements
      * Attach the given file to the field.
      *
      * @param string $field
-     * @param string $path
+     * @param string|array<string> $paths
      * @return $this
      */
-    public function attach($field, $path)
+    public function attach($field, $paths)
     {
-        $element = $this->resolver->resolveForAttachment($field);
+        $paths = Arr::wrap($paths);
         
-        $element->setFileDetector(new LocalFileDetector)->sendKeys($path);
+        $element = $this->resolver->resolveForAttachment($field);
+    
+        [$fileChooser] = $element->clickAndFile();
+        
+        $tmpFiles = [];
+        foreach ($paths as $path) {
+            $tmpFiles[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
+        }
+        
+        $fileChooser->accept($tmpFiles);
         
         return $this;
     }

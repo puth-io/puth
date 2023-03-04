@@ -40,7 +40,6 @@ but I don't think enough people would use this feature so I removed it.
 
 - `$browser->fitContent()`:
 - `$browser->storeConsoleLog('filename')`: There is no exact equivalent for console logs but we can provide better ones
-- `$browser->attach('photo', __DIR__.'/photos/mountains.png');`:
 - `$browser->keys('selector', ['{shift}', 'taylor'], 'swift');`:
 - `$browser->waitForEvent`: 
 - `$browser->withinFrame`:
