@@ -2814,13 +2814,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromium-bidi@npm:0.4.3":
-  version: 0.4.3
-  resolution: "chromium-bidi@npm:0.4.3"
+"chromium-bidi@npm:0.4.4":
+  version: 0.4.4
+  resolution: "chromium-bidi@npm:0.4.4"
+  dependencies:
+    mitt: 3.0.0
   peerDependencies:
     devtools-protocol: "*"
-    mitt: "*"
-  checksum: 280c3b5c2315847cf25b5e356a43f915dea1205f27a8fb10443fad6832d8e08c1878e3b62104c50a27bf4fd6d07868882187b5226195a5bacb9f572f9940f7fb
+  checksum: 153a276fcce8eb934c9e6a6f8bde5bc37c454d76e82994ce3eca16ab32415a44c553cba3e2ab7ab48ef65f7423f4be35e0ff5b57c7eb378f65fd9b2042df7d03
   languageName: node
   linkType: hard
 
@@ -5520,7 +5521,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mitt@npm:^3.0.0":
+"mitt@npm:3.0.0, mitt@npm:^3.0.0":
   version: 3.0.0
   resolution: "mitt@npm:3.0.0"
   checksum: f7be5049d27d18b1dbe9408452d66376fa60ae4a79fe9319869d1b90ae8cbaedadc7e9dab30b32d781411256d468be5538996bb7368941c09009ef6bbfa6bfc7
@@ -6673,11 +6674,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"puppeteer-core@npm:19.7.0":
-  version: 19.7.0
-  resolution: "puppeteer-core@npm:19.7.0"
+"puppeteer-core@npm:19.7.2":
+  version: 19.7.2
+  resolution: "puppeteer-core@npm:19.7.2"
   dependencies:
-    chromium-bidi: 0.4.3
+    chromium-bidi: 0.4.4
     cross-fetch: 3.1.5
     debug: 4.3.4
     devtools-protocol: 0.0.1094867
@@ -6693,20 +6694,20 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: a4d41a1f4b5e4088a2fe11b774efaea0b7634236a6da1f8e27590e1d737bf7fe3593829c8ffca53e7a945bf8c6c174891ba1bc0ed7e73c03af81d077af5da782
+  checksum: dafb2f63b74e3270426011ddcd1f4a06e74ca44322137d4240bfaf6090d8450fbf3607336109286861aa96e1f4f2ab9c13cef66c2fc4ec1a690d92d48e8fe773
   languageName: node
   linkType: hard
 
-"puppeteer@npm:^19.7.0":
-  version: 19.7.0
-  resolution: "puppeteer@npm:19.7.0"
+"puppeteer@npm:^19.7":
+  version: 19.7.2
+  resolution: "puppeteer@npm:19.7.2"
   dependencies:
     cosmiconfig: 8.0.0
     https-proxy-agent: 5.0.1
     progress: 2.0.3
     proxy-from-env: 1.1.0
-    puppeteer-core: 19.7.0
-  checksum: 46d8ad795126864a1da58777b60b12671e5c96ece4b2c352fe1cf0b8d4f6db5b4c2fe78bd5dbde69dadc479a3db6138c21e28786d8827996c2f733da0e02074f
+    puppeteer-core: 19.7.2
+  checksum: 10a77ee40173e56ddce605c07296b7e538a7e18b0a517e55d570fb2944c7d983d1b19581e31e0f3626e21544c63d20bbac1583307a7a3afbfc80f83fa695f1ae
   languageName: node
   linkType: hard
 
@@ -6737,7 +6738,7 @@ __metadata:
     mitt: ^3.0.0
     mocha: ^10.2.0
     prettier: ^2.8.1
-    puppeteer: ^19.7.0
+    puppeteer: ^19.7
     tmp-promise: ^2.1.1
     ts-mocha: ^10.0.0
     ts-node: ^10.9.1
