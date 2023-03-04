@@ -21,10 +21,6 @@ import Constructors from './Context/Constructors';
 import {tmpdir} from "os";
 const { writeFile } = fsPromise;
 
-export enum Capability {
-  EVAL = 'EVAL',
-}
-
 class Context extends Generic {
   private readonly id: string = v4();
   private readonly type: string = 'Context';

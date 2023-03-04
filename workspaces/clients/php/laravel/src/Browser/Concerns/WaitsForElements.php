@@ -17,8 +17,6 @@ trait WaitsForElements
      * @param \Closure $callback
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function whenAvailable($selector, Closure $callback, $seconds = null)
     {
@@ -31,8 +29,6 @@ trait WaitsForElements
      * @param string $selector
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitFor($selector, $seconds = null)
     {
@@ -49,8 +45,6 @@ trait WaitsForElements
      * @param string $selector
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitUntilMissing($selector, $seconds = null)
     {
@@ -73,8 +67,6 @@ trait WaitsForElements
      * @param string $text
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitUntilMissingText($text, $seconds = null)
     {
@@ -93,8 +85,6 @@ trait WaitsForElements
      * @param array|string $text
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitForText($text, $seconds = null)
     {
@@ -114,8 +104,6 @@ trait WaitsForElements
      * @param array|string $text
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitForTextIn($selector, $text, $seconds = null)
     {
@@ -132,8 +120,6 @@ trait WaitsForElements
      * @param string $link
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitForLink($link, $seconds = null)
     {
@@ -162,8 +148,6 @@ trait WaitsForElements
      * @param string $path
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitForLocation($path, $seconds = null)
     {
@@ -181,8 +165,6 @@ trait WaitsForElements
      * @param array $parameters
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitForRoute($route, $parameters = [], $seconds = null)
     {
@@ -232,8 +214,6 @@ trait WaitsForElements
      * @param int|null $seconds
      * @param string|null $message
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitUntil($script, $seconds = null, $message = null)
     {
@@ -301,8 +281,6 @@ trait WaitsForElements
      * @param \Closure|null $callback
      * @param int|null $seconds
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitForReload($callback = null, $seconds = null)
     {
@@ -371,8 +349,6 @@ trait WaitsForElements
      * @param \Closure $callback
      * @param string|null $message
      * @return $this
-     *
-     * @throws \Facebook\WebDriver\Exception\TimeOutException
      */
     public function waitUsing($seconds, $interval, Closure $callback, $message = null)
     {

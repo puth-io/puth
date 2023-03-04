@@ -1,8 +1,7 @@
 import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
-import { Capability } from '../Context';
-import { capitalizeFirstLetter, retryFor, sleep } from '../Utils';
+import { capitalizeFirstLetter, retryFor } from '../Utils';
 import { ElementHandle } from 'puppeteer';
 import Return from '../Context/Return';
 import Constructors from '../Context/Constructors';
@@ -419,25 +418,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
       (rv) => rv !== undefined,
     );
   }
-
-  // // TODO for fastest resolving: check if dialog exists in cache, if not register custom handler for page that resolves
-  // waitForDialog(page, options: any = {}) {
-  //   return retryFor(
-  //     5000,
-  //     () => {
-  //       console.log('checking...');
-  //
-  //       let idx = this.getContext().caches.dialog.waitingForUse.findIndex((item) => item[0] === page);
-  //
-  //       if (idx === -1) {
-  //         return;
-  //       }
-  //
-  //       return this.getContext().caches.dialog.waitingForUse.splice(idx, 1)[0];
-  //     },
-  //     (rv) => rv !== undefined,
-  //   );
-  // }
 
   scrollIntoView(elementHandle) {
     return elementHandle.evaluateHandle((handle) => handle.scrollIntoViewIfNeeded(true));

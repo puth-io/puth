@@ -300,3 +300,5 @@ Temporary Items
 
 .yarn/cache
 .yarn/install-state.gz
+
+.phpunit.result.cache
