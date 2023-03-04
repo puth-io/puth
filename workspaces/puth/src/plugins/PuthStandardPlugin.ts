@@ -44,8 +44,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           expects: Expects.Array,
         },
         visit: (page, url) => page.goto(url),
-        evaluate: this.evaluate,
-        evaluateRaw: this.evaluateRaw,
         visible: this.visible,
         blur: this.blur,
         // @ts-ignore
@@ -309,22 +307,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
   async clickAndFile(element, options, waitOptions) {
     return await Promise.all([element?.frame.page().waitForFileChooser(waitOptions), element.click(options)]);
-  }
-
-  async evaluate(page, func) {
-    if (this.getContext().hasCapability(Capability.EVAL)) {
-      // TODO Bypass puppeteer func type check
-      // 1: puppeteer evaluate runs Runtime.evaluate if func is type String
-      //    else Runtime.callFunctionOn is used. We need to bypass this check
-      //    so we can give puppeteer the raw string.
-      // tslint:disable-next-line:no-eval
-      func = eval(func);
-    }
-    return await page.evaluate(func);
-  }
-
-  async evaluateRaw(page, func) {
-    return await page.evaluate(func);
   }
 
   async visible(element, selector?) {

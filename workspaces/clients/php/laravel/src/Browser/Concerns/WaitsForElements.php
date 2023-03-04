@@ -242,7 +242,7 @@ trait WaitsForElements
         }
         
         return $this->waitUsing($seconds, 100, function () use ($script) {
-            return $this->puthPage->evaluateRaw($script);
+            return $this->puthPage->evaluate($script);
         }, $message);
     }
     

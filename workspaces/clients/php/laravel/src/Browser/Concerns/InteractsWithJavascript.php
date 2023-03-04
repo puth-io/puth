@@ -13,7 +13,7 @@ trait InteractsWithJavascript
     public function script($scripts)
     {
         return collect((array)$scripts)->map(function ($script) {
-            return $this->puthPage->evaluateRaw($script);
+            return $this->puthPage->evaluate($script);
         })->all();
     }
 }

@@ -997,17 +997,13 @@ trait MakesAssertions
     public function vueAttribute($componentSelector, $key)
     {
         $fullSelector = $this->resolver->format($componentSelector);
-    
-        $this->context->setCapability('EVAL', true);
-        $value =  $this->puthPage->evaluateRaw(
+        
+        return $this->puthPage->evaluate(
             "var el = document.querySelector('" . $fullSelector . "');" .
             "return typeof el.__vue__ === 'undefined' " .
             '? JSON.parse(JSON.stringify(el.__vueParentComponent.ctx)).' . $key .
             ': el.__vue__.' . $key
         );
-        $this->context->setCapability('EVAL', false);
-        
-        return $value;
     }
     
     /**
@@ -1020,7 +1016,7 @@ trait MakesAssertions
     public function assertScript($expression, $expected = true)
     {
         Assert::assertEquals(
-            $expected, $this->puthPage->evaluateRaw($expression),
+            $expected, $this->puthPage->evaluate($expression),
             "JavaScript expression [{$expression}] mismatched."
         );
         

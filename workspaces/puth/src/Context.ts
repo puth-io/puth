@@ -59,8 +59,6 @@ class Context extends Generic {
 
   private eventFunctions: [any, string, () => {}][] = [];
 
-  private capabilities = {};
-
   private readonly createdAt;
 
   public caches: {
@@ -92,7 +90,6 @@ class Context extends Generic {
       Snapshots.pushToCache(this, {
         ...this.serialize(true),
         options: this.options,
-        capabilities: this.capabilities,
         createdAt: this.createdAt,
       });
     }
@@ -388,14 +385,6 @@ class Context extends Generic {
     await page.goto('about:blank');
   }
 
-  setCapability(capability, value: true | false) {
-    this.capabilities[capability] = value;
-  }
-
-  hasCapability(capability: Capability) {
-    return this.capabilities[capability] === true;
-  }
-
   testFailed() {
     this.options.test.status = 'failed';
 
@@ -669,19 +658,7 @@ class Context extends Generic {
         return Return.Value(returnValue);
       }
 
-      // if (typeof returnValue[0] === 'object') {
-      //   return Return.Objects(returnValue.map((item) => {
-      //     if (item === undefined) {
-      //       return Return.Undefined();
-      //     }
-      //    
-      //     return this.returnCached(item);
-      //   }));
-      // }
-      
       return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv)));
-
-      // return Return.Value(returnValue);
     }
 
     if (typeof returnValue === 'string' || typeof returnValue === 'boolean' || typeof returnValue === 'number') {
