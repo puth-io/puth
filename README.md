@@ -63,3 +63,9 @@ Puth has a client package for PHP. You can find more information in [the package
 Puth has a JS/TS client package currently bundled in `puth`. A standalone client package should be available soon.
 
 You can find [the javascript client instructions here](https://puth.dev/docs/javascript).
+
+## Known Bugs
+
+### Subsequent keyboard down() calls ignore modifier keys
+
+https://github.com/puppeteer/puppeteer/issues/9770

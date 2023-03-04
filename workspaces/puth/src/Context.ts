@@ -657,19 +657,40 @@ class Context extends Generic {
       return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv)));
     }
 
-    if (typeof returnValue === 'string' || typeof returnValue === 'boolean' || typeof returnValue === 'number') {
+    if (this.isValueSerializable(returnValue)) {
       return Return.Value(returnValue);
     }
 
     if (returnValue?.type === 'PuthAssertion') {
       return returnValue;
     }
-
-    if (Utils.resolveConstructorName(returnValue)) {
+    
+    let constructor = Utils.resolveConstructorName(returnValue);
+    if (constructor) {
+      if (constructor === 'Object') {
+        if (this.isObjectSerializable(returnValue)) {
+          return Return.Value(returnValue);
+        }
+      }
+      
       return this.returnCached(returnValue);
     }
 
     return Return.Undefined();
+  }
+  
+  private isObjectSerializable(object) {
+    for (let key of Object.keys(object)) {
+      if (!this.isValueSerializable(object[key])) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  private isValueSerializable(value) {
+    return typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number';
   }
 
   async get(action) {

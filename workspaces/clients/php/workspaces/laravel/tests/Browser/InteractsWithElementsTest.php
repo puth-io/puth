@@ -24,7 +24,7 @@ class InteractsWithElementsTest extends PuthDuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $testFile = __DIR__ . '/files/test.txt';
-            
+    
             $browser->visit(new Playground)
                 ->attach('file-test-input', $testFile);
             
@@ -47,6 +47,34 @@ class InteractsWithElementsTest extends PuthDuskTestCase
                 fn($path) => file_get_contents($path),
                 $files,
             )));
+        });
+    }
+    
+    function test_type_keys()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->type('#actions-type input', 'test-1234')
+                ->append('#actions-type input', '{Ctrl}{a}{Delete}')
+                ->assertValue('#actions-type input', '')
+                ->type('#actions-type input', 'test-1234')
+                ->append('#actions-type input', '{Shift}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}')
+                ->append('#actions-type input', '5')
+                ->assertValue('#actions-type input', 'test-5')
+                ->append('#actions-type input', '{Control}{a}{Delete}')
+                ->assertValue('#actions-type input', '')
+                ->keys('#actions-type input', 'a', 'b', 'c')
+                ->assertValue('#actions-type input', 'abc')
+                ->keys('#actions-type input', '{Backspace}')
+                ->assertValue('#actions-type input', 'ab')
+                ->keys('#actions-type input', '{Backspace}', ['d', 'e'])
+                ->assertValue('#actions-type input', 'ade')
+                ->keys('#actions-type input', ['d', 'e'], '{Control}{a}{Delete}')
+                ->assertValue('#actions-type input', '');
+//                TODO pptr bug https://github.com/puppeteer/puppeteer/issues/9770
+//                ->type('#actions-type input', '{Shift}test')
+//                ->assertValue('#actions-type input', 't');
+                
         });
     }
 }

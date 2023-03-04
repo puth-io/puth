@@ -291,26 +291,29 @@ class Browser
         return $this;
     }
 
-///// This is mainly used for screenshots but pptr can do full page screenshots
-///// TODO may be needed by some, implement later
-//
-//    /**
-//     * Make the browser window as large as the content.
-//     *
-//     * @return $this
-//     */
-//    public function fitContent()
-//    {
-//        $this->driver->switchTo()->defaultContent();
-//        
-//        $html = $this->driver->findElement(WebDriverBy::tagName('html'));
-//        
-//        if (! empty($html) && $html->getSize()->getWidth() > 0 && $html->getSize()->getHeight() > 0) {
-//            $this->resize($html->getSize()->getWidth(), $html->getSize()->getHeight());
-//        }
-//        
-//        return $this;
-//    }
+    /**
+     * Make the browser window as large as the content.
+     *
+     * @return $this
+     */
+    public function fitContent()
+    {
+        $html = $this->puthPage->get('html');
+        
+        $boundingBox = (array) $html->boundingBox();
+        
+        $scrollSizes = [
+            'width' => $html->scrollWidth,
+            'height' => $html->scrollHeight,
+        ];
+        
+        $this->resize(
+            $boundingBox['width'] > $scrollSizes['width'] ? $boundingBox['width'] : $scrollSizes['width'],
+            $boundingBox['height'] > $scrollSizes['height'] ? $boundingBox['height'] : $scrollSizes['height'],
+        );
+        
+        return $this;
+    }
     
     /**
      * Disable fit on failures.

@@ -85,7 +85,6 @@ trait InteractsWithElements
         return $this->resolver->findOrFail($selector)->getProperty($attribute)->jsonValue();
     }
     
-    // TODO implement
     /**
      * Send the given keys to the element matching the given selector.
      *
@@ -95,31 +94,17 @@ trait InteractsWithElements
      */
     public function keys($selector, ...$keys)
     {
-        $this->resolver->findOrFail($selector)->sendKeys($this->parseKeys($keys));
+        $element = $this->resolver->findOrFail($selector);
+        
+        foreach ($keys as $key) {
+            if (is_array($key)) {
+                $key = implode($key);
+            }
+    
+            $element->type($key);
+        }
         
         return $this;
-    }
-    
-    // TODO implement
-    /**
-     * Parse the keys before sending to the keyboard.
-     *
-     * @param array $keys
-     * @return array
-     */
-    protected function parseKeys($keys)
-    {
-        return collect($keys)->map(function ($key) {
-            if (is_string($key) && Str::startsWith($key, '{') && Str::endsWith($key, '}')) {
-                $key = constant(WebDriverKeys::class . '::' . strtoupper(trim($key, '{}')));
-            }
-            
-            if (is_array($key) && Str::startsWith($key[0], '{')) {
-                $key[0] = constant(WebDriverKeys::class . '::' . strtoupper(trim($key[0], '{}')));
-            }
-            
-            return $key;
-        })->all();
     }
     
     /**
@@ -131,7 +116,7 @@ trait InteractsWithElements
      */
     public function type($field, $value)
     {
-        $this->resolver->resolveForTyping($field)->clear()->type($value); //->sendKeys($value);
+        $this->resolver->resolveForTyping($field)->clear()->type($value);
         
         return $this;
     }

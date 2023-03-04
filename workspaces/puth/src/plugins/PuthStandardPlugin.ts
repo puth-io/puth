@@ -160,7 +160,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
       let specialKey = /{(.+?)}/.exec(chs);
 
       if (specialKey) {
-        let key = this.KeyMapping[specialKey[1]] ?? capitalizeFirstLetter(specialKey[1]);
+        let key = this.KeyMapping[specialKey[1].toLowerCase()] ?? capitalizeFirstLetter(specialKey[1]);
 
         if (typeof key === 'function') {
           await key(element, options);
