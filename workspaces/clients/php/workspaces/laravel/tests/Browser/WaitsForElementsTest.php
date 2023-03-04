@@ -82,6 +82,17 @@ class WaitsForElementsTest extends PuthDuskTestCase
         });
     }
     
+    function test_wait_for_event()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->click('#wait-for-event-document')
+                ->waitForEvent('test-event', 'document')
+                ->click('#wait-for-event-element')
+                ->waitForEvent('test-event', '#wait-for-event-element');
+        });
+    }
+    
     function test_when_available()
     {
         $this->browse(function (Browser $browser) {

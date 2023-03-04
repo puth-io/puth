@@ -160,7 +160,8 @@ class Context extends Generic {
 
     browser.on('disconnected', async () => {
       this.removeEventListenersFrom(browser);
-      await this.destroyBrowserByBrowser(browser);
+      // TODO ensure browser cleanup
+      // await this.destroyBrowserByBrowser(browser);
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])

@@ -108,6 +108,14 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           el.evaluate((e, o) => (e.tagName === 'BODY' ? window.scrollTo(...o) : e.scrollTo(...o)), options),
         innerText: async (el) => (await el.getProperty('innerText')).jsonValue(),
         innerHTML: async (el) => (await el.getProperty('innerHTML')).jsonValue(),
+        evaluate: async (el, func) => {
+          if (typeof func === 'string') {
+            // tslint:disable-next-line:no-eval
+            func = eval(func);
+          }
+
+          return el.evaluate(func);
+        },
         evaluateHandle: async (el, func) => {
           if (typeof func === 'string') {
             // tslint:disable-next-line:no-eval

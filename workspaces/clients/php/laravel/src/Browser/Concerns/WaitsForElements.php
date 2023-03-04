@@ -271,7 +271,7 @@ trait WaitsForElements
     public function waitForDialog($seconds = 3)
     {
         $this->site->waitForDialog(['timeout' => $seconds * 1000]);
-    
+        
         return $this;
     }
     
@@ -319,25 +319,17 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitForEvent($type, $target = null, $seconds = null)
+    public function waitForEvent($type, $target = 'body', $seconds = null)
     {
-        $seconds = is_null($seconds) ? static::$waitSeconds : $seconds;
+        // TODO implement timeout
         
         if ($target !== 'document' && $target !== 'window') {
-            $target = $this->resolver->findOrFail($target ?? '');
+            $target = $this->resolver->findOrFail($target);
+            $target->evaluate("element => (new Promise(function (resolve, reject) { element.addEventListener('$type', resolve, { once: true }); }))");
+        } else {
+            $this->site->evaluate("(new Promise(function (resolve, reject) { $target.addEventListener('$type', resolve, { once: true }); }))");
         }
-        
-        $this->driver->manage()->timeouts()->setScriptTimeout($seconds);
-        
-        try {
-            $this->driver->executeAsyncScript(
-                'eval(arguments[0]).addEventListener(arguments[1], () => arguments[2](), { once: true });',
-                [$target, $type]
-            );
-        } catch (ScriptTimeoutException $e) {
-            throw new TimeoutException("Waited {$seconds} seconds for event [{$type}].");
-        }
-        
+
         return $this;
     }
     
