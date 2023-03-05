@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2015",
+    "target": "es6",
     "lib": [
-      "es2018",
+      "es2021",
       "dom"
     ],
     "declaration": true,
@@ -14,7 +14,8 @@
     "outDir": "./lib",
     "strict": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src"

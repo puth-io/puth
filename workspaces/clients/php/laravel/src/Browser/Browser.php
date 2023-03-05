@@ -257,21 +257,66 @@ class Browser
      * @param Closure|null $callback
      * @return $this
      */
-    public function parallel(Closure $closure, Closure $callback = null)
+    public function all(Closure $closure, Closure $callback = null)
+    {
+        return $this->multiple('all', $closure, $callback);
+    }
+    
+    /**
+     * Accumulates calls and executes them together.
+     * 
+     * Problem:
+     * - single methods making multiple calls would hang on the first call
+     * 
+     * Solution:
+     * - temporarily disabled accumulation on basic calls like get()
+     * - opt in certain methods (most likely ones that 'act') for accumulation (waitForSelector, click, ...)
+     * 
+     * @internal 
+     * @param Closure $closure
+     * @param Closure|null $callback
+     * @return $this
+     */
+    public function any(Closure $closure, Closure $callback = null)
+    {
+        return $this->multiple('any', $closure, $callback);
+    }
+    
+    /**
+     * Accumulates calls and executes them together.
+     * 
+     * Problem:
+     * - single methods making multiple calls would hang on the first call
+     * 
+     * Solution:
+     * - temporarily disabled accumulation on basic calls like get()
+     * - opt in certain methods (most likely ones that 'act') for accumulation (waitForSelector, click, ...)
+     * 
+     * @internal 
+     * @param Closure $closure
+     * @param Closure|null $callback
+     * @return $this
+     */
+    public function race(Closure $closure, Closure $callback = null)
+    {
+        return $this->multiple('race', $closure, $callback);
+    }
+    
+    private function multiple($type, Closure $closure, Closure $callback = null)
     {
         $this->context->startAccumulatingCalls();
-        
+    
         $closure();
-        
+    
         $this->context->stopAccumulatingCalls();
     
         // send all captured calls at once
-        $result = $this->context->sendAccumulatedCalls();
-        
+        $result = $this->context->sendAccumulatedCalls($type);
+    
         if ($callback) {
-            $callback($result);
+            $callback(...$result);
         }
-        
+    
         return $this;
     }
     

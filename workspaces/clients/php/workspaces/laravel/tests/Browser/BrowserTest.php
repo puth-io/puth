@@ -68,18 +68,45 @@ class BrowserTest extends PuthDuskTestCase
         });
     }
     
-    function test_parallel_navigation()
+    function test_parallel_all()
     {
         $this->browse(function (Browser $browser) {
             $site = $browser->site;
             
             $browser->visit(new Playground)
-                ->parallel(fn() => [
+                ->all(fn() => [
                     $site->waitForNavigation(),
                     $site->click('a[href="https://puth.dev/docs"]'),
                 ])
-                ->assertUrlIs('https://puth.dev/docs/')
-            ;
+                ->assertUrlIs('https://puth.dev/docs/');
+        });
+    }
+    
+    function test_parallel_any()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->any(fn() => [
+                    $browser->site->waitForDialog(),
+                    $browser->site->click('#dialog-prompt'),
+                ], function ($dialog) {
+                    $dialog->accept('1234');
+                })
+                ->assertSeeIn('#dialog-prompt-result', '1234');
+        });
+    }
+    
+    function test_parallel_race()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                ->race(fn() => [
+                    $browser->site->waitForDialog(),
+                    $browser->site->click('#dialog-prompt'),
+                ], function ($dialog) {
+                    $dialog->accept('1234');
+                })
+                ->assertSeeIn('#dialog-prompt-result', '1234');
         });
     }
 }

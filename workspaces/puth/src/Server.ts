@@ -115,8 +115,16 @@ export default class Puth {
     return this.contexts[packet.context.id].call(packet);
   }
 
-  public contextCallMultiple(packet) {
-    return this.contexts[packet.context.id].callMultiple(packet.calls);
+  public contextCallAll(packet) {
+    return this.contexts[packet.context.id].callAll(packet.calls);
+  }
+
+  public contextCallAny(packet) {
+    return this.contexts[packet.context.id].callAny(packet.calls);
+  }
+
+  public contextCallRace(packet) {
+    return this.contexts[packet.context.id].callRace(packet.calls);
   }
 
   public contextGet(packet) {
@@ -174,9 +182,19 @@ export default class Puth {
         return reply.send(await this.contextCall(request.body));
       });
 
-      // Perform multiple method call on context
-      fastify.patch('/context/call/multiple', async (request, reply) => {
-        return reply.send(await this.contextCallMultiple(request.body));
+      // Perform all method call on context
+      fastify.patch('/context/call/all', async (request, reply) => {
+        return reply.send(await this.contextCallAll(request.body));
+      });
+
+      // Perform all method call on context
+      fastify.patch('/context/call/any', async (request, reply) => {
+        return reply.send(await this.contextCallAny(request.body));
+      });
+
+      // Perform all method call on context
+      fastify.patch('/context/call/race', async (request, reply) => {
+        return reply.send(await this.contextCallRace(request.body));
       });
 
       // Perform action on context

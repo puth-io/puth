@@ -134,6 +134,10 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         tagName: async (el) => (await el.evaluateHandle((handle) => handle.tagName)).jsonValue(),
         dragToOffset: this.dragToOffset,
       },
+      'Dialog': {
+        accept: this.dialogAccept,
+        dismiss: this.dialogDismiss,
+      }
     });
   }
 
@@ -489,14 +493,34 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
   acceptDialog(page, message = '', options = {}) {
     return this.waitForDialog(page, options)
-      .then((dialog) => dialog.accept(message))
-      .finally(() => this.getContext().caches.dialog.delete(page));
+      .then((dialog) => this.dialogAccept(dialog, message));
+  }
+  
+  private dialogAccept(dialog, message = '') {
+    return dialog.accept(message)
+        .finally(() => this.getContext().caches.dialog.forEach(
+            (value, key) => {
+              if (value === dialog) {
+                this.getContext().caches.dialog.delete(key);
+              }
+            },
+        ));
   }
 
   dismissDialog(page, options = {}) {
     return this.waitForDialog(page, options)
-      .then((dialog) => dialog.dismiss())
-      .finally(() => this.getContext().caches.dialog.delete(page));
+      .then((dialog) => this.dialogDismiss(dialog));
+  }
+  
+  private dialogDismiss(dialog) {
+    return dialog.dismiss()
+      .finally(() => this.getContext().caches.dialog.forEach(
+          (value, key) => {
+            if (value === dialog) {
+              this.getContext().caches.dialog.delete(key);
+            }
+          },
+      ));
   }
 
   async dragToOffset(elementHandle, point, options = {}) {

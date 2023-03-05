@@ -490,8 +490,16 @@ class Context extends Generic {
     };
   }
   
-  async callMultiple(calls) {
+  async callAll(calls) {
     return Promise.all(calls.map(call => this.call(call)));
+  }
+  
+  async callAny(calls) {
+    return [await Promise.any(calls.map(call => this.call(call)))];
+  }
+  
+  async callRace(calls) {
+    return [await Promise.race(calls.map(call => this.call(call)))];
   }
 
   async call(packet) {

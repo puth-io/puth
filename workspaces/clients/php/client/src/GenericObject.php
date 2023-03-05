@@ -70,14 +70,14 @@ class GenericObject
         });
     }
     
-    public function sendAccumulatedCalls()
+    public function sendAccumulatedCalls($type)
     {
         if ($this->context->debug) {
             $this->log("call multiple");
             $this->log('with: ' . json_encode($this->context->accumulatedCalls));
         }
         
-        $response = $this->getClient()->patch('context/call/multiple', ['json' => [
+        $response = $this->getClient()->patch("context/call/{$type}", ['json' => [
             'context' => $this->context->serialize(),
             'calls' => $this->context->accumulatedCalls,
         ]]);
@@ -89,7 +89,7 @@ class GenericObject
         }
     
         $parts = json_decode($response->getBody());
-    
+        
         $return = [];
         foreach ($parts as $idx => $part) {
             $call = $this->context->accumulatedCalls[$idx];
@@ -105,6 +105,8 @@ class GenericObject
                 }
             );
         }
+        
+        $this->context->accumulatedCalls = [];
     
         return $return;
     }
