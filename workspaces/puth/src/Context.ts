@@ -810,6 +810,7 @@ class Context extends Generic {
     return {
       id: this.getId(),
       type: this.getType(toLowerCase),
+      represents: 'PuthContext',
       test: this.getTest(),
       group: this.getGroup(),
     };

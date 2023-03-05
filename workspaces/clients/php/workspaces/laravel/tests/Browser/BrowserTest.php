@@ -75,7 +75,9 @@ class BrowserTest extends PuthDuskTestCase
 //                ->parallel(fn() => [
 //                    $browser->waitForEvent('event'),
 //                    $browser->click('#test'),
-//                ]);
+//                ], function ($result) {
+//                    
+//                });
 //        });
 //    }
 }

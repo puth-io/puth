@@ -242,13 +242,18 @@ class Browser
     }
     
 //    TODO
-//    public function parallel(Closure $closure)
+//    public function parallel(Closure $closure, ?Closure $callback)
 //    {
 //        // capture calls
-//        dd($closure());
+//        $closure();
 //        // end capture
-//        
+//    
 //        // send all captured calls at once
+//        $result = executeParallel();
+//        
+//        if ($callback) {
+//            $callback($result);
+//        }
 //    }
     
     /**

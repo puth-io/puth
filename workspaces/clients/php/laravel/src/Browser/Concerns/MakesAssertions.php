@@ -177,8 +177,7 @@ trait MakesAssertions
         $element = $this->resolver->findOrFail($selector);
     
         try {
-            // TODO implement retry safe "notContains" function or maybe provide ['negate' => true]?
-            $result = $element->contains($text, ['timeout' => 0]);
+            $result = $element->contains($text);
         } catch (\Exception $exception) {
         };
         
@@ -204,8 +203,7 @@ trait MakesAssertions
         $element = $this->resolver->findOrFail($selector);
     
         try {
-            // TODO implement retry safe "notContains" function or maybe provide ['negate' => true]?
-            $result = $element->contains($text, ['timeout' => 0]);
+            $result = $element->contains($text, ['negate' => true]);
         } catch (\Exception $exception) {
         };
     

@@ -255,7 +255,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return retryFor(
       this.getContext().getTimeout(options),
       async () => (await element.$$(`xpath/descendant-or-self::${tag}[contains(${resolver}, "${search}")]`)).reverse(),
-      (v) => v.length > 0,
+        options?.negate ? (v) => v.length === 0 : (v) => v.length > 0,
     );
   }
 
