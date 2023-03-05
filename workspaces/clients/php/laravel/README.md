@@ -59,8 +59,3 @@ Iframes (`withinFrame()`) are only partially supported at the moment.
 - `$browser->typeInDialog(selector, value)`: Please use the accept method which now takes a value `$browser->acceptDialog(value)`
 - `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
 - `$browser->ensurejQueryIsAvailable()`: Puppeteer doesn't come with jquery because its not needed
-
-### Implementation needed
-
-- `$browser->storeConsoleLog('filename')`: There is no exact equivalent for console logs but we can provide better ones
-- `$browser->waitForEvent`:

@@ -206,27 +206,6 @@ class SnapshotHandler {
     };
   }
 
-  /**
-   * Creates a snapshot of the current dom (with element states)
-   *
-   * @deprecated
-   * @version 2
-   */
-  async makeSnapshotV2(context: Context, page: Page, snapshotState: SnapshotState): Promise<ISnapshot | undefined> {
-    if (!page || page.url() === 'about:blank') {
-      return;
-    }
-
-    return {
-      type: 'snapshot',
-      version: 2,
-      url: page.url(),
-      viewport: page.viewport(),
-      isJavascriptEnabled: page.isJavaScriptEnabled(),
-      html: await this.createPageSnapshot(page),
-    };
-  }
-
   async createPageSnapshot(page: Page, { cacheAllStyleTags = false } = {}): Promise<any> {
     if (!page || page.url() === 'about:blank') {
       return;
@@ -335,7 +314,7 @@ class SnapshotHandler {
     return [].concat(...this.cache.values());
   }
 
-  getAllCachedItemsFrom(context) {
+  getAllCachedItemsFrom(context): any[] {
     if (!this.cache.has(context)) {
       return [];
     }

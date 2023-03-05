@@ -419,29 +419,25 @@ class Browser
         
         return $this;
     }
-
-//    TODO implement
-//
-//    /**
-//     * Store the console output with the given name.
-//     *
-//     * @param  string  $name
-//     * @return $this
-//     */
-//    public function storeConsoleLog($name)
-//    {
-//        if (in_array($this->driver->getCapabilities()->getBrowserName(), static::$supportsRemoteLogs)) {
-//            $console = $this->driver->manage()->getLog('browser');
-//            
-//            if (! empty($console)) {
-//                file_put_contents(
-//                    sprintf('%s/%s.log', rtrim(static::$storeConsoleLogAt, '/'), $name), json_encode($console, JSON_PRETTY_PRINT)
-//                );
-//            }
-//        }
-//        
-//        return $this;
-//    }
+    
+    /**
+     * Store the console output with the given name.
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function storeConsoleLog($name)
+    {
+        $console = $this->context->getSnapshotsByType('log');
+        
+        if (!empty($console)) {
+            file_put_contents(
+                sprintf('%s/%s.log', rtrim(static::$storeConsoleLogAt, '/'), $name), json_encode($console, JSON_PRETTY_PRINT)
+            );
+        }
+        
+        return $this;
+    }
     
     /**
      * Store a snapshot of the page's current source code with the given name.

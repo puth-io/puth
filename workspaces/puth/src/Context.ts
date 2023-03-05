@@ -345,6 +345,10 @@ class Context extends Generic {
     //   console.log(request);
     // });
   }
+  
+  getSnapshotsByType(type) {
+    return Return.Values(Snapshots.getAllCachedItemsFrom(this).filter(item => item?.type === type));
+  }
 
   // // TODO write _untrackDialogs
   // async _trackDialogs(page) {

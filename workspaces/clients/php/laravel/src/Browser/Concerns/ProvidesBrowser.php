@@ -25,24 +25,6 @@ trait ProvidesBrowser
      * @var array
      */
     protected static $afterClassCallbacks = [];
-
-///// Implemented in PuthDuskTestCase
-//
-//    /**
-//     * Tear down the Dusk test case class.
-//     *
-//     * @afterClass
-//     *
-//     * @return void
-//     */
-//    public static function tearDownDuskClass()
-//    {
-//        static::closeAll();
-//        
-//        foreach (static::$afterClassCallbacks as $callback) {
-//            $callback();
-//        }
-//    }
     
     /**
      * Register an "after class" tear down callback.
@@ -75,7 +57,7 @@ trait ProvidesBrowser
             
             throw $e;
         } finally {
-//            $this->storeConsoleLogsFor($browsers);
+            $this->storeConsoleLogsFor($browsers);
             static::$browsers = $this->closeAllButPrimary($browsers);
         }
     }
@@ -143,7 +125,7 @@ trait ProvidesBrowser
      */
     protected function captureFailuresFor($browsers)
     {
-        $browsers->each(function ($browser, $key) {
+        $browsers->each(function (Browser $browser, $key) {
             $fullPageScreenshot = property_exists($browser, 'fitOnFailure') && $browser->fitOnFailure;
             
             $name = $this->getCallerName();
@@ -162,7 +144,7 @@ trait ProvidesBrowser
      */
     protected function storeConsoleLogsFor($browsers)
     {
-        $browsers->each(function ($browser, $key) {
+        $browsers->each(function (Browser $browser, $key) {
             $name = $this->getCallerName();
             
             $browser->storeConsoleLog($name . '-' . $key);
