@@ -34,28 +34,26 @@ class ExampleBrowserTest extends PuthDuskTestCase
 
 ## Transition from Dusk
 
-The `puth/laravel` package provides an almost complete replacement for Dusk. There are only 4 methods that are not
-supported and never will be due to the limitations of the underlying library `puppeteer`.
+The `puth/laravel` package provides a full* replacement for Dusk.
+* Four methods are not supported and never will be due to the limitations of the underlying library `puppeteer`.
 
 Another difference is that `puth/laravel` does not start the browser process. For that you need to run `puth` (e.g. in
-Docker) and point the client to the instance of `puth`. `puth/laravel` once contained code to start the `puth` process
+Docker) and point the client to the `puth` instance. `puth/laravel` once contained code to launch the `puth` process
 but I don't think enough people would use this feature so I removed it.
 
-Iframes (`withinFrame()`) are only partially supported at the moment.
+Iframes (in the `withinFrame()` method) are only partially supported at the moment.
+
+Console logs are different then the dusk console logs. They contain more information but the underlying json structure changed.
 
 ### Changed methods
 
-- `$browser->keys()`: The keys method doesn't use the php-webdriver keymap. **Instead** the
+- `$browser->keys()`: This method no longer uses the php-webdriver keymap. **Instead** the
   [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) is used and it is **case sensitive**!
-
-### Partially supported methods
-
-- `$browser->withinFrame`: Puppeteers Frame object misses many functions from Page. Need to implement missing functions in PuthStandardPlugin.
+- `$browser->typeInDialog(selector, value)`: Please use the accept method which now takes a value `$browser->acceptDialog(value)`
 
 ### Unsupported methods
 
 - `$browser->maximize()`: Puppeteer has no way of controlling the actual browser window
 - `$browser->move($x = 100, $y = 100)`: Puppeteer has no way of controlling the actual browser window
-- `$browser->typeInDialog(selector, value)`: Please use the accept method which now takes a value `$browser->acceptDialog(value)`
-- `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore you can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
-- `$browser->ensurejQueryIsAvailable()`: Puppeteer doesn't come with jquery because its not needed
+- `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
+- `$browser->ensurejQueryIsAvailable()`: Puppeteer doesn't come with jquery because it's not needed

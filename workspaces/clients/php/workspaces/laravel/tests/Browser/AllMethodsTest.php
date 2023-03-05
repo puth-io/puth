@@ -214,11 +214,11 @@ class AllMethodsTest extends PuthDuskTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->click('#actions-click > button')
-                ->assertSeeIn('#actions-click', 'clicked button')
+                ->assertSeeIn('#actions-click-verify', 'clicked button')
                 ->doubleClick('#actions-click-double')
-                ->assertSeeIn('#actions-click', 'double clicked button')
+                ->assertSeeIn('#actions-click-double-verify', 'double clicked button')
                 ->rightClick('#actions-click-mousedown')
-                ->assertSeeIn('#actions-click', 'mousedown: 3')
+                ->assertSeeIn('#actions-click-mousedown-verify', 'mousedown: 3')
                 ->mouseover('#actions-hover')
                 ->assertSeeIn('#actions-hover', 'hovering');
             

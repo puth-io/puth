@@ -239,10 +239,22 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     );
   }
 
-  contains(element, search, options?) {
+  contains(element, tag, search?, options?) {
+    if (typeof search !== "string") {
+      options = search;
+      search = undefined;
+    }
+    
+    if (search === undefined) {
+      search = tag;
+      tag = '*';
+    }
+    
+    let resolver = options?.exact ? 'text()' : '.';
+    
     return retryFor(
       this.getContext().getTimeout(options),
-      () => element.$x("//text()[contains(., '" + search + "')]"),
+      async () => (await element.$$(`xpath/descendant-or-self::${tag}[contains(${resolver}, "${search}")]`)).reverse(),
       (v) => v.length > 0,
     );
   }
