@@ -71,7 +71,7 @@ function puthContextTests(env) {
 
     describe('Browser', function () {
       it('can visit site', async function () {
-        let browser = await await this.context.createBrowser();
+        let browser = await this.context.createBrowser();
 
         let page = (await browser.pages())[0];
         await page.visit('https://playground.puth.dev');

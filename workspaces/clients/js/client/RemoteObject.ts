@@ -211,6 +211,14 @@ export function genericGet(on, context, representation, property) {
       return response.value;
     } else if (response?.type === 'GenericValues') {
       return response.value;
+    } else if (response?.type === 'GenericSelf') {
+      return on;
+    } else if (response?.type === 'GenericNull') {
+      return null;
+    } else if (response?.type === 'GenericUndefined') {
+      return on;
+    } else if (response?.type === 'GenericArray') {
+      return response.value.map(ro => handleResponse(ro));
     } else if (response?.type === 'PuthAssertion') {
       context.callAssertionHandler(response);
       // return response;
