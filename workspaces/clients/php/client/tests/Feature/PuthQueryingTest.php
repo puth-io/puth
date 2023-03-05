@@ -20,6 +20,6 @@ class PuthQueryingTest extends PuthTestCase
     
     function testContains()
     {
-        $this->assertCount(2, $this->page->get('#querying-contains')->contains('apple'));
+        $this->assertCount(3, $this->page->get('#querying-contains')->contains('apple'));
     }
 }

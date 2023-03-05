@@ -256,6 +256,8 @@ export function recoverAfterRender(command, snapshot, doc) {
     ut = snapshot?.html?.untracked;
   } else if (snapshot?.version === 3) {
     ut = snapshot?.data?.untracked;
+  } else if (snapshot?.version === 4) {
+    ut = snapshot?.data?.untracked;
   } else {
     return;
   }
