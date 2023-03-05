@@ -2,6 +2,7 @@
 
 namespace Puth\Laravel\Browser;
 
+use Puth\Context;
 use Closure;
 use BadMethodCallException;
 use Illuminate\Support\Str;
@@ -22,7 +23,7 @@ class Browser
         Macroable::__call as macroCall;
     }
     
-    public $context;
+    public Context $context;
     
     public $browser;
     
@@ -241,20 +242,38 @@ class Browser
         return $this;
     }
     
-//    TODO
-//    public function parallel(Closure $closure, ?Closure $callback)
-//    {
-//        // capture calls
-//        $closure();
-//        // end capture
-//    
-//        // send all captured calls at once
-//        $result = executeParallel();
-//        
-//        if ($callback) {
-//            $callback($result);
-//        }
-//    }
+    /**
+     * Accumulates calls and executes them together.
+     * 
+     * Problem:
+     * - single methods making multiple calls would hang on the first call
+     * 
+     * Solution:
+     * - temporarily disabled accumulation on basic calls like get()
+     * - opt in certain methods (most likely ones that 'act') for accumulation (waitForSelector, click, ...)
+     * 
+     * @internal 
+     * @param Closure $closure
+     * @param Closure|null $callback
+     * @return $this
+     */
+    public function parallel(Closure $closure, Closure $callback = null)
+    {
+        $this->context->startAccumulatingCalls();
+        
+        $closure();
+        
+        $this->context->stopAccumulatingCalls();
+    
+        // send all captured calls at once
+        $result = $this->context->sendAccumulatedCalls();
+        
+        if ($callback) {
+            $callback($result);
+        }
+        
+        return $this;
+    }
     
     /**
      * Refresh the page.

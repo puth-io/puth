@@ -55,12 +55,12 @@ class GenericObject
             return null;
         }
         
-        $response = $this->getClient()->patch('context/call', ['json' => $packet]);
-        
         if ($this->context->debug) {
             $this->log("call: $function (translated: {$this->translateActionReverse($function)}})");
             $this->log('with: ' . json_encode($parameters));
         }
+        
+        $response = $this->getClient()->patch('context/call', ['json' => $packet]);
         
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
             throw new Exception(BackTrace::message(
@@ -68,6 +68,45 @@ class GenericObject
                 $body->message
             ));
         });
+    }
+    
+    public function sendAccumulatedCalls()
+    {
+        if ($this->context->debug) {
+            $this->log("call multiple");
+            $this->log('with: ' . json_encode($this->context->accumulatedCalls));
+        }
+        
+        $response = $this->getClient()->patch('context/call/multiple', ['json' => [
+            'context' => $this->context->serialize(),
+            'calls' => $this->context->accumulatedCalls,
+        ]]);
+    
+        if ($this->context->debug) {
+            $this->log('return: ', false);
+            var_export(json_decode($response->getBody()));
+            print("\n\n");
+        }
+    
+        $parts = json_decode($response->getBody());
+    
+        $return = [];
+        foreach ($parts as $idx => $part) {
+            $call = $this->context->accumulatedCalls[$idx];
+        
+            $return[] = $this->parseGeneric(
+                $part,
+                [$call['function'], $call['parameters']],
+                function ($body, $arguments) {
+                    throw new Exception(BackTrace::message(
+                        BackTrace::filter(debug_backtrace()),
+                        $body->message
+                    ));
+                }
+            );
+        }
+    
+        return $return;
     }
     
     protected function getProperty($property)

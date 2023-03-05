@@ -68,16 +68,18 @@ class BrowserTest extends PuthDuskTestCase
         });
     }
     
-//    function test_parallel()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                ->parallel(fn() => [
-//                    $browser->waitForEvent('event'),
-//                    $browser->click('#test'),
-//                ], function ($result) {
-//                    
-//                });
-//        });
-//    }
+    function test_parallel_navigation()
+    {
+        $this->browse(function (Browser $browser) {
+            $site = $browser->site;
+            
+            $browser->visit(new Playground)
+                ->parallel(fn() => [
+                    $site->waitForNavigation(),
+                    $site->click('a[href="https://puth.dev/docs"]'),
+                ])
+                ->assertUrlIs('https://puth.dev/docs/')
+            ;
+        });
+    }
 }

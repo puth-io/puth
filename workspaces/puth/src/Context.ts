@@ -489,6 +489,10 @@ class Context extends Generic {
       },
     };
   }
+  
+  async callMultiple(calls) {
+    return Promise.all(calls.map(call => this.call(call)));
+  }
 
   async call(packet) {
     let on = this.resolveOn(packet);

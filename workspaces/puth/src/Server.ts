@@ -115,6 +115,10 @@ export default class Puth {
     return this.contexts[packet.context.id].call(packet);
   }
 
+  public contextCallMultiple(packet) {
+    return this.contexts[packet.context.id].callMultiple(packet.calls);
+  }
+
   public contextGet(packet) {
     return this.contexts[packet.context.id].get(packet);
   }
@@ -168,6 +172,11 @@ export default class Puth {
       // Perform method call on context
       fastify.patch('/context/call', async (request, reply) => {
         return reply.send(await this.contextCall(request.body));
+      });
+
+      // Perform multiple method call on context
+      fastify.patch('/context/call/multiple', async (request, reply) => {
+        return reply.send(await this.contextCallMultiple(request.body));
       });
 
       // Perform action on context

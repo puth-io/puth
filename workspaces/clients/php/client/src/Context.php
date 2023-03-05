@@ -68,6 +68,16 @@ class Context extends GenericObject
         }
     }
     
+    public function startAccumulatingCalls()
+    {
+        $this->accumulateCalls = true;
+    }
+    
+    public function stopAccumulatingCalls()
+    {
+        $this->accumulateCalls = false;
+    }
+    
     public function getClient(): Client
     {
         return $this->client;
