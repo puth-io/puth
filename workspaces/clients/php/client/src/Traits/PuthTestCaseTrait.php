@@ -51,7 +51,7 @@ trait PuthTestCaseTrait
         $this->context = new Context($this->getPuthInstanceUrl(), [
             'snapshot' => $this->isSnapshot(),
             'test' => [
-                'name' => $this->isPhpunitVersion(9) ? $this->getName() : $this->name(),
+                'name' => $this->getName(),
             ],
             'group' => get_class($this),
             'dev' => $this->isDev(),
@@ -111,13 +111,11 @@ trait PuthTestCaseTrait
 
         $destroyOptions = [];
 
-        if ($this->isPhpunitVersion(9)) {
-            if ($this->hasFailed()) {
-                $this->context->testFailed();
-        
-                if ($this->shouldSaveSnapshotOnFailure()) {
-                    $destroyOptions['save'] = ['to' => 'file'];
-                }
+        if ($this->hasFailed()) {
+            $this->context->testFailed();
+    
+            if ($this->shouldSaveSnapshotOnFailure()) {
+                $destroyOptions['save'] = ['to' => 'file'];
             }
         }
     
@@ -175,10 +173,5 @@ trait PuthTestCaseTrait
     public function shouldSaveSnapshotOnFailure()
     {
         return $this->saveSnapshotOnFailure ?? false;
-    }
-    
-    private function isPhpunitVersion($version) 
-    {
-        return str_starts_with($version, Version::id());
     }
 }
