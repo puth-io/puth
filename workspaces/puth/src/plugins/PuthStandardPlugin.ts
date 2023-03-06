@@ -75,6 +75,10 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         acceptDialog: this.acceptDialog,
         dismissDialog: this.dismissDialog,
         type: async (page, selector, chars, options = {}) => await this.type(await page.$(selector), chars, options),
+        // acceptNextDialog(message)  
+        // acceptAllDialogs(message)  
+        // dismissNextDialog(message)  
+        // dismissAllDialogs(message)  
       },
       [Constructors.ElementHandle]: {
         get: this.get,

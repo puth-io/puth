@@ -5,6 +5,7 @@ namespace Puth\Laravel;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Log;
+use Monolog\Formatter\LineFormatter;
 
 class PuthManager
 {
@@ -34,30 +35,21 @@ class PuthManager
                 return;
             }
             
-            $this->logEventsCaptured[] = $event;
+            $this->logEventsCaptured[] = [
+                'level_name' => strtoupper($event->level),
+                'channel' => config('app.env'),
+                'message' => $event->message,
+                'context' => $event->context,
+                'extra' => [],
+                'datetime' => now(),
+            ];
         });
     }
     
     public function getFormattedLog()
     {
-        return array_map(
-            function (MessageLogged $event)  {
-                $context = array_map(function ($item) {
-                    if (is_object($item)) {
-                        return get_class($item) . '::class';
-                    }    
-                    
-                    return $item;
-                }, $event->context);
-                
-                return [
-                    'level' => $event->level,
-                    'message' => $event->message,
-                    'context' => $context,
-                ];
-            },
-            $this->logEventsCaptured,
-        );
+        $formatter = new LineFormatter(null, 'Y-m-d H:i:s', true, true);
+        $formatter->includeStacktraces();
     }
     
     public function clearLog()
@@ -73,8 +65,6 @@ class PuthManager
     public function releaseLog()
     {
         $this->captureLog = false;
-    
-        $this->clearLog();
     }
     
     public function instanceUrl()

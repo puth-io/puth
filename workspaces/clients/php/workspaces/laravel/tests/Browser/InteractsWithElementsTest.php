@@ -23,30 +23,21 @@ class InteractsWithElementsTest extends PuthDuskTestCase
     function test_attach()
     {
         $this->browse(function (Browser $browser) {
-            $testFile = __DIR__ . '/files/test.txt';
-    
             $browser->visit(new Playground)
-                ->attach('file-test-input', $testFile);
-            
-            $browser->assertSeeIn('#file-attach-preview', file_get_contents($testFile));
+                ->attach('file-test-input', __DIR__ . '/files/test.txt')
+                ->assertSeeIn('#file-attach-preview', 'test.txt content');
         });
     }
     
     function test_attach_multiple()
     {
         $this->browse(function (Browser $browser) {
-            $files = [
-                __DIR__ . '/files/test.txt',
-                __DIR__ . '/files/test2.txt',
-            ];
-            
             $browser->visit(new Playground)
-                ->attach('file-test-input', $files);
-            
-            $browser->assertSeeIn('#file-attach-preview', implode(array_map(
-                fn($path) => file_get_contents($path),
-                $files,
-            )));
+                ->attach('file-test-input', [
+                    __DIR__ . '/files/test.txt',
+                    __DIR__ . '/files/test2.txt',
+                ])
+                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
         });
     }
     

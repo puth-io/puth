@@ -2,6 +2,7 @@
 
 namespace Puth\Laravel\Browser;
 
+use JetBrains\PhpStorm\ExpectedValues;
 use Puth\Context;
 use Closure;
 use BadMethodCallException;
@@ -302,11 +303,15 @@ class Browser
         return $this->multiple('race', $closure, $callback);
     }
     
-    private function multiple($type, Closure $closure, Closure $callback = null)
+    private function multiple(
+        #[ExpectedValues(['all', 'any', 'race'])] $type, 
+        Closure $closure, 
+        Closure $callback = null
+    )
     {
         $this->context->startAccumulatingCalls();
     
-        $closure();
+        $closure($this->site);
     
         $this->context->stopAccumulatingCalls();
     

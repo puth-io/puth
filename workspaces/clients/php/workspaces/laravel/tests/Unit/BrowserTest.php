@@ -128,4 +128,13 @@ class BrowserTest extends PuthDuskTestCase
                 ->assertUrlIs($playground->url());
         });
     }
+//    
+//    function test_log_capture()
+//    {
+//        Puth::captureLog();
+//        Log::info('1234', [$this]);
+//        Puth::releaseLog();
+//        
+//        dd(Puth::getFormattedLog());
+//    }
 }

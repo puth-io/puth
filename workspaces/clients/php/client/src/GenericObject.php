@@ -3,7 +3,9 @@
 namespace Puth;
 
 use Exception;
+use Puth\Proxies\FileChooser;
 use Puth\Utils\BackTrace;
+use Puth\Utils\DontProxy;
 
 class GenericObject
 {
@@ -52,7 +54,7 @@ class GenericObject
         
         if ($this->context->accumulateCalls) {
             $this->context->accumulatedCalls[] = $packet;
-            return null;
+            return new DontProxy();
         }
         
         if ($this->context->debug) {
@@ -166,9 +168,9 @@ class GenericObject
         
         return match ($generic->type) {
             'GenericValue', 'GenericValues' => $generic->value,
-            'GenericObject' => new GenericObject($generic->id, $generic->type, $generic->represents, $this, $this->context),
+            'GenericObject' => $this->resolveGenericObject($generic),
             'GenericObjects' => array_map(
-                fn($item) => new GenericObject($item->id, $item->type, $item->represents, $this, $this->context),
+                fn($item) => $this->resolveGenericObject($generic),
                 $generic->value
             ),
             'GenericArray' => array_map(
@@ -180,6 +182,14 @@ class GenericObject
             'PuthAssertion' => $generic,
             'error' => $onError($generic, $arguments),
             default => $this,
+        };
+    }
+    
+    private function resolveGenericObject($generic)
+    {
+        return match ($generic->represents) {
+            'FileChooser' => new FileChooser($generic->id, $generic->type, $generic->represents, $this, $this->context),
+            default => new GenericObject($generic->id, $generic->type, $generic->represents, $this, $this->context),
         };
     }
     
@@ -241,26 +251,46 @@ class GenericObject
         $this->parent->log('[GEN ' . $this->getRepresents() . '] ' . $string, $newline);
     }
     
+    /**
+     * @internal
+     * @return mixed
+     */
     public function getId()
     {
         return $this->id;
     }
     
+    /**
+     * @internal
+     * @return mixed
+     */
     public function getType()
     {
         return $this->type;
     }
     
+    /**
+     * @internal
+     * @return mixed
+     */
     public function getRepresents()
     {
         return $this->represents;
     }
     
+    /**
+     * @internal
+     * @return mixed
+     */
     public function getClient()
     {
         return $this->parent->getClient();
     }
     
+    /**
+     * @internal
+     * @return array
+     */
     public function serialize() {
         return [
             'id' => $this->getId(),
@@ -269,6 +299,10 @@ class GenericObject
         ];
     }
     
+    /**
+     * @internal
+     * @return string
+     */
     public function __toString() {
         return "GenericObject({$this->getRepresents()}, {$this->getId()})";
     }

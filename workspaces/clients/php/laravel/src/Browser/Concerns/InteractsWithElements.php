@@ -276,15 +276,13 @@ trait InteractsWithElements
         $paths = Arr::wrap($paths);
         
         $element = $this->resolver->resolveForAttachment($field);
-    
-        [$fileChooser] = $element->clickAndFile();
         
-        $tmpFiles = [];
+        $tmpFilePaths = [];
         foreach ($paths as $path) {
-            $tmpFiles[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
+            $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
         }
         
-        $fileChooser->accept($tmpFiles);
+        $element->uploadFile(...$tmpFilePaths);
         
         return $this;
     }

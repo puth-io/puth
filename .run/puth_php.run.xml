@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="puth/php" type="PHPUnitRunConfigurationType" factoryName="PHPUnit">
+    <TestRunner configuration_file="$PROJECT_DIR$/workspaces/clients/php/client/phpunit.xml" directory="$PROJECT_DIR$/workspaces/clients/php/workspaces/laravel/tests" paratest_binary_path="$PROJECT_DIR$/workspaces/clients/php/client/vendor/bin/paratest_for_phpstorm" scope="XML" use_alternative_configuration_file="true" />
+    <method v="2" />
+  </configuration>
+</component>

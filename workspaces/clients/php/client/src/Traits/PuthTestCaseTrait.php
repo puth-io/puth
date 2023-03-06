@@ -2,10 +2,10 @@
 
 namespace Puth\Traits;
 
+use PHPUnit\Runner\Version;
 use Puth\Context;
 //use Puth\Objects\Browser;
 //use Puth\Objects\Page;
-use Symfony\Component\Process\Process;
 
 /**
  * PuthTestCaseTrait
@@ -24,22 +24,6 @@ trait PuthTestCaseTrait
     public $page;
 
     /**
-     * The Puth process instance.
-     *
-     * https://symfony.com/doc/current/components/process.html
-     *
-     * @var Process
-     */
-    protected static Process $puthProcess;
-
-    /**
-     * The Puth instance port.
-     *
-     * @var int
-     */
-    protected static int $puthPort = 7345;
-
-    /**
      * Set to connect to custom browser ws endpoint instead of the puth server creating a new one.
      *
      * @var string
@@ -56,22 +40,7 @@ trait PuthTestCaseTrait
         'height' => 720,
         // 'deviceScaleFactor' => 1,
     ];
-
-    /**
-     * Prepare for Puth test execution.
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-
-        if (method_exists(__CLASS__, 'shouldCreatePuthProcess') && static::shouldCreatePuthProcess()) {
-            static::startPuthProcess();
-        }
-    }
-
+    
     /**
      * Sets up a Context, Browser and Page for every test.
      */
@@ -82,7 +51,7 @@ trait PuthTestCaseTrait
         $this->context = new Context($this->getPuthInstanceUrl(), [
             'snapshot' => $this->isSnapshot(),
             'test' => [
-                'name' => $this->getName(),
+                'name' => $this->isPhpunitVersion(9) ? $this->getName() : $this->name(),
             ],
             'group' => get_class($this),
             'dev' => $this->isDev(),
@@ -142,57 +111,22 @@ trait PuthTestCaseTrait
 
         $destroyOptions = [];
 
-        if ($this->hasFailed()) {
-            $this->context->testFailed();
-
-            if ($this->shouldSaveSnapshotOnFailure()) {
-                $destroyOptions['save'] = ['to' => 'file'];
+        if ($this->isPhpunitVersion(9)) {
+            if ($this->hasFailed()) {
+                $this->context->testFailed();
+        
+                if ($this->shouldSaveSnapshotOnFailure()) {
+                    $destroyOptions['save'] = ['to' => 'file'];
+                }
             }
         }
     
         $this->context->destroy(['options' => $destroyOptions]);
     }
 
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-
-        if (isset(static::$puthProcess)) {
-            static::$puthProcess->stop();
-        }
-    }
-
-    public static function startPuthProcess()
-    {
-        static::$puthProcess = new Process(
-            ['puth', 'start', '-p', static::getPuthPort()]
-        );
-        static::$puthProcess->start();
-
-        static::$puthProcess->waitUntil(function ($type, $output) {
-            return str_contains($output, '[Puth][Server] Api on');
-        });
-
-        if (static::$puthProcess->isTerminated()) {
-            $error = static::$puthProcess->getErrorOutput();
-            $exitCode = static::$puthProcess->getExitCode();
-
-            throw new \RuntimeException("Puth could not be started. Command exited with code {$exitCode}: {$error}");
-        }
-    }
-
-    public static function getPuthPort()
-    {
-        if (!isset(static::$puthPort)) {
-            static::$puthPort = random_int(10000, 20000);
-        }
-
-        return static::$puthPort;
-    }
-
     public function getPuthInstanceUrl(): string
     {
-        return 'http://127.0.0.1:' . static::getPuthPort();
+        return 'http://127.0.0.1:7345';
     }
 
     public function getBaseUrl(): ?string
@@ -241,5 +175,10 @@ trait PuthTestCaseTrait
     public function shouldSaveSnapshotOnFailure()
     {
         return $this->saveSnapshotOnFailure ?? false;
+    }
+    
+    private function isPhpunitVersion($version) 
+    {
+        return str_starts_with($version, Version::id());
     }
 }

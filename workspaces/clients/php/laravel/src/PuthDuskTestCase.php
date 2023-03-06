@@ -61,6 +61,7 @@ abstract class PuthDuskTestCase extends BaseTestCase
     protected function tearDown(): void
     {
         Puth::releaseLog();
+        Puth::clearLog();
     
         $destroyOptions = [];
 
