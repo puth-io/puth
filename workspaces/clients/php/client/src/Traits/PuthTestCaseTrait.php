@@ -105,10 +105,6 @@ trait PuthTestCaseTrait
     {
         parent::tearDown();
 
-        if (!$this->isDev()) {
-            $this->page->close();
-        }
-
         $destroyOptions = [];
 
         if ($this->hasFailed()) {

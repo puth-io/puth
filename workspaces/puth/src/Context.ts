@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
+import { Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
 import mitt from 'mitt';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
@@ -15,6 +15,7 @@ import { mkdtemp } from 'node:fs/promises';
 import Return from './Context/Return';
 import Constructors from './Context/Constructors';
 import {tmpdir} from "os";
+import {PuthBrowser} from "./HandlesBrowsers";
 const { writeFile } = fsPromise;
 
 class Context extends Generic {
@@ -42,7 +43,7 @@ class Context extends Generic {
 
   private plugins: PuthContextPlugin[] = [];
   
-  private browsers: Browser[] = [];
+  private browsers: PuthBrowser[] = [];
 
   private eventFunctions: [any, string, () => {}][] = [];
 
@@ -108,14 +109,13 @@ class Context extends Generic {
     return this.options?.dev === true;
   }
   
-  async _trackBrowser(browser: Browser | undefined) {
+  async _trackBrowser(browser: PuthBrowser | undefined) {
     if (browser === undefined) {
       return;
     }
 
     browser.once('disconnected', async () => {
       this.removeEventListenersFrom(browser);
-      
       this.browsers = this.browsers.filter(b => b !== browser);
     });
 
@@ -153,7 +153,7 @@ class Context extends Generic {
     this.removeBrowser(browser);
   }
 
-  private removeBrowser(browser: Browser) {
+  private removeBrowser(browser: PuthBrowser) {
     this.browsers.splice(
       this.browsers.findIndex(b => b === browser),
       1,
