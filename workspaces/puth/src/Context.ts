@@ -8,13 +8,9 @@ import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
 import { Browser, Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
 import mitt from 'mitt';
-
-import { createBrowser } from './Browser';
-import { DaemonBrowser } from './DaemonBrowser';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
-
-import {mkdtempSync, promises as fsPromise} from 'fs';
+import {promises as fsPromise} from 'fs';
 import { mkdtemp } from 'node:fs/promises';
 import Return from './Context/Return';
 import Constructors from './Context/Constructors';
@@ -45,13 +41,8 @@ class Context extends Generic {
   };
 
   private plugins: PuthContextPlugin[] = [];
-
-  private instances: {
-    daemon?: boolean;
-    browser?: puppeteer.Browser;
-    browserCleanup?: () => {};
-    external?: boolean;
-  }[] = [];
+  
+  private browsers: Browser[] = [];
 
   private eventFunctions: [any, string, () => {}][] = [];
 
@@ -101,67 +92,31 @@ class Context extends Generic {
 
   async connectBrowser(options) {
     let browser = await puppeteer.connect(options);
-
+    this.browsers.push(browser);
     await this._trackBrowser(browser);
-
-    let instance = {
-      browser,
-      external: true,
-    };
-
-    this.instances.push(instance);
-
     return browser;
   }
 
   async createBrowser(options = {}) {
-    // TODO remove daemon browser code
-    // if (this.puth.isDev() || this.isDev()) {
-    //   return await this.getDaemonBrowser();
-    // }
-
-    let { browser, browserCleanup } = await createBrowser({
-      launchOptions: options,
-      args: ['--no-sandbox'],
-    });
-
+    let browser = await this.puth.browserHandler.launch(options);
+    this.browsers.push(browser);
     await this._trackBrowser(browser);
-
-    let instance = {
-      browser,
-      browserCleanup,
-      external: false,
-    };
-
-    this.instances.push(instance);
-
     return browser;
   }
 
   isDev() {
     return this.options?.dev === true;
   }
-
-  // TODO remove daemon browser code
-  // async getDaemonBrowser(options?) {
-  //   this.instance.browser = await DaemonBrowser.getBrowser(options);
-  //   this.instance.external = true;
-  //   this.instance.daemon = true;
-  //
-  //   await this._trackBrowser(this.instance.browser);
-  //
-  //   return this.instance.browser;
-  // }
-
+  
   async _trackBrowser(browser: Browser | undefined) {
     if (browser === undefined) {
       return;
     }
 
-    browser.on('disconnected', async () => {
+    browser.once('disconnected', async () => {
       this.removeEventListenersFrom(browser);
-      // TODO ensure browser cleanup
-      // await this.destroyBrowserByBrowser(browser);
+      
+      this.browsers = this.browsers.filter(b => b !== browser);
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
@@ -186,45 +141,21 @@ class Context extends Generic {
     }
 
     this.unregisterAllEventListeners();
-
-    await Promise.all(this.instances.map((instance) => this.destroyBrowserByInstance(instance)));
     
+    await Promise.all(this.browsers.map((browser) => this.destroyBrowserByBrowser(browser)));
     await Promise.all(this.cleanupCallbacks);
 
     return true;
   }
 
   async destroyBrowserByBrowser(browser) {
-    return this.destroyBrowserByInstance(this.instances.find((instance) => instance.browser === browser));
+    await this.puth.browserHandler.destroy(browser);
+    this.removeBrowser(browser);
   }
 
-  async destroyBrowserByInstance(instance) {
-    if (!instance.browser) {
-      return this.removeBrowserInstance(instance);
-    }
-
-    if (instance.daemon) {
-      return this.removeBrowserInstance(instance);
-    }
-
-    if (instance.browser.isConnected()) {
-      if (instance.external) {
-        await instance.browser.disconnect();
-      } else {
-        await instance.browser.close();
-      }
-    }
-
-    if (instance.browserCleanup) {
-      await instance.browserCleanup();
-    }
-
-    this.removeBrowserInstance(instance);
-  }
-
-  private removeBrowserInstance(instance) {
-    this.instances.splice(
-      this.instances.findIndex((i) => i === instance),
+  private removeBrowser(browser: Browser) {
+    this.browsers.splice(
+      this.browsers.findIndex(b => b === browser),
       1,
     );
   }

@@ -10,11 +10,13 @@ import Snapshots from './Snapshots';
 import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
+import {HandlesBrowsers, DefaultBrowserHandler} from "./HandlesBrowsers";
 
 export default class Puth {
   private contexts: Context[] = [];
   private contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
   private instancePlugins: PuthInstancePlugin[] = [];
+  public browserHandler: HandlesBrowsers;
 
   private server;
   private options: {
@@ -40,6 +42,8 @@ export default class Puth {
         import(path.join(process.cwd(), plugin)).then((ip) => this.use(ip.default));
       });
     }
+  
+    this.browserHandler = new DefaultBrowserHandler();
   }
 
   use(plugin: PuthPluginGeneric<PuthPlugin>) {
