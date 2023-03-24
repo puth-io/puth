@@ -14,5 +14,5 @@ export type PuthPluginGeneric<T> = {
 export abstract class PuthPlugin {
   public static readonly PluginType;
 
-  abstract install(param: Puth | Context);
+  abstract install(param: Puth | Context): void;
 }

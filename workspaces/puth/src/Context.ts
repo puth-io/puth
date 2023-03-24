@@ -7,7 +7,7 @@ import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
 import { Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
-import mitt from 'mitt';
+import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
 import {promises as fsPromise} from 'fs';
@@ -18,11 +18,19 @@ import {tmpdir} from "os";
 import {PuthBrowser} from "./HandlesBrowsers";
 const { writeFile } = fsPromise;
 
+type ContextEvents = {
+  'call': any,
+  'get': any,
+  'set': any,
+  'delete': any,
+  'destroying',
+}
+
 class Context extends Generic {
   private readonly id: string = v4();
   private readonly type: string = 'Context';
 
-  private readonly emitter;
+  private readonly emitter: Emitter<ContextEvents>;
 
   private readonly puth: Puth;
   private options: {
@@ -70,7 +78,7 @@ class Context extends Generic {
     this.options = options;
     // @ts-ignore
     // TODO maybe PR to https://github.com/developit/mitt because broken index.d.ts
-    this.emitter = mitt();
+    this.emitter = mitt<ContextEvents>();
     this.createdAt = Date.now();
 
     // Track context creation
@@ -780,20 +788,23 @@ class Context extends Generic {
   getPlugins(): PuthContextPlugin[] {
     return this.plugins;
   }
-
-  emit(...args) {
-    // @ts-ignore
-    return this.emitter.emit(...args);
+  
+  on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
+  on(type: '*', handler: WildcardHandler<ContextEvents>): void;
+  on(type, handler) {
+    return this.emitter.on(type, handler);
   }
-
-  off(...args) {
-    // @ts-ignore
-    return this.emitter.off(...args);
+  
+  off<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
+  off(type: '*', handler: WildcardHandler<ContextEvents>): void;
+  off(type, handler) {
+    return this.emitter.off(type, handler);
   }
-
-  on(...args) {
-    // @ts-ignore
-    return this.emitter.on(...args);
+  
+  emit<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): void;
+  emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
+  emit(type, event?) {
+    return this.emitter.emit(type, event);
   }
 
   getTimeout(options?) {

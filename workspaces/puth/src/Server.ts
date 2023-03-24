@@ -1,9 +1,7 @@
 import path from 'path';
-
 import Fastify from 'fastify';
 import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
-
 import Context from './Context';
 import WebsocketConnections from './WebsocketConnections';
 import Snapshots from './Snapshots';
@@ -11,11 +9,19 @@ import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGener
 import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
 import {HandlesBrowsers, DefaultBrowserHandler} from "./HandlesBrowsers";
+import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
+
+type PuthEvents = {
+  'context:created': {context: Context};
+  'context:destroyed': {context: Context};
+  // 'packet': {packet: any};
+}
 
 export default class Puth {
   private contexts: Context[] = [];
   private contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
   private instancePlugins: PuthInstancePlugin[] = [];
+  private emitter: Emitter<PuthEvents>;
   public browserHandler: HandlesBrowsers;
 
   private server;
@@ -33,6 +39,7 @@ export default class Puth {
   };
 
   constructor(options?) {
+    this.emitter = mitt<PuthEvents>();
     this.options = options;
 
     if (this.options?.plugins) {
@@ -112,6 +119,7 @@ export default class Puth {
     let context = new Context(this, options);
     this.contexts[context.getId()] = context;
     await context.setup();
+    this.emitter.emit('context:created', {context});
     return context.serialize();
   }
 
@@ -148,6 +156,7 @@ export default class Puth {
 
     if (id in this.contexts) {
       await this.contexts[id].destroy(packet?.options);
+      this.emitter.emit('context:destroyed', {context: this.contexts[id]});
       delete this.contexts[id];
 
       return true;
@@ -251,5 +260,17 @@ export default class Puth {
 
   getServer() {
     return this.server;
+  }
+  
+  on<Key extends keyof PuthEvents>(type: Key, handler: Handler<PuthEvents[Key]>): void;
+  on(type: '*', handler: WildcardHandler<PuthEvents>): void;
+  on(type, handler) {
+    return this.emitter.on(type, handler);
+  }
+  
+  off<Key extends keyof PuthEvents>(type: Key, handler: Handler<PuthEvents[Key]>): void;
+  off(type: '*', handler: WildcardHandler<PuthEvents>): void;
+  off(type, handler) {
+    return this.emitter.on(type, handler);
   }
 }

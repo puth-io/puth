@@ -10,9 +10,8 @@ export default abstract class PuthContextPlugin extends PuthPlugin {
   protected context: Context | undefined;
   protected additions: { [key: string]: {} } = {};
 
-  public install(context: Context): PuthContextPlugin {
+  public install(context: Context): void {
     this.context = context;
-    return this;
   }
 
   register(additions: {}) {
