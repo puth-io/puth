@@ -22,9 +22,9 @@ const client = new RemotePuthClient("http://127.0.0.1:7345");
 
   await page.visit("https://playground.puth.dev/");
 
-  for (let i = 0; i < 10000; i++) {
-    await page.$("#querying-get");
-  }
+  // for (let i = 0; i < 10000; i++) {
+  //   await page.$("#querying-get");
+  // }
 
   // await context.testFailed();
 

@@ -26,8 +26,8 @@ type ContextEvents = {
   'destroying',
   'browser:connected': {browser: PuthBrowser},
   'browser:disconnected': {browser: PuthBrowser},
-  'page:created': {page: Page},
-  'page:closed': {page: Page},
+  'page:created': {browser: PuthBrowser, page: Page},
+  'page:closed': {browser: PuthBrowser, page: Page},
 }
 
 class Context extends Generic {
@@ -55,7 +55,7 @@ class Context extends Generic {
 
   private plugins: PuthContextPlugin[] = [];
   
-  private browsers: PuthBrowser[] = [];
+  public browsers: PuthBrowser[] = [];
 
   private eventFunctions: [any, string, () => {}][] = [];
 
@@ -130,22 +130,26 @@ class Context extends Generic {
 
     browser.once('disconnected', async () => {
       this.removeEventListenersFrom(browser);
-      this.browsers = this.browsers.filter(b => b !== browser);
       this.emitter.emit('browser:disconnected', {browser});
+      this.browsers = this.browsers.filter(b => b !== browser);
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
     let page0 = (await browser.pages())[0];
     this._trackPage(page0);
-    this.emitter.emit('page:created', {page: page0});
+    this.emitter.emit('page:created', {browser, page: page0});
 
+    console.log(Object.getOwnPropertyNames(page0));
+    
     this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
       // TODO do we need to track more here? like 'browser' or 'background_page'...?
       if (target.type() === 'page') {
         let page = await target.page();
         this._trackPage(page);
         // @ts-ignore
-        this.emitter.emit('page:created', {page});
+        this.emitter.emit('page:created', {browser, page});
+        // @ts-ignore
+        page.on('close', _ => this.emitter.emit('page:closed', {browser, page}))
       }
     });
   }
