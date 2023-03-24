@@ -7,6 +7,7 @@ import ContextStore from '../Mobx/ContextStore';
 import DevStore, { DebugStoreClass } from './DebugStoreClass';
 import { BlobHandler } from './SnapshotRecovering';
 import Events from "../../Events";
+import events from "../../Events";
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -207,6 +208,10 @@ class WebsocketHandlerSingleton {
       this.addUpdate(packet);
     } else if (packet.type === 'exception') {
       this.addException(packet);
+    } else if (packet.type === 'screencast') {
+      let context = this.getContext(packet.context.id);
+      console.log(packet);
+      events.emit('context:event:screencast', {context, packet})
     }
   }
 

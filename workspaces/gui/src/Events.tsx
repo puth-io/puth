@@ -10,7 +10,7 @@ type Events = {
     'layout:resize': undefined;
     'context:created': ContextStore;
     'context:event': [ContextStore, any];
-    'context:event:screencast': [ContextStore, any];
+    'context:event:screencast': {context: ContextStore, packet: any};
 };
 
 const Events: Emitter<Events> = mitt<Events>();
