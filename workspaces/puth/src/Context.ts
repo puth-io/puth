@@ -135,6 +135,7 @@ class Context extends Generic {
       this.removeEventListenersFrom(browser);
       this.emitter.emit('browser:disconnected', {browser});
       this.browsers = this.browsers.filter(b => b !== browser);
+      this.emitter.emit('browser:disconnected', {browser});
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
