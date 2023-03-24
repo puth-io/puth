@@ -135,7 +135,6 @@ class Context extends Generic {
       this.removeEventListenersFrom(browser);
       this.emitter.emit('browser:disconnected', {browser});
       this.browsers = this.browsers.filter(b => b !== browser);
-      this.emitter.emit('browser:disconnected', {browser});
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
@@ -143,6 +142,8 @@ class Context extends Generic {
     this._trackPage(page0);
     this.emitter.emit('page:created', {browser, page: page0});
 
+    console.log(Object.getOwnPropertyNames(page0));
+    
     this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
       // TODO do we need to track more here? like 'browser' or 'background_page'...?
       if (target.type() === 'page') {
