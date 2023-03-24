@@ -1,7 +1,7 @@
 import { ICommand } from '../Components/Command/Command';
 import { action, makeAutoObservable } from 'mobx';
 import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
-import { Events } from '../../main';
+import Events from '../../Events';
 import { IContext } from '../Misc/WebsocketHandler';
 import { resolveSnapshotBacktrack3, resolveSnapshotBacktrackV4 } from '../Misc/Util';
 
@@ -9,7 +9,7 @@ export type SnapshotState = 'before' | 'after';
 
 export const domParser = new DOMParser();
 
-export class PreviewStoreClass {
+class PreviewStoreClass {
   private _activeContext: IContext | undefined;
   private _activeCommand: ICommand | undefined;
   activeState: SnapshotState = 'before';
@@ -197,3 +197,10 @@ export class PreviewStoreClass {
     );
   }
 }
+
+/**
+ * Global objects initialization
+ */
+const PreviewStore = new PreviewStoreClass();
+
+export default PreviewStore;

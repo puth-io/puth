@@ -1,12 +1,14 @@
 // @ts-nocheck
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useRef, useState } from 'react';
-import { calculateIframeSize, debounce, throttle, useForceUpdatePreview } from '../../Misc/Util';
+import React, { useEffect, useRef } from 'react';
+import { calculateIframeSize, debounce, useForceUpdatePreview } from '../../Misc/Util';
 import './Preview.scss';
 import { loadHighlights } from '../Highlight';
-import { DevStore, Events, PreviewStore } from '../../../main';
+import DevStore from "../../Misc/DebugStoreClass";
+import PreviewStore from "../../Mobx/PreviewStore";
+import Events from "../../../Events";
 import { recoverAfterRender } from '../../Misc/SnapshotRecovering';
-import { WebsocketHandler } from '../../Misc/WebsocketHandler';
+import WebsocketHandler from '../../Misc/WebsocketHandler';
 import Code from '../Code/Code';
 import { ContextDetails } from '../ContextDetails/ContextDetails';
 
@@ -185,12 +187,6 @@ export const Preview = observer(() => {
       <div className={'element ms-2'}>
         {snapshot?.viewport.width}x{snapshot?.viewport.height} ({(iframeSize.scale * 100).toFixed(0)}%)
       </div>
-
-      {WebsocketHandler.isConnected ? (
-        <button className={'btn btn-sm btn-outline-success ms-2'}>Connected</button>
-      ) : (
-        <button className={'btn btn-sm btn-outline-danger ms-2'}>Disconnected</button>
-      )}
     </div>
   ));
 

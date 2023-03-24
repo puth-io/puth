@@ -1,4 +1,4 @@
-import { WebsocketHandler } from '../../Misc/WebsocketHandler';
+import WebsocketHandler from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 import puthLogoNew from '../../../assets/puth-logo-new.png';
 

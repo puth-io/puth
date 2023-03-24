@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { WebsocketHandler } from '../../Misc/WebsocketHandler';
+import WebsocketHandler from '../../Misc/WebsocketHandler';
 import { CSSTransition } from 'react-transition-group';
 
 export const Spinner = () => (

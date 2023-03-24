@@ -1,6 +1,7 @@
 import React, { FunctionComponent, useCallback } from 'react';
 import './Command.scss';
-import { Events, PreviewStore } from '../../../main';
+import PreviewStore from "../../Mobx/PreviewStore";
+import Events from "../../../Events";
 import { IContext } from '../../Misc/WebsocketHandler';
 import { observer } from 'mobx-react-lite';
 import Constructors from 'puth/src/Context/Constructors';

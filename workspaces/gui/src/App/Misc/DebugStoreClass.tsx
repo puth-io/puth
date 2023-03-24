@@ -1,10 +1,10 @@
+import Events from '../../Events';
 import { makeAutoObservable } from 'mobx';
-import { Events } from '../../main';
 
 // tslint:disable-next-line:no-empty
 export let DebugStoreClass: (func: any) => any = () => {};
 
-export class DevStoreClass {
+class DevStoreClass {
   private _debug: boolean = false;
   private _connectAutomatically: boolean = false;
 
@@ -76,3 +76,10 @@ export class DevStoreClass {
     console.warn('[Puth] Performance is affected by debug');
   }
 }
+
+/**
+ * Debug setup
+ */
+const DevStore = new DevStoreClass();
+
+export default DevStore;

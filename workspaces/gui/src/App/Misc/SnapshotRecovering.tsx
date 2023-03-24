@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { resolveElement } from '../Components/Highlight';
 import { BlobHandler as BlobHandlerClass } from './BlobHandler';
-import { PreviewStore } from '../../main';
+import PreviewStore from "../Mobx/PreviewStore";
 
 export const BlobHandler = new BlobHandlerClass();
 export const textDecoder = new TextDecoder();

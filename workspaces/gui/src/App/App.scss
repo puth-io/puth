@@ -6,8 +6,8 @@ $font-size-root: 14px;
 //  font-size: 16px;
 //}
 
-@import 'Misc/colors';
-@import '../../node_modules/bootstrap/scss/bootstrap';
+@import './Misc/colors';
+@import 'bootstrap/scss/bootstrap';
 
 .status {
   &[data-connected="true"] {

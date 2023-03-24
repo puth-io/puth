@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './Dropzone.scss';
 import { observer } from 'mobx-react-lite';
 import { useDropzone } from 'react-dropzone';
-import { WebsocketHandler } from '../../Misc/WebsocketHandler';
+import WebsocketHandler from '../../Misc/WebsocketHandler';
 import { runInAction } from 'mobx';
 import DropzoneStore from '../../Mobx/DropzoneStore';
 

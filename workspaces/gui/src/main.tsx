@@ -1,28 +1,9 @@
 import React from 'react';
-import mitt from 'mitt';
-import { DevStoreClass } from './App/Misc/DebugStoreClass';
-import { PreviewStoreClass } from './App/Mobx/PreviewStore';
 import { createRoot } from 'react-dom/client';
-import { WebsocketHandler } from './App/Misc/WebsocketHandler';
 import { runInAction } from 'mobx';
 import DropzoneStore from './App/Mobx/DropzoneStore';
 import App from './App/App';
 import './index.css';
-
-/**
- * Pre global objects initialization (required for debug handler)
- */
-export const Events = mitt();
-
-/**
- * Debug setup
- */
-export const DevStore = new DevStoreClass();
-
-/**
- * Global objects initialization
- */
-export const PreviewStore = new PreviewStoreClass();
 
 const container = document.getElementById('root') as HTMLElement;
 const root = createRoot(container!);
@@ -32,13 +13,6 @@ root.render(
     <App />
   </React.StrictMode>,
 );
-
-/**
- * Websocket auto connect
- */
-if (DevStore.connectAutomatically) {
-  WebsocketHandler.try(WebsocketHandler.connectionSuggestions[0]);
-}
 
 /**
  * Register drag and drop events

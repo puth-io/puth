@@ -3,9 +3,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useForceUpdatePreview } from '../../Misc/Util';
-import { Events, PreviewStore } from '../../../main';
 import { Resizable } from 're-resizable';
 import { Exception } from '../Exception/Exception';
+import PreviewStore from "../../Mobx/PreviewStore";
+import Events from "../../../Events";
 
 const ExceptionsTab = ({ exceptions, contextId }) =>
   exceptions.map((exception, idx) => <Exception key={`${contextId}-${idx}`} exception={exception} />);

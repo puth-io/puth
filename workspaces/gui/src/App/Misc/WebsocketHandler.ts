@@ -4,8 +4,9 @@ import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
-import { DebugStoreClass } from './DebugStoreClass';
+import DevStore, { DebugStoreClass } from './DebugStoreClass';
 import { BlobHandler } from './SnapshotRecovering';
+import Events from "../../Events";
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -214,6 +215,8 @@ class WebsocketHandlerSingleton {
 
     command.context = context;
     context.commands.push(command);
+    
+    Events.emit('context:event', [context, command]);
   }
 
   private addLog(log: ICommand) {
@@ -221,13 +224,17 @@ class WebsocketHandlerSingleton {
 
     log.context = context;
     context.logs.push(log);
+  
+    Events.emit('context:event', [context, log]);
   }
 
-  private addRequest(response: any) {
-    let context = this.getContext(response.context.id);
+  private addRequest(request: any) {
+    let context = this.getContext(request.context.id);
 
-    response.context = context;
-    context.requests.push(response);
+    request.context = context;
+    context.requests.push(request);
+  
+    Events.emit('context:event', [context, request]);
   }
 
   private addResponse(response: any) {
@@ -240,20 +247,27 @@ class WebsocketHandlerSingleton {
     let request = context.requests.find((r) => r.requestId === response.requestId);
     request.response = response;
     request.status = 'finished';
+  
+    Events.emit('context:event', [context, response]);
   }
 
   private addContext(response: any) {
     let { id, options, test, group, capabilities, createdAt } = response;
 
-    this.contexts.set(id, new ContextStore(id, options, test, group, capabilities, createdAt));
+    let context = new ContextStore(id, options, test, group, capabilities, createdAt);
+    this.contexts.set(id, context);
+    
+    Events.emit('context:created', context);
   }
 
-  private addTest(response: any) {
-    let context = this.getContext(response.context.id);
+  private addTest(test: any) {
+    let context = this.getContext(test.context.id);
 
-    if (response.specific === 'status') {
-      context.test.status = response.status;
+    if (test.specific === 'status') {
+      context.test.status = test.status;
     }
+  
+    Events.emit('context:event', [context, test]);
   }
 
   private addUpdate(update: any) {
@@ -264,12 +278,16 @@ class WebsocketHandlerSingleton {
     } else if (update.specific === 'request.failed') {
       context.requests.find((r) => r.requestId === update.requestId).status = update.status;
     }
+  
+    Events.emit('context:event', [context, update]);
   }
 
   private addException(exception) {
     let context = this.getContext(exception.context.id);
     exception.context = context;
     context.exceptions.push(exception);
+  
+    Events.emit('context:event', [context, exception]);
   }
 
   getContext(id: string): ContextStore {
@@ -333,4 +351,13 @@ class WebsocketHandlerSingleton {
   }
 }
 
-export const WebsocketHandler = new WebsocketHandlerSingleton();
+const WebsocketHandler = new WebsocketHandlerSingleton();
+
+export default WebsocketHandler;
+
+/**
+ * Websocket auto connect
+ */
+if (DevStore.connectAutomatically) {
+  WebsocketHandler.try(WebsocketHandler.connectionSuggestions[0]);
+}
