@@ -6,7 +6,7 @@ import * as Utils from './Utils';
 import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import { Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
+import {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer';
 import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
@@ -24,6 +24,10 @@ type ContextEvents = {
   'set': any,
   'delete': any,
   'destroying',
+  'browser:connected': {browser: PuthBrowser},
+  'browser:disconnected': {browser: PuthBrowser},
+  'page:created': {page: Page},
+  'page:closed': {page: Page},
 }
 
 class Context extends Generic {
@@ -103,6 +107,7 @@ class Context extends Generic {
     let browser = await puppeteer.connect(options);
     this.browsers.push(browser);
     await this._trackBrowser(browser);
+    this.emitter.emit('browser:connected', {browser});
     return browser;
   }
 
@@ -110,6 +115,7 @@ class Context extends Generic {
     let browser = await this.puth.browserHandler.launch(options);
     this.browsers.push(browser);
     await this._trackBrowser(browser);
+    this.emitter.emit('browser:connected', {browser});
     return browser;
   }
 
@@ -125,15 +131,21 @@ class Context extends Generic {
     browser.once('disconnected', async () => {
       this.removeEventListenersFrom(browser);
       this.browsers = this.browsers.filter(b => b !== browser);
+      this.emitter.emit('browser:disconnected', {browser});
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
-    this._trackPage((await browser.pages())[0]);
+    let page0 = (await browser.pages())[0];
+    this._trackPage(page0);
+    this.emitter.emit('page:created', {page: page0});
 
     this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
       // TODO do we need to track more here? like 'browser' or 'background_page'...?
       if (target.type() === 'page') {
-        this._trackPage(await target.page());
+        let page = await target.page();
+        this._trackPage(page);
+        // @ts-ignore
+        this.emitter.emit('page:created', {page});
       }
     });
   }
