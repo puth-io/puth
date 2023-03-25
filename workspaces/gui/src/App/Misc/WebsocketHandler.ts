@@ -2,7 +2,7 @@
 import { action, makeAutoObservable, runInAction } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 import { logData, pMark, pMeasure } from './Util';
-import { decode, ExtensionCodec } from '@msgpack/msgpack';
+import { encode, decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
 import DevStore, { DebugStoreClass } from './DebugStoreClass';
 import { BlobHandler } from './SnapshotRecovering';
@@ -63,7 +63,7 @@ type IResponse = {
 
 class WebsocketHandlerSingleton {
   private websocket: WebSocket | undefined;
-  connectionState: number = WebSocket.CLOSED;
+  public connectionState: number = WebSocket.CLOSED;
   private uri: string | undefined;
   
   private totalBytesReceived: number = 0;
@@ -137,6 +137,10 @@ class WebsocketHandlerSingleton {
     };
   }
   
+  send(packet: any) {
+    let data = encode(packet, { extensionCodec: PUTH_EXTENSION_CODEC });
+    this.websocket?.send(data);
+  }
   @action
   receivedBinaryData(binary: ArrayBuffer, options: any = {}) {
     pMark('packet.received');
