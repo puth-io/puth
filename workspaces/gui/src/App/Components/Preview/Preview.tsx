@@ -203,7 +203,7 @@ export const Preview = observer(() => {
         overflow: 'hidden',
       }}
     >
-      <div className={'quick-navigation-container'}>
+      <div className={'quick-navigation-container mb-2'}>
         {/*<QuickNavigation />*/}
         <PreviewInfo />
       </div>

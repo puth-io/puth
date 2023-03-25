@@ -24,7 +24,7 @@ export const SidebarAction = observer(() => {
     );
 });
 
-export default observer(function Sidebar({suffix, buttons, extra, children}: any) {
+export default observer(function Sidebar({suffix, buttons, extra, children, hideHeader = false}: any) {
     return (
         <Resizable
             className={'d-flex flex-column pe-2'}
@@ -36,16 +36,18 @@ export default observer(function Sidebar({suffix, buttons, extra, children}: any
             enable={{right: true}}
             onResizeStop={() => Events.emit('layout:resize')}
         >
-            <div className="d-flex align-items-center" style={{height: '3rem'}}>
-                <div className="d-flex align-items-center ms-2 me-auto">
-                    <img src={puthLogoNew} className={'align-self-center'} style={{height: '18px'}} alt=""/>
-                    <span className={'ms-2 text-accent'} style={{fontSize: '1.2rem'}}>
+            {! hideHeader && (
+                <div className="d-flex align-items-center" style={{height: '3rem'}}>
+                    <div className="d-flex align-items-center ms-2 me-auto">
+                        <img src={puthLogoNew} className={'align-self-center'} style={{height: '18px'}} alt=""/>
+                        <span className={'ms-2 text-accent'} style={{fontSize: '1.2rem'}}>
                         Puth {suffix}
                     </span>
-                    {buttons}
+                        {buttons}
+                    </div>
+                    {extra}
                 </div>
-                {extra}
-            </div>
+            )}
             <div className={'sidebar px-2'}>
                 {children}
             </div>

@@ -210,7 +210,6 @@ class WebsocketHandlerSingleton {
       this.addException(packet);
     } else if (packet.type === 'screencast') {
       let context = this.getContext(packet.context.id);
-      console.log(packet);
       events.emit('context:event:screencast', {context, packet})
     }
   }
