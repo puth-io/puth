@@ -56,7 +56,7 @@ export const Exception = ({ exception }) => {
       </div>
       <div className={'overflow-auto'}>
         {active === 'default' && (
-          <div className={'border-top border-default p-2'}>
+          <div className={'border-top border-default'}>
             <Code language={'log'}>{message}</Code>
             {preview?.length > 0 && (
               <Code
