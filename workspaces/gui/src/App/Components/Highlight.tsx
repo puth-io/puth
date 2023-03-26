@@ -1,6 +1,7 @@
 import React from 'react';
 import { ICommand } from './Command/Command';
 import { render } from 'react-dom';
+import {createRoot} from "react-dom/client";
 
 function scrollIntoView(element: Element | null) {
   if (!element) {
@@ -106,7 +107,8 @@ export function loadHighlights(
 
     let node = document.createElement('div');
     context.body.appendChild(node);
-    render(overlay, node);
+    createRoot(node).render(overlay);
+    // render(overlay, node);
   }
 
   function getPosition(element: any) {
