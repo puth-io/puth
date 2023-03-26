@@ -142,8 +142,6 @@ class Context extends Generic {
     this._trackPage(page0);
     this.emitter.emit('page:created', {browser, page: page0});
 
-    console.log(Object.getOwnPropertyNames(page0));
-    
     this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
       // TODO do we need to track more here? like 'browser' or 'background_page'...?
       if (target.type() === 'page') {

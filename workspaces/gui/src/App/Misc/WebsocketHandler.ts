@@ -363,6 +363,33 @@ const WebsocketHandler = new WebsocketHandlerSingleton();
 
 export default WebsocketHandler;
 
+
+
+export function EmitContextEvent(context, type, arg?) {
+  WebsocketHandler.send({
+    // namespace: 'events',
+    type: 'event',
+    on: 'context',
+    context,
+    event: {
+      type,
+      arg,
+    },
+  })
+}
+
+export function EmitPuthEvent(type, arg?) {
+  WebsocketHandler.send({
+    // namespace: 'events',
+    type: 'event',
+    on: 'puth',
+    event: {
+      type,
+      arg,
+    },
+  })
+}
+
 /**
  * Websocket auto connect
  */
