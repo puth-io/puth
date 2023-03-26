@@ -238,14 +238,22 @@ export default class Puth {
         }
 
         WebsocketConnections.push(connection);
-
+  
+        connection.socket.on('message', data => {
+          let message: any = WebsocketConnections.decode(data);
+          
+          if (message?.type === 'event') {
+            if (message.on === 'puth') {
+              this.emitter.emit(message.event.type, message.event.arg);
+            }
+          }
+        });
+  
         connection.socket.on('close', () => {
           WebsocketConnections.pop(connection);
         });
 
-        if (Snapshots.hasCachedItems()) {
-          connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
-        }
+        connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
       });
     });
   }

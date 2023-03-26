@@ -1,5 +1,5 @@
 import { SocketStream } from '@fastify/websocket';
-import { encode, ExtensionCodec } from '@msgpack/msgpack';
+import {decode, encode, ExtensionCodec} from '@msgpack/msgpack';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -44,8 +44,14 @@ class WebsocketConnectionHandler {
 
     throw Error('Unsupported serialization type');
   }
+  
+  decode(data) {
+    return decode(data, { extensionCodec: PUTH_EXTENSION_CODEC })
+  }
 }
 
 const WebsocketConnections = new WebsocketConnectionHandler();
 
 export default WebsocketConnections;
+
+

@@ -24,8 +24,6 @@ const func = (async function () {
   
   // await new Promise(resolve => setTimeout(resolve, 20 * 1000));
   
-  console.log('killed');
-  
   // for (let i = 0; i < 10000; i++) {
   //   await page.$("#querying-get");
   // }
