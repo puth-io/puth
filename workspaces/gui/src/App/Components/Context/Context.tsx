@@ -68,19 +68,19 @@ export const Context: FunctionComponent<ContextProps> = observer(({ context }) =
           {context.group && <div className={'fw-light fs-small mt-1 text-ellipsis'}>{context.group}</div>}
         </div>
         <button
-          className={`btn btn-smaller btn-outline-primary ${showXHR && 'active'} py-05 text-nowrap`}
+          className={`btn btn-smaller btn-outline-primary ${showXHR ? 'active' : ''} py-05 text-nowrap me-1`}
           onClick={xhrToggle}
         >
           {showXHR && <span>&#10003;</span>} <span>XHR</span>
         </button>
         <button
-          className={`btn btn-smaller btn-outline-primary ${showLogs && 'active'} py-05 text-nowrap`}
+          className={`btn btn-smaller btn-outline-primary ${showLogs ? 'active' : ''} py-05 text-nowrap me-1`}
           onClick={logsToggle}
         >
           {showLogs && <span>&#10003;</span>} <span>Logs</span>
         </button>
         <button
-          className={`btn btn-smaller btn-outline-primary ${showTimings && 'active'} py-05 text-nowrap`}
+          className={`btn btn-smaller btn-outline-primary ${showTimings ? 'active' : ''} py-05 text-nowrap me-2`}
           onClick={timingsToggle}
         >
           {showTimings && <span>&#10003;</span>} <span>Time</span>
