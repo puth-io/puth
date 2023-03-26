@@ -8,6 +8,7 @@ import DevStore, { DebugStoreClass } from './DebugStoreClass';
 import { BlobHandler } from './SnapshotRecovering';
 import Events from "../../Events";
 import events from "../../Events";
+import {Connection} from "@puth-pro/gui/src/App/AppState";
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -366,8 +367,8 @@ export default WebsocketHandler;
 
 
 
-export function EmitContextEvent(context, type, arg?) {
-  WebsocketHandler.send({
+export function EmitContextEvent(connection: Connection, context, type, arg?) {
+  connection.send({
     // namespace: 'events',
     type: 'event',
     on: 'context',
@@ -379,8 +380,8 @@ export function EmitContextEvent(context, type, arg?) {
   })
 }
 
-export function EmitPuthEvent(type, arg?) {
-  WebsocketHandler.send({
+export function EmitPuthEvent(connection: Connection, type, arg?) {
+  connection.send({
     // namespace: 'events',
     type: 'event',
     on: 'puth',

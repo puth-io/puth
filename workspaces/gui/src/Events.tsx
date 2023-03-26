@@ -9,6 +9,7 @@ type Events = {
     'command:active'?: ICommand;
     'layout:resize': undefined;
     'context:created': ContextStore;
+    'context:received': {context: ContextStore, packet: any};
     'context:event': [ContextStore, any];
     'context:event:screencast': {context: ContextStore, packet: any};
 };

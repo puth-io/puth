@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 import Constructors from 'puth/src/Context/Constructors';
+import {Connection} from "@puth-pro/gui/src/App/AppState";
 
 export default class ContextStore {
   id;
@@ -29,6 +30,7 @@ export default class ContextStore {
 
   createdAt: number;
   created = Date.now();
+  connection: Connection | undefined;
 
   constructor(
     id: string,
