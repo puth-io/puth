@@ -445,6 +445,7 @@ class Context extends Generic {
         elapsed: Date.now() - this.createdAt,
         started: Date.now(),
       },
+      timestamp: Date.now(),
     };
   }
   

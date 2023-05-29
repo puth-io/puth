@@ -21,6 +21,9 @@ const func = (async function () {
   // await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
   
   await page.visit("https://playground.puth.dev");
+  await page.visit("https://playground.puth.dev");
+  await page.visit("https://playground.puth.dev");
+  await page.visit("https://playground.puth.dev");
   
   // await new Promise(resolve => setTimeout(resolve, 20 * 1000));
   

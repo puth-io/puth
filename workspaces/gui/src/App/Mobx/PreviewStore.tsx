@@ -161,9 +161,9 @@ class PreviewStoreClass {
     return this._activeContext;
   }
   
-  set activeScreencast(screencast) {
-    
-  }
+  // set activeScreencast(screencast) {
+  //  
+  // }
   
   get activeScreencastUrl() {
     if (this.visibleHighlightType !== 'screencast' || !this.activeScreencast) {
@@ -187,6 +187,7 @@ class PreviewStoreClass {
       action((cmd: ICommand | undefined) => {
         if (this.activeCommand?.id === cmd?.id) {
           this.activeCommand = undefined;
+          this.activeScreencast = undefined;
 
           Events.emit('command:active', undefined);
 
