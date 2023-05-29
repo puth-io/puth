@@ -20,6 +20,9 @@ const func = (async function () {
   await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
   await page.visit('https://playground.puth.dev/');
   await page.$('body');
+  await page.visit("https://playground.puth.dev");
+  await page.visit("https://playground.puth.dev");
+  await page.visit("https://playground.puth.dev");
   
   await context.testFailed();
   

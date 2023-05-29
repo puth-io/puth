@@ -160,9 +160,9 @@ class PreviewStoreClass {
     return this._activeContext;
   }
   
-  set activeScreencast(screencast) {
-  
-  }
+  // set activeScreencast(screencast) {
+  //
+  // }
   
   get activeScreencastUrl() {
     if (this.visibleHighlightType !== 'screencast' || !this.activeScreencast) {
@@ -181,25 +181,26 @@ class PreviewStoreClass {
   private registerEvents() {
     // @ts-ignore
     Events.on(
-        'preview:toggle',
-        action((cmd: ICommand | undefined) => {
-          if (this.activeCommand?.id === cmd?.id) {
-            this.activeCommand = undefined;
-            
-            Events.emit('command:active', undefined);
-            
-            return;
-          }
-          
-          if (this.highlightCommand?.id === cmd?.id) {
-            this.highlightCommand = undefined;
-          }
-          
-          this.activeCommand = cmd;
-          this.activeState = 'after';
-          
-          Events.emit('command:active', cmd);
-        }),
+      'preview:toggle',
+      action((cmd: ICommand | undefined) => {
+        if (this.activeCommand?.id === cmd?.id) {
+          this.activeCommand = undefined;
+          this.activeScreencast = undefined;
+
+          Events.emit('command:active', undefined);
+
+          return;
+        }
+
+        if (this.highlightCommand?.id === cmd?.id) {
+          this.highlightCommand = undefined;
+        }
+
+        this.activeCommand = cmd;
+        this.activeState = 'after';
+
+        Events.emit('command:active', cmd);
+      }),
     );
     // @ts-ignore
     Events.on(
@@ -230,4 +231,5 @@ class PreviewStoreClass {
 const PreviewStore = new PreviewStoreClass();
 
 export default PreviewStore;
+
 
