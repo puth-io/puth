@@ -6,6 +6,8 @@ import { IContext } from '../Misc/WebsocketHandler';
 import { resolveSnapshotBacktrack3, resolveSnapshotBacktrackV4 } from '../Misc/Util';
 
 export type SnapshotState = 'before' | 'after';
+export type HighlightType = 'screencast' | 'dom';
+export type Actor = 'sidebar' | 'timeline';
 
 export const domParser = new DOMParser();
 
@@ -18,7 +20,10 @@ class PreviewStoreClass {
   private highlightInterval: number | undefined;
   _darken: boolean = false;
   _removeScriptTags: boolean = true;
-  
+  visibleHighlightType: HighlightType = 'screencast';
+  lastActor: Actor = 'sidebar';
+  activeScreencast: any = null;
+  _activeScreencastUrl: any = null;
   constructor() {
     makeAutoObservable(this);
     
@@ -78,6 +83,9 @@ class PreviewStoreClass {
   }
   
   get visibleSnapshot() {
+    if (this.visibleHighlightType !== 'dom') {
+      return null;
+    }
     return this.visibleCommand?.snapshots[this.visibleHighlightState];
   }
   
@@ -152,6 +160,24 @@ class PreviewStoreClass {
     return this._activeContext;
   }
   
+  set activeScreencast(screencast) {
+  
+  }
+  
+  get activeScreencastUrl() {
+    if (this.visibleHighlightType !== 'screencast' || !this.activeScreencast) {
+      return null;
+    }
+    
+    // if (this._activeScreencastUrl) {
+    //   URL.revokeObjectURL(this._activeScreencastUrl);
+    // }
+    // this._activeScreencastUrl = URL.createObjectURL(new Blob([this.activeScreencast.frame], {type: 'image/jpg'}));
+    
+    // return this._activeScreencastUrl;
+    
+    return URL.createObjectURL(new Blob([this.activeScreencast.frame], {type: 'image/jpg'}));
+  }
   private registerEvents() {
     // @ts-ignore
     Events.on(
@@ -204,3 +230,4 @@ class PreviewStoreClass {
 const PreviewStore = new PreviewStoreClass();
 
 export default PreviewStore;
+
