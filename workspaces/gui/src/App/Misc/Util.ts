@@ -330,9 +330,9 @@ export function throttle(func, delay = 250) {
     }
 
     inProgress = true;
-
+    
+    func(...args); // Consider moving this line before the set timeout if you want the very first one to be immediate
     setTimeout(() => {
-      func(...args); // Consider moving this line before the set timeout if you want the very first one to be immediate
       inProgress = false;
     }, delay);
   };

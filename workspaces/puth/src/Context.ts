@@ -91,6 +91,7 @@ class Context extends Generic {
         ...this.serialize(true),
         options: this.options,
         createdAt: this.createdAt,
+        timestamp: Date.now(),
       });
     }
   }
@@ -208,13 +209,13 @@ class Context extends Generic {
             context: this.serialize(),
             // @ts-ignore
             requestId: request._requestId,
-            time: Date.now(),
             isNavigationRequest: request.isNavigationRequest(),
             url: request.url(),
             resourceType: request.resourceType(),
             method: request.method(),
             headers: request.headers(),
             status: 'pending',
+            timestamp: Date.now(),
           });
         }
       });
@@ -229,7 +230,7 @@ class Context extends Generic {
             context: this.serialize(),
             // @ts-ignore
             requestId: request._requestId,
-            time: Date.now(),
+            timestamp: Date.now(),
           });
         }
       });
@@ -246,6 +247,7 @@ class Context extends Generic {
               elapsed: Date.now() - this.createdAt,
               finished: Date.now(),
             },
+            timestamp: Date.now(),
             status: response.status(),
             url: response.request().url(),
             resourceType: response.request().resourceType(),
@@ -274,7 +276,7 @@ class Context extends Generic {
           id: v4(),
           type: 'log',
           context: this.serialize(),
-          time: Date.now(),
+          timestamp: Date.now(),
           messageType: consoleMessage.type(),
           args,
           location: consoleMessage.location(),
@@ -353,6 +355,7 @@ class Context extends Generic {
         specific: 'status',
         status: 'failed',
         context: this.serialize(),
+        timestamp: Date.now(),
       });
     }
   }
@@ -363,6 +366,7 @@ class Context extends Generic {
         type: 'exception',
         context: this.serialize(),
         data: exception,
+        timestamp: Date.now(),
       });
     }
   }
@@ -376,6 +380,7 @@ class Context extends Generic {
         specific: 'status',
         status: 'success',
         context: this.serialize(),
+        timestamp: Date.now(),
       });
     }
   }

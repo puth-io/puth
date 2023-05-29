@@ -11,6 +11,7 @@ export default class ContextStore {
   requests = [];
   responses = [];
   exceptions = [];
+  screencasts = [];
 
   group: string = '';
   test: {
@@ -29,6 +30,7 @@ export default class ContextStore {
   };
 
   createdAt: number;
+  lastActivity: number;
   created = Date.now();
   connection: Connection | undefined;
 
@@ -46,6 +48,7 @@ export default class ContextStore {
     this.group = group;
     this.capabilities = capabilities;
     this.createdAt = createdAt;
+    this.lastActivity = createdAt;
 
     makeAutoObservable(this, {});
   }
