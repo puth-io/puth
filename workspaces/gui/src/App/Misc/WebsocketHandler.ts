@@ -364,8 +364,6 @@ const WebsocketHandler = new WebsocketHandlerSingleton();
 
 export default WebsocketHandler;
 
-
-
 export function EmitContextEvent(connection: Connection, context, type, arg?) {
   connection.send({
     // namespace: 'events',
