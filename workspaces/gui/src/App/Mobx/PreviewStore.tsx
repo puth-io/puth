@@ -204,7 +204,7 @@ class PreviewStoreClass {
   }
   
   get timelineData() {
-    if (!this.activeContext) {
+    if (!this.visibleCommand) {
       return {
         screencasts: [],
         commands: [],
@@ -212,15 +212,17 @@ class PreviewStoreClass {
       };
     }
     
-    let start = this.activeContext.createdAt;
-    let end = this.activeContext.lastActivity;
+    let context = this.visibleCommand.context;
+    
+    let start = context.createdAt;
+    let end = context.lastActivity;
     let diff = end - start;
     
     const percentageFromLeft = (time: number) => (time - start) / diff;
     
-    let screencasts = this.activeContext.screencasts.map((event: any) => [percentageFromLeft(event.timestamp), event]);
-    let commands = this.activeContext.commands.map((event: any) => [percentageFromLeft(event.timestamp), event]);
-    let exceptions = this.activeContext.exceptions.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let screencasts = context.screencasts.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let commands = context.commands.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let exceptions = context.exceptions.map((event: any) => [percentageFromLeft(event.timestamp), event]);
     
     return {
       screencasts,
