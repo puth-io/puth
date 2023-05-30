@@ -21,9 +21,7 @@ class PreviewStoreClass {
   _darken: boolean = false;
   _removeScriptTags: boolean = true;
   visibleHighlightType: HighlightType = 'screencast';
-  lastActor: Actor = 'sidebar';
-  activeScreencast: any = null;
-  _activeScreencastUrl: any = null;
+  highlightScreencast: any = null;
   constructor() {
     makeAutoObservable(this);
     
@@ -164,8 +162,14 @@ class PreviewStoreClass {
   //
   // }
   
+  activeScreencast: any = null;
+  
+  get visibleScreencast() {
+    return this.highlightScreencast ?? this.activeScreencast;
+  }
+  
   get activeScreencastUrl() {
-    if (this.visibleHighlightType !== 'screencast' || !this.activeScreencast) {
+    if (this.visibleHighlightType !== 'screencast' || !this.visibleScreencast) {
       return null;
     }
     
@@ -176,7 +180,83 @@ class PreviewStoreClass {
     
     // return this._activeScreencastUrl;
     
-    return URL.createObjectURL(new Blob([this.activeScreencast.frame], {type: 'image/jpg'}));
+    return URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpg'}));
+  }
+  
+  private _timelineCursor: number|null = null;
+  timelineHighlightCursor = null;
+  
+  get timelineCursor() {
+    return this.timelineHighlightCursor ?? this._timelineCursor;
+  }
+  set timelineCursor(value: number|null) {
+    this._timelineCursor = value;
+  }
+  
+  get timelineCursorPercentage() {
+    if (!this.timelineCursor) {
+      return 0;
+    }
+    
+    const percentageFromLeft = (time: number) => (time - this.timelineData?.start) / this.timelineData?.diff;
+    return percentageFromLeft(this.timelineCursor);
+  }
+  
+  get timelineData() {
+    if (!this.activeContext) {
+      return {
+        screencasts: [],
+        commands: [],
+        exceptions: [],
+      };
+    }
+    
+    let start = this.activeContext.createdAt;
+    let end = this.activeContext.lastActivity;
+    let diff = end - start;
+    
+    const percentageFromLeft = (time: number) => (time - start) / diff;
+    
+    let screencasts = this.activeContext.screencasts.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let commands = this.activeContext.commands.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let exceptions = this.activeContext.exceptions.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    
+    return {
+      screencasts,
+      commands,
+      exceptions,
+      start,
+      end,
+      diff,
+    }
+  }
+  
+  findLastEventUntil(time, events) {
+    let last;
+    for (let screencast of events) {
+      if (screencast.timestamp > time) {
+        break;
+      }
+      last = screencast;
+    }
+    return last;
+  }
+  
+  findLastScreencastForCommand(command) {
+    // calculate last frame before next command or if null, get overall last frame
+    let idx = command.context.commands.indexOf(command);
+    if (idx === (command.context.commands.length - 1)) {
+      return {
+        screencast: command.context.screencasts[command.context.screencasts.length -1],
+        until: command.timestamp,
+      };
+    } else {
+      let until = command.context.commands[idx + 1].timestamp - 1;
+      return {
+        screencast: this.findLastEventUntil(until, command.context.screencasts),
+        until,
+      };
+    }
   }
   private registerEvents() {
     // @ts-ignore
@@ -195,32 +275,44 @@ class PreviewStoreClass {
         if (this.highlightCommand?.id === cmd?.id) {
           this.highlightCommand = undefined;
         }
-
+        
         this.activeCommand = cmd;
         this.activeState = 'after';
-
+        
+        // calculate last frame before next command or if null, get overall last frame
+        let lastScreencast = this.findLastScreencastForCommand(cmd);
+        this.activeScreencast = lastScreencast.screencast;
+        this.timelineCursor = lastScreencast.until;
+        
         Events.emit('command:active', cmd);
       }),
     );
     // @ts-ignore
     Events.on(
-        'preview:highlight:show',
-        action((cmd: ICommand | undefined) => {
-          if (this.visibleCommand?.id === cmd?.id) {
-            return;
-          }
-          this.highlightCommand = cmd;
-          this.resetHighlightInterval();
-        }),
+      'preview:highlight:show',
+      action((cmd: ICommand | undefined) => {
+        if (this.visibleCommand?.id === cmd?.id) {
+          return;
+        }
+        this.highlightCommand = cmd;
+        this.resetHighlightInterval();
+        
+        // calculate last frame before next command or if null, get overall last frame
+        let lastScreencast = this.findLastScreencastForCommand(cmd);
+        this.highlightScreencast = lastScreencast.screencast;
+        this.timelineHighlightCursor = lastScreencast.until;
+      }),
     );
     // @ts-ignore
     Events.on(
-        'preview:highlight:hide',
-        action((cmd: ICommand | undefined) => {
-          if (this.highlightCommand?.id === cmd?.id) {
-            this.highlightCommand = undefined;
-          }
-        }),
+      'preview:highlight:hide',
+      action((cmd: ICommand | undefined) => {
+        if (this.highlightCommand?.id === cmd?.id) {
+          this.highlightCommand = undefined;
+          this.highlightScreencast = null;
+          this.timelineHighlightCursor = null;
+        }
+      }),
     );
   }
 }
@@ -231,5 +323,6 @@ class PreviewStoreClass {
 const PreviewStore = new PreviewStoreClass();
 
 export default PreviewStore;
+
 
 
