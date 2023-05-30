@@ -11,7 +11,7 @@ export default class ContextStore {
   requests = [];
   responses = [];
   exceptions = [];
-  screencasts = [];
+  screencasts: any[] = [];
   group: string = '';
   test: {
     name: string;
