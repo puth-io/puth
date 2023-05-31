@@ -12,6 +12,9 @@ export type Actor = 'sidebar' | 'timeline';
 
 export const domParser = new DOMParser();
 
+// do not put this inside PreviewStoreClass because this must not be observed
+let _lastActiveScreencastUrl: string|null = null;
+
 class PreviewStoreClass {
   private _activeContext: IContext | undefined;
   private _activeCommand: ICommand | undefined;
@@ -113,13 +116,14 @@ class PreviewStoreClass {
       html = this.visibleSnapshot?.html?.src;
     }
     
-    const parsedDocument = domParser.parseFromString(html, 'text/html');
-    recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
+    // const parsedDocument = domParser.parseFromString(html, 'text/html');
+    // recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
     
     // TODO find a way to make Blob out of document directly because this is "document => string => blob"
     //      but if innerHTML is cached then it doesn't that big of a difference
-    let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
-    return url;
+    // let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+    // return url;
+    return html;
   }
   
   get hasVisibleSnapshotSource() {
@@ -174,14 +178,17 @@ class PreviewStoreClass {
       return null;
     }
     
-    // if (this._activeScreencastUrl) {
-    //   URL.revokeObjectURL(this._activeScreencastUrl);
-    // }
+    if (_lastActiveScreencastUrl) {
+      URL.revokeObjectURL(_lastActiveScreencastUrl);
+    }
     // this._activeScreencastUrl = URL.createObjectURL(new Blob([this.activeScreencast.frame], {type: 'image/jpg'}));
     
     // return this._activeScreencastUrl;
     
-    return URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpg'}));
+    let url = URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpg'}))
+    _lastActiveScreencastUrl = url;
+    
+    return url;
   }
   
   private _timelineCursor: number|null = null;
@@ -330,6 +337,3 @@ class PreviewStoreClass {
 const PreviewStore = new PreviewStoreClass();
 
 export default PreviewStore;
-
-
-
