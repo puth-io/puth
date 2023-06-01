@@ -328,8 +328,78 @@ class PreviewStoreClass {
         }
       }),
     );
+    
+    Events.on('rl', ({url, requestId, serviceWorker}) => {
+      if (!this.visibleCommand) {
+        serviceWorker.postMessage({
+          type: 1,
+          content: null,
+          contentType: null,
+          requestId,
+        });
+        return;
+      }
+      
+      let base = new URL(PreviewStore.visibleSnapshot?.url);
+      let replaced = url.replace(window.location.origin, base.origin);
+      
+      if (replaced.startsWith('http://') || replaced.startsWith('https://')) {
+        // do nothing
+      } else if (replaced.startsWith('//')) {
+        let url = new URL(window.location.origin + '/');
+        replaced = url.origin + replaced.replace('//', '/');
+      } else if (replaced.startsWith('/')) {
+        let url = new URL(window.location.origin + '/');
+        replaced = url.origin + replaced;
+      } else {
+        replaced = new URL(replaced, window.location.origin + '/').href;
+      }
+      
+      let found = this.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
+        return replaced === pageInclude.url;
+      });
+      
+      if (!found) {
+        console.error('Did not find response', {original: url, replaced, responses: this.visibleCommand.context.responses});
+      }
+      
+      console.log(found);
+      
+      // TODO check srcdoc and inject serviceWorker ???
+      
+      if (found) {
+        let content = found.content.slice(0);
+        serviceWorker.postMessage({
+          type: 1,
+          content,
+          contentType: getHeader(found.headers, 'content-type'),
+          requestId,
+        }, [content.buffer]);
+      } else {
+        serviceWorker.postMessage({
+          type: 1,
+          content: null,
+          contentType: null,
+          requestId,
+        });
+      }
+      
+      console.log('rl', url, replaced, 'found', found);
+    });
   }
 }
+
+let getHeader = (headers, find) => {
+  find = find.toLowerCase();
+  
+  for (let header of Object.keys(headers)) {
+    if (header.toLowerCase() === find) {
+      return headers[header];
+    }
+  }
+  
+  return '';
+};
 
 /**
  * Global objects initialization
