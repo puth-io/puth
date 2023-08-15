@@ -170,7 +170,7 @@ class GenericObject
             'GenericValue', 'GenericValues' => $generic->value,
             'GenericObject' => $this->resolveGenericObject($generic),
             'GenericObjects' => array_map(
-                fn($item) => $this->resolveGenericObject($generic),
+                fn($item) => $this->resolveGenericObject($item),
                 $generic->value
             ),
             'GenericArray' => array_map(
