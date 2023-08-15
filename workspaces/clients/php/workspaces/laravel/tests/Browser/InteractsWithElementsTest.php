@@ -4,10 +4,10 @@ namespace Browser;
 
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\Browser\Concerns\LegacyBrowserHandling;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class InteractsWithElementsTest extends PuthDuskTestCase
+class InteractsWithElementsTest extends PuthTestCase
 {
     use LegacyBrowserHandling;
     
@@ -65,7 +65,7 @@ class InteractsWithElementsTest extends PuthDuskTestCase
 //                TODO pptr bug https://github.com/puppeteer/puppeteer/issues/9770
 //                ->type('#actions-type input', '{Shift}test')
 //                ->assertValue('#actions-type input', 't');
-                
+        
         });
     }
 }

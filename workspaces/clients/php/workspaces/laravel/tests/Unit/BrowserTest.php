@@ -7,10 +7,10 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class BrowserTest extends PuthDuskTestCase
+class BrowserTest extends PuthTestCase
 {
     function test_wip()
     {
@@ -128,13 +128,13 @@ class BrowserTest extends PuthDuskTestCase
                 ->assertUrlIs($playground->url());
         });
     }
-//    
+//
 //    function test_log_capture()
 //    {
 //        Puth::captureLog();
 //        Log::info('1234', [$this]);
 //        Puth::releaseLog();
-//        
+//
 //        dd(Puth::getFormattedLog());
 //    }
 }

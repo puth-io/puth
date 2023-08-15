@@ -40,6 +40,12 @@ class PuthServiceProvider extends ServiceProvider
                 ]);
             });
         }
+        
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                Console\InstallCommand::class,
+            ]);
+        }
     }
     
     public function register()

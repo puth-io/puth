@@ -3,19 +3,17 @@
 namespace Puth\Laravel;
 
 use Exception;
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
 use Puth\Context;
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\Browser\Concerns\ProvidesBrowser;
 use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
-use Tests\CreatesApplication;
 
-abstract class PuthDuskTestCase extends BaseTestCase
+abstract class TestCase extends FoundationTestCase
 {
     use ProvidesBrowser;
-    use CreatesApplication;
     use PuthAssertions;
     
     public Context $context;
@@ -28,20 +26,20 @@ abstract class PuthDuskTestCase extends BaseTestCase
         
         static::$debug = config('puth.debug', false);
     
-        $this->context = new Context(Puth::instanceUrl(), [
+        $this->context = new Context(Puth::instanceUrl(), array_merge([
             'test' => [
                 'name' => $this->getName(),
                 'group' => get_class($this),
             ],
+            'snapshot' => true,
+            'debug' => static::$debug,
 //            'timeouts' => [
 //                'commands' => 5000,
 ////                'assertions' => 5000,
 ////                'default' => 5000,
 //            ],
-            'snapshot' => true,
 //            'dev' => false,
-            'debug' => static::$debug,
-        ]);
+        ], $this->getContextOptions()));
         
         Browser::$baseUrl = $this->baseUrl();
         Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
@@ -56,6 +54,11 @@ abstract class PuthDuskTestCase extends BaseTestCase
         if ($this->shouldTrackLog()) {
             Puth::captureLog();
         }
+    }
+    
+    public function getContextOptions(): array
+    {
+        return [];
     }
     
     protected function tearDown(): void

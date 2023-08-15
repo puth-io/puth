@@ -3,10 +3,10 @@
 namespace Browser;
 
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class WaitUntilTest extends PuthDuskTestCase
+class WaitUntilTest extends PuthTestCase
 {
     function test_wait_until()
     {

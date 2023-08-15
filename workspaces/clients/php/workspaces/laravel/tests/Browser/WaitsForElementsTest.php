@@ -6,10 +6,10 @@ use Exception;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class WaitsForElementsTest extends PuthDuskTestCase
+class WaitsForElementsTest extends PuthTestCase
 {
     function test_wait_until_script()
     {

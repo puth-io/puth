@@ -6,10 +6,10 @@ use Exception;
 use PHPUnit\Framework\Assert;
 use Illuminate\Support\Carbon;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class AllMethodsTest extends PuthDuskTestCase
+class AllMethodsTest extends PuthTestCase
 {
     function test_querying_elements()
     {

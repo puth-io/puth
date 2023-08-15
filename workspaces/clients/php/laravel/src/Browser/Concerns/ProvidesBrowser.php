@@ -90,9 +90,13 @@ trait ProvidesBrowser
      */
     protected function newBrowser()
     {
-        $browser = $this->context->createBrowser([
+        $browser = $this->context->createBrowser(array_merge([
             'headless' => true,
-        ]);
+            'defaultViewport' => [
+                'width' => 1280,
+                'height' => 720,
+            ],
+        ], $this->getLaunchOptions()));
         
         return new Browser(
             $this->context,
@@ -204,5 +208,10 @@ trait ProvidesBrowser
             : $this->getName(false);
         
         return str_replace('\\', '_', get_class($this)) . '_' . $name;
+    }
+    
+    public function getLaunchOptions(): array
+    {
+        return [];
     }
 }

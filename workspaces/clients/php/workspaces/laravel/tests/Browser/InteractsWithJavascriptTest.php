@@ -4,10 +4,10 @@ namespace Tests\Browser;
 
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class InteractsWithJavascriptTest extends PuthDuskTestCase
+class InteractsWithJavascriptTest extends PuthTestCase
 {
     function test_script()
     {

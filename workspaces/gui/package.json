@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "gui:dev": "vite",
     "build": "tsc && vite build",
     "postbuild": "(rm -rf ../puth/static/gui || true) && cp -r dist ../puth/static/gui",
     "preview": "vite preview"

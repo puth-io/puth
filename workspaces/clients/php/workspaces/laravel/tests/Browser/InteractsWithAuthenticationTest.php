@@ -4,9 +4,9 @@ namespace Tests\Browser;
 
 use App\Models\User;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
+use Tests\PuthTestCase;
 
-class InteractsWithAuthenticationTest extends PuthDuskTestCase
+class InteractsWithAuthenticationTest extends PuthTestCase
 {
     function test_user_resolver()
     {

@@ -1,10 +1,10 @@
 <?php
 
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class InteractsWithDraggingTest extends PuthDuskTestCase
+class InteractsWithDraggingTest extends PuthTestCase
 {
     function test_drag_and_drop()
     {

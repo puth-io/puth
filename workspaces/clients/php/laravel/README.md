@@ -17,10 +17,10 @@ php artisan vendor:publish --provider=Puth\\Laravel\\PuthServiceProvider
 ### Example Browser Test
 
 ```php
+use Tests\PuthTestCase;
 use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\PuthDuskTestCase;
 
-class ExampleBrowserTest extends PuthDuskTestCase
+class ExampleBrowserTest extends PuthTestCase
 {
     function test_visit_website()
     {

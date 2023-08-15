@@ -4,10 +4,10 @@ namespace Tests\Browser;
 
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\Browser\Concerns\LegacyBrowserHandling;
-use Puth\Laravel\PuthDuskTestCase;
 use Tests\Browser\Pages\Playground;
+use Tests\PuthTestCase;
 
-class InteractsWithDialogTest extends PuthDuskTestCase
+class InteractsWithDialogTest extends PuthTestCase
 {
     use LegacyBrowserHandling;
     
