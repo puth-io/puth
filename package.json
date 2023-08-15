@@ -8,7 +8,7 @@
   ],
   "name": "@puth/monorepo",
   "devDependencies": {
-    "lerna": "^6.4.1"
+    "lerna": "^7.1.5"
   },
   "engines": {
     "yarn": ">=3.4.1"
