@@ -52,8 +52,8 @@ jobs:
             workspaces/puth/.cache
           key: node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: lerna run build && lerna run postbuild
-      - run: lerna run test
+      - run: npx lerna run build && npx lerna run postbuild
+      - run: npx lerna run test
 
   build-test-image:
     needs: npm
@@ -71,7 +71,7 @@ jobs:
             workspaces/puth/.cache
           key: node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
-      - run: lerna run build && lerna run postbuild
+      - run: npx lerna run build && npx lerna run postbuild
       - name: Image
         run: |
           rm -rf workspaces/puth/node_modules
