@@ -21,15 +21,6 @@ abstract class TestCase extends FoundationTestCase
     
     public static bool $debug = false;
     
-    private bool $isPhpVersion10;
-    
-    public function __construct(string $name)
-    {
-        parent::__construct($name);
-        
-        $this->isPhpVersion10 = intval(explode('.', Version::id())[0]) > 9;
-    }
-    
     protected function setUp(): void
     {
         parent::setUp();
@@ -107,14 +98,19 @@ abstract class TestCase extends FoundationTestCase
         return $this->saveSnapshotOnFailure ?? false;
     }
     
+    private function isPhpVersion10()
+    {
+        return intval(explode('.', Version::id())[0]) > 9;
+    }
+    
     public function getPhpunitTestName()
     {
-        return $this->isPhpVersion10 ? $this->name() : $this->getName();
+        return $this->isPhpVersion10() ? $this->name() : $this->getName();
     }
     
     public function hasPhpunitTestFailed()
     {
-        if (!$this->isPhpVersion10) {
+        if (!$this->isPhpVersion10()) {
             return $this->hasFailed();
         }
         

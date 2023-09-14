@@ -117,6 +117,8 @@ jobs:
             phpunit: 10.*
           - laravel: 10.*
             php: '8.0'
+          - phpunit: 10.*
+            php: '8.0'
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
