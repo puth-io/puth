@@ -10,7 +10,7 @@ import {Context} from "./Components/Context/Context";
 import React from "react";
 
 const LocalSidebar = observer(() => (
-    <Sidebar>
+    <Sidebar extra={<SidebarAction/>}>
         {WebsocketHandler.contextArray.map((context, idx) => {
             return <Context key={context.id} context={context} />;
         })}
