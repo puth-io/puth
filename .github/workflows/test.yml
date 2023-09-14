@@ -74,12 +74,14 @@ jobs:
       - run: npx lerna run build && npx lerna run postbuild
       - name: Image
         run: |
+          npm ci
           rm -rf workspaces/puth/node_modules
           mv node_modules workspaces/puth
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
       - name: Test image
         run: |
+          npm ci
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
