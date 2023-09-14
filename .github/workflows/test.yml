@@ -109,8 +109,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ '8.0', 8.1, 8.2 ]
-        laravel: [ 9 ]
+        php: ['8.0', 8.1, 8.2]
+        laravel: [9.*, 10.*]
+        phpunit: [9.*, 10.*]
+        exclude:
+          - laravel: 9.*
+            phpunit: 10.*
+          - laravel: 10.*
+            php: '8.0'
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
@@ -155,7 +161,7 @@ jobs:
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           php artisan migrate --force
-          php artisan test
+          php artisan test --without-tty
         env:
           RUNNING_IN_CI: true
 
