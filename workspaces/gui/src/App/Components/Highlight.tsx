@@ -64,7 +64,7 @@ export function loadHighlights(
     // that the function did find and perform on.
     function innerQuery(selector: string) {
       siv = root.querySelector(selector);
-      highlight(siv, frame, true);
+      // highlight(siv, frame, true);
     }
 
     // TODO Add an integration inside puth plugin to enable custom highlights
@@ -74,7 +74,7 @@ export function loadHighlights(
     }
 
     scrollIntoView(siv);
-    highlight(hl, frame);
+    // highlight(hl, frame);
   });
 
   function highlight(element: any, context: Document, root = false) {
