@@ -91,7 +91,6 @@ trait ProvidesBrowser
     protected function newBrowser()
     {
         $browser = $this->context->createBrowser(array_merge([
-            'headless' => true,
             'defaultViewport' => [
                 'width' => 1280,
                 'height' => 720,

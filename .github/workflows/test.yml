@@ -110,20 +110,20 @@ jobs:
       fail-fast: true
       matrix:
         php: ['8.0', 8.1, 8.2]
-        laravel: [9.*, 10.*]
-        phpunit: [9.*, 10.*]
+        laravel: [9, 10]
+        phpunit: [9, 10]
         exclude:
-          - laravel: 9.*
-            phpunit: 10.*
-          - laravel: 10.*
+          - laravel: 9
+            phpunit: 10
+          - laravel: 10
             php: '8.0'
-          - phpunit: 10.*
+          - phpunit: 10
             php: '8.0'
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
 
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}.*
+    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}
 
     steps:
       - name: Checkout
@@ -155,7 +155,10 @@ jobs:
           restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
 
       - name: Install Composer dependencies
-        run: composer update --prefer-stable --no-interaction --no-suggest
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
+          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update
+          composer update --prefer-stable --no-interaction --no-suggest
       - name: Run tests
         run: |
           cp .env.example .env
