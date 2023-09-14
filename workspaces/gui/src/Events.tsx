@@ -22,7 +22,7 @@ const MessageType = {
 };
 navigator.serviceWorker.onmessage = (event) => {
     if (event.data?.type === MessageType.REQUEST) {
-        console.log('events', event);
+        // console.log('events', event);
         Events.emit('rl', {
             url: event.data.url,
             requestId: event.data.requestId,

@@ -7,4 +7,4 @@ const instance = new Puth({
 
 instance.use(PuthStandardPlugin);
 
-instance.serve(7345, "0.0.0.0");
+instance.serve(7345, '127.0.0.1');
