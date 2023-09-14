@@ -4,13 +4,13 @@ on:
     branches:
       - master
   pull_request:
-    branches: 
+    branches:
       - master
 
 jobs:
-  yarn:
+  npm:
     runs-on: ubuntu-latest
-    name: 'yarn cache'
+    name: 'npm cache'
     steps:
       - uses: actions/checkout@v3
       - id: get_version
@@ -22,15 +22,15 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: |
-            .yarn/cache
+            .npm/cache
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
+          key: node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: node
-      - name: yarn install
-        run: yarn
+      - name: npm install
+        run: npm ci
 
   test-puth-node:
-    needs: yarn
+    needs: npm
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,15 +48,15 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            .yarn/cache
+            .npm/cache
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-      - run: yarn
+          key: node-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
       - run: lerna run build && lerna run postbuild
       - run: lerna run test
 
   build-test-image:
-    needs: yarn
+    needs: npm
     name: 'Build test image'
     runs-on: ubuntu-latest
     steps:
@@ -67,21 +67,21 @@ jobs:
       - uses: actions/cache/restore@v3
         with:
           path: |
-            .yarn/cache
+            .npm/cache
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-      - run: yarn
+          key: node-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
       - run: lerna run build && lerna run postbuild
       - name: Image
         run: |
-          yarn workspaces focus --production puth
+#          yarn workspaces focus --production puth
           rm -rf workspaces/puth/node_modules
           mv node_modules workspaces/puth
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
       - name: Test image
         run: |
-          yarn
+#          yarn
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
