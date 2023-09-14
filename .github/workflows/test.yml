@@ -8,29 +8,28 @@ on:
       - master
 
 jobs:
-  npm:
-    runs-on: ubuntu-latest
-    name: 'npm cache'
-    steps:
-      - uses: actions/checkout@v3
-      - id: get_version
-        uses: battila7/get-version-action@v2
-      - run: echo TAG ${{ steps.get_version.outputs.version }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - uses: actions/cache@v3
-        with:
-          path: |
-            .npm/cache
-            workspaces/puth/.cache
-          key: node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: node
-      - name: npm install
-        run: npm ci
+#  npm:
+#    runs-on: ubuntu-latest
+#    name: 'npm cache'
+#    steps:
+#      - uses: actions/checkout@v3
+#      - id: get_version
+#        uses: battila7/get-version-action@v2
+#      - run: echo TAG ${{ steps.get_version.outputs.version }}
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: 18
+#      - uses: actions/cache@v3
+#        with:
+#          path: |
+#            .npm
+#            workspaces/puth/.cache
+#          key: node-${{ hashFiles('**/package-lock.json') }}
+#          restore-keys: node
+#      - run: npm ci
 
   test-puth-node:
-    needs: npm
+#    needs: npm
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -44,11 +43,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
-      - name: 'Cache'
-        uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v3
         with:
           path: |
-            .npm/cache
+            .npm
             workspaces/puth/.cache
           key: node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
@@ -56,7 +54,7 @@ jobs:
       - run: npx lerna run test
 
   build-test-image:
-    needs: npm
+#    needs: npm
     name: 'Build test image'
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +65,7 @@ jobs:
       - uses: actions/cache/restore@v3
         with:
           path: |
-            .npm/cache
+            .npm
             workspaces/puth/.cache
           key: node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
@@ -84,7 +82,7 @@ jobs:
           npm ci
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
+          PUTH_URL=http://127.0.0.1:7345 npx lerna run test:only:remote
           docker save -o /tmp/puth-test-image.tar puth-test-image
       - uses: actions/upload-artifact@v3
         with:
