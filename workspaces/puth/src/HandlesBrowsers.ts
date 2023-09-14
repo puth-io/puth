@@ -27,7 +27,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
         });
         
         const browser = await puppeteer.launch({
-            // headless: true,
+            headless: 'new',
             ignoreDefaultArgs: [
                 '--enable-automation',
             ],
@@ -58,7 +58,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
         this.browsers.delete(browser);
         
         if (cleanup) {
-            await cleanup();    
+            await cleanup();
         }
     }
 }
