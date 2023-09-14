@@ -4,6 +4,7 @@ namespace Puth\Laravel;
 
 use Exception;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
+use PHPUnit\Runner\Version;
 use Puth\Context;
 use Puth\Laravel\Browser\Browser;
 use Puth\Laravel\Browser\Concerns\ProvidesBrowser;
@@ -20,6 +21,15 @@ abstract class TestCase extends FoundationTestCase
     
     public static bool $debug = false;
     
+    private bool $isPhpVersion10;
+    
+    public function __construct(string $name)
+    {
+        parent::__construct($name);
+        
+        $this->isPhpVersion10 = intval(explode('.', Version::id())[0]) > 9;
+    }
+    
     protected function setUp(): void
     {
         parent::setUp();
@@ -28,7 +38,7 @@ abstract class TestCase extends FoundationTestCase
     
         $this->context = new Context(Puth::instanceUrl(), array_merge([
             'test' => [
-                'name' => $this->getName(),
+                'name' => $this->getPhpunitTestName(),
                 'group' => get_class($this),
             ],
             'snapshot' => true,
@@ -68,7 +78,7 @@ abstract class TestCase extends FoundationTestCase
     
         $destroyOptions = [];
 
-        if ($this->hasFailed()) {
+        if ($this->hasPhpunitTestFailed()) {
             $this->context->testFailed();
     
             if ($this->shouldSaveSnapshotOnFailure()) {
@@ -95,6 +105,20 @@ abstract class TestCase extends FoundationTestCase
     public function shouldSaveSnapshotOnFailure()
     {
         return $this->saveSnapshotOnFailure ?? false;
+    }
+    
+    public function getPhpunitTestName()
+    {
+        return $this->isPhpVersion10 ? $this->name() : $this->getName();
+    }
+    
+    public function hasPhpunitTestFailed()
+    {
+        if (!$this->isPhpVersion10) {
+            return $this->hasFailed();
+        }
+        
+        return $this->status()->isFailure() || $this->status()->isError();
     }
     
     /**
