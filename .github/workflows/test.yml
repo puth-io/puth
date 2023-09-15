@@ -114,7 +114,7 @@ jobs:
         phpunit: [9, 10]
         collision: [6, 7]
         exclude:
-          - laravel: 9
+          - laravel: 9 # maybe remove
             phpunit: 10
           - laravel: 10
             phpunit: 9

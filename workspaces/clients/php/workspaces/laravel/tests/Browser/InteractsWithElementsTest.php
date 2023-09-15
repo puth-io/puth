@@ -68,4 +68,23 @@ class InteractsWithElementsTest extends PuthTestCase
         
         });
     }
+    
+    function test_click_exception()
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessageMatches('/Function click threw error: Node is either not clickable or not an HTMLElement/');
+        
+        $this->browse(function (Browser $browser) {
+            $browser->site->setContent('<body><button style="display: none">test</button></body>');
+            $browser->click('button');
+        });
+    }
+    
+    function test_move_mouse_exception()
+    {
+        $this->expectException(\Exception::class);
+        $this->browse(function (Browser $browser) {
+            $browser->moveMouse(0, 0);
+        });
+    }
 }

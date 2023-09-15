@@ -3,6 +3,7 @@
 namespace Puth;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 
 /**
  * @method connectBrowser(string[] $array)
@@ -46,25 +47,22 @@ class Context extends GenericObject
 
     public function destroy($options)
     {
-        $response = $this->client->delete('context', [
-            'json' => array_merge(
-                $options,
-                $this->serialize()
-            ),
-        ]);
-        $statusCode = $response->getStatusCode();
-        
-        if ($statusCode === 200) {
+        try {
+            $this->client->delete('context', [
+                'json' => array_merge(
+                    $options,
+                    $this->serialize()
+                ),
+            ]);
             $this->log("destroyed");
-            return true;
-        } else if ($statusCode === 404) {
-            echo $response->getBody();
             
-            // Return true because if puth doesn't exist it is already destroyed
             return true;
-        } else {
-            // Currently not possible by server
-            return false;
+        } catch (ClientException $exception) {
+            if ($exception->getResponse()?->getStatusCode() === 404) {
+                return true;
+            }
+            
+            throw $exception;
         }
     }
     

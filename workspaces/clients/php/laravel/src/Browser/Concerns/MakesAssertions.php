@@ -9,6 +9,33 @@ use Puth\GenericObject;
 use Puth\Traits\PuthAssertions;
 use Puth\Traits\PuthUtils;
 
+/**
+ * This file is a direct copy or contains substantial parts of the Laravel/Dusk
+ * code which is covered by the MIT license below.
+ * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/MakesAssertions.php
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) Taylor Otwell
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 trait MakesAssertions
 {
     use PuthAssertions;
@@ -89,26 +116,28 @@ trait MakesAssertions
      * @param string $name
      * @return $this
      */
-    public function assertCookieMissing($name)
+    public function assertCookieMissing($name, $decrypt = true)
     {
+        $cookie = $decrypt ? $this->cookie($name) : $this->plainCookie($name);
+        
         Assert::assertTrue(
-            is_null($this->plainCookie($name)),
+            is_null($cookie),
             "Found unexpected cookie [{$name}]."
         );
         
         return $this;
     }
     
-    // /**
-    //  * Assert that the given unencrypted cookie is not present.
-    //  *
-    //  * @param string $name
-    //  * @return $this
-    //  */
-    // public function assertPlainCookieMissing($name)
-    // {
-    //     return $this->assertCookieMissing($name, false);
-    // }
+     /**
+      * Assert that the given unencrypted cookie is not present.
+      *
+      * @param string $name
+      * @return $this
+      */
+     public function assertPlainCookieMissing($name)
+     {
+         return $this->assertCookieMissing($name, false);
+     }
     
     /**
      * Assert that an encrypted cookie has a given value.
@@ -236,6 +265,44 @@ trait MakesAssertions
     }
     
     /**
+     * Assert that no text is present within the selector.
+     *
+     * @param string $selector
+     *
+     * @return $this
+     */
+    public function assertSeeNothingIn($selector)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        $element = $this->resolver->findOrFail($selector);
+        
+        Assert::assertTrue(
+            $element->innerText === '',
+            "Did not see expected text [''] within element [{$fullSelector}]."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the given JavaScript expression evaluates to the given value.
+     *
+     * @param string $expression
+     * @param mixed $expected
+     * @return $this
+     */
+    public function assertScript($expression, $expected = true)
+    {
+        Assert::assertEquals(
+            $expected, $this->site->evaluate($expression),
+            "JavaScript expression [{$expression}] mismatched."
+        );
+        
+        return $this;
+    }
+    
+    /**
      * Assert that the given source code is present on the page.
      *
      * @param string $code
@@ -311,12 +378,7 @@ trait MakesAssertions
      */
     public function seeLink($link)
     {
-        return $this->visible("a[href='" . $link . "']");
-    }
-    
-    public function visible($selector)
-    {
-        return $this->site->visible($selector);
+        return $this->site->visible("a[href='" . $link . "']");
     }
     
     /**
@@ -367,6 +429,38 @@ trait MakesAssertions
     }
     
     /**
+     * Assert that the given input field is present.
+     *
+     * @param  string  $field
+     * @return $this
+     */
+    public function assertInputPresent($field, $timeout = 5)
+    {
+        $this->assertPresent(
+            "input[name='{$field}'], textarea[name='{$field}'], select[name='{$field}']",
+            $timeout
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the given input field is not visible.
+     *
+     * @param  string  $field
+     * @return $this
+     */
+    public function assertInputMissing($field, $timeout = 5)
+    {
+        $this->assertMissing(
+            "input[name='{$field}'], textarea[name='{$field}'], select[name='{$field}']",
+            $timeout
+        );
+        
+        return $this;
+    }
+    
+    /**
      * Assert that the given checkbox field is checked.
      *
      * @return $this
@@ -395,6 +489,25 @@ trait MakesAssertions
         Assert::assertFalse(
             $element->checked,
             "Checkbox [{$element}] was unexpectedly checked."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the given checkbox is in an indeterminate state.
+     *
+     * @param  string  $field
+     * @param  string|null  $value
+     * @return $this
+     */
+    public function assertIndeterminate($field, $value = null)
+    {
+        $this->assertNotChecked($field, $value);
+        
+        Assert::assertTrue(
+            $this->resolver->findOrFail($field)->indeterminate,
+            "Checkbox [{$field}] was not in indeterminate state."
         );
         
         return $this;
@@ -739,9 +852,16 @@ trait MakesAssertions
      * @param string $element
      * @return $this
      */
-    public function assertPresent($selector)
+    public function assertPresent($selector, $timeout = 5)
     {
         $fullSelector = $this->resolver->format($selector);
+        
+        if ($timeout !== 0) {
+            try {
+                $this->site->waitForSelector($fullSelector, ['timeout' => $timeout]);
+            } catch (\Exception) {
+            }
+        }
         
         Assert::assertNotNull(
             $this->resolver->find($selector),
@@ -773,22 +893,27 @@ trait MakesAssertions
      * Assert that the element with the given selector is not on the page.
      *
      * @param string $selector
+     *
      * @return $this
      */
-    public function assertMissing($selector)
+    public function assertMissing($selector, $timeout = 5)
     {
         $fullSelector = $this->resolver->format($selector);
-    
+        
         try {
-            // TODO improve assertions with waits
-//            $this->site->waitForSelector($fullSelector, ['hidden' => true]);
+            if ($timeout !== 0) {
+                try {
+                    $this->site->waitForSelector($fullSelector, ['hidden' => true, 'timeout' => $timeout]);
+                } catch (\Exception) {
+                }
+            }
             $this->resolver->findOrFail($selector);
-    
+            
             $missing = false;
         } catch (Exception $e) {
             $missing = true;
         }
-    
+        
         Assert::assertTrue(
             $missing,
             "Saw unexpected element [{$fullSelector}]."
@@ -997,28 +1122,16 @@ trait MakesAssertions
         $fullSelector = $this->resolver->format($componentSelector);
         
         return $this->site->evaluate(
-            "var el = document.querySelector('" . $fullSelector . "');" .
-            "return typeof el.__vue__ === 'undefined' " .
-            '? JSON.parse(JSON.stringify(el.__vueParentComponent.ctx)).' . $key .
-            ': el.__vue__.' . $key
+            "var el = document.querySelector('".$fullSelector."');".
+            "if (typeof el.__vue__ !== 'undefined')".
+            '    return el.__vue__.'.$key.';'.
+            'try {'.
+            '    var attr = el.__vueParentComponent.ctx.'.$key.';'.
+            "    if (typeof attr !== 'undefined')".
+            '        return attr;'.
+            '} catch (e) {}'.
+            'return el.__vueParentComponent.setupState.'.$key.';'
         );
-    }
-    
-    /**
-     * Assert that the given JavaScript expression evaluates to the given value.
-     *
-     * @param string $expression
-     * @param mixed $expected
-     * @return $this
-     */
-    public function assertScript($expression, $expected = true)
-    {
-        Assert::assertEquals(
-            $expected, $this->site->evaluate($expression),
-            "JavaScript expression [{$expression}] mismatched."
-        );
-        
-        return $this;
     }
     
 }
