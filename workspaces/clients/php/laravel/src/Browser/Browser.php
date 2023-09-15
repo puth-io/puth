@@ -42,6 +42,7 @@ class Browser
     use Concerns\InteractsWithCookies;
     use Concerns\InteractsWithElements;
     use Concerns\InteractsWithJavascript;
+    use Concerns\InteractsWithKeyboard;
     use Concerns\InteractsWithMouse;
     use Concerns\MakesAssertions;
     use Concerns\MakesUrlAssertions;
