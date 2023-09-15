@@ -4,7 +4,7 @@ import WebsocketHandler from '../../Misc/WebsocketHandler';
 import { CSSTransition } from 'react-transition-group';
 
 export const Spinner = () => (
-  <div className="spinner-grow spinner-grow-sm text-warning ms-2" role="status">
+  <div className="spinner-border spinner-grow-sm text-warning ms-2" role="status">
     <span className="visually-hidden">Loading...</span>
   </div>
 );

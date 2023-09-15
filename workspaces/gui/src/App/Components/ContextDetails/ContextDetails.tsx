@@ -11,11 +11,13 @@ import Events from "../../../Events";
 const ExceptionsTab = ({ exceptions, contextId }) =>
   exceptions.map((exception, idx) => <Exception key={`${contextId}-${idx}`} exception={exception} />);
 
-export const ContextDetails = observer(() => {
+export const ContextDetails = observer(({context}) => {
   const [activeTab, setActiveTab] = useState('exceptions');
   const forceUpdatePreview = useForceUpdatePreview();
 
-  let context = PreviewStore.activeContext;
+  if (!context) {
+    context = PreviewStore.activeContext;
+  }
 
   let shortened = 23;
 

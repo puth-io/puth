@@ -8,7 +8,6 @@ const meow = require('meow');
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
-const { createBrowser } = require('../lib/Browser');
 
 const PuthStandardPlugin = require('../lib/plugins/PuthStandardPlugin').PuthStandardPlugin;
 
@@ -24,10 +23,6 @@ const cli = meow(
       --address  -a     Address to use (defaults to 127.0.0.1)
       --port     -p     Port to use (default to 7345)
       --disable-cors    Disables all CORS policies
-      
-    $ puth daemon [options]
-    
-      --debug    -d     Enables debug output
 `,
   {
     booleanDefault: true,
@@ -93,8 +88,6 @@ process.on('SIGINT', () => {
 // Commands
 if (input[0] === 'start') {
   start();
-} else if (input[0] === 'daemon') {
-  daemon();
 } else if (input[0] === 'dev') {
   dev();
 } else if (input[0] === 'version') {
@@ -116,18 +109,6 @@ async function dev() {
   });
   instance.use(PuthStandardPlugin);
   await instance.serve(puthConfig.port, puthConfig.address);
-}
-
-async function daemon() {
-  const instance = await createBrowser({
-    launchOptions: {
-      headless: false,
-      dumpio: flags.debug,
-    },
-    args: ['--no-sandbox'],
-  });
-
-  !flags.debug && console.log('DevTools listening on', await instance.browser.wsEndpoint());
 }
 
 // Util

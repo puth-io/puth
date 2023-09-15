@@ -157,3 +157,32 @@ input[type="checkbox"]:focus {
   transition: opacity 200ms;
 }
 
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  background-color: $gray-600;
+  height: 0.75rem;
+  width: 0.75rem;
+  margin: 0 2px;
+  
+  &.dot-primary {
+    background-color: $primary;
+  }
+  &.dot-success {
+    background-color: $green;
+  }
+  &.dot-warning {
+    background-color: $orange;
+  }
+  &.dot-danger {
+    background-color: $red;
+  }
+  &.dot-sm {
+    height: 0.5rem;
+    width: 0.5rem;
+  }
+  &.dot-lg {
+    height: 1rem;
+    width: 1rem;
+  }
+}

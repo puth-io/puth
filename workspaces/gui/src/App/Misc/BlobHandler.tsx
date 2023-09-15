@@ -6,11 +6,11 @@ export class BlobHandler {
     return this.createUrlFrom([source], options);
   }
 
-  createUrlFrom(blobParts: BlobPart[], options: { type?: string; track: any }) {
+  createUrlFrom(blobParts: BlobPart[], options: { type?: string; track?: any }) {
     let { blob } = this.createBlobFrom(blobParts, options);
     let url = URL.createObjectURL(blob);
 
-    if (options?.track !== false) {
+    if (options?.track === undefined || options?.track !== false) {
       this.urls.push(url);
     } else {
       this.urlsUntracked.push(url);

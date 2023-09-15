@@ -8,9 +8,8 @@ export default abstract class PuthInstancePlugin extends PuthPlugin {
   public static readonly PluginType = PuthPluginType.InstancePlugin;
   protected puth: Puth | undefined;
 
-  public install(puth: Puth): PuthInstancePlugin {
+  public install(puth: Puth): void {
     this.puth = puth;
-    return this;
   }
 
   protected getPuth() {

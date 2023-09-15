@@ -57,6 +57,7 @@ export type ICommand = {
     took?: number;
     finished?: number;
   };
+  timestamp: number;
 };
 
 export type ILogLocation = {

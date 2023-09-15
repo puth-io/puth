@@ -10,7 +10,7 @@ import {Context} from "./Components/Context/Context";
 import React from "react";
 
 const LocalSidebar = observer(() => (
-    <Sidebar suffix={<span style={{color: '#c7c7c7'}}>Pro</span> } extra={<SidebarAction/>}>
+    <Sidebar extra={<SidebarAction/>}>
         {WebsocketHandler.contextArray.map((context, idx) => {
             return <Context key={context.id} context={context} />;
         })}

@@ -4,13 +4,13 @@ import Constructors from 'puth/src/Context/Constructors';
 
 export default class ContextStore {
   id;
-
+  
   commands = [];
   logs = [];
   requests = [];
   responses = [];
   exceptions = [];
-
+  
   group: string = '';
   test: {
     name: string;
@@ -19,24 +19,24 @@ export default class ContextStore {
     name: '',
     status: undefined,
   };
-
+  
   options: {
     [key: string]: any;
   };
   capabilities: {
     [key: string]: boolean;
   };
-
+  
   createdAt: number;
   created = Date.now();
-
+  
   constructor(
-    id: string,
-    options: { [key: string]: any },
-    test: { name: string; status: 'failed' | 'success' | undefined },
-    group: string,
-    capabilities: { [key: string]: boolean },
-    createdAt: number,
+      id: string,
+      options: { [key: string]: any },
+      test: { name: string; status: 'failed' | 'success' | undefined },
+      group: string,
+      capabilities: { [key: string]: boolean },
+      createdAt: number,
   ) {
     this.id = id;
     this.options = options;
@@ -44,20 +44,20 @@ export default class ContextStore {
     this.group = group;
     this.capabilities = capabilities;
     this.createdAt = createdAt;
-
+    
     makeAutoObservable(this, {});
   }
-
+  
   getRenderedTypesFilter() {
     return (command: ICommand) => {
       return [Constructors.Page, Constructors.ElementHandle].includes(command.on.type);
     };
   }
-
+  
   get hasDetails() {
     return this.exceptions.length > 0;
   }
-
+  
   getRequestFilter() {
     return (request: any) => {
       if (['xhr', 'fetch'].includes(request.resourceType)) {
@@ -66,7 +66,7 @@ export default class ContextStore {
       return request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
     };
   }
-
+  
   get renderedEvents() {
     return [
       ...this.commands.filter(this.getRenderedTypesFilter()),
@@ -74,7 +74,7 @@ export default class ContextStore {
       ...this.requests.filter(this.getRequestFilter()),
     ].sort((a, b) => this.getEventTime(a) - this.getEventTime(b));
   }
-
+  
   getEventTime(event: any) {
     return event?.time?.started ?? event?.time?.created ?? event?.time;
   }

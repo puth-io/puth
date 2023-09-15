@@ -1,6 +1,7 @@
 import React from 'react';
 import { ICommand } from './Command/Command';
 import { render } from 'react-dom';
+import {createRoot} from "react-dom/client";
 
 function scrollIntoView(element: Element | null) {
   if (!element) {
@@ -63,7 +64,7 @@ export function loadHighlights(
     // that the function did find and perform on.
     function innerQuery(selector: string) {
       siv = root.querySelector(selector);
-      highlight(siv, frame, true);
+      // highlight(siv, frame, true);
     }
 
     // TODO Add an integration inside puth plugin to enable custom highlights
@@ -73,7 +74,7 @@ export function loadHighlights(
     }
 
     scrollIntoView(siv);
-    highlight(hl, frame);
+    // highlight(hl, frame);
   });
 
   function highlight(element: any, context: Document, root = false) {
@@ -106,7 +107,8 @@ export function loadHighlights(
 
     let node = document.createElement('div');
     context.body.appendChild(node);
-    render(overlay, node);
+    createRoot(node).render(overlay);
+    // render(overlay, node);
   }
 
   function getPosition(element: any) {

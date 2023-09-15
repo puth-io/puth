@@ -3,16 +3,21 @@ import { useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { diff_match_patch } from 'diff-match-patch';
 import { ICommand } from '../Components/Command/Command';
+import {DebugStoreClass} from "./DebugStoreClass";
 
 export const DMP = new diff_match_patch();
 
 export function pMark(name: string) {
-  performance.mark(name);
+  DebugStoreClass(() => {
+    performance.mark(name);
+  });
 }
 
 export function pMeasure(name: string, startMark: string) {
-  performance.mark(name);
-  performance.measure(name, startMark);
+  DebugStoreClass(() => {
+    performance.mark(name);
+    performance.measure(name, startMark);
+  });
 }
 
 export function useForceUpdate() {
@@ -303,7 +308,10 @@ export function resolveSnapshotBacktrackV4(commands, until, lastSnapshotStateBef
   let command: ICommand = commands[index];
 
   if (command.snapshots.before) {
+    console.time('patch');
     value = DMP.patch_apply(command.snapshots.before.data.diff, value)[0];
+    console.timeLog('patch', command.snapshots.before, command.snapshots.before.data.diff, value.length);
+    console.timeEnd('patch');
   }
 
   if (index === until && lastSnapshotStateBefore) {
@@ -311,7 +319,10 @@ export function resolveSnapshotBacktrackV4(commands, until, lastSnapshotStateBef
   }
 
   if (command.snapshots.after) {
+    console.time('patch');
     value = DMP.patch_apply(command.snapshots.after.data.diff, value)[0];
+    console.timeLog('patch', command.snapshots.before, command.snapshots.after.data.diff, value.length);
+    console.timeEnd('patch');
   }
 
   if (index === until) {
@@ -330,9 +341,9 @@ export function throttle(func, delay = 250) {
     }
 
     inProgress = true;
-
+    
+    func(...args); // Consider moving this line before the set timeout if you want the very first one to be immediate
     setTimeout(() => {
-      func(...args); // Consider moving this line before the set timeout if you want the very first one to be immediate
       inProgress = false;
     }, delay);
   };

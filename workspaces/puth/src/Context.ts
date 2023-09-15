@@ -6,8 +6,8 @@ import * as Utils from './Utils';
 import Puth from './Server';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import { Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog } from 'puppeteer';
-import mitt from 'mitt';
+import {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer';
+import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
 import {promises as fsPromise} from 'fs';
@@ -18,11 +18,23 @@ import {tmpdir} from "os";
 import {PuthBrowser} from "./HandlesBrowsers";
 const { writeFile } = fsPromise;
 
+type ContextEvents = {
+  'call': any,
+  'get': any,
+  'set': any,
+  'delete': any,
+  'destroying',
+  'browser:connected': {browser: PuthBrowser},
+  'browser:disconnected': {browser: PuthBrowser},
+  'page:created': {browser: PuthBrowser, page: Page},
+  'page:closed': {browser: PuthBrowser, page: Page},
+}
+
 class Context extends Generic {
   private readonly id: string = v4();
   private readonly type: string = 'Context';
 
-  private readonly emitter;
+  private readonly emitter: Emitter<ContextEvents>;
 
   private readonly puth: Puth;
   private options: {
@@ -43,7 +55,7 @@ class Context extends Generic {
 
   private plugins: PuthContextPlugin[] = [];
   
-  private browsers: PuthBrowser[] = [];
+  public browsers: PuthBrowser[] = [];
 
   private eventFunctions: [any, string, () => {}][] = [];
 
@@ -70,7 +82,7 @@ class Context extends Generic {
     this.options = options;
     // @ts-ignore
     // TODO maybe PR to https://github.com/developit/mitt because broken index.d.ts
-    this.emitter = mitt();
+    this.emitter = mitt<ContextEvents>();
     this.createdAt = Date.now();
 
     // Track context creation
@@ -79,6 +91,7 @@ class Context extends Generic {
         ...this.serialize(true),
         options: this.options,
         createdAt: this.createdAt,
+        timestamp: Date.now(),
       });
     }
   }
@@ -95,6 +108,7 @@ class Context extends Generic {
     let browser = await puppeteer.connect(options);
     this.browsers.push(browser);
     await this._trackBrowser(browser);
+    this.emitter.emit('browser:connected', {browser});
     return browser;
   }
 
@@ -102,6 +116,7 @@ class Context extends Generic {
     let browser = await this.puth.browserHandler.launch(options);
     this.browsers.push(browser);
     await this._trackBrowser(browser);
+    this.emitter.emit('browser:connected', {browser});
     return browser;
   }
 
@@ -116,16 +131,24 @@ class Context extends Generic {
 
     browser.once('disconnected', async () => {
       this.removeEventListenersFrom(browser);
+      this.emitter.emit('browser:disconnected', {browser});
       this.browsers = this.browsers.filter(b => b !== browser);
     });
 
     // Track default browser page (there is no 'targetcreated' event for page[0])
-    this._trackPage((await browser.pages())[0]);
+    let page0 = (await browser.pages())[0];
+    this._trackPage(page0);
+    this.emitter.emit('page:created', {browser, page: page0});
 
     this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
       // TODO do we need to track more here? like 'browser' or 'background_page'...?
       if (target.type() === 'page') {
-        this._trackPage(await target.page());
+        let page = await target.page();
+        this._trackPage(page);
+        // @ts-ignore
+        this.emitter.emit('page:created', {browser, page});
+        // @ts-ignore
+        page.on('close', _ => this.emitter.emit('page:closed', {browser, page}))
       }
     });
   }
@@ -186,13 +209,13 @@ class Context extends Generic {
             context: this.serialize(),
             // @ts-ignore
             requestId: request._requestId,
-            time: Date.now(),
             isNavigationRequest: request.isNavigationRequest(),
             url: request.url(),
             resourceType: request.resourceType(),
             method: request.method(),
             headers: request.headers(),
             status: 'pending',
+            timestamp: Date.now(),
           });
         }
       });
@@ -207,7 +230,7 @@ class Context extends Generic {
             context: this.serialize(),
             // @ts-ignore
             requestId: request._requestId,
-            time: Date.now(),
+            timestamp: Date.now(),
           });
         }
       });
@@ -224,6 +247,7 @@ class Context extends Generic {
               elapsed: Date.now() - this.createdAt,
               finished: Date.now(),
             },
+            timestamp: Date.now(),
             status: response.status(),
             url: response.request().url(),
             resourceType: response.request().resourceType(),
@@ -252,7 +276,7 @@ class Context extends Generic {
           id: v4(),
           type: 'log',
           context: this.serialize(),
-          time: Date.now(),
+          timestamp: Date.now(),
           messageType: consoleMessage.type(),
           args,
           location: consoleMessage.location(),
@@ -331,6 +355,7 @@ class Context extends Generic {
         specific: 'status',
         status: 'failed',
         context: this.serialize(),
+        timestamp: Date.now(),
       });
     }
   }
@@ -341,6 +366,7 @@ class Context extends Generic {
         type: 'exception',
         context: this.serialize(),
         data: exception,
+        timestamp: Date.now(),
       });
     }
   }
@@ -354,6 +380,7 @@ class Context extends Generic {
         specific: 'status',
         status: 'success',
         context: this.serialize(),
+        timestamp: Date.now(),
       });
     }
   }
@@ -418,6 +445,7 @@ class Context extends Generic {
         elapsed: Date.now() - this.createdAt,
         started: Date.now(),
       },
+      timestamp: Date.now(),
     };
   }
   
@@ -780,20 +808,23 @@ class Context extends Generic {
   getPlugins(): PuthContextPlugin[] {
     return this.plugins;
   }
-
-  emit(...args) {
-    // @ts-ignore
-    return this.emitter.emit(...args);
+  
+  on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
+  on(type: '*', handler: WildcardHandler<ContextEvents>): void;
+  on(type, handler) {
+    return this.emitter.on(type, handler);
   }
-
-  off(...args) {
-    // @ts-ignore
-    return this.emitter.off(...args);
+  
+  off<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
+  off(type: '*', handler: WildcardHandler<ContextEvents>): void;
+  off(type, handler) {
+    return this.emitter.off(type, handler);
   }
-
-  on(...args) {
-    // @ts-ignore
-    return this.emitter.on(...args);
+  
+  emit<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): void;
+  emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
+  emit(type, event?) {
+    return this.emitter.emit(type, event);
   }
 
   getTimeout(options?) {
