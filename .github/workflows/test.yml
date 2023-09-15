@@ -109,18 +109,19 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: ['8.0', 8.1, 8.2]
+        php: [8.1, 8.2]
         laravel: [9, 10]
         phpunit: [9, 10]
+        collision: [6, 7]
         exclude:
           - laravel: 9
             phpunit: 10
           - laravel: 10
-            php: '8.0'
-          - laravel: 10
             phpunit: 9
           - phpunit: 10
-            php: '8.0'
+            collision: 6
+          - phpunit: 9
+            collision: 7
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
@@ -159,7 +160,8 @@ jobs:
       - name: Install Composer dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
-          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update
+          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
+          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
           composer update --prefer-stable --no-interaction --no-suggest
       - name: Run tests
         run: |
