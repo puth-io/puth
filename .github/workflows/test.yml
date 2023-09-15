@@ -126,7 +126,7 @@ jobs:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
 
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}
+    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
 
     steps:
       - name: Checkout
