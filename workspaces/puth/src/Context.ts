@@ -3,7 +3,7 @@ import * as puppeteer from 'puppeteer';
 import Generic from './Generic';
 import Snapshots, { ICommand } from './Snapshots';
 import * as Utils from './Utils';
-import Puth from './Server';
+import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
 import {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer';

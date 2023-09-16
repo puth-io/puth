@@ -8,6 +8,7 @@ const meow = require('meow');
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
+const {getChromeInstallations} = require("../lib");
 
 const PuthStandardPlugin = require('../lib/plugins/PuthStandardPlugin').PuthStandardPlugin;
 
@@ -85,15 +86,38 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
+let chromeInstallations = getChromeInstallations();
+
 // Commands
 if (input[0] === 'start') {
+  info();
+  ensureChromeInstallation();
   start();
 } else if (input[0] === 'dev') {
   dev();
 } else if (input[0] === 'version') {
-  console.log('Puth version', pkg.version);
+  console.log('Puth ' + pkg.version);
+} else if (input[0] === 'info') {
+  info();
 } else {
   cli.showHelp();
+}
+
+function info() {
+  console.log('[Puth] Version ' + pkg.version);
+  console.log('[Puth] Chrome installations:', chromeInstallations);
+}
+
+function ensureChromeInstallation() {
+  if (chromeInstallations.length !== 0) {
+    return;
+  }
+  
+  console.log("\nNo chrome installations found. Would you like to install chrome? (y/N)");
+  
+  // TODO WIP
+  
+  process.exit(1);
 }
 
 async function start() {

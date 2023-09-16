@@ -1,4 +1,4 @@
-import Puth from './Server';
+import Puth from './Puth';
 import { PuthPlugin, PuthPluginType } from './PuthPluginGeneric';
 
 /**
