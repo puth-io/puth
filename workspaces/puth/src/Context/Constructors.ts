@@ -1,14 +1,14 @@
 const Constructors = {
-  Page: 'CDPPage',
-  Frame: 'Frame',
-  Browser: 'CDPBrowser',
-  BrowserContext: 'CDPBrowserContext',
-  JSHandle: 'CDPJSHandle',
-  ElementHandle: 'CDPElementHandle',
-  Session: 'CDPSession',
-  SessionImpl: 'CDPSessionImpl',
-  ConnectionAdapter: 'CDPConnectionAdapter',
-  ClientAdapter: 'CDPClientAdapter',
+  Page: 'CdpPage',
+  Frame: 'CdpFrame',
+  Browser: 'CdpBrowser',
+  BrowserContext: 'CdpBrowserContext',
+  JSHandle: 'CdpJSHandle',
+  ElementHandle: 'CdpElementHandle',
+  Session: 'CdpSession',
+  // SessionImpl: 'CdpSessionImpl',
+  ConnectionAdapter: 'CdpConnectionAdapter',
+  ClientAdapter: 'CdpClientAdapter',
 };
 
 export default Constructors;
