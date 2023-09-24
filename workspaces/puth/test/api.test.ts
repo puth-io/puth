@@ -65,7 +65,7 @@ function puthContextTests(env) {
     it('can call a function on context', async function () {
       let rep = await (await this.context.createBrowser()).getRepresentation();
       assert.containsAllKeys(rep, ['id', 'type']);
-      assert.strictEqual(rep?.represents, 'CDPBrowser');
+      assert.strictEqual(rep?.represents, 'CdpBrowser');
       assert.isFulfilled(this.context.destroy());
     });
 
