@@ -112,7 +112,10 @@ class Context extends Generic {
     return browser;
   }
 
-  async createBrowser(options = {}) {
+  async createBrowser(options: any = {}) {
+    if (!options.executablePath && this.puth.getInstalledBrowser().executablePath) {
+      options.executablePath = this.puth.getInstalledBrowser().executablePath;
+    }
     let browser = await this.puth.browserHandler.launch(options);
     this.browsers.push(browser);
     await this._trackBrowser(browser);

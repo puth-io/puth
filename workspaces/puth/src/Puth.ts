@@ -36,6 +36,7 @@ export default class Puth {
       allowOrigins: string[];
     };
     disableCors: boolean | undefined;
+    installedBrowser: any;
   };
 
   constructor(options?) {
@@ -84,6 +85,10 @@ export default class Puth {
 
   isDev() {
     return this.options?.dev === true;
+  }
+
+  getInstalledBrowser() {
+    return this.options?.installedBrowser;
   }
 
   serve(port = 7345, address = '127.0.0.1', log = true) {

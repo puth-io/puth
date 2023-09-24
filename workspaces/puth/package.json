@@ -11,6 +11,7 @@
     "@fastify/http-proxy": "^8.4.0",
     "@fastify/static": "^6.6.0",
     "@fastify/websocket": "^8.2.0",
+    "@inquirer/prompts": "^3.1.1",
     "@msgpack/msgpack": "^2.8.0",
     "@types/diff-match-patch": "^1.0.32",
     "axios": "^1.2.1",
