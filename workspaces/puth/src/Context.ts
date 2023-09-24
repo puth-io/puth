@@ -113,7 +113,7 @@ class Context extends Generic {
   }
 
   async createBrowser(options: any = {}) {
-    if (!options.executablePath && this.puth.getInstalledBrowser().executablePath) {
+    if (!options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
       options.executablePath = this.puth.getInstalledBrowser().executablePath;
     }
     let browser = await this.puth.browserHandler.launch(options);
