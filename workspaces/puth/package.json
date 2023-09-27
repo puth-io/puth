@@ -23,7 +23,9 @@
     "puppeteer-core": "^21.3.4",
     "tmp-promise": "^2.1.1",
     "typedoc": "^0.23.22",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "pino": "^8.15.1",
+    "pino-pretty": "^10.2.0"
   },
   "devDependencies": {
     "@puth/client": "*",

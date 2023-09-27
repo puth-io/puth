@@ -9,58 +9,64 @@ const {resolveBuildId, canDownload, install} = require('@puppeteer/browsers');
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
-const {getPlatform, installedBrowsers} = require("../lib");
+const {getPlatform, installedBrowsers, makeLogger} = require("../lib");
 const {homedir} = require("os");
 
 const PuthStandardPlugin = require('../lib/plugins/PuthStandardPlugin').PuthStandardPlugin;
 
-const cli = meow(
-  `
-	Usage
-	  $ puth command [options]
+const cli = meow(`
+Usage
+  $ puth command [options]
 
-  Commands
-    $ puth start [options]
-    
-      --debug    -d     Enables debug output
-      --address  -a     Address to use (defaults to 127.0.0.1)
-      --port     -p     Port to use (default to 7345)
-      --disable-cors    Disables all CORS policies
-`,
-  {
-    booleanDefault: true,
-    flags: {
-      debug: {
-        type: 'boolean',
-        alias: 'd',
-        default: false,
-      },
-      address: {
-        type: 'string',
-        default: '127.0.0.1',
-        alias: 'a',
-      },
-      port: {
-        type: 'number',
-        default: 7345,
-        alias: 'p',
-      },
-      disableCors: {
-        type: 'boolean',
-        default: false,
+Commands
+  $ puth start [options]
+  
+    --debug    -d     Enables debug output
+    --address  -a     Address to use (defaults to 127.0.0.1)
+    --port     -p     Port to use (default to 7345)
+    --disable-cors    Disables all CORS policies
+    --json-logger     Formats logs to json
+`, {
+      booleanDefault: true,
+      flags: {
+        debug: {
+          type: 'boolean',
+          alias: 'd',
+          default: false,
+        },
+        address: {
+          type: 'string',
+          default: '127.0.0.1',
+          alias: 'a',
+        },
+        port: {
+          type: 'number',
+          default: 7345,
+          alias: 'p',
+        },
+        disableCors: {
+          type: 'boolean',
+          default: false,
+        },
+        jsonLogger: {
+          type: 'boolean',
+        },
+        prettyLogger: {
+          type: 'boolean',
+        },
       },
     },
-  },
 );
 
 const cwd = process.cwd();
 const input = cli.input;
 const flags = cli.flags;
 
-// Debug
-debug('cwd =', cwd);
-debug('input =', input);
-debug('flags =', flags);
+let pretty = flags.prettyLogger ?? process.stdout.isTTY;
+if (flags.jsonLogger) pretty = false;
+const logger = makeLogger(pretty);
+
+logger.debug({cwd, input, flags});
 
 // Puth config
 let puthConfig = {
@@ -68,6 +74,7 @@ let puthConfig = {
   port: flags.port,
   debug: flags.debug,
   disableCors: flags.disableCors,
+  logger,
 };
 
 if (fs.existsSync(path.join(cwd, 'puth.config.json'))) {
@@ -96,7 +103,7 @@ if (input[0] === 'start') {
 } else if (input[0] === 'dev') {
   dev();
 } else if (input[0] === 'version') {
-  console.log('Puth ' + pkg.version);
+  console.log(pkg.version);
 } else if (input[0] === 'info') {
   info();
 } else {
@@ -104,8 +111,8 @@ if (input[0] === 'start') {
 }
 
 function info() {
-  console.log('[Puth] Version ' + pkg.version);
-  console.log('[Puth] Found browsers: ' + installedBrowsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', '));
+  logger.info('Puth version ' + pkg.version);
+  logger.info(`Installed browsers: ${installedBrowsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ')}`);
 }
 
 async function ensureChromeInstallation() {

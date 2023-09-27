@@ -10,6 +10,7 @@ import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
 import {HandlesBrowsers, DefaultBrowserHandler} from "./HandlesBrowsers";
 import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
+import {Logger} from "pino";
 
 type PuthEvents = {
   'context:created': {context: Context};
@@ -23,8 +24,9 @@ export default class Puth {
   private instancePlugins: PuthInstancePlugin[] = [];
   private emitter: Emitter<PuthEvents>;
   public browserHandler: HandlesBrowsers;
-
   private server;
+  private logger: Logger;
+  
   private options: {
     address: string | undefined;
     port: number | undefined;
@@ -37,11 +39,13 @@ export default class Puth {
     };
     disableCors: boolean | undefined;
     installedBrowser: any;
+    logger: any;
   };
 
   constructor(options?) {
     this.emitter = mitt<PuthEvents>();
     this.options = options;
+    this.logger = options.logger;
 
     if (this.options?.plugins) {
       // TODO this is async code and problematic since user can already write code that would fail if
@@ -52,6 +56,10 @@ export default class Puth {
     }
   
     this.browserHandler = new DefaultBrowserHandler();
+    
+    if (options?.installedBrowser) {
+      this.logger.info(`Using browser: ${options.installedBrowser.browser} ${options.installedBrowser.buildId} (${options.installedBrowser.platform})`);
+    }
   }
 
   use(plugin: PuthPluginGeneric<PuthPlugin>) {
@@ -72,19 +80,11 @@ export default class Puth {
     }
 
     // @ts-ignore
-    this.log('info', '[Puth] Loaded plugin:', plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name);
+    this.logger.info(`Plugin loaded: ${plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name}`);
   }
 
   isDebug() {
     return this.options?.debug === true;
-  }
-
-  isSilent() {
-    return this.options?.silent === true;
-  }
-
-  isDev() {
-    return this.options?.dev === true;
   }
 
   getInstalledBrowser() {
@@ -94,30 +94,9 @@ export default class Puth {
   serve(port = 7345, address = '127.0.0.1', log = true) {
     let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
 
-    this.server = Fastify({ logger: this.isDebug() });
+    this.server = Fastify({ logger: this.logger });
     this.setupFastify(allowedOrigins);
-    
-    this.server.addHook('onListen', (done) => {
-      let uri =
-          typeof this.server.server.address() === 'object'
-              ? // @ts-ignore
-              `${this.server.server.address().address}:${this.server.server.address().port}`
-              : this.server.server.address();
-      
-      if (log) {
-        this.log('info', `[Puth][Server] Running on http://${uri}`);
-      }
-      done();
-    });
-    
     this.server.listen({ port, host: address });
-  }
-
-  public log(level = 'info', ...args) {
-    if (this.isSilent()) {
-      return;
-    }
-    console[level](...args);
   }
 
   public async contextCreate(options = {}) {
