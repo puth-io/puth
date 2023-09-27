@@ -1,6 +1,6 @@
-import pino from 'pino';
+import pino, {Logger} from 'pino';
 
-export const makeLogger = (pretty = false) => {
+export function makeLogger(pretty = false) {
     let conf: any = {
         level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
     };
@@ -17,4 +17,18 @@ export const makeLogger = (pretty = false) => {
     const logger = pino(conf);
     logger.debug({environment: process.env.NODE_ENV ?? 'undefined', node: process.versions.node});
     return logger
+}
+
+export function makeVoidLogger(): Logger {
+    // @ts-ignore
+    return {
+        level: 'none',
+        info: () => false,
+        debug: () => false,
+        fatal: () => false,
+        error: () => false,
+        warn: () => false,
+        trace: () => false,
+        silent: () => false,
+    };
 }

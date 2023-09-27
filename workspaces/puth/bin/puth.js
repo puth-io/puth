@@ -174,9 +174,7 @@ async function ensureChromeInstallation() {
 }
 
 async function start() {
-  const usedBrowser = installedBrowsers[0];
-  puthConfig.installedBrowser = usedBrowser;
-  console.log(`[Puth] Using browser: ${usedBrowser.browser} ${usedBrowser.buildId} (${usedBrowser.platform})`);
+  puthConfig.installedBrowser = installedBrowsers[0];
   
   let instance = new Puth(puthConfig);
   instance.use(PuthStandardPlugin);

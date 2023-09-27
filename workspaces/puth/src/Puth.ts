@@ -45,7 +45,7 @@ export default class Puth {
   constructor(options?) {
     this.emitter = mitt<PuthEvents>();
     this.options = options;
-    this.logger = options.logger;
+    this.logger = options?.logger ?? false;
 
     if (this.options?.plugins) {
       // TODO this is async code and problematic since user can already write code that would fail if
@@ -58,7 +58,7 @@ export default class Puth {
     this.browserHandler = new DefaultBrowserHandler();
     
     if (options?.installedBrowser) {
-      this.logger.info(`Using browser: ${options.installedBrowser.browser} ${options.installedBrowser.buildId} (${options.installedBrowser.platform})`);
+      this.info(`Using browser: ${options.installedBrowser.browser} ${options.installedBrowser.buildId} (${options.installedBrowser.platform})`);
     }
   }
 
@@ -80,7 +80,12 @@ export default class Puth {
     }
 
     // @ts-ignore
-    this.logger.info(`Plugin loaded: ${plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name}`);
+    this.info(`Plugin loaded: ${plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name}`);
+  }
+  
+  info(string) {
+    if (!this.logger) return;
+    this.logger.info(string);
   }
 
   isDebug() {
