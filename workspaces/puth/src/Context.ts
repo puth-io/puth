@@ -1,12 +1,11 @@
 import { v4 } from 'uuid';
-import * as puppeteer from 'puppeteer';
+import puppeteer, {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots, { ICommand } from './Snapshots';
 import * as Utils from './Utils';
 import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer';
 import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';

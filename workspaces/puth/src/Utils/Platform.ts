@@ -390,16 +390,52 @@ function findChromeExecutables(folder: string) {
 
 /** Returns the highest priority chrome installation. */
 export function getChromeInstallations() {
-    switch (getPlatform()) {
-        case 'linux':
-            return linux();
-        case 'darwin':
-            return darwinFast();
-        case 'wsl':
-            return wsl();
-        case 'win32':
-            return win32();
+    let platform = getPlatform();
+    let executables = getChromeExecutablePaths(platform);
+    
+    if (executables) {
+        return executables.map(path => ({platform, executablePath: path, browser: path.split('/').pop(), buildId: 'system'}));
     }
     
     return [];
 }
+
+function getChromeExecutablePaths(platform) {
+    if (platform === 'linux') return linux();
+    if (platform === 'darwin') return darwinFast();
+    if (platform === 'wsl') return wsl();
+    if (platform === 'win32') return win32();
+    return null;
+}
+
+const {Cache} = require('@puppeteer/browsers');
+import {homedir} from "os";
+
+const browserCacheCWD = new Cache(path.join(process.cwd(), '.cache/puppeteer'));
+const browserCacheHomedir = new Cache(path.join(homedir(), '.cache/puppeteer'));
+
+function checkInstalledBrowsers(browsers) {
+    const checked = [];
+    for (let browser of browsers) {
+        if (fs.existsSync(browser.executablePath)) {
+            checked.push({browser: browser.browser, platform: browser.platform, buildId: browser.buildId, executablePath: browser.executablePath});
+            continue;
+        }
+        
+        if (browser.platform === 'linux') {
+            const test = browser.executablePath.replace('chrome-linux64', 'chrome-linux');
+            if (fs.existsSync(test)) {
+                checked.push({browser: browser.browser, platform: browser.platform, buildId: browser.buildId, executablePath: test});
+                continue;
+            }
+        }
+    }
+    return checked;
+}
+
+// TODO add --browser={system|home|cwd} parameter
+export const installedBrowsers = [
+    ...checkInstalledBrowsers(browserCacheCWD.getInstalledBrowsers()).reverse(),
+    ...checkInstalledBrowsers(browserCacheHomedir.getInstalledBrowsers()).reverse(),
+    ...getChromeInstallations(),
+];

@@ -5,11 +5,11 @@ const fs = require('fs');
 const path = require('path');
 const meow = require('meow');
 const prompts = require('@inquirer/prompts');
-const {resolveBuildId, canDownload, install, Cache} = require('@puppeteer/browsers');
+const {resolveBuildId, canDownload, install} = require('@puppeteer/browsers');
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
-const {getChromeInstallations, getPlatform} = require("../lib");
+const {getPlatform, installedBrowsers} = require("../lib");
 const {homedir} = require("os");
 
 const PuthStandardPlugin = require('../lib/plugins/PuthStandardPlugin').PuthStandardPlugin;
@@ -56,36 +56,6 @@ const cli = meow(
 const cwd = process.cwd();
 const input = cli.input;
 const flags = cli.flags;
-
-const browserCacheCWD = new Cache(path.join(cwd, '.cache/puppeteer'));
-const browserCacheHomedir = new Cache(path.join(homedir(), '.cache/puppeteer'));
-
-function checkInstalledBrowsers(browsers) {
-  const checked = [];
-  for (let browser of browsers) {
-    if (fs.existsSync(browser.executablePath)) {
-      checked.push({platform: browser.platform, buildId: browser.buildId, executablePath: browser.executablePath});
-      continue;
-    }
-    
-    if (browser.platform === 'linux') {
-      const test = browser.executablePath.replace('chrome-linux64', 'chrome-linux');
-      if (fs.existsSync(test)) {
-        browser.executablePath = test;
-        checked.push({platform: browser.platform, buildId: browser.buildId, executablePath: test});
-        continue;
-      }
-    }
-  }
-  return checked;
-}
-
-// TODO add system browser
-// TODO add --browser={system|home|cwd} parameter
-const installedBrowsers = [
-    ...checkInstalledBrowsers(browserCacheCWD.getInstalledBrowsers()).reverse(),
-    ...checkInstalledBrowsers(browserCacheHomedir.getInstalledBrowsers()).reverse(),
-];
 
 // Debug
 debug('cwd =', cwd);

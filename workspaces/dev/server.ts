@@ -1,8 +1,9 @@
-import Puth, { PuthStandardPlugin } from "puth";
+import Puth, {installedBrowsers, PuthStandardPlugin} from "puth";
 
 const instance = new Puth({
   debug: true,
   disableCors: true,
+  installedBrowser: installedBrowsers[0],
 });
 
 instance.use(PuthStandardPlugin);

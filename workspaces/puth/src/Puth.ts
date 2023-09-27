@@ -96,8 +96,6 @@ export default class Puth {
 
     this.server = Fastify({ logger: this.isDebug() });
     this.setupFastify(allowedOrigins);
-
-    this.server.listen({ port, host: address });
     
     this.server.addHook('onListen', (done) => {
       let uri =
@@ -111,6 +109,8 @@ export default class Puth {
       }
       done();
     });
+    
+    this.server.listen({ port, host: address });
   }
 
   public log(level = 'info', ...args) {

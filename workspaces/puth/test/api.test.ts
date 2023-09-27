@@ -4,6 +4,7 @@ import Puth, { PuthStandardPlugin } from '../';
 import LocalPuthClient from '@puth/client/LocalPuthClient';
 import RemotePuthClient from '@puth/client/RemotePuthClient';
 import { RemoteContext } from '@puth/client/RemoteObject';
+import Constructors from "../src/Context/Constructors";
 
 chai.use(chaiAsPromised);
 
@@ -65,7 +66,7 @@ function puthContextTests(env) {
     it('can call a function on context', async function () {
       let rep = await (await this.context.createBrowser()).getRepresentation();
       assert.containsAllKeys(rep, ['id', 'type']);
-      assert.strictEqual(rep?.represents, 'CdpBrowser');
+      assert.strictEqual(rep?.represents, Constructors.Browser);
       assert.isFulfilled(this.context.destroy());
     });
 

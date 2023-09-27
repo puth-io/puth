@@ -1,5 +1,5 @@
 import Context from './Context';
-import { ConsoleMessageType, Page, Viewport } from 'puppeteer';
+import { ConsoleMessageType, Page, Viewport } from 'puppeteer-core';
 import * as fs from 'fs';
 import { diff_match_patch } from 'diff-match-patch';
 import WebsocketConnections from './WebsocketConnections';
