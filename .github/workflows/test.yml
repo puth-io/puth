@@ -50,17 +50,20 @@ jobs:
       - run: lerna run build && lerna run postbuild
       - name: Image
         run: |
+          echo 1 $(pwd)
           npm ci --omit=dev --workspace=workspaces/puth
           mv node_modules workspaces/puth
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
+          echo 2 $(pwd)
       - name: Test image
         run: |
-          npm ci
+          echo 3 $(pwd)
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
           docker save -o /tmp/puth-test-image.tar puth-test-image
+          docker cp puth-test-image:/puth/.cache .
       - uses: actions/upload-artifact@v3
         with:
           name: puth-test-image

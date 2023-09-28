@@ -55,6 +55,10 @@ Commands
           type: 'boolean',
           default: false,
         },
+        cleanupOtherInstalls: {
+          type: 'boolean',
+          default: false,
+        },
       },
     },
 );
@@ -69,6 +73,9 @@ if (flags.jsonLogger === true) pretty = false;
 const logger = makeLogger(pretty);
 
 logger.debug({cwd, input, flags});
+
+const buildId = PUPPETEER_REVISIONS.chrome;
+const platform = detectBrowserPlatform();
 
 // Puth config
 let puthConfig = {
@@ -111,9 +118,7 @@ if (input[0] === 'start') {
   logger.info(`Using browser: ${installedBrowsers[0].browser} ${installedBrowsers[0].buildId} (${installedBrowsers[0].platform})`);
 }  else if (input[0] === 'browser') {
   if (input[1] === 'install') {
-    const platform = getPlatform();
-    const browser = input[2];
-    const channel = input[3];
+    browserInstaller(input[2]);
   }
 } else {
   cli.showHelp();
@@ -128,29 +133,45 @@ async function ensureChromeInstallation() {
     return; // applicable browser found
   }
   
+  if (! await prompts.confirm({ message: `No chrome installation found. Would you like to download chrome (${buildId} (${platform}))?` })) {
+    logger.error('Exiting. No chrome installation found.');
+    process.exit(1);
+  }
+  
   return browserInstaller();
 }
 
-async function browserInstaller() {
-  const buildId = PUPPETEER_REVISIONS.chrome;
-  const platform = detectBrowserPlatform();
+async function browserInstaller(cache) {
   const channel = 'chrome';
-  
-  if (! await prompts.confirm({ message: `No chrome installations found. Would you like to download chrome (${buildId} (${platform}))?` })) {
-    console.error('Exiting. No chrome installations found.');
-    process.exit(1);
-  }
   
   const cacheRootHome = path.join(homedir(), '/.cache/puth');
   const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
   
-  const cache = await prompts.select({
-    message: 'Select download location',
-    choices: [
-      {name: `home dir (${cacheRootHome})`, value: cacheRootHome},
-      {name: `current working directory (${cacheRootCwd})`, value: cacheRootCwd},
-    ],
-  });
+  if (!cache) {
+    cache = await prompts.select({
+      message: 'Select download location',
+      choices: [
+        {name: `home dir (${cacheRootHome})`, value: cacheRootHome},
+        {name: `current working directory (${cacheRootCwd})`, value: cacheRootCwd},
+      ],
+    });
+  } else if (cache === 'cwd') {
+    cache = cacheRootCwd;
+  } else if (cache === 'home') {
+    cache = cacheRootHome;
+  }
+  
+  const checkInstallDirectory = path.join(cache, channel, `${platform}-${buildId}`);
+  if (fs.existsSync(checkInstallDirectory)) {
+    logger.info(`Aborting browser install. Folder exists ${checkInstallDirectory}.`);
+    return;
+  }
+  if (flags.cleanupOtherInstalls) {
+    if (fs.existsSync(cache)) {
+      logger.info(`Removing existing cache directory ${cache}`);
+      fs.rmSync(cache, {recursive: true, force: true});
+    }
+  }
   
   const installOptions = {browser: channel, platform, buildId, cacheDir: cache};
   installOptions.downloadProgressCallback = throttle((downloadedBytes, totalBytes) => {
@@ -163,7 +184,7 @@ async function browserInstaller() {
   await canDownload(installOptions);
   const browser = await install(installOptions); // cleanup progress bar
   
-  logger.info(`Successfully downloaded browser ${browser.browser} ${browser.buildId} (${browser.platform})`);
+  logger.info(`Successfully downloaded ${browser.browser} ${browser.buildId} (${browser.platform})`);
   
   installedBrowsers.push(browser);
 }

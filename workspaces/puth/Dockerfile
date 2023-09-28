@@ -45,6 +45,7 @@ WORKDIR /puth
 COPY . .
 
 RUN npm install --omit=dev
+RUN if [ ! -d .cache/puth ]; then ./bin/puth.js browser install cwd --cleanup-other-installs ; fi
 
 EXPOSE 7345
 
