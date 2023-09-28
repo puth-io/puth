@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:lts
 
 RUN apt-get update && \
     apt-get clean && \
@@ -43,6 +43,8 @@ RUN apt-get update && \
 WORKDIR /puth
 
 COPY . .
+
+RUN npm install --omit=dev
 
 EXPOSE 7345
 

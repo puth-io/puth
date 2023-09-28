@@ -3,16 +3,15 @@
 // Imports
 const fs = require('fs');
 const path = require('path');
+const {homedir} = require("os");
 const meow = require('meow');
 const prompts = require('@inquirer/prompts');
-const {resolveBuildId, canDownload, install} = require('@puppeteer/browsers');
+const {detectBrowserPlatform, canDownload, install} = require('@puppeteer/browsers');
+const {PUPPETEER_REVISIONS} = require("puppeteer-core");
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
-const {getPlatform, installedBrowsers, makeLogger} = require("../lib");
-const {homedir} = require("os");
-
-const PuthStandardPlugin = require('../lib/plugins/PuthStandardPlugin').PuthStandardPlugin;
+const {installedBrowsers, makeLogger, PuthStandardPlugin} = require("../lib");
 
 const cli = meow(`
 Usage
@@ -50,9 +49,11 @@ Commands
         },
         jsonLogger: {
           type: 'boolean',
+          default: false,
         },
         prettyLogger: {
           type: 'boolean',
+          default: false,
         },
       },
     },
@@ -62,8 +63,9 @@ const cwd = process.cwd();
 const input = cli.input;
 const flags = cli.flags;
 
-let pretty = flags.prettyLogger ?? process.stdout.isTTY;
-if (flags.jsonLogger) pretty = false;
+let pretty = process.stdout.isTTY;
+if (flags.prettyLogger === true) pretty = true;
+if (flags.jsonLogger === true) pretty = false;
 const logger = makeLogger(pretty);
 
 logger.debug({cwd, input, flags});
@@ -97,80 +99,73 @@ process.on('SIGINT', () => {
 
 // Commands
 if (input[0] === 'start') {
-  info();
   ensureChromeInstallation()
+      .then(_ => version())
       .then(_ => start());
 } else if (input[0] === 'dev') {
   dev();
 } else if (input[0] === 'version') {
   console.log(pkg.version);
 } else if (input[0] === 'info') {
-  info();
+  version();
+  logger.info(`Using browser: ${installedBrowsers[0].browser} ${installedBrowsers[0].buildId} (${installedBrowsers[0].platform})`);
+}  else if (input[0] === 'browser') {
+  if (input[1] === 'install') {
+    const platform = getPlatform();
+    const browser = input[2];
+    const channel = input[3];
+  }
 } else {
   cli.showHelp();
 }
 
-function info() {
-  logger.info('Puth version ' + pkg.version);
-  logger.info(`Installed browsers: ${installedBrowsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ')}`);
+function version() {
+  logger.info('Puth version ' + pkg.version)
 }
 
 async function ensureChromeInstallation() {
   if (installedBrowsers.length !== 0) {
-    return;
+    return; // applicable browser found
   }
   
-  if (! await prompts.confirm({ message: 'No chrome installations found. Would you like to download chrome?' })) {
+  return browserInstaller();
+}
+
+async function browserInstaller() {
+  const buildId = PUPPETEER_REVISIONS.chrome;
+  const platform = detectBrowserPlatform();
+  const channel = 'chrome';
+  
+  if (! await prompts.confirm({ message: `No chrome installations found. Would you like to download chrome (${buildId} (${platform}))?` })) {
     console.error('Exiting. No chrome installations found.');
     process.exit(1);
   }
   
-  const detectedPlatform = getPlatform();
-  const platform = await prompts.select({
-    message: `Select your platform (detected: ${detectedPlatform})`,
-    choices: [
-      {value: detectedPlatform},
-      new prompts.Separator('----- Other platforms -----'),
-        ...['linux', 'dawrin', 'wsl', 'win32'].filter(p => p !== detectedPlatform).map(p => ({value: p})),
-    ],
-  });
+  const cacheRootHome = path.join(homedir(), '/.cache/puth');
+  const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
   
-  const browser = await prompts.select({
-    message: 'Select a browser',
-    choices: [
-      {value: 'chrome'},
-      {value: 'chromium'},
-      // {value: 'firefox (unsupported)'},
-    ],
-  });
-  
-  const channel = await prompts.select({
-    message: 'Select a chrome channel',
-    choices: [
-      {value: 'stable'},
-      {value: 'latest'},
-      {value: 'beta'},
-      {value: 'canary'},
-      {value: 'dev'},
-    ],
-  });
-  
-  const cacheRoot = await prompts.select({
+  const cache = await prompts.select({
     message: 'Select download location',
     choices: [
-      {name: `current working directory (${cwd})`, value: cwd},
-      {name: `home dir (${homedir()})`, value: homedir()},
-      // {value: 'custom'},
+      {name: `home dir (${cacheRootHome})`, value: cacheRootHome},
+      {name: `current working directory (${cacheRootCwd})`, value: cacheRootCwd},
     ],
   });
   
-  const buildId = await resolveBuildId(browser, platform, channel);
-  const download = {browser, platform, buildId, cacheDir: cacheRoot + '/.cache/puppeteer'};
+  const installOptions = {browser: channel, platform, buildId, cacheDir: cache};
+  installOptions.downloadProgressCallback = throttle((downloadedBytes, totalBytes) => {
+    const steps = 20;
+    const step = Math.round(steps * downloadedBytes / totalBytes);
+    const mb = 1000 * 1000;
+    process.stdout.write(`\rDownloading [${'.'.repeat(step)}${' '.repeat(steps - step)}] ${step * (100/steps)}% | ${Math.round(downloadedBytes/mb)}/${Math.round(totalBytes/mb)}MB`);
+    if (downloadedBytes === totalBytes) process.stdout.write("\n");
+  }, 50);
+  await canDownload(installOptions);
+  const browser = await install(installOptions); // cleanup progress bar
   
-  await canDownload(download);
-  await install(download);
+  logger.info(`Successfully downloaded browser ${browser.browser} ${browser.buildId} (${browser.platform})`);
   
-  // TODO add new browser to installedBrowsers
+  installedBrowsers.push(browser);
 }
 
 async function start() {
@@ -195,4 +190,19 @@ function debug(...args) {
   if (flags.debug) {
     console.log.apply(null, args);
   }
+}
+
+function throttle(func, timeFrame) {
+  let timer;
+  let lastArgs = [];
+  let mediator = _ => {
+    timer = null;
+    func(...lastArgs);
+  }
+  return function (...args) {
+    lastArgs = args;
+    if (!timer) {
+      timer = setTimeout(mediator, timeFrame);
+    }
+  };
 }
