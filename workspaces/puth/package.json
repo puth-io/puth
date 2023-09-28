@@ -64,7 +64,8 @@
     "postversion": "git push && git push --tags",
     "image:install": "npm install && cd gui && npm install",
     "image:build": "npm run build && cd gui && npm run build",
-    "image:cleanup": "rm -rf src && rm -rf gui"
+    "image:cleanup": "rm -rf src && rm -rf gui",
+    "ci:browser:install": "puth browser install cwd --cleanup-other-installs"
   },
   "repository": {
     "type": "git",

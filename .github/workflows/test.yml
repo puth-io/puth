@@ -30,6 +30,7 @@ jobs:
           key: node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
       - run: lerna run build && lerna run postbuild
+      - run: lerna run ci:browser:install
       - run: lerna run test
 
   build-test-image:
