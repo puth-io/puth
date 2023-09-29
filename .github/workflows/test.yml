@@ -33,7 +33,7 @@ jobs:
       - run: lerna run ci:browser:install
       - run: lerna run test
 
-  build-test-image:
+  build-image:
     name: 'Build test image'
     runs-on: ubuntu-latest
     steps:
@@ -52,7 +52,7 @@ jobs:
       - name: Image
         run: |
           echo 1 $(pwd)
-          npm ci --omit=dev --workspace=workspaces/puth
+          npm ci --workspace=workspaces/puth
           mv node_modules workspaces/puth
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
@@ -71,7 +71,7 @@ jobs:
           path: /tmp/puth-test-image.tar
 
   php-client:
-    needs: build-test-image
+    needs: build-image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -108,7 +108,7 @@ jobs:
           ./vendor/bin/phpunit
 
   php-laravel:
-    needs: build-test-image
+    needs: build-image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
