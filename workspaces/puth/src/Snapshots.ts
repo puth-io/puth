@@ -123,10 +123,6 @@ class SnapshotHandler {
     }
   }
 
-  log(...msg) {
-    fs.appendFileSync(__dirname + '/../../../logs/console.log', msg.join(' ') + '\n');
-  }
-
   async createBefore(context: Context, page: Page, command: ICommand | undefined) {
     if (!command) {
       return;

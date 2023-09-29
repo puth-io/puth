@@ -16,6 +16,7 @@ jobs:
         node-version:
           - 16
           - 18
+          - 20
     name: puth | Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v3

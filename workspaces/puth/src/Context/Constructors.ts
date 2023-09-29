@@ -9,6 +9,10 @@ const Constructors = {
   // SessionImpl: 'CdpSessionImpl',
   ConnectionAdapter: 'CdpConnectionAdapter',
   ClientAdapter: 'CdpClientAdapter',
+  Mouse: 'CdpMouse',
+  Keyboard: 'CdpKeyboard',
+  Touchscreen: 'CdpTouchscreen',
+  Target: 'CdpTarget',
 };
 
 export default Constructors;

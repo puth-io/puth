@@ -180,7 +180,7 @@ async function browserInstaller(cache) {
     const mb = 1000 * 1000;
     process.stdout.write(`\rDownloading [${'.'.repeat(step)}${' '.repeat(steps - step)}] ${step * (100/steps)}% | ${Math.round(downloadedBytes/mb)}/${Math.round(totalBytes/mb)}MB`);
     if (downloadedBytes === totalBytes) process.stdout.write("\n");
-  }, 50);
+  }, 100);
   await canDownload(installOptions);
   const browser = await install(installOptions); // cleanup progress bar
   
@@ -213,7 +213,7 @@ function debug(...args) {
   }
 }
 
-function throttle(func, timeFrame) {
+function throttle(func, wait) {
   let timer;
   let lastArgs = [];
   let mediator = _ => {
@@ -222,8 +222,6 @@ function throttle(func, timeFrame) {
   }
   return function (...args) {
     lastArgs = args;
-    if (!timer) {
-      timer = setTimeout(mediator, timeFrame);
-    }
+    if (!timer) timer = setTimeout(mediator, wait);
   };
 }

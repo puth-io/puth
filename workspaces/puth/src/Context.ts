@@ -699,7 +699,7 @@ class Context extends Generic {
     }
 
     // TODO check for other types which are actual instances and not serializable objects
-    if (['Mouse'].includes(Utils.resolveConstructorName(resolvedTo))) {
+    if ([Constructors.Mouse].includes(Utils.resolveConstructorName(resolvedTo))) {
       return this.returnCached(resolvedTo);
     }
 
@@ -755,9 +755,7 @@ class Context extends Generic {
     }
 
     if (this.options?.debug) {
-      // TODO implement logger
-      // tslint:disable-next-line:no-console
-      console.log('[resolveOn]', Utils.resolveConstructorName(on), representation.function, representation.parameters);
+      this.puth.logger.debug(`[resolveOn] ${Utils.resolveConstructorName(on)} ${representation.function} ${JSON.stringify(representation.parameters)}`);
     }
 
     return on;

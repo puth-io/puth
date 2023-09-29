@@ -25,7 +25,7 @@ export default class Puth {
   private emitter: Emitter<PuthEvents>;
   public browserHandler: HandlesBrowsers;
   private server;
-  private logger: Logger;
+  public readonly logger: Logger;
   
   private options: {
     address: string | undefined;

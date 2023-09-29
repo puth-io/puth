@@ -23,7 +23,7 @@ class MakesAssertionsTest extends PuthTestCase
     function test_assert_port_is()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('http://example.com/')
+            $browser->visit('http://httpforever.com/')
                 ->assertPortIs(80);
         });
     }
