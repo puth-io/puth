@@ -28,6 +28,7 @@
     "pino-pretty": "^10.2.0"
   },
   "devDependencies": {
+    "@puth/client": "*",
     "@types/assert": "^1.5.7",
     "@types/axios": "^0.14.0",
     "@types/mocha": "^10.0.1",

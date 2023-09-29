@@ -44,6 +44,9 @@ WORKDIR /puth
 
 COPY . .
 
+# removes devDependencies from package.json because npm install with omit dev still searches for the "@puth/client" in
+# the npm registry but that package does not exist. You have to love npm.
+RUN ./bin/ci.js
 RUN npm install --omit=dev
 RUN if [ ! -d .cache/puth ]; then ./bin/puth.js browser install cwd --cleanup-other-installs ; fi
 

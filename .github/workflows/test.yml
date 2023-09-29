@@ -52,8 +52,7 @@ jobs:
       - name: Image
         run: |
           echo 1 $(pwd)
-          npm ci --workspace=workspaces/puth
-          mv node_modules workspaces/puth
+          npm ci
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
           echo 2 $(pwd)
