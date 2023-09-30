@@ -72,7 +72,7 @@ class InteractsWithElementsTest extends PuthTestCase
     function test_click_exception()
     {
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessageMatches('/Function click threw error: Node is either not clickable or not an HTMLElement/');
+        $this->expectExceptionMessageMatches('/Function click threw error: Node is either not clickable or not an Element/');
         
         $this->browse(function (Browser $browser) {
             $browser->site->setContent('<body><button style="display: none">test</button></body>');

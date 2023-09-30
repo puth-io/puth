@@ -1,12 +1,11 @@
 import { v4 } from 'uuid';
-import * as puppeteer from 'puppeteer';
+import puppeteer, {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots, { ICommand } from './Snapshots';
 import * as Utils from './Utils';
-import Puth from './Server';
+import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import { PUTH_EXTENSION_CODEC } from './WebsocketConnections';
-import {Page, HTTPRequest, HTTPResponse, Target, ConsoleMessage, Dialog} from 'puppeteer';
 import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import path from 'path';
 import { encode } from '@msgpack/msgpack';
@@ -112,7 +111,10 @@ class Context extends Generic {
     return browser;
   }
 
-  async createBrowser(options = {}) {
+  async createBrowser(options: any = {}) {
+    if (!options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
+      options.executablePath = this.puth.getInstalledBrowser().executablePath;
+    }
     let browser = await this.puth.browserHandler.launch(options);
     this.browsers.push(browser);
     await this._trackBrowser(browser);
@@ -697,7 +699,7 @@ class Context extends Generic {
     }
 
     // TODO check for other types which are actual instances and not serializable objects
-    if (['Mouse'].includes(Utils.resolveConstructorName(resolvedTo))) {
+    if ([Constructors.Mouse].includes(Utils.resolveConstructorName(resolvedTo))) {
       return this.returnCached(resolvedTo);
     }
 
@@ -753,9 +755,7 @@ class Context extends Generic {
     }
 
     if (this.options?.debug) {
-      // TODO implement logger
-      // tslint:disable-next-line:no-console
-      console.log('[resolveOn]', Utils.resolveConstructorName(on), representation.function, representation.parameters);
+      this.puth.logger.debug(`[resolveOn] ${Utils.resolveConstructorName(on)} ${representation.function} ${JSON.stringify(representation.parameters)}`);
     }
 
     return on;

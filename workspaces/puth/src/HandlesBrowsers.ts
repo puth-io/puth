@@ -1,10 +1,10 @@
 import tmp from "tmp-promise";
 import defaultArgs from './chromeDefaultArgs.json';
-import puppeteer, {Browser, EventEmitter, EventType, Handler, Page} from "puppeteer";
+import puppeteer, {Browser, EventEmitter, EventType, Handler, Page} from 'puppeteer-core';
 
 export type PuthBrowser = {
-    on(event: EventType, handler: Handler<any>): EventEmitter;
-    once(event: EventType, handler: Handler<any>): EventEmitter;
+    on(event: EventType, handler: Handler<any>): void;
+    once(event: EventType, handler: Handler<any>): void;
     pages(): Promise<Page[]>;
     close(): Promise<void>;
 }

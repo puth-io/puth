@@ -308,10 +308,7 @@ export function resolveSnapshotBacktrackV4(commands, until, lastSnapshotStateBef
   let command: ICommand = commands[index];
 
   if (command.snapshots.before) {
-    console.time('patch');
     value = DMP.patch_apply(command.snapshots.before.data.diff, value)[0];
-    console.timeLog('patch', command.snapshots.before, command.snapshots.before.data.diff, value.length);
-    console.timeEnd('patch');
   }
 
   if (index === until && lastSnapshotStateBefore) {
@@ -319,10 +316,7 @@ export function resolveSnapshotBacktrackV4(commands, until, lastSnapshotStateBef
   }
 
   if (command.snapshots.after) {
-    console.time('patch');
     value = DMP.patch_apply(command.snapshots.after.data.diff, value)[0];
-    console.timeLog('patch', command.snapshots.before, command.snapshots.after.data.diff, value.length);
-    console.timeEnd('patch');
   }
 
   if (index === until) {

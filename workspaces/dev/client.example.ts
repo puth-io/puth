@@ -15,23 +15,13 @@ const func = (async function () {
       width: 1280,
     },
   });
-  
   const page = (await browser.pages())[0];
   
-  // await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+  await page.visit('https://playground.puth.dev/');
+  await page.$('body');
   
-  await page.visit("https://playground.puth.dev");
-  await page.visit("https://playground.puth.dev");
-  await page.visit("https://playground.puth.dev");
-  await page.visit("https://playground.puth.dev");
-  
-  // await new Promise(resolve => setTimeout(resolve, 20 * 1000));
-  
-  // for (let i = 0; i < 10000; i++) {
-  //   await page.$("#querying-get");
-  // }
-  
-  // await context.testFailed();
+  await context.testFailed();
   
   await context.exception({
     origin: "default",
@@ -87,12 +77,3 @@ const func = (async function () {
 });
 
 func();
-
-// let time = Date.now();
-// (async () => {
-//   for (let i = 0; i < 10; i++) {
-//     await func();
-//   }
-//  
-//   console.log('took: ' + (Date.now() - time) + 'ms');
-// })();

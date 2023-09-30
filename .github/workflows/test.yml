@@ -16,6 +16,7 @@ jobs:
         node-version:
           - 16
           - 18
+          - 20
     name: puth | Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v3
@@ -30,9 +31,10 @@ jobs:
           key: node-${{ hashFiles('**/package-lock.json') }}
       - run: npm ci
       - run: lerna run build && lerna run postbuild
+      - run: lerna run ci:browser:install
       - run: lerna run test
 
-  build-test-image:
+  build-image:
     name: 'Build test image'
     runs-on: ubuntu-latest
     steps:
@@ -50,24 +52,26 @@ jobs:
       - run: lerna run build && lerna run postbuild
       - name: Image
         run: |
-          npm ci --omit=dev --workspace=workspaces/puth
-          mv node_modules workspaces/puth
+          echo 1 $(pwd)
+          npm ci
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
+          echo 2 $(pwd)
       - name: Test image
         run: |
-          npm ci
+          echo 3 $(pwd)
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
           docker save -o /tmp/puth-test-image.tar puth-test-image
+          docker cp puth-test-image:/puth/.cache .
       - uses: actions/upload-artifact@v3
         with:
           name: puth-test-image
           path: /tmp/puth-test-image.tar
 
   php-client:
-    needs: build-test-image
+    needs: build-image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -104,7 +108,7 @@ jobs:
           ./vendor/bin/phpunit
 
   php-laravel:
-    needs: build-test-image
+    needs: build-image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true

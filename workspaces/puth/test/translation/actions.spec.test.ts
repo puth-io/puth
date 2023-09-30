@@ -1,32 +1,5 @@
-import * as assert from 'assert';
+import {puthContextBinder} from "../helper";
 import { PuthStandardPlugin } from '../../';
-import LocalPuthClient from '@puth/client/LocalPuthClient';
-
-export async function puthContextBinder(mochaContext) {
-  mochaContext.remote = new LocalPuthClient({ silent: true });
-  await mochaContext.remote.getPuth().use(PuthStandardPlugin);
-
-  mochaContext.remote.setAssertionHandler((assertion) => {
-    if (!assertion.result) {
-      assert.fail(assertion.message);
-    }
-  });
-
-  mochaContext.context = await mochaContext.remote.contextCreate({
-    snapshot: true,
-    track: ['commands', 'console', 'network'],
-  });
-  mochaContext.browser = await mochaContext.context.createBrowser();
-
-  mochaContext.page = (await mochaContext.browser.pages())[0];
-  mochaContext.puthAssertStrictEqual = async (handle1, handle2) => {
-    let response = await mochaContext.context.assertStrictEqual(
-      await handle1.getRepresentation(),
-      await handle2.getRepresentation(),
-    );
-    return assert.ok(response.result, 'handle1 and handle2 are not equal');
-  };
-}
 
 // Following code is substantially copied from
 // https://github.com/cypress-io/cypress-example-kitchensink/blob/master/cypress/integration/2-advanced-examples/actions.spec.js
@@ -44,8 +17,7 @@ export async function puthContextBinder(mochaContext) {
 describe('Actions', function () {
   beforeEach(async function () {
     this.timeout(10000);
-    await puthContextBinder(this);
-
+    await puthContextBinder(this, [PuthStandardPlugin]);
     await this.page.goto('https://playground.puth.dev/');
   });
 

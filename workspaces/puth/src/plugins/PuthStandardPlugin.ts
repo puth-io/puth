@@ -2,7 +2,7 @@ import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { capitalizeFirstLetter, retryFor } from '../Utils';
-import { ElementHandle } from 'puppeteer';
+import { ElementHandle } from 'puppeteer-core';
 import Return from '../Context/Return';
 import Constructors from '../Context/Constructors';
 
@@ -75,10 +75,10 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         acceptDialog: this.acceptDialog,
         dismissDialog: this.dismissDialog,
         type: async (page, selector, chars, options = {}) => await this.type(await page.$(selector), chars, options),
-        // acceptNextDialog(message)  
-        // acceptAllDialogs(message)  
-        // dismissNextDialog(message)  
-        // dismissAllDialogs(message)  
+        // acceptNextDialog(message)
+        // acceptAllDialogs(message)
+        // dismissNextDialog(message)
+        // dismissAllDialogs(message)
       },
       [Constructors.ElementHandle]: {
         get: this.get,

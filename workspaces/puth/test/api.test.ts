@@ -1,9 +1,9 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import Puth, { PuthStandardPlugin } from '../';
-import LocalPuthClient from '@puth/client/LocalPuthClient';
+import {PuthStandardPlugin} from '../';
 import RemotePuthClient from '@puth/client/RemotePuthClient';
-import { RemoteContext } from '@puth/client/RemoteObject';
+import Constructors from "../src/Context/Constructors";
+import {makeLocalPuthClient, makePuthServer} from "./helper";
 
 chai.use(chaiAsPromised);
 
@@ -11,7 +11,7 @@ const assert = chai.assert;
 
 const envs: [string, () => any][] = [
   ['remote', () => new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:43210')],
-  ['local', () => new LocalPuthClient()],
+  ['local', () => makeLocalPuthClient()],
 ];
 
 if (process.env.TEST_ONLY_REMOTE) {
@@ -27,9 +27,7 @@ if (process.env.TEST_ONLY_REMOTE) {
 function puthContextTests(env) {
   before(function () {
     if (env[0] === 'remote' && !process.env.PUTH_URL) {
-      this.__remoteTestInstance = new Puth();
-      this.__remoteTestInstance.use(PuthStandardPlugin);
-      this.__remoteTestInstance.serve(43210, '127.0.0.1', false);
+      this.__remoteTestInstance = makePuthServer(43210, '127.0.0.1');
     }
   });
 
@@ -65,7 +63,7 @@ function puthContextTests(env) {
     it('can call a function on context', async function () {
       let rep = await (await this.context.createBrowser()).getRepresentation();
       assert.containsAllKeys(rep, ['id', 'type']);
-      assert.strictEqual(rep?.represents, 'CDPBrowser');
+      assert.strictEqual(rep?.represents, Constructors.Browser);
       assert.isFulfilled(this.context.destroy());
     });
 
