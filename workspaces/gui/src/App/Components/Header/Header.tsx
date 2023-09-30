@@ -36,7 +36,7 @@ export default observer(function Header() {
             </a>
           </li>
           <li className="nav-item">
-            <a href="https://github.com/SEUH/puth" target={'_blank'} className="nav-link">
+            <a href="https://github.com/puth-io/puth" target={'_blank'} className="nav-link">
               Github
             </a>
           </li>

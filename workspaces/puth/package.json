@@ -1,6 +1,6 @@
 {
   "name": "puth",
-  "version": "0.6.2",
+  "version": "1.0.0-alpha.0",
   "author": {
     "name": "Sebastian Uehlin",
     "email": "s.uehlin@proton.me"
@@ -69,7 +69,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/SEUH/puth"
+    "url": "https://github.com/puth-io/puth"
   },
   "bin": "./bin/puth.js",
   "homepage": "https://puth.dev",

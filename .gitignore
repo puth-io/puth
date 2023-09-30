@@ -302,3 +302,5 @@ Temporary Items
 .yarn/install-state.gz
 
 .phpunit.result.cache
+
+workspaces/puth/static/gui
