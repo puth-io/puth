@@ -4,6 +4,7 @@ import {PuthStandardPlugin} from '../';
 import RemotePuthClient from '@puth/client/RemotePuthClient';
 import Constructors from "../src/Context/Constructors";
 import {makeLocalPuthClient, makePuthServer} from "./helper";
+import {sleep} from "../src/Utils";
 
 chai.use(chaiAsPromised);
 
@@ -99,7 +100,7 @@ function puthContextTests(env) {
         this.page.___delete_test = true;
         assert.ok(await this.page._getProperty('___delete_test'));
         delete this.page.___delete_test;
-
+        await sleep(500);
         await assert.isRejected(this.page._getProperty('___delete_test'));
       });
     });
