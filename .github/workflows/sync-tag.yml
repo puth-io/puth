@@ -6,94 +6,72 @@ on:
       - 'v*'
 
 jobs:
-  
+
 ###### TEST ############################################################################################################
 
-  yarn:
-    runs-on: ubuntu-latest
-    name: 'yarn cache'
-    steps:
-      - uses: actions/checkout@v3
-      - id: get_version
-        uses: battila7/get-version-action@v2
-      - run: echo TAG ${{ steps.get_version.outputs.version }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - uses: actions/cache@v3
-        with:
-          path: |
-            .yarn/cache
-            workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: node
-      - name: yarn install
-        run: yarn
-
   test-puth-node:
-    needs: yarn
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version:
-          - 14
           - 16
           - 18
+          - 20
     name: puth | Node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
-      - name: 'Cache'
-        uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v3
         with:
           path: |
-            .yarn/cache
+            .npm
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-      - run: yarn
+          key: node-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
       - run: lerna run build && lerna run postbuild
+      - run: lerna run ci:browser:install
       - run: lerna run test
 
-  build-test-image:
-    needs: yarn
+  build-image:
     name: 'Build test image'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
       - uses: actions/cache/restore@v3
         with:
           path: |
-            .yarn/cache
+            .npm
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/yarn.lock') }}
-      - run: yarn
+          key: node-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
       - run: lerna run build && lerna run postbuild
       - name: Image
         run: |
-          yarn workspaces focus --production puth
-          rm -rf workspaces/puth/node_modules
-          mv node_modules workspaces/puth
+          echo 1 $(pwd)
+          npm ci
           cd workspaces/puth
           docker build --file Dockerfile --tag puth-test-image .
+          echo 2 $(pwd)
       - name: Test image
         run: |
-          yarn
+          echo 3 $(pwd)
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 lerna run test:only:remote
           docker save -o /tmp/puth-test-image.tar puth-test-image
+          docker cp puth-test-image:/puth/.cache .
       - uses: actions/upload-artifact@v3
         with:
           name: puth-test-image
           path: /tmp/puth-test-image.tar
 
   php-client:
-    needs: build-test-image
+    needs: build-image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -130,18 +108,29 @@ jobs:
           ./vendor/bin/phpunit
 
   php-laravel:
-    needs: build-test-image
+    needs: build-image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        php: [ '8.0', 8.1, 8.2 ]
-        laravel: [ 9 ]
+        php: [8.1, 8.2]
+        laravel: [9, 10]
+        phpunit: [9, 10]
+        collision: [6, 7]
+        exclude:
+          - laravel: 9 # maybe remove
+            phpunit: 10
+          - laravel: 10
+            phpunit: 9
+          - phpunit: 10
+            collision: 6
+          - phpunit: 9
+            collision: 7
     defaults:
       run:
         working-directory: workspaces/clients/php/workspaces/laravel
 
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}.*
+    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
 
     steps:
       - name: Checkout
@@ -173,7 +162,11 @@ jobs:
           restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
 
       - name: Install Composer dependencies
-        run: composer update --prefer-stable --no-interaction --no-suggest
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
+          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
+          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
+          composer update --prefer-stable --no-interaction --no-suggest
       - name: Run tests
         run: |
           cp .env.example .env
@@ -181,7 +174,7 @@ jobs:
           docker run --name puth-test-image -d --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           php artisan migrate --force
-          php artisan test
+          php artisan test --without-tty
         env:
           RUNNING_IN_CI: true
 
@@ -199,12 +192,12 @@ jobs:
           path: |
             workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
             workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log      
-            
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log     
+
 ###### RELEASE #########################################################################################################
-  
+
   release:
-    needs: [ test-puth-node, build-test-image, php-client, php-laravel ]
+    needs: [ test-puth-node, build-image, php-client, php-laravel ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -220,7 +213,7 @@ jobs:
           name: puth-test-image
           path: /tmp
       - run: docker load --input /tmp/puth-test-image.tar
-        
+
       - name: Push image
         run: |
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
