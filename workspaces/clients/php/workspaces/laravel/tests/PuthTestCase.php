@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use Puth\Laravel\TestCase as BaseTestCase;
+use Puth\Laravel\LegacyTestCase as BaseTestCase;
 
 abstract class PuthTestCase extends BaseTestCase
 {
@@ -12,8 +12,8 @@ abstract class PuthTestCase extends BaseTestCase
     {
         return [
             'defaultViewport' => [
-                'width' => 1234,
-                'height' => 789,
+                'width' => 1280,
+                'height' => 720,
             ],
         ];
     }

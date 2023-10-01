@@ -18,7 +18,17 @@ class BackTrace
         
         return array_values(array_filter($trace, function ($frame) {
             if (array_key_exists('file', $frame)) {
-                return ! (str_contains($frame['file'], 'puth-php/src') || str_contains($frame['file'], 'puth/php/src'));
+                if (str_contains($frame['file'], 'vendor/phpunit/phpunit')) {
+                    return false;
+                }
+                
+                if (str_contains($frame['file'], 'puth-php/src')) {
+                    return false;
+                }
+                
+                if (str_contains($frame['file'], 'puth/php/src')) {
+                    return false;
+                }
             }
             
             return true;

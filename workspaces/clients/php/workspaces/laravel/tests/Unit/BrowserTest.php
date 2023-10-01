@@ -12,15 +12,6 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
-    function test_wip()
-    {
-        $this->browse(function (Browser $browser1, Browser $browser2) {
-            Assert::assertIsObject($browser1);
-            Assert::assertIsObject($browser2);
-            Assert::assertNotEquals($browser1, $browser2);
-        });
-    }
-    
     function test_multiple_browsers()
     {
         $this->browse(function (Browser $browser1, Browser $browser2) {

@@ -6,13 +6,15 @@
 composer require --dev puth/laravel
 ```
 
-### Configuration
-
-You can find the configuration for this package in `config/puth.php` after publishing it.
+After installing the Puth package, run the `puth:install` Artisan command.
 
 ```bash
-php artisan vendor:publish --provider=Puth\\Laravel\\PuthServiceProvider
+php artisan puth:install
 ```
+
+### Configuration
+
+You can find the configuration file for this package in `config/puth.php`.
 
 ### Example Browser Test
 
