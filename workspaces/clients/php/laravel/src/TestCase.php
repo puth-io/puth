@@ -34,12 +34,6 @@ abstract class TestCase extends FoundationTestCase
             ],
             'snapshot' => true,
             'debug' => static::$debug,
-//            'timeouts' => [
-//                'commands' => 5000,
-////                'assertions' => 5000,
-////                'default' => 5000,
-//            ],
-//            'dev' => false,
         ], $this->getContextOptions()));
         
         Browser::$baseUrl = $this->baseUrl();

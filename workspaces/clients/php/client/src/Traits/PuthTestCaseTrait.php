@@ -4,8 +4,6 @@ namespace Puth\Traits;
 
 use PHPUnit\Runner\Version;
 use Puth\Context;
-//use Puth\Objects\Browser;
-//use Puth\Objects\Page;
 
 /**
  * PuthTestCaseTrait
@@ -51,7 +49,8 @@ trait PuthTestCaseTrait
         $this->context = new Context($this->getPuthInstanceUrl(), [
             'snapshot' => $this->isSnapshot(),
             'test' => [
-                'name' => $this->getName(),
+                'name' => $this->getPhpunitTestName(),
+                'group' => get_class($this),
             ],
             'group' => get_class($this),
             'dev' => $this->isDev(),
@@ -107,7 +106,7 @@ trait PuthTestCaseTrait
 
         $destroyOptions = [];
 
-        if ($this->hasFailed()) {
+        if ($this->hasPhpunitTestFailed()) {
             $this->context->testFailed();
     
             if ($this->shouldSaveSnapshotOnFailure()) {
@@ -164,6 +163,25 @@ trait PuthTestCaseTrait
         }
 
         return true;
+    }
+    
+    private function isPhpVersion10()
+    {
+        return intval(explode('.', Version::id())[0]) > 9;
+    }
+    
+    public function getPhpunitTestName()
+    {
+        return $this->isPhpVersion10() ? $this->name() : $this->getName();
+    }
+    
+    public function hasPhpunitTestFailed()
+    {
+        if (!$this->isPhpVersion10()) {
+            return $this->hasFailed();
+        }
+        
+        return $this->status()->isFailure() || $this->status()->isError();
     }
 
     public function shouldSaveSnapshotOnFailure()
