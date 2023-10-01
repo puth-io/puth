@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use Puth\Laravel\LegacyTestCase as BaseTestCase;
+use Puth\Laravel\TestCase as BaseTestCase;
 
 abstract class PuthTestCase extends BaseTestCase
 {
