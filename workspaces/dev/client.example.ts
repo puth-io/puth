@@ -72,6 +72,24 @@ const func = (async function () {
               "            ],\n" +
               "        ]);",
         },
+        {
+          path: ".env",
+          content:
+              "APP_NAME=Puth\n" +
+              "APP_ENV=local\n" +
+              "APP_KEY=base64:KR7P88xkoAppIuoL7vhOAwMov7pmQGqHkWLJwUKIYGM=\n" +
+              "APP_DEBUG=true\n" +
+              "APP_URL=http://localhost\n" +
+              "LOG_CHANNEL=stack\n" +
+              "LOG_DEPRECATIONS_CHANNEL=null\n" +
+              "LOG_LEVEL=debug\n" +
+              "DB_CONNECTION=mysql\n" +
+              "DB_HOST=127.0.0.1\n" +
+              "DB_PORT=3306\n" +
+              "DB_DATABASE=laravel\n" +
+              "DB_USERNAME=root\n" +
+              "DB_PASSWORD=\n"
+        },
       ],
     },
   });
