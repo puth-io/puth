@@ -4,7 +4,6 @@ import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
 import Events from '../../Events';
 import { IContext } from '../Misc/WebsocketHandler';
 import { resolveSnapshotBacktrack3, resolveSnapshotBacktrackV4 } from '../Misc/Util';
-import AppState from "@puth-pro/gui/src/App/AppState";
 
 export type SnapshotState = 'before' | 'after';
 export type HighlightType = 'screencast' | 'dom';
@@ -275,10 +274,6 @@ class PreviewStoreClass {
     Events.on(
       'preview:toggle',
       action((cmd: ICommand | undefined) => {
-        if (AppState.mode === 'follow') {
-          AppState.mode = 'default';
-        }
-        
         if (this.activeCommand?.id === cmd?.id) {
           this.activeCommand = undefined;
           this.activeScreencast = undefined;
