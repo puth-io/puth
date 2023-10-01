@@ -23,13 +23,6 @@ abstract class TestCase extends FoundationTestCase
     
     private bool $isPhpVersion10;
     
-    public function __construct(string $name)
-    {
-        parent::__construct($name);
-        
-        $this->isPhpVersion10 = intval(explode('.', Version::id())[0]) > 9;
-    }
-    
     protected function setUp(): void
     {
         parent::setUp();
