@@ -69,6 +69,8 @@ class InstallCommand extends Command
             }
         }
         
+        $this->call('vendor:publish', ['--provider' => 'Puth\\Laravel\\PuthServiceProvider']);
+        
         $this->info('Puth installed successfully.');
     }
     
