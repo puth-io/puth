@@ -21,8 +21,6 @@ abstract class TestCase extends FoundationTestCase
     
     public static bool $debug = false;
     
-    private bool $isPhpVersion10;
-    
     protected function setUp(): void
     {
         parent::setUp();
