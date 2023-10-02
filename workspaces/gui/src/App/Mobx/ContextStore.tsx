@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import { ICommand } from '../Components/Command/Command';
 import Constructors from 'puth/src/Context/Constructors';
+import {Connection} from "@puth-pro/gui/src/App/AppState";
 
 export default class ContextStore {
   id;
@@ -10,7 +11,7 @@ export default class ContextStore {
   requests = [];
   responses = [];
   exceptions = [];
-  
+  screencasts: any[] = [];
   group: string = '';
   test: {
     name: string;
@@ -28,8 +29,9 @@ export default class ContextStore {
   };
   
   createdAt: number;
+  lastActivity: number;
   created = Date.now();
-  
+  connection: Connection | undefined;
   constructor(
       id: string,
       options: { [key: string]: any },
@@ -44,7 +46,7 @@ export default class ContextStore {
     this.group = group;
     this.capabilities = capabilities;
     this.createdAt = createdAt;
-    
+    this.lastActivity = createdAt;
     makeAutoObservable(this, {});
   }
   

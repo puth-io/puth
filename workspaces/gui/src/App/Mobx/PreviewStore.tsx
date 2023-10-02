@@ -6,8 +6,13 @@ import { IContext } from '../Misc/WebsocketHandler';
 import { resolveSnapshotBacktrack3, resolveSnapshotBacktrackV4 } from '../Misc/Util';
 
 export type SnapshotState = 'before' | 'after';
+export type HighlightType = 'screencast' | 'dom';
+export type Actor = 'sidebar' | 'timeline';
 
 export const domParser = new DOMParser();
+
+// do not put this inside PreviewStoreClass because this must not be observed
+let _lastActiveScreencastUrl: string|null = null;
 
 class PreviewStoreClass {
   private _activeContext: IContext | undefined;
@@ -18,7 +23,8 @@ class PreviewStoreClass {
   private highlightInterval: number | undefined;
   _darken: boolean = false;
   _removeScriptTags: boolean = true;
-  
+  visibleHighlightType: HighlightType = 'screencast';
+  highlightScreencast: any = null;
   constructor() {
     makeAutoObservable(this);
     
@@ -78,6 +84,9 @@ class PreviewStoreClass {
   }
   
   get visibleSnapshot() {
+    if (this.visibleHighlightType !== 'dom') {
+      return null;
+    }
     return this.visibleCommand?.snapshots[this.visibleHighlightState];
   }
   
@@ -106,13 +115,14 @@ class PreviewStoreClass {
       html = this.visibleSnapshot?.html?.src;
     }
     
-    const parsedDocument = domParser.parseFromString(html, 'text/html');
-    recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
+    // const parsedDocument = domParser.parseFromString(html, 'text/html');
+    // recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
     
     // TODO find a way to make Blob out of document directly because this is "document => string => blob"
     //      but if innerHTML is cached then it doesn't that big of a difference
-    let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
-    return url;
+    // let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
+    // return url;
+    return html;
   }
   
   get hasVisibleSnapshotSource() {
@@ -152,51 +162,239 @@ class PreviewStoreClass {
     return this._activeContext;
   }
   
+  // set activeScreencast(screencast) {
+  //
+  // }
+  
+  activeScreencast: any = null;
+  
+  get visibleScreencast() {
+    return this.highlightScreencast ?? this.activeScreencast;
+  }
+  
+  get activeScreencastUrl() {
+    if (this.visibleHighlightType !== 'screencast' || !this.visibleScreencast) {
+      return null;
+    }
+    
+    if (_lastActiveScreencastUrl) {
+      URL.revokeObjectURL(_lastActiveScreencastUrl);
+    }
+    // this._activeScreencastUrl = URL.createObjectURL(new Blob([this.activeScreencast.frame], {type: 'image/jpg'}));
+    
+    // return this._activeScreencastUrl;
+    
+    let url = URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpg'}))
+    _lastActiveScreencastUrl = url;
+    
+    return url;
+  }
+  
+  private _timelineCursor: number|null = null;
+  timelineHighlightCursor = null;
+  
+  get timelineCursor() {
+    return this.timelineHighlightCursor ?? this._timelineCursor;
+  }
+  set timelineCursor(value: number|null) {
+    this._timelineCursor = value;
+  }
+  
+  get timelineCursorPercentage() {
+    if (!this.timelineCursor) {
+      return 0;
+    }
+    
+    const percentageFromLeft = (time: number) => (time - this.timelineData?.start) / this.timelineData?.diff;
+    return percentageFromLeft(this.timelineCursor);
+  }
+  
+  get timelineData() {
+    if (!this.visibleCommand) {
+      return {
+        screencasts: [],
+        commands: [],
+        exceptions: [],
+      };
+    }
+    
+    let context = this.visibleCommand.context;
+    
+    let start = context.createdAt;
+    let end = context.lastActivity;
+    let diff = end - start;
+    
+    const percentageFromLeft = (time: number) => (time - start) / diff;
+    
+    let screencasts = context.screencasts.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let commands = context.commands.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    let exceptions = context.exceptions.map((event: any) => [percentageFromLeft(event.timestamp), event]);
+    
+    return {
+      screencasts,
+      commands,
+      exceptions,
+      start,
+      end,
+      diff,
+    }
+  }
+  
+  findLastEventUntil(time, events) {
+    let last;
+    for (let screencast of events) {
+      if (screencast.timestamp > time) {
+        break;
+      }
+      last = screencast;
+    }
+    return last;
+  }
+  
+  findLastScreencastForCommand(command) {
+    // calculate last frame before next command or if null, get overall last frame
+    let idx = command.context.commands.indexOf(command);
+    if (idx === (command.context.commands.length - 1)) {
+      return {
+        screencast: command.context.screencasts[command.context.screencasts.length -1],
+        until: command.timestamp,
+      };
+    } else {
+      let until = command.context.commands[idx + 1].timestamp - 1;
+      return {
+        screencast: this.findLastEventUntil(until, command.context.screencasts),
+        until,
+      };
+    }
+  }
   private registerEvents() {
     // @ts-ignore
     Events.on(
-        'preview:toggle',
-        action((cmd: ICommand | undefined) => {
-          if (this.activeCommand?.id === cmd?.id) {
-            this.activeCommand = undefined;
-            
-            Events.emit('command:active', undefined);
-            
-            return;
-          }
-          
-          if (this.highlightCommand?.id === cmd?.id) {
-            this.highlightCommand = undefined;
-          }
-          
-          this.activeCommand = cmd;
-          this.activeState = 'after';
-          
-          Events.emit('command:active', cmd);
-        }),
+      'preview:toggle',
+      action((cmd: ICommand | undefined) => {
+        if (this.activeCommand?.id === cmd?.id) {
+          this.activeCommand = undefined;
+          this.activeScreencast = undefined;
+
+          Events.emit('command:active', undefined);
+
+          return;
+        }
+
+        if (this.highlightCommand?.id === cmd?.id) {
+          this.highlightCommand = undefined;
+        }
+        
+        this.activeCommand = cmd;
+        this.activeState = 'after';
+        
+        // calculate last frame before next command or if null, get overall last frame
+        let lastScreencast = this.findLastScreencastForCommand(cmd);
+        this.activeScreencast = lastScreencast.screencast;
+        this.timelineCursor = lastScreencast.until;
+        
+        Events.emit('command:active', cmd);
+      }),
     );
     // @ts-ignore
     Events.on(
-        'preview:highlight:show',
-        action((cmd: ICommand | undefined) => {
-          if (this.visibleCommand?.id === cmd?.id) {
-            return;
-          }
-          this.highlightCommand = cmd;
-          this.resetHighlightInterval();
-        }),
+      'preview:highlight:show',
+      action((cmd: ICommand | undefined) => {
+        if (this.visibleCommand?.id === cmd?.id) {
+          return;
+        }
+        this.highlightCommand = cmd;
+        this.resetHighlightInterval();
+        
+        // calculate last frame before next command or if null, get overall last frame
+        let lastScreencast = this.findLastScreencastForCommand(cmd);
+        this.highlightScreencast = lastScreencast.screencast;
+        this.timelineHighlightCursor = lastScreencast.until;
+      }),
     );
     // @ts-ignore
     Events.on(
-        'preview:highlight:hide',
-        action((cmd: ICommand | undefined) => {
-          if (this.highlightCommand?.id === cmd?.id) {
-            this.highlightCommand = undefined;
-          }
-        }),
+      'preview:highlight:hide',
+      action((cmd: ICommand | undefined) => {
+        if (this.highlightCommand?.id === cmd?.id) {
+          this.highlightCommand = undefined;
+          this.highlightScreencast = null;
+          this.timelineHighlightCursor = null;
+        }
+      }),
     );
+    
+    Events.on('rl', ({url, requestId, serviceWorker}) => {
+      if (!this.visibleCommand) {
+        serviceWorker.postMessage({
+          type: 1,
+          content: null,
+          contentType: null,
+          requestId,
+        });
+        return;
+      }
+      
+      let base = new URL(PreviewStore.visibleSnapshot?.url);
+      let replaced = url.replace(window.location.origin, base.origin);
+      
+      if (replaced.startsWith('http://') || replaced.startsWith('https://')) {
+        // do nothing
+      } else if (replaced.startsWith('//')) {
+        let url = new URL(window.location.origin + '/');
+        replaced = url.origin + replaced.replace('//', '/');
+      } else if (replaced.startsWith('/')) {
+        let url = new URL(window.location.origin + '/');
+        replaced = url.origin + replaced;
+      } else {
+        replaced = new URL(replaced, window.location.origin + '/').href;
+      }
+      
+      let found = this.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
+        return replaced === pageInclude.url;
+      });
+      
+      if (!found) {
+        console.error('Did not find response', {original: url, replaced, responses: this.visibleCommand.context.responses});
+      }
+      
+      console.log(found);
+      
+      // TODO check srcdoc and inject serviceWorker ???
+      
+      if (found) {
+        let content = found.content.slice(0);
+        serviceWorker.postMessage({
+          type: 1,
+          content,
+          contentType: getHeader(found.headers, 'content-type'),
+          requestId,
+        }, [content.buffer]);
+      } else {
+        serviceWorker.postMessage({
+          type: 1,
+          content: null,
+          contentType: null,
+          requestId,
+        });
+      }
+      
+      console.log('rl', url, replaced, 'found', found);
+    });
   }
 }
+
+let getHeader = (headers, find) => {
+  find = find.toLowerCase();
+  
+  for (let header of Object.keys(headers)) {
+    if (header.toLowerCase() === find) {
+      return headers[header];
+    }
+  }
+  
+  return '';
+};
 
 /**
  * Global objects initialization
