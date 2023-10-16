@@ -3,7 +3,7 @@
 ### Installation
 
 ```bash
-composer require --dev puth/laravel
+composer require --dev puth/laravel:1.0.0-alpha.0
 ```
 
 After installing the Puth package, run the `puth:install` Artisan command.
