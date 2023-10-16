@@ -1,8 +1,6 @@
 import tmp from "tmp-promise";
 import puppeteer, {Browser, EventType, Handler, Page} from 'puppeteer-core';
 
-puppeteer.defaultArgs()
-
 export type PuthBrowser = {
     on(event: EventType, handler: Handler<any>): void;
     once(event: EventType, handler: Handler<any>): void;
