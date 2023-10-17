@@ -44,6 +44,15 @@ let findResourceInCache = ({ src, base = PreviewStore.visibleSnapshot?.url }) =>
   } else {
     matchUrl = new URL(src, base).href;
   }
+  
+  // $url1 = https://playground.puth.dev/assets/bootstrap/bootstrap.min.css
+  // ../../fontawesome.font
+  
+  // $url1 ../ fontawesome.font
+  // https://playground.puth.dev/assets/fontawesome.font
+  // TODO resolve relatives "../"
+  // TODO img
+  // TODO run LiveView setViewport after createBrowser
 
   return PreviewStore.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
     return matchUrl === pageInclude.url;

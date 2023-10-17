@@ -25,7 +25,8 @@
     "typedoc": "^0.23.22",
     "uuid": "^9.0.1",
     "pino": "^8.15.1",
-    "pino-pretty": "^10.2.0"
+    "pino-pretty": "^10.2.0",
+    "sharp": "^0.32.6"
   },
   "devDependencies": {
     "@puth/client": "*",

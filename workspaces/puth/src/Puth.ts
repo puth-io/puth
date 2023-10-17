@@ -4,7 +4,6 @@ import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
 import Context from './Context';
 import WebsocketConnections from './WebsocketConnections';
-import Snapshots from './Snapshots';
 import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
@@ -242,7 +241,7 @@ export default class Puth {
           WebsocketConnections.pop(connection);
         });
 
-        connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+        // connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
       });
     });
   }

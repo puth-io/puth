@@ -1,6 +1,8 @@
 import tmp from "tmp-promise";
 import puppeteer, {Browser, EventType, Handler, Page} from 'puppeteer-core';
 
+const chromeDefaultArgs = require('./chromeDefaultArgs.json');
+
 export type PuthBrowser = {
     on(event: EventType, handler: Handler<any>): void;
     once(event: EventType, handler: Handler<any>): void;
@@ -28,6 +30,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
         const browser = await puppeteer.launch({
             headless: 'new',
             args: [
+                ...chromeDefaultArgs,
                 '--no-sandbox',
                 '--user-data-dir=' + tmpDir,
             ],
