@@ -90,8 +90,6 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             const viewport = page.viewport();
             
             let frame = Buffer.from(data, 'base64');
-            
-            
             if (viewport) {
                 frame = await sharp(frame)
                     .jpeg()
@@ -128,14 +126,9 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         client.on('Page.screencastFrame', handler);
         this.handlers.push([client, 'Page.screencastFrame', handler]);
         
-        // When you want to start
-        // await client.send('Page.enable');
         client.send('Page.startScreencast', {
             format: 'jpeg',
             quality: 75,
-            // maxWidth: 1920,
-            // maxHeight: 1080,
-            // everyNthFrame: 1,
         });
     }
     

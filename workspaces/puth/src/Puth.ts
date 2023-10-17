@@ -10,6 +10,7 @@ import PuthInstancePlugin from './PuthInstancePlugin';
 import {HandlesBrowsers, DefaultBrowserHandler} from "./HandlesBrowsers";
 import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import {Logger} from "pino";
+import Snapshots from "./Snapshots";
 
 type PuthEvents = {
   'context:created': {context: Context};
@@ -105,7 +106,7 @@ export default class Puth {
 
   public async contextCreate(options = {}) {
     let context = new Context(this, options);
-    this.contexts[context.getId()] = context;
+    this.contexts[context.id] = context;
     await context.setup();
     this.emitter.emit('context:created', {context});
     return context.serialize();
@@ -241,7 +242,7 @@ export default class Puth {
           WebsocketConnections.pop(connection);
         });
 
-        // connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+        connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
       });
     });
   }

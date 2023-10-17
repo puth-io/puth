@@ -53,6 +53,7 @@ let findResourceInCache = ({ src, base = PreviewStore.visibleSnapshot?.url }) =>
   // TODO resolve relatives "../"
   // TODO img
   // TODO run LiveView setViewport after createBrowser
+  // TODO better way to determine which screencast frame was after a command
 
   return PreviewStore.visibleCommand.context.responses.find(function matchResponseUrl(pageInclude) {
     return matchUrl === pageInclude.url;
