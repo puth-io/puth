@@ -90,6 +90,11 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             const viewport = page.viewport();
             
             let frame = Buffer.from(data, 'base64');
+            
+            client.send('Page.screencastFrameAck', {
+                sessionId,
+            }).catch(err => console.log(err));
+            
             if (viewport) {
                 frame = await sharp(frame)
                     .jpeg()
@@ -118,10 +123,6 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
                 },
                 frame,
             });
-            
-            client.send('Page.screencastFrameAck', {
-                sessionId,
-            }).catch(err => console.log(err));
         };
         client.on('Page.screencastFrame', handler);
         this.handlers.push([client, 'Page.screencastFrame', handler]);

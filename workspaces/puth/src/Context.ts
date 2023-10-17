@@ -156,7 +156,7 @@ class Context extends Generic {
         );
     }
     
-    protected isPageBlockedByDialog(page) {
+    isPageBlockedByDialog(page) {
         return this.caches.dialog.has(page);
     }
     
@@ -201,12 +201,12 @@ class Context extends Generic {
         return Return.Values(Snapshots.getAllCachedItemsFrom(this).filter(item => item?.type === type));
     }
     
-    protected registerEventListenerOn(object, event, func) {
+    registerEventListenerOn(object, event, func) {
         this.eventFunctions.push([object, event, func]);
         object.on(event, func);
     }
     
-    protected removeEventListenersFrom(object) {
+    removeEventListenersFrom(object) {
         let listeners = this.eventFunctions.filter((listener) => listener[0] === object);
         listeners.forEach(([page, event, func]) => {
             page.off(event, func);
@@ -270,7 +270,7 @@ class Context extends Generic {
         }
     }
     
-    protected snapshot(func: () => any): void {
+    snapshot(func: () => any): void {
         if (! this.shouldSnapshot) {
             return;
         }
@@ -501,7 +501,7 @@ class Context extends Generic {
         return Return.Undefined().serialize();
     }
     
-    protected isObjectSerializable(object) {
+    isObjectSerializable(object) {
         for (let key of Object.keys(object)) {
             if (! this.isValueSerializable(object[key])) {
                 return false;
@@ -511,7 +511,7 @@ class Context extends Generic {
         return true;
     }
     
-    protected isValueSerializable(value) {
+    isValueSerializable(value) {
         return typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number';
     }
     
@@ -589,7 +589,7 @@ class Context extends Generic {
         return Return.Value(tmpFilePath);
     }
     
-    protected resolveOn(representation): Context|any {
+    resolveOn(representation): Context|any {
         let on = this;
         
         if (representation.type && representation.type !== this.type) {
@@ -603,7 +603,7 @@ class Context extends Generic {
         return on;
     }
     
-    protected resolveIfCached(representation) {
+    resolveIfCached(representation) {
         if (representation?.id && representation?.type) {
             return this.getCache(representation.type)[representation.id];
         }
@@ -641,7 +641,7 @@ class Context extends Generic {
         return this._createdAt;
     }
     
-    protected getTest() {
+    getTest() {
         if (! this.options?.test) {
             this.options.test = {
                 name: undefined,
@@ -651,19 +651,19 @@ class Context extends Generic {
         return this.options.test;
     }
     
-    protected getGroup() {
+    getGroup() {
         return this.options?.group;
     }
     
-    protected getPuth(): Puth {
+    getPuth(): Puth {
         return this.puth;
     }
     
-    protected getPlugins(): PuthContextPlugin[] {
+    getPlugins(): PuthContextPlugin[] {
         return this.plugins;
     }
     
-    protected getTimeout(options?) {
+    getTimeout(options?) {
         if (options?.timeout != null) {
             return options.timeout;
         }
@@ -671,21 +671,21 @@ class Context extends Generic {
         return this.options?.timeouts?.command ?? 30 * 1000;
     }
     
-    protected on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
-    protected on(type: '*', handler: WildcardHandler<ContextEvents>): void;
-    protected on(type, handler) {
+    on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
+    on(type: '*', handler: WildcardHandler<ContextEvents>): void;
+    on(type, handler) {
         return this.emitter.on(type, handler);
     }
     
-    protected off<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
-    protected off(type: '*', handler: WildcardHandler<ContextEvents>): void;
-    protected off(type, handler) {
+    off<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
+    off(type: '*', handler: WildcardHandler<ContextEvents>): void;
+    off(type, handler) {
         return this.emitter.off(type, handler);
     }
     
-    protected emit<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): void;
-    protected emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
-    protected emit(type, event?) {
+    emit<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): void;
+    emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
+    emit(type, event?) {
         return this.emitter.emit(type, event);
     }
 }
