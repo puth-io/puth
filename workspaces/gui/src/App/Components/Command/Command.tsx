@@ -18,10 +18,6 @@ export type IViewport = {
 export type ICommand = {
   id: string;
   type: 'command';
-  snapshots: {
-    before: any | undefined;
-    after: any | undefined;
-  };
   errors: [];
   context: IContext;
   func: string;

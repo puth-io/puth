@@ -1,201 +1,185 @@
-import { ICommand } from '../Components/Command/Command';
-import { action, makeAutoObservable } from 'mobx';
-import { BlobHandler, recover } from '../Misc/SnapshotRecovering';
+import {ICommand} from '../Components/Command/Command';
+import {action, makeAutoObservable} from 'mobx';
 import Events from '../../Events';
-import { IContext } from '../Misc/WebsocketHandler';
-import { resolveSnapshotBacktrack3, resolveSnapshotBacktrackV4 } from '../Misc/Util';
+import {IContext} from '../Misc/WebsocketHandler';
 
-export type SnapshotState = 'before' | 'after';
+export type SnapshotState = 'before'|'after';
 
-export const domParser = new DOMParser();
+// do not put this inside PreviewStoreClass because this must not be observed
+let _lastActiveScreencastUrl: string|null = null;
 
 class PreviewStoreClass {
-  private _activeContext: IContext | undefined;
-  private _activeCommand: ICommand | undefined;
-  activeState: SnapshotState = 'before';
-  highlightCommand: ICommand | undefined;
-  highlightState: SnapshotState = 'after';
-  private highlightInterval: number | undefined;
-  _darken: boolean = false;
-  _removeScriptTags: boolean = true;
-  
-  constructor() {
-    makeAutoObservable(this);
+    private _activeContext: IContext|undefined;
+    private _activeCommand: ICommand|undefined;
+    activeState: SnapshotState = 'before';
+    highlightCommand: ICommand|undefined;
+    highlightState: SnapshotState = 'after';
+    highlightScreencast: any = null;
+    private highlightInterval: number|undefined;
+    _darken: boolean = false;
     
-    this.registerEvents();
-    
-    this._darken = localStorage.getItem('previewStore.darken') === 'true';
-    let lsRemoveScriptTags = localStorage.getItem('previewStore.removeScriptTags');
-    this._removeScriptTags = lsRemoveScriptTags ? lsRemoveScriptTags === 'true' : true;
-  }
-  
-  clear() {
-    this.highlightCommand = undefined;
-    this.activeCommand = undefined;
-    this.activeContext = undefined;
-  }
-  
-  set darken(value) {
-    this._darken = value;
-    localStorage.setItem('previewStore.darken', value ? 'true' : 'false');
-  }
-  
-  get darken() {
-    return this._darken;
-  }
-  
-  set removeScriptTags(value) {
-    this._removeScriptTags = value;
-    localStorage.setItem('previewStore.removeScriptTags', value ? 'true' : 'false');
-  }
-  
-  get removeScriptTags() {
-    return this._removeScriptTags;
-  }
-  
-  resetHighlightInterval() {
-    clearInterval(this.highlightInterval);
-    // this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
-    this.highlightState = 'after';
-  }
-  
-  toggleHighlightState() {
-    this.highlightState = this.highlightState === 'before' ? 'after' : 'before';
-  }
-  
-  get visibleCommand() {
-    return this.highlightCommand ?? this.activeCommand;
-  }
-  
-  get visibleHighlightState() {
-    if (!this.visibleCommand?.snapshots?.before) {
-      return 'after';
-    }
-    if (!this.visibleCommand?.snapshots?.after) {
-      return 'before';
-    }
-    return this.highlightCommand ? this.highlightState : this.activeState;
-  }
-  
-  get visibleSnapshot() {
-    return this.visibleCommand?.snapshots[this.visibleHighlightState];
-  }
-  
-  get visibleSnapshotSource() {
-    if (!this.hasVisibleSnapshotSource || !this.visibleSnapshot) {
-      return;
+    constructor() {
+        makeAutoObservable(this);
+        
+        this.registerEvents();
+        
+        this._darken = localStorage.getItem('previewStore.darken') === 'true';
     }
     
-    BlobHandler.cleanup();
-    
-    let html = '';
-    
-    if (this.visibleSnapshot?.version === 4) {
-      let context = this.visibleCommand?.context;
-      let commands = context?.commands.filter((i) => i.type === 'command');
-      let index = commands?.findIndex((i) => i.id === this.visibleCommand?.id);
-      
-      html = resolveSnapshotBacktrackV4(commands, index, this.visibleHighlightState === 'before');
-    } else if (this.visibleSnapshot?.version === 3) {
-      let context = this.visibleCommand?.context;
-      let commands = context?.commands.filter((i) => i.type === 'command');
-      let index = commands?.findIndex((i) => i.id === this.visibleCommand?.id);
-      
-      html = resolveSnapshotBacktrack3(commands, index, this.visibleHighlightState === 'after');
-    } else if (this.visibleSnapshot?.version === 2) {
-      html = this.visibleSnapshot?.html?.src;
+    clear() {
+        this.highlightCommand = undefined;
+        this.activeCommand = undefined;
+        this.activeContext = undefined;
     }
     
-    const parsedDocument = domParser.parseFromString(html, 'text/html');
-    recover(this.visibleCommand, this.visibleSnapshot, parsedDocument);
+    set darken(value) {
+        this._darken = value;
+        localStorage.setItem('previewStore.darken', value ? 'true' : 'false');
+    }
     
-    // TODO find a way to make Blob out of document directly because this is "document => string => blob"
-    //      but if innerHTML is cached then it doesn't that big of a difference
-    let { url } = BlobHandler.createUrlFromString(parsedDocument.documentElement.innerHTML, { type: 'text/html' });
-    return url;
-  }
-  
-  get hasVisibleSnapshotSource() {
-    return true;
-  }
-  
-  get visibleHasBefore() {
-    return this.visibleCommand?.snapshots && 'before' in this.visibleCommand.snapshots;
-  }
-  
-  get visibleHasAfter() {
-    return this.visibleCommand?.snapshots && 'after' in this.visibleCommand.snapshots;
-  }
-  
-  get visibleHasSnapshots() {
-    return Array.isArray(this.visibleCommand?.snapshots);
-  }
-  
-  get isVisibleHighlight() {
-    return this.highlightCommand !== undefined;
-  }
-  
-  set activeCommand(command) {
-    this.activeContext = command?.context;
-    this._activeCommand = command;
-  }
-  
-  get activeCommand() {
-    return this._activeCommand;
-  }
-  
-  set activeContext(context) {
-    this._activeContext = context;
-  }
-  
-  get activeContext() {
-    return this._activeContext;
-  }
-  
-  private registerEvents() {
-    // @ts-ignore
-    Events.on(
-        'preview:toggle',
-        action((cmd: ICommand | undefined) => {
-          if (this.activeCommand?.id === cmd?.id) {
-            this.activeCommand = undefined;
-            
-            Events.emit('command:active', undefined);
-            
-            return;
-          }
-          
-          if (this.highlightCommand?.id === cmd?.id) {
-            this.highlightCommand = undefined;
-          }
-          
-          this.activeCommand = cmd;
-          this.activeState = 'after';
-          
-          Events.emit('command:active', cmd);
-        }),
-    );
-    // @ts-ignore
-    Events.on(
-        'preview:highlight:show',
-        action((cmd: ICommand | undefined) => {
-          if (this.visibleCommand?.id === cmd?.id) {
-            return;
-          }
-          this.highlightCommand = cmd;
-          this.resetHighlightInterval();
-        }),
-    );
-    // @ts-ignore
-    Events.on(
-        'preview:highlight:hide',
-        action((cmd: ICommand | undefined) => {
-          if (this.highlightCommand?.id === cmd?.id) {
-            this.highlightCommand = undefined;
-          }
-        }),
-    );
-  }
+    get darken() {
+        return this._darken;
+    }
+    
+    resetHighlightInterval() {
+        clearInterval(this.highlightInterval);
+        // this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
+        this.highlightState = 'after';
+    }
+    
+    toggleHighlightState() {
+        this.highlightState = this.highlightState === 'before' ? 'after' : 'before';
+    }
+    
+    get visibleCommand() {
+        return this.highlightCommand ?? this.activeCommand;
+    }
+    
+    get visibleHighlightState() {
+        return this.highlightCommand ? this.highlightState : this.activeState;
+    }
+    
+    get isVisibleHighlight() {
+        return this.highlightCommand !== undefined;
+    }
+    
+    set activeCommand(command) {
+        this.activeContext = command?.context;
+        this._activeCommand = command;
+    }
+    
+    get activeCommand() {
+        return this._activeCommand;
+    }
+    
+    set activeContext(context) {
+        this._activeContext = context;
+    }
+    
+    get activeContext() {
+        return this._activeContext;
+    }
+    
+    activeScreencast: any = null;
+    
+    get visibleScreencast() {
+        return this.highlightScreencast ?? this.activeScreencast;
+    }
+    
+    get activeScreencastUrl() {
+        if (! this.visibleScreencast) {
+            return null;
+        }
+        
+        if (_lastActiveScreencastUrl) {
+            URL.revokeObjectURL(_lastActiveScreencastUrl);
+        }
+        
+        _lastActiveScreencastUrl = URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpeg'}));
+        return _lastActiveScreencastUrl;
+    }
+    
+    findLastEventUntil(time: number, events: any) {
+        let last;
+        for (let screencast of events) {
+            if (screencast.timestamp > time) {
+                break;
+            }
+            last = screencast;
+        }
+        return last;
+    }
+    
+    findLastScreencastForCommand(command: any) {
+        // calculate last frame before next command or if null, get overall last frame
+        let idx = command.context.commands.indexOf(command);
+        if (idx === (command.context.commands.length - 1)) {
+            return {
+                screencast: command.context.screencasts[command.context.screencasts.length - 1],
+                until: command.timestamp,
+            };
+        } else {
+            let until = command.context.commands[idx + 1].timestamp - 1;
+            return {
+                screencast: this.findLastEventUntil(until, command.context.screencasts),
+                until,
+            };
+        }
+    }
+    
+    private registerEvents() {
+        // @ts-ignore
+        Events.on(
+            'preview:toggle',
+            action((cmd: ICommand|undefined) => {
+                if (this.activeCommand?.id === cmd?.id) {
+                    this.activeCommand = undefined;
+                    
+                    Events.emit('command:active', undefined);
+                    
+                    return;
+                }
+                
+                if (this.highlightCommand?.id === cmd?.id) {
+                    this.highlightCommand = undefined;
+                }
+                
+                this.activeCommand = cmd;
+                this.activeState = 'before';
+                
+                // calculate last frame before next command or if null, get overall last frame
+                let lastScreencast = this.findLastScreencastForCommand(cmd);
+                this.activeScreencast = lastScreencast.screencast;
+                
+                Events.emit('command:active', cmd);
+            }),
+        );
+        // @ts-ignore
+        Events.on(
+            'preview:highlight:show',
+            action((cmd: ICommand|undefined) => {
+                if (this.visibleCommand?.id === cmd?.id) {
+                    return;
+                }
+                this.highlightCommand = cmd;
+                this.resetHighlightInterval();
+                
+                // calculate last frame before next command or if null, get overall last frame
+                let lastScreencast = this.findLastScreencastForCommand(cmd);
+                this.highlightScreencast = lastScreencast.screencast;
+            }),
+        );
+        // @ts-ignore
+        Events.on(
+            'preview:highlight:hide',
+            action((cmd: ICommand|undefined) => {
+                if (this.highlightCommand?.id === cmd?.id) {
+                    this.highlightCommand = undefined;
+                    this.highlightScreencast = null;
+                }
+            }),
+        );
+    }
 }
 
 /**

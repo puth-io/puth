@@ -7,9 +7,7 @@ export default class ContextStore {
   
   commands = [];
   logs = [];
-  requests = [];
-  responses = [];
-  exceptions = [];
+  screencasts: any[] = [];
   
   group: string = '';
   test: {
@@ -54,24 +52,10 @@ export default class ContextStore {
     };
   }
   
-  get hasDetails() {
-    return this.exceptions.length > 0;
-  }
-  
-  getRequestFilter() {
-    return (request: any) => {
-      if (['xhr', 'fetch'].includes(request.resourceType)) {
-        return true;
-      }
-      return request.status !== 'pending' && Math.floor(request?.response?.status / 100) !== 2;
-    };
-  }
-  
   get renderedEvents() {
     return [
       ...this.commands.filter(this.getRenderedTypesFilter()),
       ...this.logs,
-      ...this.requests.filter(this.getRequestFilter()),
     ].sort((a, b) => this.getEventTime(a) - this.getEventTime(b));
   }
   

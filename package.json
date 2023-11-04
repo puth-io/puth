@@ -3,15 +3,12 @@
   "workspaces": [
     "workspaces/puth",
     "workspaces/gui",
+    "workspaces/gui2",
     "workspaces/dev",
     "workspaces/clients/js/client"
   ],
   "name": "@puth/monorepo",
   "devDependencies": {
     "lerna": "^7.3.0"
-  },
-  "engines": {
-    "yarn": ">=3.4.1"
-  },
-  "packageManager": "yarn@3.4.1"
+  }
 }

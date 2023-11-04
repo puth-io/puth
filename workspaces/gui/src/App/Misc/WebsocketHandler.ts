@@ -5,7 +5,6 @@ import { logData, pMark, pMeasure } from './Util';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 import ContextStore from '../Mobx/ContextStore';
 import DevStore, { DebugStoreClass } from './DebugStoreClass';
-import { BlobHandler } from './SnapshotRecovering';
 import Events from "../../Events";
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
@@ -35,7 +34,6 @@ export type IContext = {
   commands: ICommand[];
   logs: any[];
   responses: IResponse[];
-  exceptions: any;
   created: number;
   hasDetails: boolean;
 };
@@ -195,18 +193,15 @@ class WebsocketHandlerSingleton {
       this.addCommand(packet);
     } else if (packet.type === 'log') {
       this.addLog(packet);
-    } else if (packet.type === 'request') {
-      this.addRequest(packet);
-    } else if (packet.type === 'response') {
-      this.addResponse(packet);
     } else if (packet.type === 'context') {
       this.addContext(packet);
     } else if (packet.type === 'test') {
       this.addTest(packet);
     } else if (packet.type === 'update') {
       this.addUpdate(packet);
-    } else if (packet.type === 'exception') {
-      this.addException(packet);
+    } else if (packet.type === 'screencasts') {
+      let context = this.getContext(packet.context.id);
+      context.screencasts.push(packet);
     }
   }
   
@@ -226,29 +221,6 @@ class WebsocketHandlerSingleton {
     context.logs.push(log);
     
     Events.emit('context:event', [context, log]);
-  }
-  
-  private addRequest(request: any) {
-    let context = this.getContext(request.context.id);
-    
-    request.context = context;
-    context.requests.push(request);
-    
-    Events.emit('context:event', [context, request]);
-  }
-  
-  private addResponse(response: any) {
-    let context = this.getContext(response.context.id);
-    
-    response.context = context;
-    response.contentParsed = {};
-    context.responses.push(response);
-    
-    let request = context.requests.find((r) => r.requestId === response.requestId);
-    request.response = response;
-    request.status = 'finished';
-    
-    Events.emit('context:event', [context, response]);
   }
   
   private addContext(response: any) {
@@ -280,14 +252,6 @@ class WebsocketHandlerSingleton {
     }
     
     Events.emit('context:event', [context, update]);
-  }
-  
-  private addException(exception) {
-    let context = this.getContext(exception.context.id);
-    exception.context = context;
-    context.exceptions.push(exception);
-    
-    Events.emit('context:event', [context, exception]);
   }
   
   getContext(id: string): ContextStore {
@@ -332,21 +296,12 @@ class WebsocketHandlerSingleton {
     this.contexts.forEach((ctx) => {
       metrics.events += ctx.commands.length;
       metrics.events += ctx.logs.length;
-      metrics.events += ctx.requests.length;
-      metrics.events += ctx.responses.length;
     });
     
     return metrics;
   }
   
   clear() {
-    this.contexts.forEach(function cleanupContext(context) {
-      context.responses.forEach((response) => {
-        if (response.contentParsed?.blob) {
-          BlobHandler.revoke(response.contentParsed.blob.url);
-        }
-      });
-    });
     this.contexts.clear();
   }
 }
