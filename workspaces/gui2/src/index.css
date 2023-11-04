@@ -74,6 +74,21 @@ html {
   color-scheme: dark;
 }
 
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0.75rem;
+}
+::-webkit-scrollbar-track {
+  background: inherit;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 0.125rem;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
 /*:root {*/
 /*  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;*/
 /*  line-height: 1.5;*/
