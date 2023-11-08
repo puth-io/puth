@@ -37,7 +37,7 @@ function QuickConnect() {
             <Card>
                 <CardHeader>
                     <CardTitle>Connect to a Puth instance</CardTitle>
-                    <CardDescription>Enter an IP or hostname or select one of the recommendations</CardDescription>
+                    <CardDescription>Enter an IP or hostname or select one of the suggestions</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className={'flex'}>
@@ -216,7 +216,7 @@ function App() {
                     {AppStore.active.connection && <History/>}
                 </div>
                 
-                <div className="flex flex-col grow">
+                <div className="flex flex-col grow overflow-auto">
                     <div className={'shrink flex items-center h-12 px-2'} style={{borderBottom: '1px solid #3d4249'}}>
                         
                         <Button size={'xs'} variant={'outline'}>Frame</Button>
@@ -232,7 +232,7 @@ function App() {
                         <Toggle size={'xs'} className={'ml-2'}><Icon name={'dark_mode'}/></Toggle>
                     </div>
                     
-                    <div className={'grow p-2'}>
+                    <div className={'grow p-2 overflow-auto'}>
                         <ScreencastPreview/>
                     </div>
                     

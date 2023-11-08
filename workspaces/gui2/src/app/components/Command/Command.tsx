@@ -121,8 +121,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         <td>{displayType}</td>
 
         <td>{displayFunc}</td>
-        <td colSpan={active ? 1 : 2}>{displayArgs.join(', ')}</td>
-        {active && <td>{circleDot}</td>}
+        <td colSpan={2}>{displayArgs.join(', ')}</td>
       </tr>
 
       {command.errors.map((error: any, idx) => {
