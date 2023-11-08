@@ -216,54 +216,15 @@ export class Connection {
             return;
         }
         
-        context.lastActivity = packet.timestamp;
+        context.received(packet);
         
+        // TODO update
         if (AppStore.mode === 'follow' && AppStore.active.connection === this && ! PreviewStore.activeContext) {
             PreviewStore.activeCommand = undefined;
             PreviewStore.activeContext = context;
         }
         
-        if (packet.type === 'response') {
-            packet.context = context;
-            packet.contentParsed = {};
-            context.responses.push(packet);
-            
-            let request = context.requests.find((r: any) => r.requestId === packet.requestId);
-            request.response = packet;
-            request.status = 'finished';
-        } else if (packet.type === 'test') {
-            if (packet.specific === 'status') {
-                context.test.status = packet.status;
-            }
-        } else if (packet.type === 'update') {
-            if (packet.specific === 'context.test') {
-                context.test.status = packet.status;
-            } else if (packet.specific === 'request.failed') {
-                context.requests.find((r: any) => r.requestId === packet.requestId).status = packet.status;
-            }
-        } else if (packet.type === 'screencasts') {
-            let context = this.getContext(packet.context.id);
-            context.screencasts.push(packet);
-            Events.emit('context:event:screencast', {context, packet});
-            this.emit('context:event:screencast', {context, packet});
-            
-            if (AppStore.mode === 'follow' && PreviewStore.activeContext === context) {
-                PreviewStore.activeScreencast = packet;
-                PreviewStore.timelineCursor = packet.timestamp;
-            }
-        } else {
-            
-            // @ts-ignore
-            let key = {
-                'command': 'commands',
-                'log': 'logs',
-                'request': 'requests',
-                'exception': 'exceptions',
-            }[packet.type];
-            
-            packet.context = context;
-            context[key ?? packet.type].push(packet);
-        }
+        
         
         Events.emit('context:received', {context, packet});
         this.emit('context:received', {context, packet});
@@ -318,7 +279,7 @@ export class Connection {
         return this.emitter.on(type, handler);
     }
     
-    private emit<Key extends keyof ConnectionEvents>(type: Key, event: ConnectionEvents[Key]) {
+    emit<Key extends keyof ConnectionEvents>(type: Key, event: ConnectionEvents[Key]) {
         return this.emitter.emit(type, event);
     }
 }

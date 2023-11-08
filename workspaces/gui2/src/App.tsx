@@ -15,9 +15,12 @@ import {
 } from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {observer} from "mobx-react-lite";
-import PreviewStore from "@/app/store/PreviewStore.tsx";
+import PreviewStore from "./app/store/PreviewStore.tsx";
 import context from "puth/lib/Context.ts";
-import ContextStore from "@/app/store/ContextStore.tsx";
+import ContextStore from "./app/store/ContextStore.tsx";
+import Command from "./app/components/Command/Command.tsx";
+import Log from "./app/components/Log/Log.tsx";
+import Request from "./app/components/Request/Request.tsx";
 
 
 // tailwind include: dark
@@ -69,6 +72,8 @@ function ContextStatusIcon({status, ...rest}) {
 }
 
 const Context = observer(function Context() {
+    let commandIndex = 0;
+    console.log(AppStore.active.connection?.active.context?.renderedEvents);
     return (
         <>
             <div className={'flex items-center p-2'} style={{borderBottom: '1px solid hsl(var(--input))'}}>
@@ -86,24 +91,17 @@ const Context = observer(function Context() {
             <div className={'grow overflow-y-auto'}>
                 <table className="table-auto w-full">
                     <tbody className={'divide-y divide-gray-700'}>
-                    <tr>
-                        <td className={'pl-2'}>1</td>
-                        <td>Page</td>
-                        <td>get</td>
-                        <td className={'pr-2'}>#test</td>
-                    </tr>
-                    <tr style={{background: '#ffffff17'}}>
-                        <td className={'pl-2'}>2</td>
-                        <td>Page</td>
-                        <td>get</td>
-                        <td className={'pr-2'}>#test</td>
-                    </tr>
-                    <tr>
-                        <td className={'pl-2'}>3</td>
-                        <td>Page</td>
-                        <td>get</td>
-                        <td className={'pr-2'}>#test</td>
-                    </tr>
+                    {AppStore.active.connection?.active.context?.renderedEvents.map(((event) => {
+                        if (event.type === 'command') {
+                            return <Command key={event.id} index={commandIndex++} command={event} />;
+                        } else if (event.type === 'log') {
+                            return <Log key={event.id} log={event} />;
+                        } else if (event.type === 'request') {
+                            return <Request key={event.id} request={event} />;
+                        } else {
+                            return <tr key={event.id}><td colSpan={6}>No component found for type to display</td></tr>;
+                        }
+                    }))}
                     </tbody>
                 </table>
             </div>
@@ -175,6 +173,23 @@ const ConnectionDropdown = observer(function ConnectionDropdown() {
     );
 });
 
+const ScreencastPreview = observer(function ScreencastPreview() {
+    if (! PreviewStore.activeScreencastUrl) {
+        return <></>;
+    }
+    
+    return <img
+        src={PreviewStore.activeScreencastUrl}
+        style={{
+            position: 'relative',
+            top: 0,
+            left: 0,
+            maxWidth: `${PreviewStore.visibleScreencast.page.viewport.width}px`,
+        }}
+        className={'w-100'}
+    ></img>;
+});
+
 function App() {
     return (
         <>
@@ -197,7 +212,7 @@ function App() {
                     </div>
                     
                     {! AppStore.active.connection && <QuickConnect/>}
-                    {AppStore.active.connection && <Context/>}
+                    {AppStore.active.connection && AppStore.active.connection.active.context && <Context/>}
                     {AppStore.active.connection && <History/>}
                 </div>
                 
@@ -212,13 +227,13 @@ function App() {
                         <Button size={'xs'} variant={'outline'} className={'mr-2'}>After</Button>
                         
                         
-                        <Input className={'h-8 grow'} value={PreviewStore.activeScreencastUrl ?? ''} disabled/>
+                        <Input className={'h-8 grow'} value={PreviewStore.visibleScreencast?.page?.url ?? ''} disabled/>
                         
                         <Toggle size={'xs'} className={'ml-2'}><Icon name={'dark_mode'}/></Toggle>
                     </div>
                     
                     <div className={'grow p-2'}>
-                        preview container
+                        <ScreencastPreview/>
                     </div>
                     
                     <div className={'shrink flex'} style={{borderTop: '1px solid #3d4249'}}>
