@@ -191,6 +191,7 @@ const ScreencastPreview = observer(function ScreencastPreview() {
 });
 
 function App() {
+    console.log('PreviewStore.visibleScreencast', PreviewStore.visibleScreencast);
     return (
         <>
             <div className={'grid grid-cols-[500px_1fr] h-screen w-screen'}>
@@ -227,7 +228,9 @@ function App() {
                         <Button size={'xs'} variant={'outline'} className={'mr-2'}>After</Button>
                         
                         
-                        <Input className={'h-8 grow'} value={PreviewStore.visibleScreencast?.page?.url ?? ''} disabled/>
+                        <Input className={'h-8 grow mr-2'} value={PreviewStore.visibleScreencast?.page?.url ?? ''} disabled/>
+                        
+                        {PreviewStore.visibleScreencast && <><Icon name={'screenshot_monitor'} className={'mr-1'}/> {PreviewStore.visibleScreencast?.page.viewport.width}x{PreviewStore.visibleScreencast?.page.viewport.height}</>}
                         
                         <Toggle size={'xs'} className={'ml-2'}><Icon name={'dark_mode'}/></Toggle>
                     </div>
