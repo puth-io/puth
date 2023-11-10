@@ -100,7 +100,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   return (
     <>
       <tr
-        className={`command ${active ? 'active' : ''} ${hasErrors ? 'hasErrors' : ''}`}
+        className={`command ${active ? 'active' : ''} ${hasErrors ? 'bg-red-500' : ''} relative`}
         onClick={mouseClick}
         onMouseEnter={mouseEnter}
         onMouseLeave={mouseLeave}
@@ -130,15 +130,15 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         return (
           <tr
             key={idx}
-            className={`log ${active ? 'active' : ''}`}
+            className={`border-l-4 border-l-red log ${active ? 'active' : ''}`}
             onClick={mouseClick}
             onMouseEnter={mouseEnter}
             onMouseLeave={mouseLeave}
           >
             <td colSpan={6}>
               <div data-messagetype={'error'}>
-                <div className={'title'}>Error</div>
-                <div className={'message'}>{message}</div>
+                <div className={'font-bold text-red'}>{error.error.name}</div>
+                <div className={''}>{message}</div>
               </div>
             </td>
           </tr>

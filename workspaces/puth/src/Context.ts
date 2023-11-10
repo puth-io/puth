@@ -393,7 +393,11 @@ class Context extends Generic {
                 Snapshots.error(this, page, command, {
                     type: 'error',
                     specific: 'apply',
-                    error,
+                    error: {
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack,
+                    },
                     time: Date.now(),
                 });
                 Snapshots.broadcast(command);

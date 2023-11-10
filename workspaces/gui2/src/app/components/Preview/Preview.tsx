@@ -1,7 +1,6 @@
 import {observer} from 'mobx-react-lite';
 import {useEffect} from 'react';
 import {debounce, useForceUpdatePreview} from '../../util/Debugging';
-import './Preview.scss';
 import DevStore from "../../DebugStoreClass";
 import PreviewStore from "../../store/PreviewStore";
 import Events from '../../Events';
@@ -112,29 +111,8 @@ export const Preview = observer(() => {
     
     let snapshot = PreviewStore.visibleSnapshot;
     
-    console.log(PreviewStore.visibleScreencast);
-    
     const PreviewInfo = observer(() => (
         <div className="d-flex flex-1 info me-2">
-            {/*<div className="btn-group btn-group-sm" role="group">*/}
-            {/*    <button*/}
-            {/*        type="button"*/}
-            {/*        className={`btn m-0 btn-outline-primary ${PreviewStore.visibleHighlightState === 'before' ? 'active' : ''}`}*/}
-            {/*        onClick={(_) => stickSnapshotState('before')}*/}
-            {/*        disabled={! PreviewStore.isVisibleHighlight && ! PreviewStore.visibleHasBefore}*/}
-            {/*    >*/}
-            {/*        Before*/}
-            {/*    </button>*/}
-            {/*    <button*/}
-            {/*        type="button"*/}
-            {/*        className={`btn btn-outline-primary m-0 ${PreviewStore.visibleHighlightState === 'after' ? 'active' : ''}`}*/}
-            {/*        onClick={(_) => stickSnapshotState('after')}*/}
-            {/*        disabled={! PreviewStore.isVisibleHighlight && ! PreviewStore.visibleHasAfter}*/}
-            {/*    >*/}
-            {/*        After*/}
-            {/*    </button>*/}
-            {/*</div>*/}
-            
             <div className="input-group input-group-sm ms-2">
                 <div className={'element url'}>{snapshot?.url}</div>
                 <a

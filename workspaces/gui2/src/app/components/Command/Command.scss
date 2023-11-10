@@ -12,9 +12,9 @@ $info: #158fe6;
     border: 0;
   }
 
-  &:not(.hasErrors) {
-    border-bottom: 1px solid #5f636a;
-  }
+  //&:not(.hasErrors) {
+  //  border-bottom: 1px solid #5f636a;
+  //}
 
   &.hasErrors {
     background-color: #a61e2a;
