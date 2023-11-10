@@ -1,13 +1,21 @@
 import {observer} from 'mobx-react-lite';
-import {useEffect} from 'react';
+import {useContext, useEffect} from 'react';
 import {debounce, useForceUpdatePreview} from '../../util/Debugging';
 import DevStore from "../../DebugStoreClass";
-import PreviewStore from "../../store/PreviewStore";
 import Events from '../../Events';
 import {ContextDetails} from '../ContextDetails/ContextDetails';
 import AppStore from "@/app/store/AppStore.tsx";
+import {AppContext} from "@/App.tsx";
 
-const PreviewOverlay = observer(() => <div className={`overlay ${PreviewStore.darken ? 'darken' : ''}`}></div>);
+const PreviewOverlay = observer(() => {
+    const {app} = useContext(AppContext);
+    
+    if (!app.active.connection?.preview.darken) {
+        return <></>;
+    }
+    
+    return <div className={`overlay darken`}></div>;
+});
 
 export const Split = () => <span className={'split'}> | </span>;
 

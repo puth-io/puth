@@ -10,19 +10,18 @@ import {Preview} from "@/app/components/Preview.tsx";
 
 // @ts-ignore
 export const AppContext = createContext<any>();
-// @ts-ignore
-export const PreviewContext = createContext<any>();
 
 const App = () => (
-    <AppContext.Provider value={AppStore}>
-        <PreviewContext.Provider value={PreviewStore}>
-            <AppLayout
-                sidebar={<Sidebar/>}
-                preview={<Preview/>}
-                mainTop={<MainTop/>}
-                mainBottom={<MainBottom/>}
-            />
-        </PreviewContext.Provider>
+    <AppContext.Provider value={{
+        app: AppStore,
+        preview: PreviewStore,
+    }}>
+        <AppLayout
+            sidebar={<Sidebar/>}
+            preview={<Preview/>}
+            mainTop={<MainTop/>}
+            mainBottom={<MainBottom/>}
+        />
     </AppContext.Provider>
 );
 export default App;

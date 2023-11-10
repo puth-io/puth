@@ -6,7 +6,7 @@ import {Icon} from "@/components/icon.tsx";
 import {AppContext} from "@/App.tsx";
 
 export const ConnectionDropdown = observer(function ConnectionDropdown() {
-    const app = useContext(AppContext);
+    const {app} = useContext(AppContext);
     
     if (!app.active.connection) {
         return <></>;

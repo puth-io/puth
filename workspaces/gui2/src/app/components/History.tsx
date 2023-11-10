@@ -8,7 +8,7 @@ import {Button} from "@/components/ui/button.tsx";
 import {AppContext} from "@/App.tsx";
 
 export const HistoryItem = observer(function HistoryItem({context}: {context: ContextStore}) {
-    const app = useContext(AppContext);
+    const {app} = useContext(AppContext);
     
     if (! app.active.connection?.contexts) {
         return <></>;
@@ -33,7 +33,7 @@ export const HistoryItem = observer(function HistoryItem({context}: {context: Co
 });
 
 export const History = observer(function History() {
-    const app = useContext(AppContext);
+    const {app} = useContext(AppContext);
     
     if (! app.active.connection) {
         return <></>;

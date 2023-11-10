@@ -1,19 +1,22 @@
 import {observer} from "mobx-react-lite";
-import PreviewStore from "@/app/store/PreviewStore.tsx";
+import {useContext} from "react";
+import {AppContext} from "@/App.tsx";
 
 export const Preview = observer(function ScreencastPreview() {
-    if (! PreviewStore.activeScreencastUrl) {
+    const {app} = useContext(AppContext);
+    
+    if (! app.active.connection?.preview.activeScreencastUrl) {
         return <></>;
     }
     
     return (
         <img
-            src={PreviewStore.activeScreencastUrl}
+            src={app.active.connection?.preview.activeScreencastUrl}
             style={{
                 position: 'relative',
                 top: 0,
                 left: 0,
-                maxWidth: `${PreviewStore.visibleScreencast.page.viewport.width}px`,
+                maxWidth: `${app.active.connection?.preview.visibleScreencast.page.viewport.width}px`,
             }}
             className={'w-100'}
         ></img>

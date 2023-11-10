@@ -7,7 +7,7 @@ export type SnapshotState = 'before'|'after';
 // do not put this inside PreviewStoreClass because this must not be observed
 let _lastActiveScreencastUrl: string|null = null;
 
-class PreviewStoreClass {
+class PreviewStore {
     private _activeContext: IContext|undefined;
     private _activeCommand: ICommand|undefined;
     activeState: SnapshotState = 'before';
@@ -193,10 +193,5 @@ class PreviewStoreClass {
         );
     }
 }
-
-/**
- * Global objects initialization
- */
-const PreviewStore = new PreviewStoreClass();
 
 export default PreviewStore;

@@ -20,7 +20,7 @@ export function ContextStatusIcon({status, ...rest}: any) {
 }
 
 export const Context = observer(function Context() {
-    const app = useContext(AppContext);
+    const {app} = useContext(AppContext);
     
     if (!app.active.connection || !app.active.connection.active.context) {
         return <></>;

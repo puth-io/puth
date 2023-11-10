@@ -4,7 +4,7 @@ import {Icon} from "@/components/icon.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Toggle} from "@/components/ui/toggle.tsx";
 import {useContext} from "react";
-import {PreviewContext} from "@/App.tsx";
+import {AppContext} from "@/App.tsx";
 
 export const MainTopButtons = observer(function MainTopButtons() {
     return (
@@ -29,7 +29,7 @@ export const MainTop = observer(function MainTop({
     left,
     right,
 }: any) {
-    const preview = useContext(PreviewContext);
+    const {preview} = useContext(AppContext);
     
     return (
         <>

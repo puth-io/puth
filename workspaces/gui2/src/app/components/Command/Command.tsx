@@ -1,10 +1,10 @@
-import { FunctionComponent, useCallback } from 'react';
+import {FunctionComponent, useCallback, useContext} from 'react';
 import './Command.scss';
-import PreviewStore from "../../store/PreviewStore";
 import Events from '../../Events';
 import { IContext } from '../../Types';
 import { observer } from 'mobx-react-lite';
 import Constructors from 'puth/src/Context/Constructors';
+import {AppContext} from "@/App.tsx";
 
 export type IViewport = {
   width: number;
@@ -41,6 +41,7 @@ type CommandProps = {
 };
 
 const Command: FunctionComponent<CommandProps> = observer(({ index, command, showTimings = false }) => {
+  const {app} = useContext(AppContext);
   let { on, func, args } = command;
 
   let mouseClick = useCallback(
@@ -94,7 +95,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   }
 
   const circleDot = '\u2299';
-  let active = PreviewStore.activeCommand?.id === command?.id;
+  let active = app.active.connection?.preview.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
   return (
