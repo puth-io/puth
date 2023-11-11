@@ -17,12 +17,62 @@ class PreviewStore {
     private highlightInterval: number|undefined;
     _darken: boolean = false;
     
+    screencast: {
+        inBetween: any[],
+        mode: 'replay'|'before'|'after',
+        replayTime: number,
+        minReplayTime: number,
+        maxReplayTime: number,
+        timePerFrame: number,
+        replaying: boolean,
+        rerunDelay: number,
+        rerunTime: number,
+    } = {
+        inBetween: [],
+        mode: 'replay',
+        replayTime: 0,
+        minReplayTime: 0,
+        maxReplayTime: 0,
+        timePerFrame: 1000 / 30,
+        replaying: true,
+        rerunDelay: 500,
+        rerunTime: 0,
+    };
+    
     constructor() {
         makeAutoObservable(this);
         
         this.registerEvents();
         
         this._darken = localStorage.getItem('previewStore.darken') === 'true';
+        
+        setInterval(() => {
+            if (this.screencast.inBetween.length < 2) {
+                return; // set replaceTime greater than the single frame in inBetween
+            }
+            
+            if (this.screencast.replaying) {
+                this.screencast.replayTime += this.screencast.timePerFrame;
+                if (this.screencast.replayTime > this.screencast.maxReplayTime) {
+                    this.screencast.replaying = false;
+                }
+            } else {
+                this.screencast.rerunTime += this.screencast.timePerFrame;
+                if (this.screencast.rerunTime > this.screencast.rerunDelay) {
+                    this.screencast.rerunTime = 0;
+                    this.screencast.replaying = true;
+                    this.screencast.replayTime = this.screencast.minReplayTime;
+                }
+            }
+        }, this.screencast.timePerFrame);
+    }
+    
+    get visibleScreencast() {
+        if (this.screencast.mode === 'replay') {
+            return this.findLastEventUntil(this.screencast.replayTime, this.screencast.inBetween);
+        }
+        
+        return this.highlightScreencast ?? this.activeScreencast;
     }
     
     clear() {
@@ -81,10 +131,6 @@ class PreviewStore {
     
     activeScreencast: any = null;
     
-    get visibleScreencast() {
-        return this.highlightScreencast ?? this.activeScreencast;
-    }
-    
     get activeScreencastUrl() {
         if (! this.visibleScreencast) {
             return null;
@@ -125,14 +171,12 @@ class PreviewStore {
         console.log(command.context.screencasts);
         let idx = command.context.commands.indexOf(command);
         if (idx === (command.context.commands.length - 1)) {
-            console.log('returning last screencast');
             return {
                 screencast: command.context.screencasts[command.context.screencasts.length - 1],
                 until: command.timestamp,
             };
         } else {
             let until = command.context.commands[idx + 1].time.started;
-            console.log('between', this.findEventsBetween(command.time.started, until, command.context.screencasts));
             return {
                 screencast: this.findLastEventUntil(until, command.context.screencasts),
                 until,
@@ -144,27 +188,38 @@ class PreviewStore {
         // @ts-ignore
         Events.on(
             'preview:toggle',
-            action((cmd: ICommand|undefined) => {
-                if (this.activeCommand?.id === cmd?.id) {
+            action((command: ICommand) => {
+                if (this.activeCommand?.id === command?.id) {
                     this.activeCommand = undefined;
+                    this.screencast.inBetween = [];
                     
                     Events.emit('command:active', undefined);
                     
                     return;
                 }
                 
-                if (this.highlightCommand?.id === cmd?.id) {
+                if (this.highlightCommand?.id === command?.id) {
                     this.highlightCommand = undefined;
                 }
                 
-                this.activeCommand = cmd;
+                this.activeCommand = command;
                 this.activeState = 'before';
                 
+                let idx = command.context.commands.indexOf(command);
+                let until = idx === (command.context.commands.length - 1) ? (command.time.finished + 1) : command.context.commands[idx + 1].time.started;
+                this.screencast.inBetween = [];
+                // this.screencast.inBetween.push(this.findLastScreencastForCommand(command));
+                this.screencast.inBetween.push(...this.findEventsBetween(command.time.started, until, command.context.screencasts));
+                
+                this.screencast.minReplayTime = this.screencast.inBetween[0].timestamp;
+                this.screencast.replayTime = this.screencast.minReplayTime;
+                this.screencast.maxReplayTime = this.screencast.inBetween[this.screencast.inBetween.length - 1].timestamp;
+                
                 // calculate last frame before next command or if null, get overall last frame
-                let lastScreencast = this.findLastScreencastForCommand(cmd);
+                let lastScreencast = this.findLastScreencastForCommand(command);
                 this.activeScreencast = lastScreencast.screencast;
                 
-                Events.emit('command:active', cmd);
+                Events.emit('command:active', command);
             }),
         );
         // @ts-ignore

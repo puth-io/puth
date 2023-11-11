@@ -50,21 +50,21 @@ export const Context = observer(function Context() {
                             return <Log key={event.id} log={event}/>;
                         } else if (event.type === 'request') {
                             return <Request key={event.id} request={event}/>;
-                        } else if (event.type === 'screencasts') {
-                            return (
-                                <tr
-                                    key={event.id}
-                                    className={app.active.connection?.preview.visibleScreencast === event ? 'bg-gray-700' : ''}
-                                >
-                                    <td colSpan={6}>{event.timestamp} {event.type} {app.active.connection?.preview.visibleScreencast === event ? 'active' : ''}</td>
-                                </tr>
-                            );
-                        } else {
-                            return (
-                                <tr key={event.id}>
-                                    <td colSpan={6}>No component found for type to display</td>
-                                </tr>
-                            );
+                        // } else if (event.type === 'screencasts') {
+                        //     return (
+                        //         <tr
+                        //             key={event.id}
+                        //             className={app.active.connection?.preview.visibleScreencast === event ? 'bg-gray-700' : ''}
+                        //         >
+                        //             <td colSpan={6}>{event.timestamp} {event.type} {app.active.connection?.preview.visibleScreencast === event ? 'active' : ''}</td>
+                        //         </tr>
+                        //     );
+                        // } else {
+                        //     return (
+                        //         <tr key={event.id}>
+                        //             <td colSpan={6}>No component found for type to display</td>
+                        //         </tr>
+                        //     );
                         }
                     }))}
                     </tbody>

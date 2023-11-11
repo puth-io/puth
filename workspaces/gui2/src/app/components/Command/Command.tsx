@@ -98,6 +98,15 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   let active = app.active.connection?.preview.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
+  let {inBetween, replayTime, minReplayTime, maxReplayTime} = app.active.connection?.preview.screencast;
+  let replayProgress =  <></>;
+  if (active && app.active.connection?.preview.screencast.mode === 'replay' && inBetween.length > 2) {
+    let timespan = maxReplayTime - minReplayTime;
+    let progress = replayTime - minReplayTime;
+    let percent = progress / timespan;
+    replayProgress = <div className={'bg-primary'} style={{height: '2px', position: 'absolute', bottom: 0, left: 0, width: Math.min(percent * 100, 100) + '%'}}></div>;
+  }
+
   return (
     <>
       <tr
@@ -106,7 +115,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         onMouseEnter={mouseEnter}
         onMouseLeave={mouseLeave}
       >
-        <td>{index !== undefined ? index + 1 : ''}</td>
+        <td>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
         <td>
           {showTimings && (
             <>
@@ -120,7 +129,6 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
           )}
         </td>
         <td>{displayType}</td>
-
         <td>{displayFunc}</td>
         <td colSpan={2}>{displayArgs.join(', ')}</td>
       </tr>
