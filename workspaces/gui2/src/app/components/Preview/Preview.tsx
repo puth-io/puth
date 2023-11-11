@@ -4,7 +4,6 @@ import {debounce, useForceUpdatePreview} from '../../util/Debugging';
 import DevStore from "../../DebugStoreClass";
 import Events from '../../Events';
 import {ContextDetails} from '../ContextDetails/ContextDetails';
-import AppStore from "@/app/store/AppStore.tsx";
 import {AppContext} from "@/App.tsx";
 
 const PreviewOverlay = observer(() => {
@@ -20,11 +19,13 @@ const PreviewOverlay = observer(() => {
 export const Split = () => <span className={'split'}> | </span>;
 
 const FooterMetrics = observer(() => {
-    if (!AppStore.active.connection) {
+    const {app} = useContext(AppContext);
+    
+    if (!app.active.connection) {
         return <></>;
     }
     
-    let {contexts, events} = AppStore.active.connection.getMetrics();
+    let {contexts, events} = app.active.connection.getMetrics();
     
     return (
         <div>

@@ -21,7 +21,7 @@ export const MainTopButtons = observer(function MainTopButtons() {
 
 export const MainTopRight = observer(function MainTopRight() {
     return (
-        <Toggle size={'xs'} className={'ml-2'}><Icon name={'dark_mode'}/></Toggle>
+        <Toggle size={'xs'}><Icon name={'dark_mode'}/></Toggle>
     );
 });
 

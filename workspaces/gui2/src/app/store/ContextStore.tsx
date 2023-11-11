@@ -90,10 +90,11 @@ export default class ContextStore {
         return [
             ...this.commands.filter(this.getRenderedTypesFilter()),
             ...this.logs,
+            ...this.screencasts,
         ].sort((a, b) => this.getEventTime(a) - this.getEventTime(b));
     }
     
     getEventTime(event: any) {
-        return event?.time?.started ?? event?.time?.created ?? event?.time;
+        return event?.time?.started ?? event?.time?.created ?? event?.timestamp ?? event?.time;
     }
 }

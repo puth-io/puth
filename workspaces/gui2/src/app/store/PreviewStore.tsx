@@ -99,9 +99,9 @@ class PreviewStore {
     }
     
     findLastEventUntil(time: number, events: any) {
-        let last;
+        let last = null;
         for (let screencast of events) {
-            if (screencast.timestamp > time) {
+            if (screencast.timestamp >= time) {
                 break;
             }
             last = screencast;
@@ -111,17 +111,18 @@ class PreviewStore {
     
     findEventsBetween(start: number, end: number, events: any) {
         let rv: any[] = [];
-        // for (let screencast of events) {
-        //     if (screencast.timestamp > start && screencast.timestamp < end) {
-        //         events.push(screencast);
-        //     }
-        // }
+        for (let screencast of events) {
+            if (screencast.timestamp > start && screencast.timestamp < end) {
+                rv.push(screencast);
+            }
+        }
+        console.log('last until', this.findLastEventUntil(start, events));
         return rv;
     }
     
     findLastScreencastForCommand(command: any) {
         // calculate last frame before next command or if null, get overall last frame
-        console.log(command, command.context.screencasts);
+        console.log(command.context.screencasts);
         let idx = command.context.commands.indexOf(command);
         if (idx === (command.context.commands.length - 1)) {
             console.log('returning last screencast');
@@ -130,8 +131,8 @@ class PreviewStore {
                 until: command.timestamp,
             };
         } else {
-            let until = command.context.commands[idx + 1].time.started - 1;
-            // console.log('between', this.findEventsBetween(command.time.started, until, command.context.screencasts));
+            let until = command.context.commands[idx + 1].time.started;
+            console.log('between', this.findEventsBetween(command.time.started, until, command.context.screencasts));
             return {
                 screencast: this.findLastEventUntil(until, command.context.screencasts),
                 until,

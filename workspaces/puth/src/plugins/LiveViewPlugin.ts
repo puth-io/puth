@@ -130,6 +130,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         client.send('Page.startScreencast', {
             format: 'jpeg',
             quality: 75,
+            everyNthFrame: 1,
         });
     }
     
