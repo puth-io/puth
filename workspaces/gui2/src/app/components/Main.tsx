@@ -7,14 +7,39 @@ import {useContext} from "react";
 import {AppContext} from "@/App.tsx";
 
 export const MainTopButtons = observer(function MainTopButtons() {
+    const {app} = useContext(AppContext);
+    
+    let setScreencastMode = (mode: 'replay'|'before'|'after') => {
+        if (!app.active.connection.preview.screencast) {
+            return;
+        }
+        app.active.connection.preview.screencast.mode = mode;
+    }
+    
     return (
         <>
             {/*<Button size={'xs'} variant={'outline'}>Frame</Button>*/}
             {/*<Button size={'xs'} variant={'outline'} className={'mr-2'}>Dom</Button>*/}
             
-            <Button size={'icon-xs'} variant={'outline'}><Icon name={'autoplay'}/></Button>
-            <Button size={'xs'} variant={'outline'}>Before</Button>
-            <Button size={'xs'} variant={'outline'} className={'mr-2'}>After</Button>
+            <Button
+                size={'icon-xs'}
+                variant={'outline'}
+                active={app.active.connection?.preview?.screencast.mode === 'replay'}
+                onClick={() => setScreencastMode('replay')}
+            ><Icon name={'autoplay'}/></Button>
+            <Button
+                size={'xs'}
+                variant={'outline'}
+                active={app.active.connection?.preview?.screencast.mode === 'before'}
+                onClick={() => setScreencastMode('before')}
+            >Before</Button>
+            <Button
+                size={'xs'}
+                variant={'outline'}
+                active={app.active.connection?.preview?.screencast.mode === 'after'}
+                onClick={() => setScreencastMode('after')}
+                className={'mr-2'}
+            >After</Button>
         </>
     );
 });

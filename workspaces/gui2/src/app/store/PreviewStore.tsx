@@ -18,6 +18,7 @@ class PreviewStore {
     _darken: boolean = false;
     
     screencast: {
+        lastFrameBeforeSector: any,
         inBetween: any[],
         mode: 'replay'|'before'|'after',
         replayTime: number,
@@ -28,6 +29,7 @@ class PreviewStore {
         rerunDelay: number,
         rerunTime: number,
     } = {
+        lastFrameBeforeSector: null,
         inBetween: [],
         mode: 'replay',
         replayTime: 0,
@@ -35,7 +37,7 @@ class PreviewStore {
         maxReplayTime: 0,
         timePerFrame: 1000 / 30,
         replaying: true,
-        rerunDelay: 500,
+        rerunDelay: 750,
         rerunTime: 0,
     };
     
@@ -46,11 +48,11 @@ class PreviewStore {
         
         this._darken = localStorage.getItem('previewStore.darken') === 'true';
         
-        setInterval(() => {
+        setInterval(action(() => {
             if (this.screencast.inBetween.length < 2) {
                 return; // set replaceTime greater than the single frame in inBetween
             }
-            
+
             if (this.screencast.replaying) {
                 this.screencast.replayTime += this.screencast.timePerFrame;
                 if (this.screencast.replayTime > this.screencast.maxReplayTime) {
@@ -64,15 +66,41 @@ class PreviewStore {
                     this.screencast.replayTime = this.screencast.minReplayTime;
                 }
             }
-        }, this.screencast.timePerFrame);
+        }), this.screencast.timePerFrame);
+    }
+    
+    get activeScreencast() {
+        if (this.screencast.mode === 'replay') {
+            // TODO only use lastFrameBeforeSector if its in a certain time window to "smoothen" the replay
+            return this.findLastEventUntil(this.screencast.replayTime, this.screencast.inBetween) ?? this.screencast.lastFrameBeforeSector;
+        }
+        if (this.screencast.mode === 'after') {
+            if (this.screencast.inBetween.length > 0) {
+                return this.screencast.inBetween[this.screencast.inBetween.length - 1];
+            }
+        }
+        if (this.screencast.mode === 'before') {
+            return this.screencast.lastFrameBeforeSector;
+        }
+        
+        return this.screencast.lastFrameBeforeSector;
     }
     
     get visibleScreencast() {
-        if (this.screencast.mode === 'replay') {
-            return this.findLastEventUntil(this.screencast.replayTime, this.screencast.inBetween);
+        return this.highlightScreencast ?? this.activeScreencast;
+    }
+    
+    get activeScreencastUrl() {
+        if (_lastActiveScreencastUrl) {
+            URL.revokeObjectURL(_lastActiveScreencastUrl);
         }
         
-        return this.highlightScreencast ?? this.activeScreencast;
+        if (! this.visibleScreencast) {
+            return null;
+        }
+        
+        _lastActiveScreencastUrl = URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpeg'}));
+        return _lastActiveScreencastUrl;
     }
     
     clear() {
@@ -129,21 +157,6 @@ class PreviewStore {
         return this._activeContext;
     }
     
-    activeScreencast: any = null;
-    
-    get activeScreencastUrl() {
-        if (! this.visibleScreencast) {
-            return null;
-        }
-        
-        if (_lastActiveScreencastUrl) {
-            URL.revokeObjectURL(_lastActiveScreencastUrl);
-        }
-        
-        _lastActiveScreencastUrl = URL.createObjectURL(new Blob([this.visibleScreencast.frame], {type: 'image/jpeg'}));
-        return _lastActiveScreencastUrl;
-    }
-    
     findLastEventUntil(time: number, events: any) {
         let last = null;
         for (let screencast of events) {
@@ -162,13 +175,11 @@ class PreviewStore {
                 rv.push(screencast);
             }
         }
-        console.log('last until', this.findLastEventUntil(start, events));
         return rv;
     }
     
     findLastScreencastForCommand(command: any) {
         // calculate last frame before next command or if null, get overall last frame
-        console.log(command.context.screencasts);
         let idx = command.context.commands.indexOf(command);
         if (idx === (command.context.commands.length - 1)) {
             return {
@@ -191,6 +202,7 @@ class PreviewStore {
             action((command: ICommand) => {
                 if (this.activeCommand?.id === command?.id) {
                     this.activeCommand = undefined;
+                    this.screencast.lastFrameBeforeSector = undefined;
                     this.screencast.inBetween = [];
                     
                     Events.emit('command:active', undefined);
@@ -200,24 +212,28 @@ class PreviewStore {
                 
                 if (this.highlightCommand?.id === command?.id) {
                     this.highlightCommand = undefined;
+                    this.highlightScreencast = null;
                 }
                 
                 this.activeCommand = command;
                 this.activeState = 'before';
                 
                 let idx = command.context.commands.indexOf(command);
+                // if (idx !== 0) { // find last frame before inBetween sector to display as entry point
+                //     this.screencast.lastFrameBeforeSector = this.findLastScreencastForCommand(command.context.commands[idx - 1]).screencast;
+                // }
                 let until = idx === (command.context.commands.length - 1) ? (command.time.finished + 1) : command.context.commands[idx + 1].time.started;
-                this.screencast.inBetween = [];
-                // this.screencast.inBetween.push(this.findLastScreencastForCommand(command));
-                this.screencast.inBetween.push(...this.findEventsBetween(command.time.started, until, command.context.screencasts));
+                this.screencast.inBetween = this.findEventsBetween(command.time.started, until, command.context.screencasts);
                 
-                this.screencast.minReplayTime = this.screencast.inBetween[0].timestamp;
+                // find last frame before inBetween sector to display as entry point
+                this.screencast.lastFrameBeforeSector = this.findLastEventUntil(command.time.started, command.context.screencasts);
+                console.log(this.screencast.lastFrameBeforeSector);
+                
+                this.screencast.minReplayTime = this.screencast.inBetween[0]?.timestamp;
                 this.screencast.replayTime = this.screencast.minReplayTime;
-                this.screencast.maxReplayTime = this.screencast.inBetween[this.screencast.inBetween.length - 1].timestamp;
-                
-                // calculate last frame before next command or if null, get overall last frame
-                let lastScreencast = this.findLastScreencastForCommand(command);
-                this.activeScreencast = lastScreencast.screencast;
+                this.screencast.maxReplayTime = this.screencast.inBetween[this.screencast.inBetween.length - 1]?.timestamp;
+                this.screencast.replaying = true;
+                this.screencast.rerunTime = 0;
                 
                 Events.emit('command:active', command);
             }),
