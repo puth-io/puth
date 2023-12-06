@@ -54,7 +54,7 @@ export const MainTop = observer(function MainTop({
     left,
     right,
 }: any) {
-    const {preview} = useContext(AppContext);
+    const {app} = useContext(AppContext);
     
     return (
         <>
@@ -62,14 +62,14 @@ export const MainTop = observer(function MainTop({
             
             <Input
                 className={'h-8 grow mr-2'}
-                value={preview.visibleScreencast?.page?.url ?? ''}
+                value={app.active.connection?.preview?.visibleScreencast?.page?.url ?? ''}
                 disabled
             />
             
-            {preview.visibleScreencast && <><Icon
+            {app.active.connection?.preview?.visibleScreencast && <><Icon
                 name={'screenshot_monitor'}
                 className={'mr-1'}
-            /> {preview.visibleScreencast?.page.viewport.width}x{preview.visibleScreencast?.page.viewport.height}</>}
+            /> {app.active.connection?.preview?.visibleScreencast?.page.viewport.width}x{app.active.connection?.preview?.visibleScreencast?.page.viewport.height}</>}
             
             {right ? right : <MainTopRight/>}
         </>
