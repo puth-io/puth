@@ -15,7 +15,7 @@ export const AppLayout = observer(function AppLayout({
             <div className={'grid grid-rows-[3rem_1fr] h-screen w-screen'}>
                 <div className={'flex items-center px-2 shrink-0'} style={{backgroundColor: '#22252c', boxShadow: '0 0 8px 0px black', zIndex: 10}}>
                     <div className={'flex items-center mr-auto'}>
-                        <img src={puthLogoBlue} className={'h-5 mr-2'}/>
+                        <img src={puthLogoBlue} className={'h-7 mr-2'}/>
                         Puth
                     </div>
                     
@@ -33,14 +33,14 @@ export const AppLayout = observer(function AppLayout({
                         {sidebar}
                     </div>
                     
-                    <div className="flex flex-col grow overflow-auto px-4 py-2">
+                    <div className="flex flex-col grow overflow-auto">
                         {mainTop && (
-                            <div className={'shrink flex items-center h-12 px-2'}>
+                            <div className={'shrink flex items-center h-12 px-4 mt-2'}>
                                 {mainTop}
                             </div>
                         )}
                         
-                        <div className={'grow p-2 overflow-auto'}>
+                        <div className={'grow px-4 p-2 overflow-auto'}>
                             {preview}
                         </div>
                         

@@ -107,19 +107,15 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
     replayProgress = <div className={'bg-primary'} style={{height: '2px', position: 'absolute', bottom: 0, left: 0, width: Math.min(percent * 100, 100) + '%'}}></div>;
   }
   
-  let borderColor = 'rgb(255 255 255 / 6%)';
-  // borderColor = '#4fc49f';
-
   return (
     <>
       <tr
-        className={`command ${active ? 'active' : ''} ${hasErrors ? 'bg-red-500' : ''} relative`}
+        className={`bg-lighter command ${active ? 'active' : ''} ${hasErrors ? 'bg-red-500' : ''} relative`}
         onClick={mouseClick}
         onMouseEnter={mouseEnter}
         onMouseLeave={mouseLeave}
-        style={{backgroundColor: 'rgb(255 255 255 / 6%)'}}
       >
-        <td className={'rounded-l-md border-l-4 border-solid py-2 pl-4'} style={{borderColor}}>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
+        <td className={'rounded-l-md border-l-4 border-solid border-lighter py-2 pl-4'} style={{paddingLeft: '0.75rem'}}>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
         <td>
           {showTimings && (
             <>
