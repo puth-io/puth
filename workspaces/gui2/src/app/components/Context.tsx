@@ -28,20 +28,20 @@ export const Context = observer(function Context() {
     let commandIndex = 0;
     return (
         <>
-            <div className={'flex items-center p-2'} style={{borderBottom: '1px solid hsl(var(--input))'}}>
+            <div className={'flex items-center px-5 py-5'}>
                 <div className={'grow flex items-center'}>
                     <ContextStatusIcon
                         status={app.active.connection?.active.context?.test.status}
-                        className={'mr-1'}
+                        className={'mr-2'}
                     /> {app.active.connection?.active.context?.test.name}
                 </div>
                 <div className={'flex items-center text-gray-300 ml-auto'}><Icon name={'timer'}/> 00:54s</div>
                 <div className={'flex items-center text-gray-300 ml-2 mr-2'}><Icon name={'history'}/> 1min</div>
-                <Button variant={'outline'} size={'icon-xs'}><Icon name={'download'}/></Button>
+                <Button variant={'ghost'} size={'icon-xs'}><Icon name={'download'}/></Button>
             </div>
             
-            <div className={'grow overflow-y-auto'}>
-                <table className="table-auto w-full">
+            <div className={'grow overflow-y-auto px-5'}>
+                <table className="table-auto w-full" style={{borderSpacing: '0 0.25rem', borderCollapse: 'separate'}}>
                     <tbody className={''}>
                     {app.active.connection?.active.context?.renderedEvents.map(((event) => {
                         if (event.type === 'command') {

@@ -21,25 +21,31 @@ export const MainTopButtons = observer(function MainTopButtons() {
             {/*<Button size={'xs'} variant={'outline'}>Frame</Button>*/}
             {/*<Button size={'xs'} variant={'outline'} className={'mr-2'}>Dom</Button>*/}
             
+            {/*<Button*/}
+            {/*    size={'icon-xs'}*/}
+            {/*    variant={'outline'}*/}
+            {/*    active={app.active.connection?.preview?.screencast.mode === 'replay'}*/}
+            {/*    onClick={() => setScreencastMode('replay')}*/}
+            {/*><Icon name={'autoplay'}/></Button>*/}
             <Button
-                size={'icon-xs'}
+                size={'xs'}
                 variant={'outline'}
                 active={app.active.connection?.preview?.screencast.mode === 'replay'}
                 onClick={() => setScreencastMode('replay')}
-            ><Icon name={'autoplay'}/></Button>
+            >REPLAY</Button>
             <Button
                 size={'xs'}
                 variant={'outline'}
                 active={app.active.connection?.preview?.screencast.mode === 'before'}
                 onClick={() => setScreencastMode('before')}
-            >Before</Button>
+            >BEFORE</Button>
             <Button
                 size={'xs'}
                 variant={'outline'}
                 active={app.active.connection?.preview?.screencast.mode === 'after'}
                 onClick={() => setScreencastMode('after')}
                 className={'mr-2'}
-            >After</Button>
+            >AFTER</Button>
         </>
     );
 });

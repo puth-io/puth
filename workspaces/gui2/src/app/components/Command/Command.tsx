@@ -106,6 +106,9 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
     let percent = progress / timespan;
     replayProgress = <div className={'bg-primary'} style={{height: '2px', position: 'absolute', bottom: 0, left: 0, width: Math.min(percent * 100, 100) + '%'}}></div>;
   }
+  
+  let borderColor = 'rgb(255 255 255 / 6%)';
+  // borderColor = '#4fc49f';
 
   return (
     <>
@@ -114,8 +117,9 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         onClick={mouseClick}
         onMouseEnter={mouseEnter}
         onMouseLeave={mouseLeave}
+        style={{backgroundColor: 'rgb(255 255 255 / 6%)'}}
       >
-        <td>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
+        <td className={'rounded-l-md border-l-4 border-solid py-2 pl-4'} style={{borderColor}}>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
         <td>
           {showTimings && (
             <>
@@ -130,7 +134,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         </td>
         <td>{displayType}</td>
         <td>{displayFunc}</td>
-        <td colSpan={2}>{displayArgs.join(', ')}</td>
+        <td className={'rounded-r-md'} colSpan={2}>{displayArgs.join(', ')}</td>
       </tr>
 
       {command.errors.map((error: any, idx) => {

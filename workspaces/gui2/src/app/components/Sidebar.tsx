@@ -14,23 +14,23 @@ export const Sidebar = observer(function Sidebar({
 }: any) {
     return (
         <>
-            <div
-                className={'flex items-center px-2 h-12 shrink-0'}
-                style={{borderBottom: '1px solid hsl(var(--input))'}}
-            >
-                {header ? header : (<>
-                    <div className={'flex items-center'}>
-                        <img src={puthLogoBlue} className={'h-5 mr-2'}/>
-                        {title}
-                    </div>
-                    
-                    <Button size={'icon-xs'} variant={'outline'} className={'ml-auto'}>
-                        <Icon name={'settings'}/>
-                    </Button>
-                    
-                    <ConnectionDropdown/>
-                </>)}
-            </div>
+            {/*<div*/}
+            {/*    className={'flex items-center px-2 h-12 shrink-0'}*/}
+            {/*    style={{borderBottom: '1px solid hsl(var(--input))'}}*/}
+            {/*>*/}
+            {/*    {header ? header : (<>*/}
+            {/*        <div className={'flex items-center'}>*/}
+            {/*            <img src={puthLogoBlue} className={'h-5 mr-2'}/>*/}
+            {/*            {title}*/}
+            {/*        </div>*/}
+            {/*        */}
+            {/*        <Button size={'icon-xs'} variant={'outline'} className={'ml-auto'}>*/}
+            {/*            <Icon name={'settings'}/>*/}
+            {/*        </Button>*/}
+            {/*        */}
+            {/*        <ConnectionDropdown/>*/}
+            {/*    </>)}*/}
+            {/*</div>*/}
             
             {content ? content : (<>
                 <QuickConnect/>

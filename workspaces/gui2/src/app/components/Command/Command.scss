@@ -8,9 +8,9 @@ $info: #158fe6;
   padding: 0.3rem 0;
   cursor: pointer;
 
-  &:last-child > td {
-    border: 0;
-  }
+  //&:last-child > td {
+  //  border: 0;
+  //}
 
   //&:not(.hasErrors) {
   //  border-bottom: 1px solid #5f636a;
@@ -34,7 +34,8 @@ $info: #158fe6;
 
   & > td {
     // padding: 0.125rem 0.25rem;
-    padding: 0.075rem 0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
 
     &:first-child {
       padding-left: 0.25rem;
