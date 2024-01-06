@@ -12,10 +12,10 @@ export const AppLayout = observer(function AppLayout({
 }: any) {
     return (
         <>
-            <div className={'grid grid-rows-[3rem_1fr] h-screen w-screen'}>
-                <div className={'flex items-center px-2 shrink-0'} style={{backgroundColor: '#22252c', boxShadow: '0 0 8px 0px black', zIndex: 10}}>
+            <div className={'grid grid-rows-[2.5rem_1fr] h-screen w-screen'}>
+                <div className={'flex items-center px-2 shrink-0'} style={{backgroundColor: '#22252b', boxShadow: '0 1px 4px 0px #1a1c1f', borderBottom: '1px solid rgba(25,27,31,0.74)', zIndex: 10}}>
                     <div className={'flex items-center mr-auto'}>
-                        <img src={puthLogoBlue} className={'h-7 mr-2'}/>
+                        <img src={puthLogoBlue} className={'h-6 mr-2'}/>
                         Puth
                     </div>
                     
@@ -25,10 +25,10 @@ export const AppLayout = observer(function AppLayout({
                         <Icon name={'settings'}/>
                     </Button>
                 </div>
-                <div className={'grid grid-cols-[500px_1fr]'}>
+                <div className={'grid grid-cols-[450px_1fr]'}>
                     <div
                         className={'flex flex-col min-h-0 grow'}
-                        style={{background: '#2a2d36', borderRight: '1px solid #3d4249'}}
+                        style={{background: '#2a2d36', borderRight: '1px solid #1a1d21'}}
                     >
                         {sidebar}
                     </div>
