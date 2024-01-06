@@ -16,8 +16,12 @@ module.exports = {
       },
     },
     extend: {
+      fontSize: {
+        xxs: '0.625rem',
+      },
       colors: {
         lighter: "rgb(255 255 255 / 6%)",
+        light: "rgb(255 255 255 / 16%)",
         success: "#4fc49f",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -53,6 +57,10 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
         red: '#e96363',
+        'primary-hover': '#5b96f7',
+        'primary-hover-hover': 'rgba(60, 130, 246, 0.7)',
+        'primary-hover-hover-hover': 'rgba(60, 130, 246, 0.4)',
+        unselected: "rgba(255, 255, 255, 0.74)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -73,6 +81,9 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+    },
+    letterSpacing: {
+      widest: '0.078125rem',
     },
   },
   plugins: [require("tailwindcss-animate")],

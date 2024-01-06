@@ -14,7 +14,6 @@ export const AppContext = createContext<any>();
 const App = () => (
     <AppContext.Provider value={{
         app: AppStore,
-        preview: PreviewStore,
     }}>
         <AppLayout
             sidebar={<Sidebar/>}

@@ -1,5 +1,5 @@
-export const Icon = function ({name, className}: {name: string, className?: string}) {
+export const Icon = function ({name, size, className}: {name: string, size?: string, className?: string}) {
     return (
-        <span className={'material-symbols-rounded ' + (className ?? '')}>{ name }</span>
+        <span className={'material-symbols-rounded ' + (className ?? '')} style={{fontSize: size ?? undefined}}>{ name }</span>
     );
 };

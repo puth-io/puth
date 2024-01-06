@@ -6,15 +6,36 @@ import {Toggle} from "@/components/ui/toggle.tsx";
 import {useContext} from "react";
 import {AppContext} from "@/App.tsx";
 
+export const GroupContainer = function GroupContainer({children, ...rest}) {
+    return (
+        <div
+            className={'flex rounded-full mr-4 leading-none tracking-widest select-none text-xxs'}
+            style={{backgroundColor: '#2b303b'}}
+            {...rest}
+        >{children}</div>
+    )
+}
+
+export const GroupButton = function GroupButton({active, children, ...rest}) {
+    return (
+        <div
+            className={'p-2 rounded-full cursor-pointer ' + (active ? 'bg-primary text-black' : 'text-unselected hover:bg-primary-hover-hover')}
+            {...rest}
+        >
+            {children}
+        </div>
+    )
+}
+
 export const MainTopButtons = observer(function MainTopButtons() {
     const {app} = useContext(AppContext);
     
     let setScreencastMode = (mode: 'replay'|'before'|'after') => {
-        if (!app.active.connection.preview.screencast) {
+        if (! app.active.connection.preview.screencast) {
             return;
         }
         app.active.connection.preview.screencast.mode = mode;
-    }
+    };
     
     return (
         <>
@@ -27,25 +48,23 @@ export const MainTopButtons = observer(function MainTopButtons() {
             {/*    active={app.active.connection?.preview?.screencast.mode === 'replay'}*/}
             {/*    onClick={() => setScreencastMode('replay')}*/}
             {/*><Icon name={'autoplay'}/></Button>*/}
-            <Button
-                size={'xs'}
-                variant={'outline'}
-                active={app.active.connection?.preview?.screencast.mode === 'replay'}
-                onClick={() => setScreencastMode('replay')}
-            >REPLAY</Button>
-            <Button
-                size={'xs'}
-                variant={'outline'}
-                active={app.active.connection?.preview?.screencast.mode === 'before'}
-                onClick={() => setScreencastMode('before')}
-            >BEFORE</Button>
-            <Button
-                size={'xs'}
-                variant={'outline'}
-                active={app.active.connection?.preview?.screencast.mode === 'after'}
-                onClick={() => setScreencastMode('after')}
-                className={'mr-2'}
-            >AFTER</Button>
+            <GroupContainer>
+                <GroupButton
+                    active={app.active.connection?.preview?.screencast.mode === 'before'}
+                    onClick={() => setScreencastMode('before')}
+                    children={'BEFORE'}
+                />
+                <GroupButton
+                    active={app.active.connection?.preview?.screencast.mode === 'after'}
+                    onClick={() => setScreencastMode('after')}
+                    children={'AFTER'}
+                />
+                <GroupButton
+                    active={app.active.connection?.preview?.screencast.mode === 'replay'}
+                    onClick={() => setScreencastMode('replay')}
+                    children={'REPLAY'}
+                />
+            </GroupContainer>
         </>
     );
 });
