@@ -2,24 +2,23 @@ import {observer} from "mobx-react-lite";
 import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {Input} from "@/components/ui/input.tsx";
-import {Toggle} from "@/components/ui/toggle.tsx";
 import {useContext} from "react";
 import {AppContext} from "@/App.tsx";
 
-export const GroupContainer = function GroupContainer({children, ...rest}) {
+export const GroupContainer = function GroupContainer({children, className = '', ...rest}) {
     return (
         <div
-            className={'flex rounded-full mr-4 leading-none tracking-widest select-none text-xxs'}
+            className={'flex rounded-full leading-none tracking-widest select-none text-xxs ' + className}
             style={{backgroundColor: '#2b303b'}}
             {...rest}
         >{children}</div>
     )
 }
 
-export const GroupButton = function GroupButton({active, children, ...rest}) {
+export const GroupButton = function GroupButton({active, children, className = '', ...rest}) {
     return (
         <div
-            className={'p-2 rounded-full cursor-pointer ' + (active ? 'bg-primary text-black' : 'text-unselected hover:bg-primary-hover-hover')}
+            className={`p-2 rounded-full cursor-pointer ${className} ` + (active ? 'bg-primary text-black' : 'text-unselected hover:bg-primary-hover-hover')}
             style={{padding: 'calc(0.5rem + 1px) 0.75rem calc(0.5rem + 1px) 0.75rem'}}
             {...rest}
         >
@@ -40,16 +39,20 @@ export const MainTopButtons = observer(function MainTopButtons() {
     
     return (
         <>
-            {/*<Button size={'xs'} variant={'outline'}>Frame</Button>*/}
-            {/*<Button size={'xs'} variant={'outline'} className={'mr-2'}>Dom</Button>*/}
-            
-            {/*<Button*/}
-            {/*    size={'icon-xs'}*/}
-            {/*    variant={'outline'}*/}
-            {/*    active={app.active.connection?.preview?.screencast.mode === 'replay'}*/}
-            {/*    onClick={() => setScreencastMode('replay')}*/}
-            {/*><Icon name={'autoplay'}/></Button>*/}
             <GroupContainer>
+                <GroupButton
+                    active={true}
+                    children={'FRAME'}
+                />
+                <GroupButton
+                    active={false}
+                    children={'DOM'}
+                />
+            </GroupContainer>
+            
+            <div className={'shrink-0'} style={{height: '1px', width: '0.75rem', background: 'rgba(255, 255, 255, 0.24)'}} />
+            
+            <GroupContainer className={'mr-4'}>
                 <GroupButton
                     active={app.active.connection?.preview?.screencast.mode === 'before'}
                     onClick={() => setScreencastMode('before')}
@@ -93,10 +96,10 @@ export const MainTop = observer(function MainTop({
                 disabled
             />
             
-            {app.active.connection?.preview?.visibleScreencast && <><Icon
-                name={'screenshot_monitor'}
-                className={'mr-1'}
-            /> {app.active.connection?.preview?.visibleScreencast?.page.viewport.width}x{app.active.connection?.preview?.visibleScreencast?.page.viewport.height}</>}
+            {/*{app.active.connection?.preview?.visibleScreencast && <><Icon*/}
+            {/*    name={'screenshot_monitor'}*/}
+            {/*    className={'mr-1'}*/}
+            {/*/> {app.active.connection?.preview?.visibleScreencast?.page.viewport.width}x{app.active.connection?.preview?.visibleScreencast?.page.viewport.height}</>}*/}
             
             {right ? right : <MainTopRight/>}
         </>
@@ -106,11 +109,11 @@ export const MainTop = observer(function MainTop({
 export const MainBottom = observer(function MainBottom() {
     return (
         <>
-            <Button variant={'ghost'} size={'toggle'}><Icon
+            <Button variant={'ghost'} size={'toggle'} className={'text-primary'}><Icon
                 name={'error'}
                 className={'mr-1'}
             /> Exceptions</Button>
-            <Button variant={'ghost'} size={'toggle'}><Icon
+            <Button variant={'ghost'} size={'toggle'} className={'text-primary'}><Icon
                 name={'folder'}
                 className={'mr-1'}
             /> Files</Button>
