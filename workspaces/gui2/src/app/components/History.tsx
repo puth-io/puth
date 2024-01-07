@@ -1,7 +1,7 @@
 import {observer} from "mobx-react-lite";
 import ContextStore from "@/app/store/ContextStore.tsx";
 import {useContext} from "react";
-import {ContextStatusIcon} from "@/app/components/Context.tsx";
+import {StatusIcon} from "@/app/components/Context.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
@@ -24,7 +24,7 @@ export const HistoryItem = observer(function HistoryItem({context}: {context: Co
             style={{paddingRight: '0.375rem'}}
             onClick={onClick}
         >
-            <ContextStatusIcon status={context.test.status} className={'mr-1'}/> {context.test.name}
+            <StatusIcon status={context.test.status} className={'mr-1'}/> {context.test.name}
             <div className={'flex items-center text-gray-400 italic ml-auto'}>
                 <Icon name={'history'}/> just now
             </div>

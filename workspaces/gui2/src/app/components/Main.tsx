@@ -20,6 +20,7 @@ export const GroupButton = function GroupButton({active, children, ...rest}) {
     return (
         <div
             className={'p-2 rounded-full cursor-pointer ' + (active ? 'bg-primary text-black' : 'text-unselected hover:bg-primary-hover-hover')}
+            style={{padding: 'calc(0.5rem + 1px) 0.75rem calc(0.5rem + 1px) 0.75rem'}}
             {...rest}
         >
             {children}
@@ -70,9 +71,10 @@ export const MainTopButtons = observer(function MainTopButtons() {
 });
 
 export const MainTopRight = observer(function MainTopRight() {
-    return (
-        <Toggle size={'xs'}><Icon name={'dark_mode'}/></Toggle>
-    );
+    // return (
+    //     <Toggle size={'xs'}><Icon name={'dark_mode'}/></Toggle>
+    // );
+    return <></>;
 });
 
 export const MainTop = observer(function MainTop({
@@ -86,7 +88,7 @@ export const MainTop = observer(function MainTop({
             {left ? left : <MainTopButtons/>}
             
             <Input
-                className={'h-8 grow mr-2'}
+                className={'h-7 grow bg-lighter border-none'}
                 value={app.active.connection?.preview?.visibleScreencast?.page?.url ?? ''}
                 disabled
             />

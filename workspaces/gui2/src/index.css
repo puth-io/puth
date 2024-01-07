@@ -78,9 +78,9 @@ html {
   font-size: 16px;
 }
 
-/*body {*/
-/*  font-size: 14px;*/
-/*}*/
+body {
+  font-size: 12px;
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar {

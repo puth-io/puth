@@ -56,7 +56,15 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        red: '#e96363',
+        task: {
+          DEFAULT: 'rgba(166, 166, 166, 0.42)',
+          success: 'rgba(13, 184, 124, 0.74)',
+          error: 'rgba(212, 49, 49, 0.74)',
+        },
+        red: {
+          DEFAULT: '#e96363',
+          '500': '#e96363',
+        },
         'primary-hover': '#5b96f7',
         'primary-hover-hover': 'rgba(60, 130, 246, 0.7)',
         'primary-hover-hover-hover': 'rgba(60, 130, 246, 0.4)',
@@ -66,6 +74,9 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      borderWidth: {
+        '3': '3px',
       },
       keyframes: {
         "accordion-down": {

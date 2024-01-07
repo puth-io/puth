@@ -5,6 +5,8 @@ import { IContext } from '../../Types';
 import { observer } from 'mobx-react-lite';
 import Constructors from 'puth/src/Context/Constructors';
 import {AppContext} from "@/App.tsx";
+import {Icon} from "@/components/icon.tsx";
+import {StatusIcon} from "@/app/components/Context.tsx";
 
 export type IViewport = {
   width: number;
@@ -107,15 +109,19 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
     replayProgress = <div className={'bg-primary'} style={{height: '2px', position: 'absolute', bottom: 0, left: 0, width: Math.min(percent * 100, 100) + '%'}}></div>;
   }
   
+  let borderColor = hasErrors ? 'border-task-error' : 'border-task';
+  let statusIcon = hasErrors ? <StatusIcon status={'failed'}/> : null;
+  
   return (
     <>
       <tr
-        className={`bg-lighter command ${active ? 'active' : ''} ${hasErrors ? 'bg-red-500' : ''} relative`}
+        className={`border-b-4 border-solid border-transparent command ${active ? 'active' : ''} ${hasErrors ? 'bg-red-500' : ''} relative`}
+        style={{backgroundColor: '#2b303b'}}
         onClick={mouseClick}
         onMouseEnter={mouseEnter}
         onMouseLeave={mouseLeave}
       >
-        <td className={'rounded-l-md border-l-4 border-solid border-lighter py-2 pl-4'} style={{paddingLeft: '0.75rem'}}>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
+        <td className={`rounded-l-md border-l-3 border-solid ${borderColor} py-2 pl-4`} style={{paddingLeft: '0.75rem'}}>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
         <td>
           {showTimings && (
             <>
@@ -130,24 +136,31 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         </td>
         <td>{displayType}</td>
         <td>{displayFunc}</td>
-        <td className={'rounded-r-md'} colSpan={2}>{displayArgs.join(', ')}</td>
+        <td className={'rounded-r-md'} colSpan={statusIcon ? 1 : 2}>{displayArgs.join(', ')}</td>
+        {statusIcon && (
+            <td className={'leading-none pr-4'}>{statusIcon}</td>
+        )}
       </tr>
-
+      
       {command.errors.map((error: any, idx) => {
+        let title = error.type === 'error' ? error.error.name : 'Expectation missed';
         let message = error.type === 'error' ? error.error.message : error.expectation.message;
 
         return (
           <tr
             key={idx}
-            className={`border-l-4 border-l-red log ${active ? 'active' : ''}`}
+            className={``}
+            
             onClick={mouseClick}
             onMouseEnter={mouseEnter}
             onMouseLeave={mouseLeave}
           >
-            <td colSpan={6}>
-              <div data-messagetype={'error'}>
-                <div className={'font-bold text-red'}>{error.error.name}</div>
-                <div className={''}>{message}</div>
+            <td colSpan={6} className={'relative p-0'}>
+              <div style={{width: '1px', height: '1.75rem', background: 'rgba(255, 255, 255, 0.24)', position: 'absolute', left: '0.5rem', top: 0,}}/>
+              <div style={{width: '0.75rem', height: '1px', background: 'rgba(255, 255, 255, 0.24)', position: 'absolute', left: '0.5rem', top: '1.75rem',}}/>
+              <div className={'p-3 ml-6 rounded-md'} data-messagetype={'error'} style={{backgroundColor: 'rgba(212, 49, 49, 0.12)'}}>
+                <div className={'text-xs text-red flex items-center'}><Icon name={'bolt'} className={'mr-1'}/> {title}</div>
+                <div className={'text-xxs text-unselected mt-3'}>{message}</div>
               </div>
             </td>
           </tr>

@@ -26,7 +26,7 @@ export const AppLayout = observer(function AppLayout({
                         zIndex: 10,
                     }}
                 >
-                    <div className={'flex items-center mr-auto'}>
+                    <div className={'flex items-center mr-auto text-base'}>
                         <img src={puthLogoBlue} className={'h-6 mr-2'}/>
                         Puth
                     </div>
@@ -54,12 +54,12 @@ export const AppLayout = observer(function AppLayout({
                         ) : (
                             <>
                                 {mainTop && (
-                                    <div className={'shrink flex items-center h-12 px-4 mt-2'}>
+                                    <div className={'shrink flex items-center h-7 px-4 mt-3'}>
                                         {mainTop}
                                     </div>
                                 )}
                                 
-                                <div className={'grow px-4 p-2 overflow-auto'}>
+                                <div className={'grow m-4 overflow-auto'} style={{border: '1px solid #2f333d'}}>
                                     {preview}
                                 </div>
                                 

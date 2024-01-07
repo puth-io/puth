@@ -7,15 +7,17 @@ import Log from "@/app/components/Log/Log.tsx";
 import Request from "@/app/components/Request/Request.tsx";
 import {AppContext} from "@/App.tsx";
 
-export function ContextStatusIcon({status, ...rest}: any) {
+export function StatusIcon({status, className, ...rest}: any) {
     let icon = 'pending';
     if (status === 'failed') {
         icon = 'error';
+        className = 'text-red-500 ' + className;
     } else if (status === 'success') {
-        icon = 'task_alt';
+        icon = 'check_circle';
+        className = 'text-green-500 ' + className;
     }
     
-    return <Icon name={icon} {...rest}/>;
+    return <Icon name={icon} className={className} {...rest}/>;
 }
 
 export const Context = observer(function Context() {
@@ -29,8 +31,8 @@ export const Context = observer(function Context() {
     return (
         <>
             <div className={'flex items-center px-5 py-5'}>
-                <div className={'grow flex items-center'}>
-                    <ContextStatusIcon
+                <div className={'grow flex items-center text-lg'}>
+                    <StatusIcon
                         status={app.active.connection?.active.context?.test.status}
                         className={'mr-2'}
                     /> {app.active.connection?.active.context?.test.name}
@@ -41,7 +43,7 @@ export const Context = observer(function Context() {
             </div>
             
             <div className={'grow overflow-y-auto px-5'}>
-                <table className="table-auto w-full" style={{borderSpacing: '0 0.25rem', borderCollapse: 'separate'}}>
+                <table className="table-auto w-full" style={{border: 'none'}}>
                     <tbody className={''}>
                     {app.active.connection?.active.context?.renderedEvents.map(((event) => {
                         if (event.type === 'command') {
