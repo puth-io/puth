@@ -43,7 +43,7 @@ export const Context = observer(function Context() {
             </div>
             
             <div className={'grow overflow-y-auto px-5'}>
-                <table className="table-auto w-full" style={{border: 'none'}}>
+                <table className={'table-auto w-full context-event-table'} style={{margin: '-4px 0'}}>
                     <tbody className={''}>
                     {app.active.connection?.active.context?.renderedEvents.map(((event) => {
                         if (event.type === 'command') {

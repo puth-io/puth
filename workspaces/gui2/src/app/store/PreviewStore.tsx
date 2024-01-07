@@ -227,7 +227,6 @@ class PreviewStore {
                 
                 // find last frame before inBetween sector to display as entry point
                 this.screencast.lastFrameBeforeSector = this.findLastEventUntil(command.time.started, command.context.screencasts);
-                console.log(this.screencast.lastFrameBeforeSector);
                 
                 this.screencast.minReplayTime = this.screencast.inBetween[0]?.timestamp;
                 this.screencast.replayTime = this.screencast.minReplayTime;

@@ -72,6 +72,21 @@
   }
 }
 
+.context-event-table tbody td {
+  @apply border-y-4;
+  @apply border-solid;
+  /*@apply border-y-transparent;*/
+  border-color: #282a32;
+  box-sizing: content-box;
+}
+.context-event-table tbody tr.step td {
+  @apply bg-context-step;
+}
+.context-event-table tbody tr.step:hover td,
+.context-event-table tbody tr.step.active td {
+  @apply bg-context-step-selected;
+}
+
 html {
   color-scheme: dark;
   font-family: 'Roboto', sans-serif;

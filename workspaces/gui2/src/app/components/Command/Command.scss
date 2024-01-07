@@ -16,18 +16,6 @@ $info: #158fe6;
   //  border-bottom: 1px solid #5f636a;
   //}
 
-  &.hasErrors {
-    background-color: #a61e2a;
-    color: white !important;
-    font-weight: bold;
-
-    > td {
-      color: white !important;
-      border: none !important;
-      background-image: none !important;
-    }
-  }
-
   & > td:first-child {
     text-align: right;
   }
@@ -42,26 +30,6 @@ $info: #158fe6;
     }
     &:last-child {
       padding-right: 0.25rem;
-    }
-  }
-
-  &:hover {
-    background: $light;
-
-    &.hasErrors {
-      background: #cc1022;
-    }
-  }
-
-  &.active {
-    background: $light;
-
-    &.hasErrors {
-      background: #cc1022;
-
-      & ~ tr > td > .error {
-        background: rgba(255, 255, 255, 0.05);
-      }
     }
   }
 

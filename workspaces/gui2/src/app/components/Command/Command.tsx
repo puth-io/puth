@@ -106,22 +106,31 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
     let timespan = maxReplayTime - minReplayTime;
     let progress = replayTime - minReplayTime;
     let percent = progress / timespan;
-    replayProgress = <div className={'bg-primary'} style={{height: '2px', position: 'absolute', bottom: 0, left: 0, width: Math.min(percent * 100, 100) + '%'}}></div>;
+    replayProgress = <div className={'bg-primary'} style={{zIndex: 10, height: '2px', position: 'absolute', bottom: '2px', left: '0px', width: Math.min(percent * 100, 100) + '%'}}></div>;
   }
   
-  let borderColor = hasErrors ? 'border-task-error' : 'border-task';
   let statusIcon = hasErrors ? <StatusIcon status={'failed'}/> : null;
+  
+  let statusBackground = hasErrors ? 'bg-task-error' : 'bg-task';
+  let status = <div className={`absolute left-0 ${statusBackground}`} style={{top: '2px', bottom: '2px', width: '3px',}}/>
+  let borderColor = hasErrors ? 'border-task-error' : 'border-task';
   
   return (
     <>
       <tr
-        className={`border-b-4 border-solid border-transparent command ${active ? 'active' : ''} ${hasErrors ? 'bg-red-500' : ''} relative`}
-        style={{backgroundColor: '#2b303b'}}
+        className={`command step relative ${active ? 'active' : ''}`}
         onClick={mouseClick}
         onMouseEnter={mouseEnter}
         onMouseLeave={mouseLeave}
       >
-        <td className={`rounded-l-md border-l-3 border-solid ${borderColor} py-2 pl-4`} style={{paddingLeft: '0.75rem'}}>{index !== undefined ? index + 1 : ''}{replayProgress}</td>
+        <td
+            className={`py-2 pl-4`}
+            style={{paddingLeft: '0.75rem'}}
+        >
+          {index !== undefined ? index + 1 : ''}
+          {replayProgress}
+          {status}
+        </td>
         <td>
           {showTimings && (
             <>
@@ -136,7 +145,7 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         </td>
         <td>{displayType}</td>
         <td>{displayFunc}</td>
-        <td className={'rounded-r-md'} colSpan={statusIcon ? 1 : 2}>{displayArgs.join(', ')}</td>
+        <td className={''} colSpan={statusIcon ? 1 : 2}>{displayArgs.join(', ')}</td>
         {statusIcon && (
             <td className={'leading-none pr-4'}>{statusIcon}</td>
         )}
@@ -149,11 +158,6 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
         return (
           <tr
             key={idx}
-            className={``}
-            
-            onClick={mouseClick}
-            onMouseEnter={mouseEnter}
-            onMouseLeave={mouseLeave}
           >
             <td colSpan={6} className={'relative p-0'}>
               <div style={{width: '1px', height: '1.75rem', background: 'rgba(255, 255, 255, 0.24)', position: 'absolute', left: '0.5rem', top: 0,}}/>

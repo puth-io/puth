@@ -69,6 +69,13 @@ module.exports = {
         'primary-hover-hover': 'rgba(60, 130, 246, 0.7)',
         'primary-hover-hover-hover': 'rgba(60, 130, 246, 0.4)',
         unselected: "rgba(255, 255, 255, 0.74)",
+        'primary-selected': 'rgba(60, 130, 246, 0.26)',
+        context: {
+          step: {
+            DEFAULT: '#2b303b',
+            selected: 'rgba(60, 130, 246, 0.26)',
+          },
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
