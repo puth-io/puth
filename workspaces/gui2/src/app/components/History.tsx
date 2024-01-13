@@ -45,11 +45,11 @@ export const History = observer(function History() {
     }
     
     return (
-        <div className={`border-t-4 border-solid rounded-t-xl ${open ? 'grow' : 'pb-3'}`} style={{borderColor: '#22252b', maxHeight: '40vh'}}>
+        <div className={`border-t-4 border-solid rounded-t-xl ${open ? 'grow' : ''}`} style={{borderColor: '#22252b', maxHeight: '40vh'}}>
             <div
-                className={'px-5 pt-3 flex items-center text-lg'}
+                className={'px-5 flex items-center text-lg'}
             >
-                <div className={'flex-1 flex items-center cursor-pointer'} onClick={_ => setOpen(!open)}>
+                <div className={'flex-1 py-3 flex items-center cursor-pointer'} onClick={_ => setOpen(!open)}>
                     <Icon name={open ? 'expand_more' : 'expand_less'} size={'1.5rem'} className={'mr-2'}/> History
                 </div>
                 
@@ -59,19 +59,24 @@ export const History = observer(function History() {
             
             {open && (
                 <>
-                    <div className={'px-5 my-3 flex items-center text-lg'}>
-                        <Input className={'h-8'} placeholder={'Filter history'}/>
-                        <Input className={'h-8 ml-4'} placeholder={'Status'}/>
-                    </div>
-                    
-                    <div
-                        className={'px-5 pb-3 grow overflow-y-auto'}
-                    >
-                        {app.active.connection.contexts.map((context: any) => <HistoryItem
-                            key={context.id}
-                            context={context}
-                        />)}
-                    </div>
+                    {app.active.connection.contexts.length === 0 ? (
+                        <div className={'m-5 p-5 flex items-center border-light border-2 border-solid italic'}><Icon name={'error'} className={'mr-1'}/> No test ran on this instance.</div>
+                    ) : (
+                        <>
+                            <div className={'px-5 mb-3 flex items-center text-lg'}>
+                                <Input className={'h-8'} placeholder={'Filter history'}/>
+                                <Input className={'h-8 ml-4'} placeholder={'Status'}/>
+                            </div>
+                            <div
+                                className={'px-5 pb-3 grow overflow-y-auto'}
+                            >
+                                {app.active.connection.contexts.map((context: any) => <HistoryItem
+                                    key={context.id}
+                                    context={context}
+                                />)}
+                            </div>
+                        </>
+                    )}
                 </>
             )}
         </div>

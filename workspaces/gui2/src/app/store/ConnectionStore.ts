@@ -188,9 +188,9 @@ export class Connection {
     private receivedPacket(packet: any) {
         // special case if context is created
         if (packet.type === 'context') {
-            let {id, options, test, group, capabilities, createdAt} = packet;
             
-            let context = new ContextStore(id, options, test, group, capabilities, createdAt, this);
+            console.log(packet);
+            let context = new ContextStore(packet, this);
             this.contexts.push(context);
             Events.emit('context:created', context);
             this.emit('context:created', context);
@@ -203,6 +203,8 @@ export class Connection {
             return;
         }
         
+        console.log(packet.context);
+        
         let context: any = this.getContext(packet.context.id);
         if (!context) {
             console.log('ignored packet because no context was initialized', packet);
@@ -210,14 +212,13 @@ export class Connection {
         }
         
         context.received(packet);
+        console.log(packet.context);
         
         // TODO update
         if (AppStore.mode === 'follow' && AppStore.active.connection === this && ! PreviewStore.activeContext) {
             PreviewStore.activeCommand = undefined;
             PreviewStore.activeContext = context;
         }
-        
-        
         
         Events.emit('context:received', {context, packet});
         this.emit('context:received', {context, packet});

@@ -1,11 +1,13 @@
 import {Icon} from "@/components/icon.tsx";
 import {observer} from "mobx-react-lite";
-import {useContext} from "react";
+import {useContext, useRef} from "react";
 import {Button} from "@/components/ui/button.tsx";
 import Command from "@/app/components/Command/Command.tsx";
 import Log from "@/app/components/Log/Log.tsx";
 import Request from "@/app/components/Request/Request.tsx";
 import {AppContext} from "@/App.tsx";
+import {encode} from "@msgpack/msgpack";
+import {PUTH_EXTENSION_CODEC} from "@/app/store/ConnectionStore.ts";
 
 export function StatusIcon({status, className, ...rest}: any) {
     let icon = 'pending';
@@ -18,6 +20,27 @@ export function StatusIcon({status, className, ...rest}: any) {
     }
     
     return <Icon name={icon} className={className} {...rest}/>;
+}
+
+export function DownloadHandler({resolver}) {
+    const ref = useRef(null);
+    
+    const download = async () => {
+        let blob = await resolver();
+        ref.current.href = URL.createObjectURL(blob);
+        ref.current.download = 'snapshot.puth';
+        ref.current.click();
+        URL.revokeObjectURL(ref.current.href);
+    }
+    
+    return (
+        <>
+            <Button variant={'ghost'} size={'icon-xs'} onClick={download}>
+                <Icon name={'download'}/>
+            </Button>
+            <a href="" style={{display: 'none'}} ref={ref}></a>
+        </>
+    )
 }
 
 export const Context = observer(function Context() {
@@ -35,6 +58,11 @@ export const Context = observer(function Context() {
         );
     }
     
+    const resolver = () => {
+        console.log(app.active.connection.active.context.packets());
+        return new Blob([encode(app.active.connection.active.context.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
+    }
+    
     let commandIndex = 0;
     return (
         <>
@@ -47,7 +75,7 @@ export const Context = observer(function Context() {
                 </div>
                 <div className={'flex items-center text-gray-300 ml-auto'}><Icon name={'timer'}/> 00:54s</div>
                 <div className={'flex items-center text-gray-300 ml-2 mr-2'}><Icon name={'history'}/> 1min</div>
-                <Button variant={'ghost'} size={'icon-xs'}><Icon name={'download'}/></Button>
+                <DownloadHandler resolver={resolver}/>
             </div>
             
             <div className={'grow overflow-y-auto px-5'}>

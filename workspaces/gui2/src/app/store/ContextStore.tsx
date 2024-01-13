@@ -1,4 +1,4 @@
-import {makeAutoObservable} from 'mobx';
+import {makeAutoObservable, toJS} from 'mobx';
 import {ICommand} from '../Types';
 import Constructors from 'puth/src/Context/Constructors';
 import Events from "@/app/Events.tsx";
@@ -9,6 +9,7 @@ export default class ContextStore {
     commands: any[] = [];
     logs: any[] = [];
     screencasts: any[] = [];
+    unspecific: any[] = [];
     
     group: string = '';
     test: {
@@ -30,14 +31,17 @@ export default class ContextStore {
     lastActivity: number;
     created: number = Date.now();
     
+    original: any;
+    connectionStore: any;
+    
     constructor(
-        id: string,
-        options: {[key: string]: any},
-        test: {name: string; status: 'failed'|'success'|undefined},
-        group: string,
-        capabilities: {[key: string]: boolean},
-        createdAt: number,
+        packet: any,
+        connectionStore: any,
     ) {
+        this.original = packet;
+        this.connectionStore = connectionStore;
+        
+        let {id, options, test, group, capabilities, createdAt} = packet;
         this.id = id;
         this.options = options;
         this.test = test;
@@ -46,7 +50,7 @@ export default class ContextStore {
         this.createdAt = createdAt;
         this.lastActivity = createdAt;
         
-        makeAutoObservable(this, {});
+        makeAutoObservable(this);
     }
     
     received(packet: any) {
@@ -61,10 +65,12 @@ export default class ContextStore {
             if (packet.specific === 'status') {
                 this.test.status = packet.status;
             }
+            this.unspecific.push(packet);
         } else if (packet.type === 'update') {
             if (packet.specific === 'context.test') {
                 this.test.status = packet.status;
             }
+            this.unspecific.push(packet);
         } else if (packet.type === 'screencasts') {
             this.screencasts.push(packet);
             Events.emit('context:event:screencast', {context: this, packet});
@@ -77,6 +83,7 @@ export default class ContextStore {
             // }
         } else {
             console.log('unhandled event packet', packet);
+            this.unspecific.push(packet);
         }
     }
     
@@ -96,5 +103,31 @@ export default class ContextStore {
     
     getEventTime(event: any) {
         return event?.time?.started ?? event?.time?.created ?? event?.timestamp ?? event?.time;
+    }
+    
+    packets() {
+        let packets = [
+            structuredClone(toJS(this.original)),
+            ...this.commands,
+            ...this.logs,
+            ...this.screencasts,
+            ...this.unspecific,
+        ];
+        
+        for (let i = 1; i < packets.length; i++) {
+            let packet = packets[i];
+            packet.context = packets[0].context;
+            // unset context because it is a circular dependency and also holds the websocket instance
+            packets[i] = structuredClone(toJS(packet));
+            // re-set the context on the original
+            packet.context = this;
+        }
+        console.log(packets);
+        
+        return packets;
+    }
+    
+    serialize() {
+    
     }
 }
