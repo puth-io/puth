@@ -109,11 +109,11 @@ export const MainTop = observer(function MainTop({
 export const MainBottom = observer(function MainBottom() {
     return (
         <>
-            <Button variant={'ghost'} size={'toggle'} className={'text-primary'}><Icon
+            <Button variant={'ghost'} size={'toggle'} className={'text-primary text-xxs uppercase tracking-widest'}><Icon
                 name={'error'}
                 className={'mr-1'}
             /> Exceptions</Button>
-            <Button variant={'ghost'} size={'toggle'} className={'text-primary'}><Icon
+            <Button variant={'ghost'} size={'toggle'} className={'text-primary text-xxs uppercase tracking-widest'}><Icon
                 name={'folder'}
                 className={'mr-1'}
             /> Files</Button>

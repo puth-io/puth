@@ -8,7 +8,7 @@ import {Input} from "@/components/ui/input.tsx";
 
 export const ConnectionDropdown = observer(function ConnectionDropdown() {
     const {app} = useContext(AppContext);
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(true);
     const isConnected = app.connections.length !== 0;
     
     return (

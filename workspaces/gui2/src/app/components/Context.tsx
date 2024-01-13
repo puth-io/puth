@@ -23,8 +23,16 @@ export function StatusIcon({status, className, ...rest}: any) {
 export const Context = observer(function Context() {
     const {app} = useContext(AppContext);
     
-    if (! app.active.connection || ! app.active.connection.active.context) {
+    if (! app.active.connection) {
         return <></>;
+    }
+    if (! app.active.connection.active.context) {
+        return (
+            <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
+                <Icon name={'explore'} size={'3rem'} className={'mb-4'}/>
+                Select a test in the history list. Head over to puth.io/getting-started if you need help running your first test.
+            </div>
+        );
     }
     
     let commandIndex = 0;
