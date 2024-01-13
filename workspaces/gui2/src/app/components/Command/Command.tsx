@@ -97,12 +97,12 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   }
 
   const circleDot = '\u2299';
-  let active = app.active.connection?.preview.activeCommand?.id === command?.id;
+  let active = app.preview?.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
-  let {inBetween, replayTime, minReplayTime, maxReplayTime} = app.active.connection?.preview.screencast;
+  let {inBetween, replayTime, minReplayTime, maxReplayTime} = app.preview?.screencast;
   let replayProgress =  <></>;
-  if (active && app.active.connection?.preview.screencast.mode === 'replay' && inBetween.length > 2) {
+  if (active && app.preview?.screencast.mode === 'replay' && inBetween.length > 2) {
     let timespan = maxReplayTime - minReplayTime;
     let progress = replayTime - minReplayTime;
     let percent = progress / timespan;

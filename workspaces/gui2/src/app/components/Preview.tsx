@@ -5,19 +5,19 @@ import {AppContext} from "@/App.tsx";
 export const Preview = observer(function ScreencastPreview() {
     const {app} = useContext(AppContext);
     
-    if (! app.active.connection?.preview.activeScreencastUrl) {
+    if (! app.preview?.activeScreencastUrl) {
         return <></>;
     }
     
     return (
         <>
             <img
-                src={app.active.connection?.preview.activeScreencastUrl}
+                src={app.preview?.activeScreencastUrl}
                 style={{
                     position: 'relative',
                     top: 0,
                     left: 0,
-                    maxWidth: `${app.active.connection?.preview.visibleScreencast.page.viewport.width}px`,
+                    maxWidth: `${app.preview?.visibleScreencast.page.viewport.width}px`,
                 }}
                 className={'w-100'}
             />

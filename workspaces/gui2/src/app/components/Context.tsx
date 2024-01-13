@@ -46,21 +46,20 @@ export function DownloadHandler({resolver}) {
 export const Context = observer(function Context() {
     const {app} = useContext(AppContext);
     
-    if (! app.active.connection) {
+    if (! app.activeContext) {
         return <></>;
     }
-    if (! app.active.connection.active.context) {
-        return (
-            <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
-                <Icon name={'explore'} size={'3rem'} className={'mb-4'}/>
-                Select a test in the history list. Head over to puth.io/getting-started if you need help running your first test.
-            </div>
-        );
-    }
+    // if (! app.active.connection.active.context) {
+    //     return (
+    //         <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
+    //             <Icon name={'explore'} size={'3rem'} className={'mb-4'}/>
+    //             Select a test in the history list. Head over to puth.io/getting-started if you need help running your first test.
+    //         </div>
+    //     );
+    // }
     
     const resolver = () => {
-        console.log(app.active.connection.active.context.packets());
-        return new Blob([encode(app.active.connection.active.context.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
+        return new Blob([encode(app.activeContext.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
     }
     
     let commandIndex = 0;
@@ -69,9 +68,9 @@ export const Context = observer(function Context() {
             <div className={'flex items-center px-5 py-5'}>
                 <div className={'grow flex items-center text-lg'}>
                     <StatusIcon
-                        status={app.active.connection?.active.context?.test.status}
+                        status={app.activeContext?.test.status}
                         className={'mr-2'}
-                    /> {app.active.connection?.active.context?.test.name}
+                    /> {app.activeContext?.test.name}
                 </div>
                 <div className={'flex items-center text-gray-300 ml-auto'}><Icon name={'timer'}/> 00:54s</div>
                 <div className={'flex items-center text-gray-300 ml-2 mr-2'}><Icon name={'history'}/> 1min</div>
@@ -81,7 +80,7 @@ export const Context = observer(function Context() {
             <div className={'grow overflow-y-auto px-5'}>
                 <table className={'table-auto w-full context-event-table'} style={{margin: '-4px 0'}}>
                     <tbody className={''}>
-                    {app.active.connection?.active.context?.renderedEvents.map(((event) => {
+                    {app.activeContext?.renderedEvents.map(((event) => {
                         if (event.type === 'command') {
                             return <Command key={event.id} index={commandIndex++} command={event} showTimings={false}/>;
                         } else if (event.type === 'log') {

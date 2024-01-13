@@ -1,10 +1,10 @@
 import AppStore from "@/app/store/AppStore.tsx";
-import PreviewStore from "./app/store/PreviewStore.tsx";
 import {AppLayout} from "./app/layouts/MainLayout.tsx";
 import {MainBottom, MainTop} from "./app/components/Main.tsx";
 import {Sidebar} from "./app/components/Sidebar.tsx";
 import {createContext} from "react";
 import {Preview} from "@/app/components/Preview.tsx";
+import Dropzone from "@/app/components/Dropzone/Dropzone.tsx";
 
 // tailwind include: dark
 
@@ -21,6 +21,7 @@ const App = () => (
             mainTop={<MainTop/>}
             mainBottom={<MainBottom/>}
         />
+        <Dropzone/>
     </AppContext.Provider>
 );
 export default App;

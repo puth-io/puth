@@ -9,12 +9,8 @@ import {AppContext} from "@/App.tsx";
 export const HistoryItem = observer(function HistoryItem({context}: {context: ContextStore}) {
     const {app} = useContext(AppContext);
     
-    if (! app.active.connection?.contexts) {
-        return <></>;
-    }
-    
-    let onClick = () => app.active.connection.active.context = context;
-    let active = app.active.connection.active.context === context;
+    let onClick = () => app.setActive(context);
+    let active = app.activeContext === context;
     
     return (
         <div
@@ -40,9 +36,11 @@ export const History = observer(function History() {
     const {app} = useContext(AppContext);
     const [open, setOpen] = useState(true);
     
-    if (! app.active.connection) {
+    if (app.empty) {
         return <></>;
     }
+    
+    console.log(app.dragAndDropped.contexts);
     
     return (
         <div className={`border-t-4 border-solid rounded-t-xl ${open ? 'grow' : ''}`} style={{borderColor: '#22252b', maxHeight: '40vh'}}>
@@ -59,7 +57,7 @@ export const History = observer(function History() {
             
             {open && (
                 <>
-                    {app.active.connection.contexts.length === 0 ? (
+                    {app.history.length === 0 ? (
                         <div className={'m-5 p-5 flex items-center border-light border-2 border-solid italic'}><Icon name={'error'} className={'mr-1'}/> No test ran on this instance.</div>
                     ) : (
                         <>
@@ -70,7 +68,7 @@ export const History = observer(function History() {
                             <div
                                 className={'px-5 pb-3 grow overflow-y-auto'}
                             >
-                                {app.active.connection.contexts.map((context: any) => <HistoryItem
+                                {app.history.map((context: any) => <HistoryItem
                                     key={context.id}
                                     context={context}
                                 />)}
