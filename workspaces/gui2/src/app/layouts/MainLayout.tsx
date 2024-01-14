@@ -6,6 +6,37 @@ import {ConnectionDropdown} from "@/app/components/ConnectionDropdown.tsx";
 import {useContext} from "react";
 import {AppContext} from "@/App.tsx";
 
+function AppModeSwitch() {
+    const {app} = useContext(AppContext);
+    const local = app.view === 'local';
+    const click = () => app.view = local ? 'instance' : 'local';
+    
+    return (
+        <div
+            className={'flex items-center rounded-full border uppercase text-xs mr-4'}
+            style={{
+                fontSize: '0.625rem',
+                letterSpacing: '1.25px',
+                borderColor: 'rgba(255,255,255,0.16)',
+                fontWeight: 500,
+            }}
+        >
+            <div
+                className={'flex items-center rounded-full cursor-pointer select-none'}
+                style={{
+                    padding: '0.125rem 0.5rem',
+                    margin: '0.125rem 0.125rem 0.125rem 0.125rem',
+                    backgroundColor: local ? 'rgba(60, 130, 246, 0.84)' : 'rgba(255,255,255,0.08)',
+                    color: local ? 'black' : 'rgba(247,248,255,0.84)',
+                }}
+                onClick={click}
+            >
+                {local ? 'Instance' : 'Local'}
+            </div>
+        </div>
+    );
+}
+
 export const AppLayout = observer(function AppLayout({
     sidebar,
     preview,
@@ -31,6 +62,7 @@ export const AppLayout = observer(function AppLayout({
                         Puth
                     </div>
                     
+                    <AppModeSwitch/>
                     <ConnectionDropdown/>
                     
                     <Button size={'icon-xs'} variant={'ghost'}>
@@ -46,7 +78,7 @@ export const AppLayout = observer(function AppLayout({
                     </div>
                     
                     <div className="flex flex-col grow overflow-auto">
-                        {!app.activeContext ? (
+                        {! app.activeContext ? (
                             <div className={'flex-1 flex flex-col items-center justify-center text-light text-2xl italic text-center px-8'}>
                                 <Icon className={'mb-4'} name={'cloud_off'} size={'6rem'}/>
                                 No instance connected. Please connect to a Puth instance.
