@@ -26,11 +26,11 @@ export type ICommand = {
         started: number;
         elapsed: number;
         took?: number;
-        finished?: number;
+        finished: number;
     };
 };
 
-type CommandProps = {
+export type CommandProps = {
     index: number | undefined;
     command: ICommand;
     showTimings: boolean;
@@ -43,6 +43,7 @@ export type IBlobHandle = {
 };
 
 export type IContext = {
+    screencasts: any[];
     id: string;
     commands: ICommand[];
     logs: any[];

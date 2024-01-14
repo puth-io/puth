@@ -22,10 +22,13 @@ export function StatusIcon({status, className, ...rest}: any) {
     return <Icon name={icon} className={className} {...rest}/>;
 }
 
-export function DownloadHandler({resolver}) {
-    const ref = useRef(null);
+export function DownloadHandler({resolver}: any) {
+    const ref = useRef<HTMLAnchorElement>(null);
     
     const download = async () => {
+        if (!ref.current) {
+            return;
+        }
         let blob = await resolver();
         ref.current.href = URL.createObjectURL(blob);
         ref.current.download = 'snapshot.puth';
@@ -46,17 +49,18 @@ export function DownloadHandler({resolver}) {
 export const Context = observer(function Context() {
     const {app} = useContext(AppContext);
     
-    if (! app.activeContext) {
+    if (!app.activeContext) {
         return <></>;
     }
-    // if (! app.active.connection.active.context) {
-    //     return (
-    //         <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
-    //             <Icon name={'explore'} size={'3rem'} className={'mb-4'}/>
-    //             Select a test in the history list. Head over to puth.io/getting-started if you need help running your first test.
-    //         </div>
-    //     );
-    // }
+    
+    if (! app.activeContext) {
+        return (
+            <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
+                <Icon name={'explore'} size={'3rem'} className={'mb-4'}/>
+                Select a test in the history list. Head over to puth.io/getting-started if you need help running your first test.
+            </div>
+        );
+    }
     
     const resolver = () => {
         return new Blob([encode(app.activeContext.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
@@ -80,7 +84,7 @@ export const Context = observer(function Context() {
             <div className={'grow overflow-y-auto px-5'}>
                 <table className={'table-auto w-full context-event-table'} style={{margin: '-4px 0'}}>
                     <tbody className={''}>
-                    {app.activeContext?.renderedEvents.map(((event) => {
+                    {app.activeContext?.renderedEvents.map(((event: any) => {
                         if (event.type === 'command') {
                             return <Command key={event.id} index={commandIndex++} command={event} showTimings={false}/>;
                         } else if (event.type === 'log') {

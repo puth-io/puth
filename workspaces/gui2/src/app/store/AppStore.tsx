@@ -74,7 +74,7 @@ class AppStoreClass {
         return (this.dragAndDropped.contexts.length + this.connections.length) === 0;
     }
     
-    setActive(context) {
+    setActive(context: ContextStore) {
         if (this.view === 'instance') {
             if (!this.active.connection) {
                 return;

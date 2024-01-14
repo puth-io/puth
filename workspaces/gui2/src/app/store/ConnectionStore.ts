@@ -1,3 +1,4 @@
+// @ts-nocheck
 import ContextStore from "@/app/store/ContextStore.tsx";
 import mitt, {Emitter, Handler} from "mitt";
 import {makeAutoObservable} from "mobx";

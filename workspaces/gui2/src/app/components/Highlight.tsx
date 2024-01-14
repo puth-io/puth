@@ -1,5 +1,5 @@
 import React from 'react';
-import { ICommand } from './Command/Command';
+import { ICommand } from '../Types.ts';
 import {createRoot} from "react-dom/client";
 
 function scrollIntoView(element: Element | null) {
@@ -25,9 +25,10 @@ export function resolveElement(el: any, root: Document) {
 }
 
 export function loadHighlights(
-  iframe: React.MutableRefObject<null | HTMLIFrameElement>,
-  command: ICommand | undefined,
-  snapshotState: 'before' | 'after',
+    iframe: React.MutableRefObject<null | HTMLIFrameElement>,
+    command: ICommand | undefined,
+// @ts-ignore
+    snapshotState: 'before' | 'after',
 ) {
   if (!iframe?.current?.contentWindow || !command || command.errors.length > 0) {
     return;
@@ -44,7 +45,7 @@ export function loadHighlights(
 
   // path is always an array because the user can perform the same function on multiple elements
   // this is a precaution for future functions or other plugins
-  path.forEach((el) => {
+  path.forEach((el: any) => {
     let root: any = frame.body;
 
     // only if el is a path then change root to this element
@@ -76,6 +77,7 @@ export function loadHighlights(
     // highlight(hl, frame);
   });
 
+  // @ts-ignore
   function highlight(element: any, context: Document, root = false) {
     if (!element) {
       return;

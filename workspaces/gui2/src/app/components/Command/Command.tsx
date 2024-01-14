@@ -1,40 +1,12 @@
 import {FunctionComponent, useCallback, useContext} from 'react';
 import './Command.scss';
 import Events from '../../Events';
-import { IContext } from '../../Types';
+import { ICommand } from '../../Types';
 import { observer } from 'mobx-react-lite';
 import Constructors from 'puth/src/Context/Constructors';
 import {AppContext} from "@/App.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {StatusIcon} from "@/app/components/Context.tsx";
-
-export type IViewport = {
-  width: number;
-  height: number;
-  deviceScaleFactor: number;
-  isMobile: boolean;
-  hasTouch: boolean;
-  isLandscaped: boolean;
-};
-
-export type ICommand = {
-  id: string;
-  type: 'command';
-  errors: [];
-  context: IContext;
-  func: string;
-  args: string[];
-  on: {
-    type: string;
-    path: [[string, number][] | string][];
-  };
-  time: {
-    started: number;
-    elapsed: number;
-    took?: number;
-    finished?: number;
-  };
-};
 
 type CommandProps = {
   index: number | undefined;
@@ -96,7 +68,6 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
     displayFunc = func;
   }
 
-  const circleDot = '\u2299';
   let active = app.preview?.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
@@ -110,10 +81,8 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   }
   
   let statusIcon = hasErrors ? <StatusIcon status={'failed'}/> : null;
-  
   let statusBackground = hasErrors ? 'bg-task-error' : 'bg-task';
   let status = <div className={`absolute left-0 ${statusBackground}`} style={{top: '2px', bottom: '2px', width: '3px',}}/>
-  let borderColor = hasErrors ? 'border-task-error' : 'border-task';
   
   return (
     <>

@@ -5,6 +5,7 @@ import {Input} from "@/components/ui/input.tsx";
 import {useContext} from "react";
 import {AppContext} from "@/App.tsx";
 
+// @ts-ignore
 export const GroupContainer = function GroupContainer({children, className = '', ...rest}) {
     return (
         <div
@@ -15,6 +16,7 @@ export const GroupContainer = function GroupContainer({children, className = '',
     )
 }
 
+// @ts-ignore
 export const GroupButton = function GroupButton({active, children, className = '', ...rest}) {
     return (
         <div
@@ -31,10 +33,10 @@ export const MainTopButtons = observer(function MainTopButtons() {
     const {app} = useContext(AppContext);
     
     let setScreencastMode = (mode: 'replay'|'before'|'after') => {
-        if (! app.active.connection.preview.screencast) {
+        if (! app.preview?.screencast) {
             return;
         }
-        app.active.connection.preview.screencast.mode = mode;
+        app.preview.screencast.mode = mode;
     };
     
     return (
@@ -54,17 +56,17 @@ export const MainTopButtons = observer(function MainTopButtons() {
             
             <GroupContainer className={'mr-4'}>
                 <GroupButton
-                    active={app.active.connection?.preview?.screencast.mode === 'before'}
+                    active={app.preview?.screencast.mode === 'before'}
                     onClick={() => setScreencastMode('before')}
                     children={'BEFORE'}
                 />
                 <GroupButton
-                    active={app.active.connection?.preview?.screencast.mode === 'after'}
+                    active={app.preview?.screencast.mode === 'after'}
                     onClick={() => setScreencastMode('after')}
                     children={'AFTER'}
                 />
                 <GroupButton
-                    active={app.active.connection?.preview?.screencast.mode === 'replay'}
+                    active={app.preview?.screencast.mode === 'replay'}
                     onClick={() => setScreencastMode('replay')}
                     children={'REPLAY'}
                 />
@@ -92,7 +94,7 @@ export const MainTop = observer(function MainTop({
             
             <Input
                 className={'h-7 grow bg-lighter border-none'}
-                value={app.active.connection?.preview?.visibleScreencast?.page?.url ?? ''}
+                value={app.preview?.visibleScreencast?.page?.url ?? ''}
                 disabled
             />
             

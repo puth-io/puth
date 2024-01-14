@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { diff_match_patch } from 'diff-match-patch';
