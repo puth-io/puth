@@ -19,7 +19,7 @@ export const Preview = observer(function ScreencastPreview() {
                     left: 0,
                     maxWidth: `${app.preview?.visibleScreencast.page.viewport.width}px`,
                 }}
-                className={'w-100'}
+                className={'w-full'}
             />
             
             {/*<div className={'flex flex-wrap space-x-1'}>*/}

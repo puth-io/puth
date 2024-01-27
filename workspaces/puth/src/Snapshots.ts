@@ -133,8 +133,6 @@ class SnapshotHandler {
             return;
         }
         
-        command.time.finished = Date.now();
-        
         this.pushToCache(context, command, {broadcast: false});
         this.broadcast(command);
     }

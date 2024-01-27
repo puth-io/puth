@@ -281,6 +281,7 @@ class Context extends Generic {
         if (! this.shouldSnapshot) {
             return;
         }
+        const now = Date.now();
         
         return {
             id: v4(),
@@ -298,10 +299,10 @@ class Context extends Generic {
                 path: await Utils.getAbsolutePaths(on),
             },
             time: {
-                elapsed: Date.now() - this.createdAt,
-                started: Date.now(),
+                elapsed: now - this.createdAt,
+                started: now,
             },
-            timestamp: Date.now(),
+            timestamp: now,
         };
     }
     
@@ -324,7 +325,7 @@ class Context extends Generic {
         let page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
         
         // Create command
-        const command: ICommand|undefined = await this.createCommandInstance(packet, on);
+        const command = await this.createCommandInstance(packet, on);
         
         // Create snapshot before command
         if (! this.isPageBlockedByDialog(page)) {
@@ -368,7 +369,7 @@ class Context extends Generic {
         }
         
         // Call original function on object
-        return this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters);
+        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters)
     }
     
     // TODO Cleanup parameters and maybe unify handling in special object
@@ -384,11 +385,14 @@ class Context extends Generic {
                 });
             }
             
-            command.time.took = Date.now() - command.time.started;
+            command.time.finished = Date.now();
+            command.time.took = command.time.finished - command.time.started;
             
             return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
         } catch (error: any) {
-            command.time.took = Date.now() - command.time.started;
+            command.time.finished = Date.now();
+            command.time.took = command.time.finished - command.time.started;
+            
             if (this.shouldSnapshot) {
                 Snapshots.error(this, page, command, {
                     type: 'error',

@@ -2,6 +2,8 @@ import {makeAutoObservable, toJS} from 'mobx';
 import {ICommand} from '../Types';
 import Constructors from 'puth/src/Context/Constructors';
 import Events from "@/app/Events.tsx";
+import {encode} from "@msgpack/msgpack";
+import {PUTH_EXTENSION_CODEC} from "@/app/store/ConnectionStore.ts";
 
 export default class ContextStore {
     id: string;
@@ -41,21 +43,25 @@ export default class ContextStore {
         this.original = packet;
         this.connectionStore = connectionStore;
         
-        let {id, options, test, group, capabilities, createdAt} = packet;
+        let {id, options, test, group, capabilities, timestamp} = packet;
         this.id = id;
         this.options = options;
         this.test = test;
         this.group = group;
         this.capabilities = capabilities;
-        this.createdAt = createdAt;
-        this.lastActivity = createdAt;
+        this.createdAt = timestamp;
+        this.lastActivity = timestamp;
         
         makeAutoObservable(this);
     }
     
     received(packet: any) {
-        this.lastActivity = packet.timestamp;
         packet.context = this;
+        
+        let last = packet?.time?.finished > packet.timestamp ? packet.time.finished : packet.timestamp;
+        if (last > this.lastActivity) {
+            this.lastActivity = last;
+        }
         
         if (packet.type === 'command') {
             this.commands.push(packet);
@@ -127,7 +133,19 @@ export default class ContextStore {
         return packets;
     }
     
-    serialize() {
+    blob() {
+        return new Blob([encode(this.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
+    }
     
+    get took() {
+        const ms = this.lastActivity - this.createdAt;
+        const minutes = Math.floor(ms / 1000 / 60);
+        const seconds = Math.ceil(ms / 1000 % 60);
+        
+        return {
+            ms,
+            minutes,
+            seconds,
+        };
     }
 }

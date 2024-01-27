@@ -6,8 +6,6 @@ import Command from "@/app/components/Command/Command.tsx";
 import Log from "@/app/components/Log/Log.tsx";
 import Request from "@/app/components/Request/Request.tsx";
 import {AppContext} from "@/App.tsx";
-import {encode} from "@msgpack/msgpack";
-import {PUTH_EXTENSION_CODEC} from "@/app/store/ConnectionStore.ts";
 
 export function StatusIcon({status, className, ...rest}: any) {
     let icon = 'pending';
@@ -26,7 +24,7 @@ export function DownloadHandler({resolver}: any) {
     const ref = useRef<HTMLAnchorElement>(null);
     
     const download = async () => {
-        if (!ref.current) {
+        if (! ref.current) {
             return;
         }
         let blob = await resolver();
@@ -34,7 +32,7 @@ export function DownloadHandler({resolver}: any) {
         ref.current.download = 'snapshot.puth';
         ref.current.click();
         URL.revokeObjectURL(ref.current.href);
-    }
+    };
     
     return (
         <>
@@ -43,13 +41,13 @@ export function DownloadHandler({resolver}: any) {
             </Button>
             <a href="" style={{display: 'none'}} ref={ref}></a>
         </>
-    )
+    );
 }
 
 export const Context = observer(function Context() {
     const {app} = useContext(AppContext);
     
-    if (!app.activeContext) {
+    if (! app.activeContext) {
         return <></>;
     }
     
@@ -57,13 +55,10 @@ export const Context = observer(function Context() {
         return (
             <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
                 <Icon name={'explore'} size={'3rem'} className={'mb-4'}/>
-                Select a test in the history list. Head over to puth.io/getting-started if you need help running your first test.
+                Select a test in the history list. Head over to puth.io/getting-started if you need help running your
+                first test.
             </div>
         );
-    }
-    
-    const resolver = () => {
-        return new Blob([encode(app.activeContext.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
     }
     
     let commandIndex = 0;
@@ -76,9 +71,14 @@ export const Context = observer(function Context() {
                         className={'mr-2'}
                     /> {app.activeContext?.test.name}
                 </div>
-                <div className={'flex items-center text-gray-300 ml-auto'}><Icon name={'timer'}/> 00:54s</div>
-                <div className={'flex items-center text-gray-300 ml-2 mr-2'}><Icon name={'history'}/> 1min</div>
-                <DownloadHandler resolver={resolver}/>
+                <div className={'flex items-center text-gray-300 ml-auto'}><Icon
+                    name={'timer'}
+                    className={'mr-1'}
+                /> {app.activeContext.took.minutes}:{app.activeContext.took.seconds}</div>
+                <div className={'flex items-center text-gray-300 mx-2'}>
+                    <Icon name={'history'} className={'mr-1'}/> 1min
+                </div>
+                <DownloadHandler resolver={() => app.activeContext.blob()}/>
             </div>
             
             <div className={'grow overflow-y-auto px-5'}>
@@ -91,21 +91,21 @@ export const Context = observer(function Context() {
                             return <Log key={event.id} log={event}/>;
                         } else if (event.type === 'request') {
                             return <Request key={event.id} request={event}/>;
-                        // } else if (event.type === 'screencasts') {
-                        //     return (
-                        //         <tr
-                        //             key={event.id}
-                        //             className={app.active.connection?.preview.visibleScreencast === event ? 'bg-gray-700' : ''}
-                        //         >
-                        //             <td colSpan={6}>{event.timestamp} {event.type} {app.active.connection?.preview.visibleScreencast === event ? 'active' : ''}</td>
-                        //         </tr>
-                        //     );
-                        // } else {
-                        //     return (
-                        //         <tr key={event.id}>
-                        //             <td colSpan={6}>No component found for type to display</td>
-                        //         </tr>
-                        //     );
+                            // } else if (event.type === 'screencasts') {
+                            //     return (
+                            //         <tr
+                            //             key={event.id}
+                            //             className={app.active.connection?.preview.visibleScreencast === event ? 'bg-gray-700' : ''}
+                            //         >
+                            //             <td colSpan={6}>{event.timestamp} {event.type} {app.active.connection?.preview.visibleScreencast === event ? 'active' : ''}</td>
+                            //         </tr>
+                            //     );
+                            // } else {
+                            //     return (
+                            //         <tr key={event.id}>
+                            //             <td colSpan={6}>No component found for type to display</td>
+                            //         </tr>
+                            //     );
                         }
                     }))}
                     </tbody>

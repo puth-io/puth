@@ -111,8 +111,6 @@ export const Preview = observer(() => {
     
     let snapshot = PreviewStore.visibleSnapshot;
     
-    console.log(PreviewStore.visibleScreencast);
-    
     const PreviewInfo = observer(() => (
         <div className="d-flex flex-1 info me-2">
             {/*<div className="btn-group btn-group-sm" role="group">*/}

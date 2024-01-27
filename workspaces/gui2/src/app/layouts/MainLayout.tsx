@@ -102,7 +102,6 @@ export const AppLayout = observer(function AppLayout({
                                 )}
                             </>
                         )}
-                    
                     </div>
                 </div>
             </div>
