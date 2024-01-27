@@ -1,6 +1,6 @@
 import mitt, {Emitter} from 'mitt';
 import ContextStore from "./store/ContextStore";
-import {ICommand} from "./Types";
+import {ICommand} from './Types';
 
 type Events = {
     'preview:toggle': ICommand;

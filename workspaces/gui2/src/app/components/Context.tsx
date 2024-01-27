@@ -50,7 +50,6 @@ export const Context = observer(function Context() {
     if (! app.activeContext) {
         return <></>;
     }
-    
     if (! app.activeContext) {
         return (
             <div className={'p-8 flex-1 flex flex-col items-center justify-center text-lg text-light text-center'}>
@@ -60,6 +59,7 @@ export const Context = observer(function Context() {
             </div>
         );
     }
+    console.log(app.activeContext?.test);
     
     let commandIndex = 0;
     return (

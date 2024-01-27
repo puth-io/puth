@@ -17,7 +17,7 @@ class DevStoreClass {
     this._originalDebugFunc = console.debug;
     // tslint:enable
 
-    this.debug = localStorage.getItem('debug.enabled') === 'true';
+    this.debug = true; // localStorage.getItem('debug.enabled') === 'true';
     this.connectAutomatically = localStorage.getItem('connectAutomatically.enabled') === 'true';
   }
 

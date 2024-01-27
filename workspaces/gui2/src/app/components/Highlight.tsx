@@ -1,5 +1,5 @@
 import React from 'react';
-import { ICommand } from '../Types.ts';
+import { ICommand } from '../Types';
 import {createRoot} from "react-dom/client";
 
 function scrollIntoView(element: Element | null) {

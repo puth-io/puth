@@ -1,9 +1,9 @@
 import {makeAutoObservable, toJS} from 'mobx';
-import {ICommand} from '../Types';
 import Constructors from 'puth/src/Context/Constructors';
 import Events from "@/app/Events.tsx";
 import {encode} from "@msgpack/msgpack";
 import {PUTH_EXTENSION_CODEC} from "@/app/store/ConnectionStore.ts";
+import {ICommand} from "../Types";
 
 export default class ContextStore {
     id: string;
@@ -69,11 +69,6 @@ export default class ContextStore {
             this.logs.push(packet);
         } else if (packet.type === 'test') {
             if (packet.specific === 'status') {
-                this.test.status = packet.status;
-            }
-            this.unspecific.push(packet);
-        } else if (packet.type === 'update') {
-            if (packet.specific === 'context.test') {
                 this.test.status = packet.status;
             }
             this.unspecific.push(packet);

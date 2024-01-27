@@ -1,7 +1,7 @@
 import {v4} from 'uuid';
 import puppeteer, {Page, Target, Dialog} from 'puppeteer-core';
 import Generic from './Generic';
-import Snapshots, {ICommand} from './Snapshots';
+import Snapshots from './Snapshots';
 import * as Utils from './Utils';
 import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
@@ -15,6 +15,7 @@ import Return from './Context/Return';
 import Constructors from './Context/Constructors';
 import {tmpdir} from "os";
 import {PuthBrowser} from "./HandlesBrowsers";
+import {ICommand} from "@puth/core/src/Types";
 
 const {writeFile} = fsPromise;
 
@@ -301,6 +302,7 @@ class Context extends Generic {
             time: {
                 elapsed: now - this.createdAt,
                 started: now,
+                finished: 0,
             },
             timestamp: now,
         };
@@ -390,10 +392,10 @@ class Context extends Generic {
             
             return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
         } catch (error: any) {
-            command.time.finished = Date.now();
-            command.time.took = command.time.finished - command.time.started;
-            
             if (this.shouldSnapshot) {
+                command.time.finished = Date.now();
+                command.time.took = command.time.finished - command.time.started;
+                
                 Snapshots.error(this, page, command, {
                     type: 'error',
                     specific: 'apply',

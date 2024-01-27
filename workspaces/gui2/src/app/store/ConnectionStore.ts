@@ -202,7 +202,7 @@ export class Connection {
             return;
         }
         
-        let context: any = this.getContext(packet.context.id);
+        let context = this.getContext(packet.context.id);
         if (!context) {
             console.log('ignored packet because no context was initialized', packet);
             return;

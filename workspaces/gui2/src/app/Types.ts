@@ -1,74 +1,12 @@
-export type IViewport = {
-    width: number;
-    height: number;
-    deviceScaleFactor: number;
-    isMobile: boolean;
-    hasTouch: boolean;
-    isLandscaped: boolean;
-};
+import {IPacket as IPacketBase, ICommand as ICommandBase} from '@puth/core/src/Types';
+import ContextStore from "./store/ContextStore.tsx";
 
-export type ICommand = {
-    id: string;
-    type: 'command';
-    snapshots: {
-        before: any | undefined;
-        after: any | undefined;
-    };
-    errors: [];
-    context: IContext;
-    func: string;
-    args: string[];
-    on: {
-        type: string;
-        path: [[string, number][] | string][];
-    };
-    time: {
-        started: number;
-        elapsed: number;
-        took?: number;
-        finished: number;
-    };
+/**
+ * Override core types because we replace IContext with ContextStore after receiving a packet
+ */
+export type IPacket = IPacketBase & {
+    context: ContextStore,
 };
-
-export type CommandProps = {
-    index: number | undefined;
-    command: ICommand;
-    showTimings: boolean;
-};
-
-export type IBlobHandle = {
-    blob: Blob;
-    url?: string;
-    options?: BlobPropertyBag;
-};
-
-export type IContext = {
-    screencasts: any[];
-    id: string;
-    commands: ICommand[];
-    logs: any[];
-    responses: IResponse[];
-    exceptions: any;
-    created: number;
-    hasDetails: boolean;
-};
-
-type IResponse = {
-    type: 'response';
-    context: {
-        id: string;
-    };
-    time: number;
-    isNavigationRequest: boolean;
-    url: string;
-    resourceType: string;
-    method: string;
-    headers: {
-        [key: string]: string;
-    };
-    content: Uint8Array;
-    contentParsed: {
-        blob?: IBlobHandle;
-        string?: string;
-    };
+export type ICommand = ICommandBase & {
+    context: ContextStore,
 };

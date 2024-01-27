@@ -1,14 +1,16 @@
 import {action, makeAutoObservable} from 'mobx';
 import Events from '../Events';
-import {IContext, ICommand} from '../Types';
+import ContextStore from "@/app/store/ContextStore.tsx";
+import {ICommand} from "../Types.ts";
 
 export type SnapshotState = 'before'|'after';
 
 // do not put this inside PreviewStoreClass because this must not be observed
 let _lastActiveScreencastUrl: string|null = null;
 
+
 class PreviewStore {
-    private _activeContext: IContext|undefined;
+    private _activeContext: ContextStore|undefined;
     private _activeCommand: ICommand|undefined;
     activeState: SnapshotState = 'before';
     highlightCommand: ICommand|undefined;

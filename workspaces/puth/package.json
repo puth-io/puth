@@ -7,6 +7,7 @@
   },
   "description": "Puth (Puppet-Theater) is a versatile browser testing framework with a powerful GUI.",
   "dependencies": {
+    "@puth/core": "*",
     "@fastify/cors": "^8.4.0",
     "@fastify/http-proxy": "^9.2.1",
     "@fastify/static": "^6.11.2",
