@@ -419,7 +419,7 @@ class Context extends Generic {
                     },
                     time: Date.now(),
                 });
-                Snapshots.broadcast(command);
+                Snapshots.pushToCache(this, command);
             }
             
             return {
@@ -449,7 +449,7 @@ class Context extends Generic {
                         expectation,
                         time: Date.now(),
                     });
-                    Snapshots.broadcast(command);
+                    Snapshots.pushToCache(this, command);
                 }
                 
                 return {
@@ -461,6 +461,7 @@ class Context extends Generic {
             
             if ('return' in expectation) {
                 await beforeReturn();
+                
                 return expectation.return(returnValue);
             }
             

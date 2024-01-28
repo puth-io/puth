@@ -26,7 +26,7 @@ class SnapshotHandler {
         
         // TODO maybe implement a time buffer to send out multiple snapshots
         if (broadcast) {
-            this.broadcast(item);
+            WebsocketConnections.broadcastAll(item);
         }
     }
     
@@ -36,10 +36,6 @@ class SnapshotHandler {
         }
         
         command.errors.push(error);
-    }
-    
-    broadcast(object: IPacket) {
-        WebsocketConnections.broadcastAll(object);
     }
     
     getAllCachedItems() {
