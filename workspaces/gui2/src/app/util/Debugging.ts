@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { diff_match_patch } from 'diff-match-patch';
 import { ICommand } from '../Types';
-import {DebugStoreClass} from "../DebugStoreClass";
+import {DebugStoreClass} from "../store/DebugStoreClass";
 
 export const DMP = new diff_match_patch();
 

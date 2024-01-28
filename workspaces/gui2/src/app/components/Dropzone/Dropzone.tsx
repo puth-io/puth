@@ -13,8 +13,12 @@ const Dropzone = observer(() => {
     const {app} = useContext(AppContext);
     const [importing, setImporting] = useState(false);
     
+    let reset = () => {
+        setImporting(false);
+        runInAction(() => (DropzoneStore.active = 0));
+    };
+    
     let onDropAccepted = (files: any) => {
-        console.log('drop accepted', files);
         setImporting(true);
         
         let reader = new FileReader();
@@ -24,6 +28,11 @@ const Dropzone = observer(() => {
             const packets: any = decode(event.target?.result as ArrayBuffer, {extensionCodec: PUTH_EXTENSION_CODEC});
             
             if (packets[0]?.type === 'context') {
+                if (app.dragAndDropped.contexts.find(item => item.id === packets[0].context.id)) {
+                    console.warn('Can\'t add same context multiple times.');
+                    reset();
+                    return;
+                }
                 let context = new ContextStore(packets[0], this);
                 for (let i = 1; i < packets.length; i++) {
                     context.received(packets[i]);
@@ -33,8 +42,7 @@ const Dropzone = observer(() => {
                 // TODO display error
             }
             
-            setImporting(false);
-            runInAction(() => (DropzoneStore.active = 0));
+            reset();
         });
     };
     

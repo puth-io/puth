@@ -46,7 +46,6 @@ class PreviewStore {
         
         this.registerEvents();
         
-        this._darken = localStorage.getItem('previewStore.darken') === 'true';
         
         setInterval(action(() => {
             if (this.screencast.inBetween.length < 2) {
@@ -111,7 +110,6 @@ class PreviewStore {
     
     set darken(value) {
         this._darken = value;
-        localStorage.setItem('previewStore.darken', value ? 'true' : 'false');
     }
     
     get darken() {

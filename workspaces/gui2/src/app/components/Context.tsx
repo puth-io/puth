@@ -59,7 +59,6 @@ export const Context = observer(function Context() {
             </div>
         );
     }
-    console.log(app.activeContext?.test);
     
     let commandIndex = 0;
     return (

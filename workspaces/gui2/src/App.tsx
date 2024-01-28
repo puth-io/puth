@@ -1,4 +1,4 @@
-import AppStore from "@/app/store/AppStore.tsx";
+import AppStore, {AppStoreClass} from "@/app/store/AppStore.tsx";
 import {AppLayout} from "./app/layouts/MainLayout.tsx";
 import {MainBottom, MainTop} from "./app/components/Main.tsx";
 import {Sidebar} from "./app/components/Sidebar.tsx";
@@ -6,10 +6,9 @@ import {createContext} from "react";
 import {Preview} from "@/app/components/Preview.tsx";
 import Dropzone from "@/app/components/Dropzone/Dropzone.tsx";
 
-// tailwind include: dark
-
+// tailwind include: da
 // @ts-ignore
-export const AppContext = createContext<any>();
+export const AppContext = createContext<{app: AppStoreClass}>();
 
 const App = () => (
     <AppContext.Provider value={{
@@ -19,7 +18,7 @@ const App = () => (
             sidebar={<Sidebar/>}
             preview={<Preview/>}
             mainTop={<MainTop/>}
-            mainBottom={<MainBottom/>}
+            // mainBottom={<MainBottom/>}
         />
         <Dropzone/>
     </AppContext.Provider>

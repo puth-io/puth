@@ -41,18 +41,18 @@ export const MainTopButtons = observer(function MainTopButtons() {
     
     return (
         <>
-            <GroupContainer>
-                <GroupButton
-                    active={true}
-                    children={'FRAME'}
-                />
-                <GroupButton
-                    active={false}
-                    children={'DOM'}
-                />
-            </GroupContainer>
+            {/*<GroupContainer>*/}
+            {/*    <GroupButton*/}
+            {/*        active={true}*/}
+            {/*        children={'FRAME'}*/}
+            {/*    />*/}
+            {/*    <GroupButton*/}
+            {/*        active={false}*/}
+            {/*        children={'DOM'}*/}
+            {/*    />*/}
+            {/*</GroupContainer>*/}
             
-            <div className={'shrink-0'} style={{height: '1px', width: '0.75rem', background: 'rgba(255, 255, 255, 0.24)'}} />
+            {/*<div className={'shrink-0'} style={{height: '1px', width: '0.75rem', background: 'rgba(255, 255, 255, 0.24)'}} />*/}
             
             <GroupContainer className={'mr-4'}>
                 <GroupButton

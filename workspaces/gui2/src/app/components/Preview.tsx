@@ -4,33 +4,22 @@ import {AppContext} from "@/App.tsx";
 
 export const Preview = observer(function ScreencastPreview() {
     const {app} = useContext(AppContext);
-    
     if (! app.preview?.activeScreencastUrl) {
         return <></>;
     }
     
     return (
-        <>
+        <div className={'relative'}>
             <img
                 src={app.preview?.activeScreencastUrl}
                 style={{
-                    position: 'relative',
-                    top: 0,
-                    left: 0,
                     maxWidth: `${app.preview?.visibleScreencast.page.viewport.width}px`,
                 }}
                 className={'w-full'}
             />
-            
-            {/*<div className={'flex flex-wrap space-x-1'}>*/}
-            {/*    {app.active.connection?.preview.screencast.inBetween.map((sc, idx) => {*/}
-            {/*        return <img*/}
-            {/*            key={idx}*/}
-            {/*            src={URL.createObjectURL(new Blob([sc.frame], {type: 'image/jpeg'}))}*/}
-            {/*            style={{width: '150px'}}*/}
-            {/*        />*/}
-            {/*    })}*/}
-            {/*</div>*/}
-        </>
+            {app.settings.preview.darken && (
+                <div className={'absolute top-0 left-0 bottom-0 right-0 pointer-events-none'} style={{backgroundColor: 'rgba(0, 0, 0, 0.3)'}}/>
+            )}
+        </div>
     );
 });

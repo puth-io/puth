@@ -1,11 +1,11 @@
 // @ts-nocheck
-import ContextStore from "@/app/store/ContextStore.tsx";
+import ContextStore from "./ContextStore.tsx";
 import mitt, {Emitter, Handler} from "mitt";
 import {makeAutoObservable} from "mobx";
 import {decode, encode, ExtensionCodec} from "@msgpack/msgpack";
-import {DebugStoreClass} from "@/app/DebugStoreClass.tsx";
+import {DebugStoreClass} from "./DebugStoreClass.tsx";
 import {logData} from "@/app/util/Debugging.ts";
-import Events from "@/app/Events.tsx";
+import Events from "../Events.tsx";
 import PreviewStore from "@/app/store/PreviewStore.tsx";
 import {BlobHandler} from "@/app/util/BlobHandler.tsx";
 import AppStore from "@/app/store/AppStore.tsx";
@@ -17,9 +17,9 @@ PUTH_EXTENSION_CODEC.register({
     encode: (object: unknown): Uint8Array|null => {
         if (object instanceof Function) {
             return new TextEncoder().encode((object as () => void).toString());
-        } else {
-            return null;
         }
+        
+        return null;
     },
     decode: (data: Uint8Array) => {
         return new TextDecoder().decode(data);

@@ -4,7 +4,7 @@ import {Connection} from "@/app/store/ConnectionStore.ts";
 import PreviewStore from "@/app/store/PreviewStore.tsx";
 import ContextStore from "@/app/store/ContextStore.tsx";
 
-class AppStoreClass {
+export class AppStoreClass {
     connections: Connection[] = [];
     connectionSuggestions: string[] = [
         (document.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/websocket',
@@ -34,10 +34,22 @@ class AppStoreClass {
         preview: new PreviewStore(),
     };
     
+    settings: {
+        preview: {
+            darken: boolean,
+        },
+    } = {
+        preview: {
+            darken: false,
+        },
+    };
+    
     view: 'local'|'instance' = 'instance';
     
     constructor() {
         makeAutoObservable(this);
+        
+        this.settings.preview.darken = this.readLocalStorageBoolean('previewStore.darken');
     }
     
     public tryConnectingTo(host: string) {
@@ -48,7 +60,7 @@ class AppStoreClass {
     
     get history() {
         if (this.view === 'instance') {
-            return this.active.connection?.contexts;
+            return this.active.connection?.contexts ?? [];
         }
         
         return this.dragAndDropped.contexts;
@@ -71,19 +83,45 @@ class AppStoreClass {
     }
     
     get empty() {
-        return (this.dragAndDropped.contexts.length + this.connections.length) === 0;
+        return !this.hasLocalContexts && !this.isConnected;
+    }
+    
+    get hasLocalContexts() {
+        return this.dragAndDropped.contexts.length !== 0;
+    }
+    
+    get isConnected() {
+        return this.connections.length !== 0;
     }
     
     setActive(context: ContextStore) {
         if (this.view === 'instance') {
-            if (!this.active.connection) {
+            if (! this.active.connection) {
                 return;
             }
             
             this.active.connection.active.context = context;
+            return;
         }
         
         this.dragAndDropped.active = context;
+    }
+    
+    setView(view: 'local'|'instance') {
+        this.view = view;
+    }
+    
+    setDarkenPreview(value: boolean) {
+        this.settings.preview.darken = value;
+        this.writeLocalStorageBoolean('previewStore.darken', value);
+    }
+    
+    readLocalStorageBoolean(key: string) {
+        return localStorage.getItem(key) === 'true';
+    }
+    
+    writeLocalStorageBoolean(key: string, value: boolean) {
+        localStorage.setItem(key, value ? 'true' : 'false');
     }
 }
 

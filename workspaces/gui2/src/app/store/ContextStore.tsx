@@ -123,7 +123,6 @@ export default class ContextStore {
             // re-set the context on the original
             packet.context = this;
         }
-        console.log(packets);
         
         return packets;
     }

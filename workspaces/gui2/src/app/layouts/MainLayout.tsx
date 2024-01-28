@@ -2,40 +2,67 @@ import {observer} from "mobx-react-lite";
 import puthLogoBlue from "@/assets/puth-logo-blue.png";
 import {Icon} from "@/components/icon.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {ConnectionDropdown} from "@/app/components/ConnectionDropdown.tsx";
-import {useContext} from "react";
-import {AppContext} from "@/App.tsx";
+import {ConnectionDropdown} from "@/app/components/ConnectionDropdown";
+import {useContext, useState} from "react";
+import {AppContext} from "@/App";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Checkbox} from "@/components/ui/checkbox";
+import DevStore from "../store/DebugStoreClass";
 
-function AppModeSwitch() {
+export const Settings = observer(() => {
     const {app} = useContext(AppContext);
-    const local = app.view === 'local';
-    const click = () => app.view = local ? 'instance' : 'local';
+    const [open, setOpen] = useState(false);
     
     return (
-        <div
-            className={'flex items-center rounded-full border uppercase text-xs mr-4'}
-            style={{
-                fontSize: '0.625rem',
-                letterSpacing: '1.25px',
-                borderColor: 'rgba(255,255,255,0.16)',
-                fontWeight: 500,
-            }}
-        >
-            <div
-                className={'flex items-center rounded-full cursor-pointer select-none'}
+        <Popover open={open} onOpenChange={open => setOpen(open)}>
+            <PopoverTrigger asChild>
+                <Button size={'icon-xs'} variant={'ghost'}>
+                    <Icon name={'settings'}/>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                sideOffset={6}
+                className={'w-[250px]'}
+                align={'end'}
                 style={{
-                    padding: '0.125rem 0.5rem',
-                    margin: '0.125rem 0.125rem 0.125rem 0.125rem',
-                    backgroundColor: local ? 'rgba(60, 130, 246, 0.84)' : 'rgba(255,255,255,0.08)',
-                    color: local ? 'black' : 'rgba(247,248,255,0.84)',
+                    backgroundColor: '#2a2d36',
+                    boxShadow: '0 2px 6px 0 rgba(0,0,0,0.16)',
+                    borderColor: '#22252b',
+                    borderWidth: '0 0 3px 0',
                 }}
-                onClick={click}
             >
-                {local ? 'Instance' : 'Local'}
-            </div>
-        </div>
+                <div className={' text-sm text-uppercase tracking-widest'}>SETTINGS</div>
+                
+                <div className="flex items-center space-x-2 mt-6">
+                    <Checkbox
+                        id="darken-preview"
+                        checked={app.settings.preview.darken}
+                        onCheckedChange={checked => app.setDarkenPreview(checked === true)}
+                    />
+                    <label
+                        htmlFor="darken-preview"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Darken preview
+                    </label>
+                </div>
+                <div className="flex items-center space-x-2 mt-4">
+                    <Checkbox
+                        id="debug-mode"
+                        checked={DevStore.debug}
+                        onCheckedChange={checked => DevStore.debug = checked === true}
+                    />
+                    <label
+                        htmlFor="debug-mode"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Debug mode
+                    </label>
+                </div>
+            </PopoverContent>
+        </Popover>
     );
-}
+});
 
 export const AppLayout = observer(function AppLayout({
     sidebar,
@@ -62,12 +89,8 @@ export const AppLayout = observer(function AppLayout({
                         Puth
                     </div>
                     
-                    <AppModeSwitch/>
                     <ConnectionDropdown/>
-                    
-                    <Button size={'icon-xs'} variant={'ghost'}>
-                        <Icon name={'settings'}/>
-                    </Button>
+                    <Settings/>
                 </div>
                 <div className={'grid grid-cols-[450px_1fr]'}>
                     <div

@@ -344,7 +344,7 @@ class Context extends Generic {
         
         // Create snapshot before command
         if (! this.isPageBlockedByDialog(page)) {
-            await Snapshots.createBefore(this, page, command);
+            // await Snapshots.createBefore(this, page, command);
         }
         
         // Turn object representations into the actual object

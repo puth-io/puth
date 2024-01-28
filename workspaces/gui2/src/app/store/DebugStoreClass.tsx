@@ -1,4 +1,4 @@
-import Events from './Events';
+import Events from '../Events';
 import { makeAutoObservable } from 'mobx';
 
 // tslint:disable-next-line:no-empty
@@ -17,7 +17,7 @@ class DevStoreClass {
     this._originalDebugFunc = console.debug;
     // tslint:enable
 
-    this.debug = true; // localStorage.getItem('debug.enabled') === 'true';
+    this.debug = localStorage.getItem('debug.enabled') === 'true';
     this.connectAutomatically = localStorage.getItem('connectAutomatically.enabled') === 'true';
   }
 
@@ -47,7 +47,7 @@ class DevStoreClass {
     localStorage.setItem('connectAutomatically.enabled', value ? 'true' : 'false');
   }
 
-  enable() {
+  private enable() {
     // tslint:disable
     console.debug = this._originalDebugFunc;
     DebugStoreClass = (func) => func();
@@ -57,7 +57,7 @@ class DevStoreClass {
     this.printPerformanceWarning();
   }
 
-  disable() {
+  private disable() {
     // tslint:disable
     this._originalDebugFunc = console.debug;
     console.debug = () => {};
