@@ -35,10 +35,10 @@ export type ICommand = IPacket & {
     };
 };
 
-export enum CommandStatus {
-    SUCCEEDED = 0,
-    ERROR = 1,
-    PENDING = 99,
+export enum ContextStatus {
+    SUCCESSFUL = 'successful',
+    FAILED = 'failed',
+    PENDING = 'pending',
 }
 
 export type CommandProps = {
@@ -58,8 +58,8 @@ export type IContext = {
     type: string;
     represents: string;
     test: {
-        name: string|undefined;
-        status: undefined|'failed'|'success';
+        name: string;
+        status: ContextStatus.FAILED|ContextStatus.SUCCESSFUL|ContextStatus.PENDING;
     };
     group: string|undefined;
 };

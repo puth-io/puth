@@ -30,24 +30,6 @@ class SnapshotHandler {
         }
     }
     
-    async createBefore(context: Context, page: Page, command: ICommand|undefined) {
-        if (! command) {
-            return;
-        }
-        
-        // TODO move this into createAfter function?
-        this.pushToCache(context, command, {broadcast: false});
-    }
-    
-    async createAfter(context: Context, page: Page, command: ICommand|undefined) {
-        if (! command) {
-            return;
-        }
-        
-        this.pushToCache(context, command, {broadcast: false});
-        this.broadcast(command);
-    }
-    
     error(param: Context, page: Page, command: ICommand|undefined, error: ICommandError) {
         if (! command) {
             return;

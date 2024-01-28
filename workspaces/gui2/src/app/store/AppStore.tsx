@@ -34,7 +34,7 @@ class AppStoreClass {
         preview: new PreviewStore(),
     };
     
-    view: 'local'|'instance' = 'local';
+    view: 'local'|'instance' = 'instance';
     
     constructor() {
         makeAutoObservable(this);

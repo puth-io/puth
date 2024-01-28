@@ -12,7 +12,7 @@ export function StatusIcon({status, className, ...rest}: any) {
     if (status === 'failed') {
         icon = 'error';
         className = 'text-red-500 ' + className;
-    } else if (status === 'success') {
+    } else if (status === 'successful') {
         icon = 'check_circle';
         className = 'text-green-500 ' + className;
     }

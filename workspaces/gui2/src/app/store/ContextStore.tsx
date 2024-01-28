@@ -16,7 +16,7 @@ export default class ContextStore {
     group: string = '';
     test: {
         name: string;
-        status: undefined|'failed'|'success';
+        status: undefined|'failed'|'successful';
     } = {
         name: '',
         status: undefined,

@@ -2,19 +2,17 @@ import {action, makeAutoObservable} from 'mobx';
 import Events from '../Events';
 import ContextStore from "@/app/store/ContextStore.tsx";
 import {ICommand} from "../Types.ts";
-
-export type SnapshotState = 'before'|'after';
+import {SnapshotState} from '@puth/core/src/Types'
 
 // do not put this inside PreviewStoreClass because this must not be observed
 let _lastActiveScreencastUrl: string|null = null;
 
-
 class PreviewStore {
     private _activeContext: ContextStore|undefined;
     private _activeCommand: ICommand|undefined;
-    activeState: SnapshotState = 'before';
+    activeState: SnapshotState = SnapshotState.BEFORE;
     highlightCommand: ICommand|undefined;
-    highlightState: SnapshotState = 'after';
+    highlightState: SnapshotState = SnapshotState.AFTER;
     highlightScreencast: any = null;
     private highlightInterval: number|undefined;
     _darken: boolean = false;
@@ -22,7 +20,7 @@ class PreviewStore {
     screencast: {
         lastFrameBeforeSector: any,
         inBetween: any[],
-        mode: 'replay'|'before'|'after',
+        mode: 'replay'|SnapshotState.BEFORE|SnapshotState.AFTER,
         replayTime: number,
         minReplayTime: number,
         maxReplayTime: number,
@@ -76,12 +74,12 @@ class PreviewStore {
             // TODO only use lastFrameBeforeSector if its in a certain time window to "smoothen" the replay
             return this.findLastEventUntil(this.screencast.replayTime, this.screencast.inBetween) ?? this.screencast.lastFrameBeforeSector;
         }
-        if (this.screencast.mode === 'after') {
+        if (this.screencast.mode === SnapshotState.AFTER) {
             if (this.screencast.inBetween.length > 0) {
                 return this.screencast.inBetween[this.screencast.inBetween.length - 1];
             }
         }
-        if (this.screencast.mode === 'before') {
+        if (this.screencast.mode === SnapshotState.BEFORE) {
             return this.screencast.lastFrameBeforeSector;
         }
         
@@ -123,11 +121,11 @@ class PreviewStore {
     resetHighlightInterval() {
         clearInterval(this.highlightInterval);
         // this.highlightInterval = window.setInterval(() => this.toggleHighlightState(), 1250);
-        this.highlightState = 'after';
+        this.highlightState = SnapshotState.AFTER;
     }
     
     toggleHighlightState() {
-        this.highlightState = this.highlightState === 'before' ? 'after' : 'before';
+        this.highlightState = this.highlightState === SnapshotState.BEFORE ? SnapshotState.AFTER : SnapshotState.BEFORE;
     }
     
     get visibleCommand() {
@@ -218,7 +216,7 @@ class PreviewStore {
                 }
                 
                 this.activeCommand = command;
-                this.activeState = 'before';
+                this.activeState = SnapshotState.BEFORE;
                 
                 let idx = command.context.commands.indexOf(command);
                 // if (idx !== 0) { // find last frame before inBetween sector to display as entry point

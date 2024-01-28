@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, {Page, Target, Dialog} from 'puppeteer-core';
+import puppeteer, {Dialog, Page, Target} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -15,7 +15,7 @@ import Return from './Context/Return';
 import Constructors from './Context/Constructors';
 import {tmpdir} from "os";
 import {PuthBrowser} from "./HandlesBrowsers";
-import {ICommand} from "@puth/core/src/Types";
+import {ContextStatus, ICommand} from "@puth/core/src/Types";
 
 const {writeFile} = fsPromise;
 
@@ -36,7 +36,7 @@ type ContextOptions = {
     snapshot: boolean|undefined;
     test: {
         name: undefined|string;
-        status: undefined|'failed'|'success';
+        status: undefined|ContextStatus.FAILED|ContextStatus.SUCCESSFUL|ContextStatus.PENDING;
     };
     group: string|undefined;
     status: string|undefined;
@@ -75,6 +75,14 @@ class Context extends Generic {
     
     public shouldSnapshot: boolean = false;
     
+    public test: {
+        name: string;
+        status: ContextStatus.FAILED|ContextStatus.SUCCESSFUL|ContextStatus.PENDING;
+    } = {
+        name: '',
+        status: ContextStatus.PENDING,
+    }
+    
     constructor(puth: Puth, options: any = {}) {
         super();
         
@@ -84,6 +92,8 @@ class Context extends Generic {
         
         this.options = options;
         this.shouldSnapshot = this.options?.snapshot === true;
+        
+        this.test.name = options?.test?.name ?? '';
         
         if (this.shouldSnapshot) { // Track context creation
             Snapshots.pushToCache(this, {
@@ -128,13 +138,12 @@ class Context extends Generic {
     }
     
     public async destroy(options: any = {}) {
-        if (this.getTest()?.status !== 'failed') { // succeed test if not defined by client
+        if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
         }
         if (options?.save) {
             await this.saveContextSnapshot(options.save);
         }
-        
         // unregister all event listeners
         this.eventFunctions.forEach(([page, event, func]) => {
             page.off(event, func);
@@ -221,13 +230,13 @@ class Context extends Generic {
     }
     
     public testFailed() { // used by clients
-        this.options.test.status = 'failed';
+        this.test.status = ContextStatus.FAILED;
         
         if (this.shouldSnapshot) {
             Snapshots.pushToCache(this, {
                 type: 'test',
                 specific: 'status',
-                status: 'failed',
+                status: ContextStatus.FAILED,
                 context: this.serialize(),
                 timestamp: Date.now(),
             });
@@ -235,17 +244,21 @@ class Context extends Generic {
     }
     
     public testSuccess() {
-        this.options.test.status = 'success';
+        this.test.status = ContextStatus.SUCCESSFUL;
         
         if (this.shouldSnapshot) {
             Snapshots.pushToCache(this, {
                 type: 'test',
                 specific: 'status',
-                status: 'success',
+                status: ContextStatus.SUCCESSFUL,
                 context: this.serialize(),
                 timestamp: Date.now(),
             });
         }
+    }
+    
+    public testSucceeded() {
+        return this.testSuccess();
     }
     
     async saveContextSnapshot(options) {
@@ -420,12 +433,12 @@ class Context extends Generic {
     
     private async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
         let beforeReturn = async () => {
-            if (this.isPageBlockedByDialog(page)) {
-                return;
+            if (!this.isPageBlockedByDialog(page)) {
+                // await Snapshots.createAfter(this, page, command);
             }
             
             // TODO Implement this in events. Event: 'function:call:return'
-            await Snapshots.createAfter(this, page, command);
+            Snapshots.pushToCache(this, command);
         };
         
         if (expectation) {
@@ -626,7 +639,7 @@ class Context extends Generic {
             id: this.id,
             type: this.type,
             represents: 'PuthContext',
-            test: this.getTest(),
+            test: this.test,
             group: this.getGroup(),
         };
     }
@@ -651,18 +664,8 @@ class Context extends Generic {
         return this._createdAt;
     }
     
-    getTest() {
-        if (! this.options?.test) {
-            this.options.test = {
-                name: undefined,
-                status: undefined,
-            };
-        }
-        return this.options.test;
-    }
-    
     getGroup() {
-        return this.options?.group;
+        return this.options?.group ?? '';
     }
     
     getPuth(): Puth {

@@ -225,8 +225,6 @@ export default class Puth {
         if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
           return connection.destroy();
         }
-
-        WebsocketConnections.push(connection);
   
         connection.socket.on('message', data => {
           let message: any = WebsocketConnections.decode(data);
@@ -243,6 +241,7 @@ export default class Puth {
         });
 
         connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+        WebsocketConnections.push(connection);
       });
     });
   }
