@@ -9,7 +9,7 @@ export const Preview = observer(function ScreencastPreview() {
     }
     
     return (
-        <div className={'relative'}>
+        <div className={'relative inline-block'}>
             <img
                 src={app.preview?.activeScreencastUrl}
                 style={{

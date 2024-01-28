@@ -92,7 +92,7 @@ export const AppLayout = observer(function AppLayout({
                     <ConnectionDropdown/>
                     <Settings/>
                 </div>
-                <div className={'grid grid-cols-[450px_1fr]'}>
+                <div className={'grid grid-cols-[450px_1fr] min-h-0'}>
                     <div
                         className={'flex flex-col min-h-0 grow'}
                         style={{background: 'rgba(44, 47, 56, 54%)', borderRight: '1px solid #1a1d21'}}

@@ -53,14 +53,14 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
         <>
             {app.hasLocalContexts && (
                 <RoundButton
-                    active={true}
+                    active={false}
                     onClick={() => app.setView('local')}
                 >
                     View local contexts
                 </RoundButton>
             )}
             <div
-                className={'flex items-center rounded-full border uppercase text-xs'}
+                className={'flex items-center rounded-full border uppercase text-xs mr-2'}
                 style={{
                     fontSize: '0.625rem',
                     letterSpacing: '1.25px',

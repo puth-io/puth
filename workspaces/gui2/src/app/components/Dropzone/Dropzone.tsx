@@ -28,16 +28,21 @@ const Dropzone = observer(() => {
             const packets: any = decode(event.target?.result as ArrayBuffer, {extensionCodec: PUTH_EXTENSION_CODEC});
             
             if (packets[0]?.type === 'context') {
-                if (app.dragAndDropped.contexts.find(item => item.id === packets[0].context.id)) {
+                let exists = app.dragAndDropped.contexts.find(item => item.id === packets[0].context.id);
+                if (exists) {
                     console.warn('Can\'t add same context multiple times.');
                     reset();
+                    app.setView('local');
+                    app.setActive(exists);
                     return;
                 }
                 let context = new ContextStore(packets[0], this);
                 for (let i = 1; i < packets.length; i++) {
                     context.received(packets[i]);
                 }
-                app.dragAndDropped.contexts.push(context);
+                app.dragAndDropped.contexts.unshift(context);
+                app.setView('local');
+                app.setActive(context);
             } else {
                 // TODO display error
             }

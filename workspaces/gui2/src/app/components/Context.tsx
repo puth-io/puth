@@ -60,6 +60,9 @@ export const Context = observer(function Context() {
         );
     }
     
+    let minutes = app.activeContext.took.minutes < 10 ? '0' + app.activeContext.took.minutes : app.activeContext.took.minutes;
+    let seconds = app.activeContext.took.seconds < 10 ? '0' + app.activeContext.took.seconds : app.activeContext.took.seconds;
+    
     let commandIndex = 0;
     return (
         <>
@@ -73,7 +76,7 @@ export const Context = observer(function Context() {
                 <div className={'flex items-center text-gray-300 ml-auto'}><Icon
                     name={'timer'}
                     className={'mr-1'}
-                /> {app.activeContext.took.minutes}:{app.activeContext.took.seconds}</div>
+                /> {minutes}:{seconds}s</div>
                 <div className={'flex items-center text-gray-300 mx-2'}>
                     <Icon name={'history'} className={'mr-1'}/> 1min
                 </div>

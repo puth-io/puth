@@ -55,7 +55,7 @@ export const History = observer(function History() {
     
     return (
         <div
-            className={`border-t-4 border-solid rounded-t-xl ${open ? 'grow' : ''}`}
+            className={`flex flex-col border-t-4 border-solid rounded-t-xl ${open ? 'grow' : ''}`}
             style={{borderColor: '#22252b', maxHeight: '40vh'}}
         >
             <div
