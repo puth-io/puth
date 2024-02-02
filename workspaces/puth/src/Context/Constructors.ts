@@ -13,6 +13,7 @@ const Constructors = {
   Keyboard: 'CdpKeyboard',
   Touchscreen: 'CdpTouchscreen',
   Target: 'CdpTarget',
+  Context: 'Context',
 };
 
 export default Constructors;
