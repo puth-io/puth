@@ -250,7 +250,7 @@ export default class Puth {
     });
   }
   
-  private cleanupContexts() {
+  private async cleanupContexts() {
     let now = Date.now();
     
     for (let idx in this.contexts) {
@@ -258,10 +258,12 @@ export default class Puth {
       if ((now - ctx.lastActivity) <= (ctx.destroying ? ctx.destroyingDelay : 30_000)) {
         continue;
       }
-      if (ctx.destroyingOptions) {
-        ctx.destroyingOptions.immediately = true;
+      if (!ctx.destroyingOptions) {
+        ctx.destroyingOptions = {};
       }
-      ctx.destroy(ctx.destroyingOptions);
+      ctx.destroyingOptions.immediately = true;
+      
+      await ctx.destroy(ctx.destroyingOptions);
       this.emitter.emit('context:destroyed', {context: ctx});
       delete this.contexts[ctx.id];
     }
