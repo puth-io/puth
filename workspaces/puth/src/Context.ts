@@ -59,6 +59,7 @@ class Context extends Generic {
     private readonly _puth: Puth;
     private readonly _emitter: Emitter<ContextEvents>;
     private readonly _createdAt: number;
+    private _lastActivity: number;
     
     private options: ContextOptions;
     private plugins: PuthContextPlugin[] = [];
@@ -83,12 +84,19 @@ class Context extends Generic {
         status: ContextStatus.PENDING,
     }
     
+    // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
+    // this is to catch all screencast frames when the call ends too fast
+    public destroying: boolean = false;
+    public destroyingDelay = 2000;
+    public destroyingOptions: any = {};
+    
     constructor(puth: Puth, options: any = {}) {
         super();
         
         this._puth = puth;
         this._emitter = mitt<ContextEvents>();
         this._createdAt = Date.now();
+        this._lastActivity = this._createdAt;
         
         this.options = options;
         this.shouldSnapshot = this.options?.snapshot === true;
@@ -138,6 +146,13 @@ class Context extends Generic {
     }
     
     public async destroy(options: any = {}) {
+        if (!options?.immediately) {
+            this.puth.logger.warn('delaying destroy...');
+            this.destroyingOptions = options;
+            this.destroying = true;
+            return false;
+        }
+        
         if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
         }
@@ -334,14 +349,14 @@ class Context extends Generic {
     }
     
     public async call(packet) {
-        let on = this.resolveOn(packet);
+        this._lastActivity = Date.now();
         
+        let on = this.resolveOn(packet);
         // resolve page object
         let page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
         
         // Create command
         const command = await this.createCommandInstance(packet, on);
-        
         // Create snapshot before command
         if (! this.isPageBlockedByDialog(page)) {
             // await Snapshots.createBefore(this, page, command);
@@ -540,8 +555,9 @@ class Context extends Generic {
     }
     
     public async get(action) {
-        let on = this.resolveOn(action);
+        this._lastActivity = Date.now();
         
+        let on = this.resolveOn(action);
         let resolvedTo = on[action.property];
         
         if (resolvedTo === undefined) {
@@ -551,7 +567,6 @@ class Context extends Generic {
                 ).jsonValue();
             }
         }
-        
         // If still undefined, return undefined exception
         if (resolvedTo === undefined) {
             return {
@@ -570,8 +585,9 @@ class Context extends Generic {
     }
     
     public async set(action) {
-        let on = this.resolveOn(action);
+        this._lastActivity = Date.now();
         
+        let on = this.resolveOn(action);
         let {property, value} = action;
         
         try {
@@ -586,6 +602,8 @@ class Context extends Generic {
     }
     
     public async delete(action) {
+        this._lastActivity = Date.now();
+        
         let on = this.resolveOn(action);
         
         try {
@@ -663,6 +681,10 @@ class Context extends Generic {
     
     get createdAt() {
         return this._createdAt;
+    }
+    
+    get lastActivity() {
+        return this._lastActivity;
     }
     
     getGroup() {

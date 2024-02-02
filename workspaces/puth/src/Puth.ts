@@ -19,7 +19,7 @@ type PuthEvents = {
 }
 
 export default class Puth {
-  private contexts: Context[] = [];
+  private contexts: {[key: string]: Context} = {};
   private contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
   private instancePlugins: PuthInstancePlugin[] = [];
   private emitter: Emitter<PuthEvents>;
@@ -60,6 +60,8 @@ export default class Puth {
     if (options?.installedBrowser) {
       this.info(`Using browser: ${options.installedBrowser.browser} ${options.installedBrowser.buildId} (${options.installedBrowser.platform})`);
     }
+    
+    setInterval(() => this.cleanupContexts(), 5_000);
   }
 
   use(plugin: PuthPluginGeneric<PuthPlugin>) {
@@ -144,9 +146,11 @@ export default class Puth {
     let { id } = packet as { id: string };
 
     if (id in this.contexts) {
-      await this.contexts[id].destroy(packet?.options);
-      this.emitter.emit('context:destroyed', {context: this.contexts[id]});
-      delete this.contexts[id];
+      let destroyed = await this.contexts[id].destroy(packet?.options);
+      if (destroyed) {
+        this.emitter.emit('context:destroyed', {context: this.contexts[id]});
+        delete this.contexts[id];
+      }
 
       return true;
     }
@@ -244,6 +248,23 @@ export default class Puth {
         WebsocketConnections.push(connection);
       });
     });
+  }
+  
+  private cleanupContexts() {
+    let now = Date.now();
+    
+    for (let idx in this.contexts) {
+      let ctx = this.contexts[idx];
+      if ((now - ctx.lastActivity) <= (ctx.destroying ? ctx.destroyingDelay : 30_000)) {
+        continue;
+      }
+      if (ctx.destroyingOptions) {
+        ctx.destroyingOptions.immediately = true;
+      }
+      ctx.destroy(ctx.destroyingOptions);
+      this.emitter.emit('context:destroyed', {context: ctx});
+      delete this.contexts[ctx.id];
+    }
   }
 
   getContextPlugins() {
