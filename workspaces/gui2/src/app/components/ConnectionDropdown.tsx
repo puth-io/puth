@@ -3,8 +3,8 @@ import {useContext, useState} from "react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
-import {AppContext} from "@/App.tsx";
 import {Input} from "@/components/ui/input.tsx";
+import {AppContext} from "../../shared/Contexts.tsx";
 
 function RoundButton({onClick, className = '', active, children}) {
     return (

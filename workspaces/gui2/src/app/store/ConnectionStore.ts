@@ -1,14 +1,10 @@
-// @ts-nocheck
 import ContextStore from "./ContextStore.tsx";
 import mitt, {Emitter, Handler} from "mitt";
 import {makeAutoObservable} from "mobx";
 import {decode, encode, ExtensionCodec} from "@msgpack/msgpack";
 import {DebugStoreClass} from "./DebugStoreClass.tsx";
-import {logData} from "@/app/util/Debugging.ts";
+import {logData} from "../util/Debugging.ts";
 import Events from "../Events.tsx";
-import PreviewStore from "@/app/store/PreviewStore.tsx";
-import {BlobHandler} from "@/app/util/BlobHandler.tsx";
-import AppStore from "@/app/store/AppStore.tsx";
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -194,10 +190,10 @@ export class Connection {
             Events.emit('context:created', context);
             this.emit('context:created', context);
             
-            if (AppStore.mode === 'follow' && AppStore.active.connection === this) {
-                PreviewStore.activeCommand = undefined;
-                PreviewStore.activeContext = context;
-            }
+            // if (AppStore.mode === 'follow' && AppStore.active.connection === this) {
+            //     PreviewStore.activeCommand = undefined;
+            //     PreviewStore.activeContext = context;
+            // }
             
             return;
         }
@@ -211,10 +207,10 @@ export class Connection {
         context.received(packet);
         
         // TODO update
-        if (AppStore.mode === 'follow' && AppStore.active.connection === this && ! PreviewStore.activeContext) {
-            PreviewStore.activeCommand = undefined;
-            PreviewStore.activeContext = context;
-        }
+        // if (AppStore.mode === 'follow' && AppStore.active.connection === this && ! PreviewStore.activeContext) {
+        //     PreviewStore.activeCommand = undefined;
+        //     PreviewStore.activeContext = context;
+        // }
         
         Events.emit('context:received', {context, packet});
         this.emit('context:received', {context, packet});
@@ -225,7 +221,7 @@ export class Connection {
     }
     
     get hasNoContexts() {
-        return this.contexts.size === 0;
+        return this.contexts.length === 0;
     }
     
     getTotalBytesReceived() {
@@ -234,31 +230,31 @@ export class Connection {
     
     getMetrics() {
         let metrics = {
-            contexts: this.contexts.size,
+            contexts: this.contexts.length,
             events: 0,
         };
         
         this.contexts.forEach((ctx) => {
             metrics.events += ctx.commands.length;
             metrics.events += ctx.logs.length;
-            metrics.events += ctx.requests.length;
-            metrics.events += ctx.responses.length;
+            // metrics.events += ctx.requests.length;
+            // metrics.events += ctx.responses.length;
         });
         
         return metrics;
     }
     
     clear() {
-        this.contexts.forEach(function cleanupContext(context) {
-            context.responses.forEach((response) => {
-                // @ts-ignore
-                if (response.contentParsed?.blob) {
-                    // @ts-ignore
-                    BlobHandler.revoke(response.contentParsed.blob.url);
-                }
-            });
-        });
-        this.contexts.clear();
+        // this.contexts.forEach(function cleanupContext(context) {
+        //     context.responses.forEach((response) => {
+        //         // @ts-ignore
+        //         if (response.contentParsed?.blob) {
+        //             // @ts-ignore
+        //             BlobHandler.revoke(response.contentParsed.blob.url);
+        //         }
+        //     });
+        // });
+        // this.contexts.clear();
     }
     
     on<Key extends keyof ConnectionEvents>(type: Key, handler: Handler<ConnectionEvents[Key]>) {

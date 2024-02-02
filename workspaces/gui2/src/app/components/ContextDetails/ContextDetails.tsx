@@ -1,6 +1,6 @@
 import {observer} from 'mobx-react-lite';
 import {useContext} from "react";
-import {AppContext} from "@/App.tsx";
+import {AppContext} from "../../../shared/Contexts.tsx";
 
 export const ContextDetails = observer(function ContextDetails() {
     const {app} = useContext(AppContext);

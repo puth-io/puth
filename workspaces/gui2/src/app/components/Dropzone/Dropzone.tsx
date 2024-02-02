@@ -5,9 +5,9 @@ import {useDropzone} from 'react-dropzone';
 import {runInAction} from 'mobx';
 import DropzoneStore from '../../store/DropzoneStore';
 import {decode} from "@msgpack/msgpack";
-import {PUTH_EXTENSION_CODEC} from "@/app/store/ConnectionStore.ts";
-import ContextStore from "@/app/store/ContextStore.tsx";
-import {AppContext} from "@/App.tsx";
+import {AppContext} from "../../../shared/Contexts.tsx";
+import {PUTH_EXTENSION_CODEC} from "../../store/ConnectionStore.ts";
+import ContextStore from "../../store/ContextStore.tsx";
 
 const Dropzone = observer(() => {
     const {app} = useContext(AppContext);

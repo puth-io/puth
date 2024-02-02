@@ -1,8 +1,7 @@
 import {makeAutoObservable} from "mobx";
-import Events from "../Events";
-import {Connection} from "@/app/store/ConnectionStore.ts";
-import PreviewStore from "@/app/store/PreviewStore.tsx";
-import ContextStore from "@/app/store/ContextStore.tsx";
+import {Connection} from "./ConnectionStore.ts";
+import ContextStore from "./ContextStore.tsx";
+import PreviewStore from "./PreviewStore.tsx";
 
 export class AppStoreClass {
     connections: Connection[] = [];
@@ -124,16 +123,3 @@ export class AppStoreClass {
         localStorage.setItem(key, value ? 'true' : 'false');
     }
 }
-
-const AppStore = new AppStoreClass();
-export default AppStore;
-
-if (process.env.NODE_ENV === 'development') {
-    AppStore.connectionSuggestions = ['ws://127.0.0.1:7345/websocket', ...AppStore.connectionSuggestions];
-}
-
-Events.on('command:active', _ => {
-    if (AppStore.mode === 'follow') {
-        AppStore.mode = 'default';
-    }
-});

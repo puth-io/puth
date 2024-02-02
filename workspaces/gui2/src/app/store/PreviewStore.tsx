@@ -1,8 +1,8 @@
 import {action, makeAutoObservable} from 'mobx';
 import Events from '../Events';
-import ContextStore from "@/app/store/ContextStore.tsx";
 import {ICommand} from "../Types.ts";
 import {SnapshotState} from '@puth/core/src/Types'
+import ContextStore from "./ContextStore.tsx";
 
 // do not put this inside PreviewStoreClass because this must not be observed
 let _lastActiveScreencastUrl: string|null = null;

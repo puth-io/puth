@@ -3,7 +3,7 @@ import {Button} from "@/components/ui/button.tsx";
 import {Icon} from "@/components/icon.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {useContext} from "react";
-import {AppContext} from "@/App.tsx";
+import {AppContext} from "../../shared/Contexts.tsx";
 
 // @ts-ignore
 export const GroupContainer = function GroupContainer({children, className = '', ...rest}) {

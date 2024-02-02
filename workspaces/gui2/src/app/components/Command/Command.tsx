@@ -4,9 +4,9 @@ import Events from '../../Events';
 import { ICommand } from '../../Types';
 import { observer } from 'mobx-react-lite';
 import Constructors from 'puth/src/Context/Constructors';
-import {AppContext} from "@/App.tsx";
+import {AppContext} from '../../../shared/Contexts';
 import {Icon} from "@/components/icon.tsx";
-import {StatusIcon} from "@/app/components/Context.tsx";
+import {StatusIcon} from "../Context.tsx";
 
 type CommandProps = {
   index: number | undefined;
