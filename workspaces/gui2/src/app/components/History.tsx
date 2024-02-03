@@ -1,8 +1,8 @@
 import {useContext, useState} from "react";
 import {observer} from "mobx-react-lite";
-import {Icon} from "@/components/icon.tsx";
-import {Input} from "@/components/ui/input.tsx";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Icon} from "../../components/icon.tsx";
+import {Input} from "../../components/ui/input.tsx";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "../../components/ui/select";
 import {ContextStatus} from '@puth/core/src/Types';
 import {AppContext} from "../../shared/Contexts.tsx";
 import ContextStore from "../store/ContextStore.tsx";

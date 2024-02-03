@@ -1,7 +1,7 @@
 import {observer} from "mobx-react-lite";
-import {Button} from "@/components/ui/button.tsx";
-import {Icon} from "@/components/icon.tsx";
-import {Input} from "@/components/ui/input.tsx";
+import {Button} from "../../components/ui/button.tsx";
+import {Icon} from "../../components/icon.tsx";
+import {Input} from "../../components/ui/input.tsx";
 import {useContext} from "react";
 import {AppContext} from "../../shared/Contexts.tsx";
 

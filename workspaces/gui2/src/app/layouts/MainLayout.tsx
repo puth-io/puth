@@ -1,11 +1,11 @@
 import {observer} from "mobx-react-lite";
 import puthLogoBlue from "../../assets/puth-logo-blue.png";
-import {Icon} from "@/components/icon.tsx";
-import {Button} from "@/components/ui/button.tsx";
+import {Icon} from "../../components/icon.tsx";
+import {Button} from "../../components/ui/button.tsx";
 import {useContext, useState} from "react";
 import {AppContext} from '../../shared/Contexts';
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {Checkbox} from "@/components/ui/checkbox";
+import {Popover, PopoverContent, PopoverTrigger} from "../../components/ui/popover";
+import {Checkbox} from "../../components/ui/checkbox";
 import DevStore from "../store/DebugStoreClass";
 import {ConnectionDropdown} from "../components/ConnectionDropdown.tsx";
 

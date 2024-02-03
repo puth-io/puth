@@ -1,11 +1,11 @@
-import {Icon} from "@/components/icon.tsx";
+import {Icon} from "../../components/icon";
 import {observer} from "mobx-react-lite";
 import {useContext, useRef} from "react";
-import {Button} from "@/components/ui/button.tsx";
-import {AppContext} from "../../shared/Contexts.tsx";
-import Command from "./Command/Command.tsx";
-import Log from "./Log/Log.tsx";
-import Request from "./Request/Request.tsx";
+import {Button} from "../../components/ui/button";
+import {AppContext} from "../../shared/Contexts";
+import Command from "./Command/Command";
+import Log from "./Log/Log";
+import Request from "./Request/Request";
 
 export function StatusIcon({status, className, ...rest}: any) {
     let icon = 'pending';
