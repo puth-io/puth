@@ -7,7 +7,8 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
         alias: {
-            "@/app/overwrites": path.resolve(__dirname, "./src/app/overwrites"),
+            "@/app/store/ContextStore": path.resolve(__dirname, "./src/app/store/ContextStore"),
+            "@/app/store/AppStore": path.resolve(__dirname, "./src/app/store/AppStore"),
         },
     },
 });

@@ -22,8 +22,11 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/app/overwrites/*": [
-        "./src/app/overwrites/*"
+      "@/app/store/ContextStore": [
+        "./src/app/store/ContextStore.ts"
+      ],
+      "@/app/store/AppStore": [
+        "./src/app/store/AppStore.ts"
       ]
     }
   },

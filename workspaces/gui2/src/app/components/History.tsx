@@ -5,7 +5,7 @@ import {Input} from "../../components/ui/input.tsx";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "../../components/ui/select";
 import {ContextStatus} from '@puth/core/src/Types';
 import {AppContext} from "../../shared/Contexts.tsx";
-import ContextStore from "@/app/overwrites/store/ContextStore.tsx";
+import ContextStore from "@/app/store/ContextStore";
 import {StatusIcon} from "./Context.tsx";
 
 export const HistoryItem = observer(function HistoryItem({context}: {context: ContextStore}) {

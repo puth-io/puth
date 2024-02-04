@@ -7,7 +7,7 @@ import DropzoneStore from '../../store/DropzoneStore';
 import {decode} from "@msgpack/msgpack";
 import {AppContext} from "../../../shared/Contexts.tsx";
 import {PUTH_EXTENSION_CODEC} from "../../store/ConnectionStore.ts";
-import ContextStore from "@/app/overwrites/store/ContextStore.tsx";
+import ContextStore from "@/app/store/ContextStore";
 
 const Dropzone = observer(() => {
     const {app} = useContext(AppContext);

@@ -1,7 +1,7 @@
-import {makeAutoObservable} from 'mobx';
-import {Connection} from '../../store/ConnectionStore.ts';
-import ContextStore from '@/app/overwrites/store/ContextStore.tsx';
-import PreviewStore from '../../store/PreviewStore.tsx';
+import {action, computed, makeObservable, observable} from 'mobx';
+import {Connection} from './ConnectionStore';
+import PreviewStore from './/PreviewStore';
+import ContextStore from '@/app/store/ContextStore';
 
 export class AppStoreClass {
     name: {suffix: string} = {
@@ -49,9 +49,32 @@ export class AppStoreClass {
     view: 'local'|'instance' = 'instance';
     
     constructor() {
-        makeAutoObservable(this);
-        
         this.settings.preview.darken = this.readLocalStorageBoolean('previewStore.darken');
+        
+        makeObservable(this, {
+            name: observable,
+            connections: observable,
+            connectionSuggestions: observable,
+            active: observable,
+            modals: observable,
+            mode: observable,
+            classes: observable,
+            dragAndDropped: observable,
+            settings: observable,
+            view: observable,
+            
+            tryConnectingTo: action,
+            setActive: action,
+            setView: action,
+            setDarkenPreview: action,
+            
+            history: computed,
+            activeContext: computed,
+            previewStore: computed,
+            empty: computed,
+            hasLocalContexts: computed,
+            isConnected: computed,
+        });
     }
     
     public tryConnectingTo(host: string) {

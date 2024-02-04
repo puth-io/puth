@@ -1,12 +1,12 @@
-import {makeAutoObservable, toJS} from 'mobx';
+import {action, computed, makeObservable, observable, toJS} from 'mobx';
 import Constructors from 'puth/src/Context/Constructors';
 import {encode} from "@msgpack/msgpack";
-import {ICommand} from "../../Types";
-import Events from "../../Events";
-import {PUTH_EXTENSION_CODEC} from "../../store/ConnectionStore";
+import {ICommand} from "../Types";
+import Events from "../Events";
+import {PUTH_EXTENSION_CODEC} from "./ConnectionStore";
 
 export default class ContextStore {
-    id: string;
+    readonly id: string;
     
     commands: any[] = [];
     logs: any[] = [];
@@ -29,11 +29,11 @@ export default class ContextStore {
         [key: string]: boolean;
     };
     
-    createdAt: number;
+    readonly createdAt: number;
+    readonly created: number = Date.now();
     lastActivity: number;
-    created: number = Date.now();
     
-    original: any;
+    readonly original: any;
     connectionStore: any;
     
     constructor(
@@ -52,7 +52,27 @@ export default class ContextStore {
         this.createdAt = timestamp;
         this.lastActivity = timestamp;
         
-        makeAutoObservable(this);
+        makeObservable(this, {
+            commands: observable,
+            logs: observable,
+            screencasts: observable,
+            unspecific: observable,
+            group: observable,
+            test: observable,
+            options: observable,
+            capabilities: observable,
+            lastActivity: observable,
+            connectionStore: observable,
+            
+            received: action,
+            getRenderedTypesFilter: action,
+            getEventTime: action,
+            packets: action,
+            blob: action,
+            
+            renderedEvents: computed,
+            took: computed,
+        });
     }
     
     received(packet: any) {
