@@ -18,7 +18,7 @@ export const Preview = observer(function ScreencastPreview() {
                 className={'w-full'}
             />
             {app.settings.preview.darken && (
-                <div className={'absolute top-0 left-0 bottom-0 right-0 pointer-events-none'} style={{backgroundColor: 'rgba(0, 0, 0, 0.3)'}}/>
+                <div className={'absolute top-0 left-0 bottom-0 right-0 pointer-events-none'} style={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}/>
             )}
         </div>
     );
