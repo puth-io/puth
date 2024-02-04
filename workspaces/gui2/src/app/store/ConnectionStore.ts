@@ -1,6 +1,6 @@
 import ContextStore from "@/app/store/ContextStore";
 import mitt, {Emitter, Handler} from "mitt";
-import {makeAutoObservable} from "mobx";
+import {makeAutoObservable} from 'mobx';
 import {decode, encode, ExtensionCodec} from "@msgpack/msgpack";
 import {DebugStoreClass} from "./DebugStoreClass.tsx";
 import {logData} from "../util/Debugging.ts";
@@ -77,12 +77,12 @@ export class Connection {
     public preview :any;
     
     constructor(uri: string, previewStore: any) {
-        makeAutoObservable(this);
-        
         this.uri = uri;
         this.connect(this.uri);
         
         this.preview = previewStore;
+        
+        makeAutoObservable(this);
     }
     
     retry() {

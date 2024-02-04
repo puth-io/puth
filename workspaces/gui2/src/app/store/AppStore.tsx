@@ -3,7 +3,7 @@ import {Connection} from './ConnectionStore';
 import PreviewStore from './/PreviewStore';
 import ContextStore from '@/app/store/ContextStore';
 
-export class AppStoreClass {
+export default class AppStore {
     name: {suffix: string} = {
         suffix: '',
     };

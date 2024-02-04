@@ -68,7 +68,7 @@ class DevStoreClass {
 
   private static eventLogger(type: any, event: any) {
     // tslint:disable-next-line:no-console
-    console.debug('[EventLogger]', type, event);
+    console.log('[EventLogger]', type, event);
   }
 
   printPerformanceWarning() {

@@ -5,23 +5,23 @@ import './index.css';
 import {runInAction} from "mobx";
 import DropzoneStore from "./app/store/DropzoneStore.tsx";
 import {AppContext} from './shared/Contexts';
-import {AppStoreClass} from "@/app/store/AppStore";
+import AppStore from "@/app/store/AppStore";
 import Events from "./app/Events.tsx";
 
-export const AppStore = new AppStoreClass();
+const app = new AppStore();
 if (process.env.NODE_ENV === 'development') {
-    AppStore.connectionSuggestions = ['ws://127.0.0.1:7345/websocket', ...AppStore.connectionSuggestions];
+    app.connectionSuggestions = ['ws://127.0.0.1:7345/websocket', ...app.connectionSuggestions];
 }
 Events.on('command:active', _ => {
-    if (AppStore.mode === 'follow') {
-        AppStore.mode = 'default';
+    if (app.mode === 'follow') {
+        app.mode = 'default';
     }
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <AppContext.Provider value={{
-            app: AppStore,
+            app: app,
         }}>
             <App/>
         </AppContext.Provider>

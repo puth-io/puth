@@ -1,4 +1,4 @@
 import {createContext} from "react";
-import {AppStoreClass} from "@/app/store/AppStore";
+import AppStore from "@/app/store/AppStore";
 
-export const AppContext = createContext<{app: AppStoreClass}>(undefined as any);
+export const AppContext = createContext<{app: AppStore}>(undefined as any);
