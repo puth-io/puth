@@ -1,5 +1,5 @@
 import mitt, {Emitter} from 'mitt';
-import ContextStore from "./store/ContextStore";
+import ContextStore from "@/app/overwrites/store/ContextStore.tsx";
 import {ICommand} from './Types';
 
 type Events = {

@@ -1,9 +1,12 @@
-import {makeAutoObservable} from "mobx";
-import {Connection} from "./ConnectionStore.ts";
-import ContextStore from "./ContextStore.tsx";
-import PreviewStore from "./PreviewStore.tsx";
+import {makeAutoObservable} from 'mobx';
+import {Connection} from '../../store/ConnectionStore.ts';
+import ContextStore from '@/app/overwrites/store/ContextStore.tsx';
+import PreviewStore from '../../store/PreviewStore.tsx';
 
 export class AppStoreClass {
+    name: {suffix: string} = {
+        suffix: '',
+    };
     connections: Connection[] = [];
     connectionSuggestions: string[] = [
         (document.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/websocket',
@@ -73,7 +76,7 @@ export class AppStoreClass {
         return this.dragAndDropped.active;
     }
     
-    get preview() {
+    get previewStore() {
         if (this.view === 'instance') {
             return this.active.connection?.preview;
         }
@@ -82,7 +85,7 @@ export class AppStoreClass {
     }
     
     get empty() {
-        return !this.hasLocalContexts && !this.isConnected;
+        return ! this.hasLocalContexts && ! this.isConnected;
     }
     
     get hasLocalContexts() {

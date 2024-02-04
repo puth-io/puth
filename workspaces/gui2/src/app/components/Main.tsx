@@ -33,10 +33,10 @@ export const MainTopButtons = observer(function MainTopButtons() {
     const {app} = useContext(AppContext);
     
     let setScreencastMode = (mode: 'replay'|'before'|'after') => {
-        if (! app.preview?.screencast) {
+        if (! app.previewStore?.screencast) {
             return;
         }
-        app.preview.screencast.mode = mode;
+        app.previewStore.screencast.mode = mode;
     };
     
     return (
@@ -56,17 +56,17 @@ export const MainTopButtons = observer(function MainTopButtons() {
             
             <GroupContainer className={'mr-4'}>
                 <GroupButton
-                    active={app.preview?.screencast.mode === 'before'}
+                    active={app.previewStore?.screencast.mode === 'before'}
                     onClick={() => setScreencastMode('before')}
                     children={'BEFORE'}
                 />
                 <GroupButton
-                    active={app.preview?.screencast.mode === 'after'}
+                    active={app.previewStore?.screencast.mode === 'after'}
                     onClick={() => setScreencastMode('after')}
                     children={'AFTER'}
                 />
                 <GroupButton
-                    active={app.preview?.screencast.mode === 'replay'}
+                    active={app.previewStore?.screencast.mode === 'replay'}
                     onClick={() => setScreencastMode('replay')}
                     children={'REPLAY'}
                 />
@@ -94,7 +94,7 @@ export const MainTop = observer(function MainTop({
             
             <Input
                 className={'h-7 grow bg-lighter border-none'}
-                value={app.preview?.visibleScreencast?.page?.url ?? ''}
+                value={app.previewStore?.visibleScreencast?.page?.url ?? ''}
                 disabled
             />
             

@@ -1,4 +1,4 @@
-import ContextStore from "./ContextStore.tsx";
+import ContextStore from "@/app/overwrites/store/ContextStore.tsx";
 import mitt, {Emitter, Handler} from "mitt";
 import {makeAutoObservable} from "mobx";
 import {decode, encode, ExtensionCodec} from "@msgpack/msgpack";

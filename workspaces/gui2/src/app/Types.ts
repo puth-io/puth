@@ -1,5 +1,5 @@
 import {IPacket as IPacketBase, ICommand as ICommandBase} from '@puth/core/src/Types';
-import ContextStore from "./store/ContextStore.tsx";
+import ContextStore from "@/app/overwrites/store/ContextStore.tsx";
 
 /**
  * Override core types because we replace IContext with ContextStore after receiving a packet

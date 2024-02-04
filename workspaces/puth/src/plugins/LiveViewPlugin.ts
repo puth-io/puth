@@ -1,6 +1,6 @@
 import {v4} from 'uuid';
 import {Page} from 'puppeteer-core';
-import Context from "puth/src/Context";
+import Context from "@/context";
 import PuthInstancePlugin from "puth/src/PuthInstancePlugin";
 import Puth from "puth";
 import {PuthBrowser} from "puth/src/HandlesBrowsers";

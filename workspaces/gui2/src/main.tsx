@@ -5,7 +5,7 @@ import './index.css';
 import {runInAction} from "mobx";
 import DropzoneStore from "./app/store/DropzoneStore.tsx";
 import {AppContext} from './shared/Contexts';
-import {AppStoreClass} from "./app/store/AppStore.tsx";
+import {AppStoreClass} from "@/app/overwrites/store/AppStore";
 import Events from "./app/Events.tsx";
 
 export const AppStore = new AppStoreClass();

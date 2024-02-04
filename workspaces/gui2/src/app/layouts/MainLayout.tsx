@@ -86,7 +86,9 @@ export const AppLayout = observer(function AppLayout({
                 >
                     <div className={'flex items-center mr-auto text-base'}>
                         <img src={puthLogoBlue} className={'h-6 mr-2'}/>
-                        Puth
+                        Puth {app.name.suffix && (
+                            <span className={'text-blue-500 font-bold ml-1'}> {app.name.suffix}</span>
+                        )}
                     </div>
                     
                     <ConnectionDropdown/>
@@ -118,11 +120,7 @@ export const AppLayout = observer(function AppLayout({
                                     {preview}
                                 </div>
                                 
-                                {mainBottom && (
-                                    <div className={'shrink flex'} style={{borderTop: '1px solid #3d4249'}}>
-                                        {mainBottom}
-                                    </div>
-                                )}
+                                {mainBottom && (<>{mainBottom}</>)}
                             </>
                         )}
                     </div>

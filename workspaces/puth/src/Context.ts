@@ -147,7 +147,6 @@ class Context extends Generic {
     
     public async destroy(options: any = {}) {
         if (!options?.immediately) {
-            this.puth.logger.warn('delaying destroy...');
             this.destroyingOptions = options;
             this.destroying = true;
             return false;
@@ -238,10 +237,6 @@ class Context extends Generic {
         });
         
         this.eventFunctions = this.eventFunctions.filter((listener) => listener[0] !== object);
-    }
-    
-    public exception() {
-        // pro feature
     }
     
     public testFailed() { // used by clients

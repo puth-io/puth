@@ -1,4 +1,4 @@
-import Context from './Context';
+import Context from '@/context';
 import {Page} from 'puppeteer-core';
 import WebsocketConnections from './WebsocketConnections';
 import {ICommand, ICommandError, IPacket} from '@puth/core/src/Types';

@@ -1,9 +1,9 @@
 import {makeAutoObservable, toJS} from 'mobx';
 import Constructors from 'puth/src/Context/Constructors';
 import {encode} from "@msgpack/msgpack";
-import {ICommand} from "../Types";
-import Events from "../Events";
-import {PUTH_EXTENSION_CODEC} from "./ConnectionStore";
+import {ICommand} from "../../Types";
+import Events from "../../Events";
+import {PUTH_EXTENSION_CODEC} from "../../store/ConnectionStore";
 
 export default class ContextStore {
     id: string;

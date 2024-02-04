@@ -68,12 +68,12 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
     displayFunc = func;
   }
 
-  let active = app.preview?.activeCommand?.id === command?.id;
+  let active = app.previewStore?.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
-  let {inBetween, replayTime, minReplayTime, maxReplayTime} = app.preview?.screencast;
+  let {inBetween, replayTime, minReplayTime, maxReplayTime} = app.previewStore?.screencast;
   let replayProgress =  <></>;
-  if (active && app.preview?.screencast.mode === 'replay' && inBetween.length > 2) {
+  if (active && app.previewStore?.screencast.mode === 'replay' && inBetween.length > 2) {
     let timespan = maxReplayTime - minReplayTime;
     let progress = replayTime - minReplayTime;
     let percent = progress / timespan;

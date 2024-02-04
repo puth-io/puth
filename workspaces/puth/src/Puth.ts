@@ -2,7 +2,7 @@ import path from 'path';
 import Fastify from 'fastify';
 import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
-import Context from './Context';
+import Context from '@/context';
 import WebsocketConnections from './WebsocketConnections';
 import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';
@@ -101,7 +101,7 @@ export default class Puth {
   serve(port = 7345, address = '127.0.0.1', log = true) {
     let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
 
-    this.server = Fastify({ logger: this.logger });
+    this.server = Fastify({ logger: this.logger, disableRequestLogging: true });
     this.setupFastify(allowedOrigins);
     this.server.listen({ port, host: address });
   }

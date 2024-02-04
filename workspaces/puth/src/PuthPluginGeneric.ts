@@ -1,5 +1,5 @@
 import Puth from './Puth';
-import Context from './Context';
+import Context from '@/context';
 
 export enum PuthPluginType {
   ContextPlugin = 'ContextPlugin',

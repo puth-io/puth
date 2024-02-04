@@ -21,11 +21,11 @@
     "noFallthroughCasesInSwitch": true,
 
     "baseUrl": ".",
-//    "paths": {
-//      "@/components/*": [
-//        "./src/components/*"
-//      ]
-//    }
+    "paths": {
+      "@/app/overwrites/*": [
+        "./src/app/overwrites/*"
+      ]
+    }
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

@@ -4,16 +4,16 @@ import {AppContext} from "../../shared/Contexts.tsx";
 
 export const Preview = observer(function ScreencastPreview() {
     const {app} = useContext(AppContext);
-    if (! app.preview?.activeScreencastUrl) {
+    if (! app.previewStore?.activeScreencastUrl) {
         return <></>;
     }
     
     return (
         <div className={'relative inline-block'}>
             <img
-                src={app.preview?.activeScreencastUrl}
+                src={app.previewStore?.activeScreencastUrl}
                 style={{
-                    maxWidth: `${app.preview?.visibleScreencast.page.viewport.width}px`,
+                    maxWidth: `${app.previewStore?.visibleScreencast.page.viewport.width}px`,
                 }}
                 className={'w-full'}
             />
