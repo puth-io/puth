@@ -1,4 +1,4 @@
-import {action, makeAutoObservable} from 'mobx';
+import {action, computed, makeObservable, observable} from 'mobx';
 import Events from '../Events';
 import {ICommand} from "../Types.ts";
 import {SnapshotState} from '@puth/core/src/Types'
@@ -8,71 +8,60 @@ import ContextStore from "@/app/store/ContextStore";
 let _lastActiveScreencastUrl: string|null = null;
 
 class PreviewStore {
-    private _activeContext: ContextStore|undefined;
-    private _activeCommand: ICommand|undefined;
+    _activeContext: ContextStore|undefined;
+    _activeCommand: ICommand|undefined;
     activeState: SnapshotState = SnapshotState.BEFORE;
     highlightCommand: ICommand|undefined;
     highlightState: SnapshotState = SnapshotState.AFTER;
     highlightScreencast: any = null;
-    private highlightInterval: number|undefined;
+    highlightInterval: number|undefined;
     _darken: boolean = false;
     
     screencast: {
         lastFrameBeforeSector: any,
         inBetween: any[],
-        mode: 'replay'|SnapshotState.BEFORE|SnapshotState.AFTER,
-        replayTime: number,
-        minReplayTime: number,
-        maxReplayTime: number,
-        timePerFrame: number,
-        replaying: boolean,
-        rerunDelay: number,
-        rerunTime: number,
+        mode: SnapshotState.BEFORE|SnapshotState.AFTER,
     } = {
         lastFrameBeforeSector: null,
         inBetween: [],
-        mode: 'replay',
-        replayTime: 0,
-        minReplayTime: 0,
-        maxReplayTime: 0,
-        timePerFrame: 1000 / 30,
-        replaying: true,
-        rerunDelay: 750,
-        rerunTime: 0,
+        mode: SnapshotState.AFTER,
     };
     
     constructor() {
-        makeAutoObservable(this);
+        makeObservable(this, {
+            _activeContext: observable,
+            _activeCommand: observable,
+            activeState: observable,
+            highlightCommand: observable,
+            highlightState: observable,
+            highlightScreencast: observable,
+            highlightInterval: observable,
+            _darken: observable,
+            screencast: observable,
+            
+            clear: action,
+            resetHighlightInterval: action,
+            toggleHighlightState: action,
+            findLastEventUntil: action,
+            findEventsBetween: action,
+            findLastScreencastForCommand: action,
+            registerEvents: action,
+            
+            activeScreencast: computed,
+            visibleScreencast: computed,
+            activeScreencastUrl: computed,
+            // darken: computed,
+            visibleCommand: computed,
+            visibleHighlightState: computed,
+            isVisibleHighlight: computed,
+            // activeCommand: computed,
+            // activeContext: computed,
+        });
         
         this.registerEvents();
-        
-        
-        setInterval(action(() => {
-            if (this.screencast.inBetween.length < 2) {
-                return; // set replaceTime greater than the single frame in inBetween
-            }
-
-            if (this.screencast.replaying) {
-                this.screencast.replayTime += this.screencast.timePerFrame;
-                if (this.screencast.replayTime > this.screencast.maxReplayTime) {
-                    this.screencast.replaying = false;
-                }
-            } else {
-                this.screencast.rerunTime += this.screencast.timePerFrame;
-                if (this.screencast.rerunTime > this.screencast.rerunDelay) {
-                    this.screencast.rerunTime = 0;
-                    this.screencast.replaying = true;
-                    this.screencast.replayTime = this.screencast.minReplayTime;
-                }
-            }
-        }), this.screencast.timePerFrame);
     }
     
     get activeScreencast() {
-        if (this.screencast.mode === 'replay') {
-            // TODO only use lastFrameBeforeSector if its in a certain time window to "smoothen" the replay
-            return this.findLastEventUntil(this.screencast.replayTime, this.screencast.inBetween) ?? this.screencast.lastFrameBeforeSector;
-        }
         if (this.screencast.mode === SnapshotState.AFTER) {
             if (this.screencast.inBetween.length > 0) {
                 return this.screencast.inBetween[this.screencast.inBetween.length - 1];
@@ -193,7 +182,7 @@ class PreviewStore {
         }
     }
     
-    private registerEvents() {
+    registerEvents() {
         // @ts-ignore
         Events.on(
             'preview:toggle',
@@ -225,12 +214,6 @@ class PreviewStore {
                 
                 // find last frame before inBetween sector to display as entry point
                 this.screencast.lastFrameBeforeSector = this.findLastEventUntil(command.time.started, command.context.screencasts);
-                
-                this.screencast.minReplayTime = this.screencast.inBetween[0]?.timestamp;
-                this.screencast.replayTime = this.screencast.minReplayTime;
-                this.screencast.maxReplayTime = this.screencast.inBetween[this.screencast.inBetween.length - 1]?.timestamp;
-                this.screencast.replaying = true;
-                this.screencast.rerunTime = 0;
                 
                 Events.emit('command:active', command);
             }),

@@ -9,6 +9,7 @@ export default defineConfig({
         alias: {
             "@/app/store/ContextStore": path.resolve(__dirname, "./src/app/store/ContextStore"),
             "@/app/store/AppStore": path.resolve(__dirname, "./src/app/store/AppStore"),
+            "@/app/store/PreviewStore": path.resolve(__dirname, "./src/app/store/PreviewStore"),
         },
     },
 });

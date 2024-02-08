@@ -32,7 +32,7 @@ export const GroupButton = function GroupButton({active, children, className = '
 export const MainTopButtons = observer(function MainTopButtons() {
     const {app} = useContext(AppContext);
     
-    let setScreencastMode = (mode: 'replay'|'before'|'after') => {
+    let setScreencastMode = (mode: 'before'|'after') => {
         if (! app.previewStore?.screencast) {
             return;
         }
@@ -64,11 +64,6 @@ export const MainTopButtons = observer(function MainTopButtons() {
                     active={app.previewStore?.screencast.mode === 'after'}
                     onClick={() => setScreencastMode('after')}
                     children={'AFTER'}
-                />
-                <GroupButton
-                    active={app.previewStore?.screencast.mode === 'replay'}
-                    onClick={() => setScreencastMode('replay')}
-                    children={'REPLAY'}
                 />
             </GroupContainer>
         </>

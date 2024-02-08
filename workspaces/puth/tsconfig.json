@@ -25,5 +25,10 @@
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
+  "paths": {
+    "@/context": [
+      "./src/Context"
+    ]
+  }
 }

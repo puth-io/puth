@@ -6,16 +6,17 @@ import * as Utils from './Utils';
 import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
-import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
+import mitt, {Emitter, Handler, WildcardHandler} from './Utils/Emitter';
 import path from 'path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'fs';
 import {mkdtemp} from 'node:fs/promises';
 import Return from './Context/Return';
 import Constructors from './Context/Constructors';
-import {tmpdir} from "os";
-import {PuthBrowser} from "./HandlesBrowsers";
-import {ContextStatus, ICommand} from "@puth/core/src/Types";
+import {tmpdir} from 'os';
+import {PuthBrowser} from './HandlesBrowsers';
+import {ContextStatus, ICommand, IExpectation} from '@puth/core/src/Types';
+import {CdpPage} from 'puppeteer-core/lib/cjs/puppeteer/cdp/Page';
 
 const {writeFile} = fsPromise;
 
@@ -29,6 +30,8 @@ type ContextEvents = {
     'browser:disconnected': {browser: PuthBrowser},
     'page:created': {browser: PuthBrowser, page: Page},
     'page:closed': {browser: PuthBrowser, page: Page},
+    'call:apply:error': {error: any, command: ICommand|undefined, page: CdpPage},
+    'call:expectation:error': {expectation: IExpectation, command: ICommand|undefined, page: CdpPage},
 }
 
 type ContextOptions = {
@@ -47,9 +50,6 @@ type ContextOptions = {
     track: string[]|undefined;
 }
 type ContextCaches = {
-    snapshot: {
-        lastHtml: string;
-    };
     dialog: Map<Page, Dialog>;
 }
 
@@ -68,9 +68,6 @@ class Context extends Generic {
     
     public browsers: PuthBrowser[] = [];
     public caches: ContextCaches = {
-        snapshot: {
-            lastHtml: '',
-        },
         dialog: new Map<Page, Dialog>(),
     };
     
@@ -82,7 +79,7 @@ class Context extends Generic {
     } = {
         name: '',
         status: ContextStatus.PENDING,
-    }
+    };
     
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
@@ -146,7 +143,7 @@ class Context extends Generic {
     }
     
     public async destroy(options: any = {}) {
-        if (!options?.immediately) {
+        if (! options?.immediately) {
             this.destroyingOptions = options;
             this.destroying = true;
             return false;
@@ -348,7 +345,7 @@ class Context extends Generic {
         
         let on = this.resolveOn(packet);
         // resolve page object
-        let page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
+        let page: CdpPage = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
         
         // Create command
         const command = await this.createCommandInstance(packet, on);
@@ -394,7 +391,7 @@ class Context extends Generic {
         }
         
         // Call original function on object
-        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters)
+        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters);
     }
     
     // TODO Cleanup parameters and maybe unify handling in special object
@@ -415,6 +412,9 @@ class Context extends Generic {
             
             return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
         } catch (error: any) {
+            // call event before any pushToCache call
+            await this.emitAsync('call:apply:error', {error, command, page});
+            
             if (this.shouldSnapshot) {
                 command.time.finished = Date.now();
                 command.time.took = command.time.finished - command.time.started;
@@ -443,7 +443,7 @@ class Context extends Generic {
     
     private async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
         let beforeReturn = async () => {
-            if (!this.isPageBlockedByDialog(page)) {
+            if (! this.isPageBlockedByDialog(page)) {
                 // await Snapshots.createAfter(this, page, command);
             }
             
@@ -453,6 +453,9 @@ class Context extends Generic {
         
         if (expectation) {
             if (expectation.test && ! expectation.test(returnValue)) {
+                // call event before any pushToCache call
+                await this.emit('call:expectation:error', {expectation, command, page});
+                
                 if (this.shouldSnapshot) {
                     Snapshots.error(this, page, command, {
                         type: 'expectation',
@@ -718,6 +721,12 @@ class Context extends Generic {
     emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
     emit(type, event?) {
         return this.emitter.emit(type, event);
+    }
+    
+    async emitAsync<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): Promise<void>;
+    async emitAsync<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): Promise<void>;
+    async emitAsync(type, event?) {
+        return this.emitter.emitAsync(type, event);
     }
 }
 

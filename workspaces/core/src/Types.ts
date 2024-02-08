@@ -8,10 +8,10 @@ export type IPacket = {
 export type IViewport = {
     width: number;
     height: number;
-    deviceScaleFactor: number;
-    isMobile: boolean;
-    isLandscaped: boolean;
-    hasTouch: boolean;
+    deviceScaleFactor?: number;
+    isMobile?: boolean;
+    isLandscape?: boolean;
+    hasTouch?: boolean;
 };
 
 export type ICommand = IPacket & {

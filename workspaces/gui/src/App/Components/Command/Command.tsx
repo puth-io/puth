@@ -9,10 +9,10 @@ import Constructors from 'puth/src/Context/Constructors';
 export type IViewport = {
   width: number;
   height: number;
-  deviceScaleFactor: number;
-  isMobile: boolean;
-  hasTouch: boolean;
-  isLandscaped: boolean;
+  deviceScaleFactor?: number;
+  isMobile?: boolean;
+  hasTouch?: boolean;
+  isLandscape?: boolean;
 };
 
 export type ICommand = {
