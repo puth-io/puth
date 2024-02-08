@@ -81,11 +81,7 @@ class Context extends Generic {
         status: ContextStatus.PENDING,
     };
     
-    // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
-    // this is to catch all screencast frames when the call ends too fast
     public destroying: boolean = false;
-    public destroyingDelay = 2000;
-    public destroyingOptions: any = {};
     
     constructor(puth: Puth, options: any = {}) {
         super();
@@ -142,10 +138,17 @@ class Context extends Generic {
             .then(() => browser);
     }
     
+    // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
+    // this is to catch all screencast frames when the call ends too fast
     public async destroy(options: any = {}) {
         if (! options?.immediately) {
-            this.destroyingOptions = options;
             this.destroying = true;
+            if (options == null) {
+                options = {};
+            }
+            options.immediately = true;
+            setTimeout(() => this.destroy(options), 400);
+            
             return false;
         }
         

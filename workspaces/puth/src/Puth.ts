@@ -60,8 +60,6 @@ export default class Puth {
     if (options?.installedBrowser) {
       this.info(`Using browser: ${options.installedBrowser.browser} ${options.installedBrowser.buildId} (${options.installedBrowser.platform})`);
     }
-    
-    setInterval(() => this.cleanupContexts(), 5_000);
   }
 
   use(plugin: PuthPluginGeneric<PuthPlugin>) {
@@ -248,25 +246,6 @@ export default class Puth {
         WebsocketConnections.push(connection);
       });
     });
-  }
-  
-  private async cleanupContexts() {
-    let now = Date.now();
-    
-    for (let idx in this.contexts) {
-      let ctx = this.contexts[idx];
-      if ((now - ctx.lastActivity) <= (ctx.destroying ? ctx.destroyingDelay : 30_000)) {
-        continue;
-      }
-      if (!ctx.destroyingOptions) {
-        ctx.destroyingOptions = {};
-      }
-      ctx.destroyingOptions.immediately = true;
-      
-      await ctx.destroy(ctx.destroyingOptions);
-      this.emitter.emit('context:destroyed', {context: ctx});
-      delete this.contexts[ctx.id];
-    }
   }
 
   getContextPlugins() {
