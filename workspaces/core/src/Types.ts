@@ -82,6 +82,11 @@ export type ISnapshot = {
     includes?: IPageInclude[];
 };
 
+export enum SnapshotMode {
+    FRAME = 'frame',
+    DOM = 'dom',
+}
+
 export enum SnapshotState {
     BEFORE = 'before',
     AFTER = 'after',

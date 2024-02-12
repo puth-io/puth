@@ -33,35 +33,22 @@ export const MainTopButtons = observer(function MainTopButtons() {
     const {app} = useContext(AppContext);
     
     let setScreencastMode = (mode: 'before'|'after') => {
-        if (! app.previewStore?.screencast) {
+        if (! app.previewStore) {
             return;
         }
-        app.previewStore.screencast.mode = mode;
+        app.previewStore.state = mode;
     };
     
     return (
         <>
-            {/*<GroupContainer>*/}
-            {/*    <GroupButton*/}
-            {/*        active={true}*/}
-            {/*        children={'FRAME'}*/}
-            {/*    />*/}
-            {/*    <GroupButton*/}
-            {/*        active={false}*/}
-            {/*        children={'DOM'}*/}
-            {/*    />*/}
-            {/*</GroupContainer>*/}
-            
-            {/*<div className={'shrink-0'} style={{height: '1px', width: '0.75rem', background: 'rgba(255, 255, 255, 0.24)'}} />*/}
-            
             <GroupContainer className={'mr-4'}>
                 <GroupButton
-                    active={app.previewStore?.screencast.mode === 'before'}
+                    active={app.previewStore?.state === 'before'}
                     onClick={() => setScreencastMode('before')}
                     children={'BEFORE'}
                 />
                 <GroupButton
-                    active={app.previewStore?.screencast.mode === 'after'}
+                    active={app.previewStore?.state === 'after'}
                     onClick={() => setScreencastMode('after')}
                     children={'AFTER'}
                 />

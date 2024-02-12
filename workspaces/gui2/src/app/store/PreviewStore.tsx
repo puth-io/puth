@@ -1,8 +1,8 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import Events from '../Events';
-import {ICommand} from "../Types.ts";
-import {SnapshotState} from '@puth/core/src/Types'
-import ContextStore from "@/app/store/ContextStore";
+import {ICommand} from '../Types.ts';
+import {SnapshotMode, SnapshotState} from '@puth/core/src/Types';
+import ContextStore from '@/app/store/ContextStore';
 
 // do not put this inside PreviewStoreClass because this must not be observed
 let _lastActiveScreencastUrl: string|null = null;
@@ -20,12 +20,13 @@ class PreviewStore {
     screencast: {
         lastFrameBeforeSector: any,
         inBetween: any[],
-        mode: SnapshotState.REPLAY|SnapshotState.BEFORE|SnapshotState.AFTER,
     } = {
         lastFrameBeforeSector: null,
         inBetween: [],
-        mode: SnapshotState.AFTER,
     };
+    
+    _mode: SnapshotMode = SnapshotMode.FRAME;
+    _state: SnapshotState = SnapshotState.AFTER;
     
     constructor() {
         makeObservable(this, {
@@ -38,6 +39,8 @@ class PreviewStore {
             highlightInterval: observable,
             _darken: observable,
             screencast: observable,
+            _mode: observable,
+            _state: observable,
             
             clear: action,
             resetHighlightInterval: action,
@@ -56,18 +59,36 @@ class PreviewStore {
             isVisibleHighlight: computed,
             // activeCommand: computed,
             // activeContext: computed,
+            mode: computed,
+            state: computed,
         });
         
         this.registerEvents();
     }
     
+    get mode() {
+        return this._mode;
+    }
+    
+    set mode(mode: SnapshotMode) {
+        this._mode = mode;
+    }
+    
+    get state() {
+        return this._state;
+    }
+    
+    set state(state: SnapshotState) {
+        this._state = state;
+    }
+    
     get activeScreencast() {
-        if (this.screencast.mode === SnapshotState.AFTER) {
+        if (this.state === SnapshotState.AFTER) {
             if (this.screencast.inBetween.length > 0) {
                 return this.screencast.inBetween[this.screencast.inBetween.length - 1];
             }
         }
-        if (this.screencast.mode === SnapshotState.BEFORE) {
+        if (this.state === SnapshotState.BEFORE) {
             return this.screencast.lastFrameBeforeSector;
         }
         
