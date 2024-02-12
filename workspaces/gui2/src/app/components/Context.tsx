@@ -3,7 +3,7 @@ import {observer} from "mobx-react-lite";
 import {useContext, useRef} from "react";
 import {Button} from "../../components/ui/button";
 import {AppContext} from "../../shared/Contexts";
-import Command from "./Command/Command";
+import Command from "@/app/components/Command";
 import Log from "./Log/Log";
 import Request from "./Request/Request";
 
@@ -80,7 +80,7 @@ export const Context = observer(function Context() {
                 <div className={'flex items-center text-gray-300 mx-2'}>
                     <Icon name={'history'} className={'mr-1'}/> 1min
                 </div>
-                <DownloadHandler resolver={() => app.activeContext.blob()}/>
+                <DownloadHandler resolver={() => app.activeContext?.blob()}/>
             </div>
             
             <div className={'grow overflow-y-auto px-5'}>

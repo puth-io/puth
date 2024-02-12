@@ -20,7 +20,7 @@ class PreviewStore {
     screencast: {
         lastFrameBeforeSector: any,
         inBetween: any[],
-        mode: SnapshotState.BEFORE|SnapshotState.AFTER,
+        mode: SnapshotState.REPLAY|SnapshotState.BEFORE|SnapshotState.AFTER,
     } = {
         lastFrameBeforeSector: null,
         inBetween: [],

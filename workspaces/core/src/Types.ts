@@ -85,6 +85,7 @@ export type ISnapshot = {
 export enum SnapshotState {
     BEFORE = 'before',
     AFTER = 'after',
+    REPLAY = 'replay',
 }
 
 export type IResponse = IPacket & {

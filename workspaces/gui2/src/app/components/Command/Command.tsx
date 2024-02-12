@@ -71,15 +71,6 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   let active = app.previewStore?.activeCommand?.id === command?.id;
   let hasErrors = command.errors.length > 0;
 
-  let {inBetween, replayTime, minReplayTime, maxReplayTime} = app.previewStore?.screencast;
-  let replayProgress =  <></>;
-  if (active && app.previewStore?.screencast.mode === 'replay' && inBetween.length > 2) {
-    let timespan = maxReplayTime - minReplayTime;
-    let progress = replayTime - minReplayTime;
-    let percent = progress / timespan;
-    replayProgress = <div className={'bg-primary'} style={{zIndex: 10, height: '2px', position: 'absolute', bottom: '2px', left: '0px', width: Math.min(percent * 100, 100) + '%'}}></div>;
-  }
-  
   let statusIcon = hasErrors ? <StatusIcon status={'failed'}/> : null;
   let statusBackground = hasErrors ? 'bg-task-error' : 'bg-task';
   let status = <div className={`absolute left-0 ${statusBackground}`} style={{top: '2px', bottom: '2px', width: '3px',}}/>
@@ -97,7 +88,6 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
             style={{paddingLeft: '0.75rem'}}
         >
           {index !== undefined ? index + 1 : ''}
-          {replayProgress}
           {status}
         </td>
         <td>
