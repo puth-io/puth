@@ -296,13 +296,6 @@ class Context extends Generic {
         }
     }
     
-    snapshot(func: () => any): void {
-        if (! this.shouldSnapshot) {
-            return;
-        }
-        func();
-    }
-    
     private async createCommandInstance(packet, on): Promise<ICommand|undefined> {
         if (! this.shouldSnapshot) {
             return;
