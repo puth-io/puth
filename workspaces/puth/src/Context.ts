@@ -30,6 +30,8 @@ type ContextEvents = {
     'browser:disconnected': {browser: PuthBrowser},
     'page:created': {browser: PuthBrowser, page: Page},
     'page:closed': {browser: PuthBrowser, page: Page},
+    'call:apply:before': {command: ICommand|undefined, page: CdpPage},
+    'call:apply:after': {command: ICommand|undefined, page: CdpPage},
     'call:apply:error': {error: any, command: ICommand|undefined, page: CdpPage},
     'call:expectation:error': {expectation: IExpectation, command: ICommand|undefined, page: CdpPage},
 }
@@ -399,6 +401,8 @@ class Context extends Generic {
     
     // TODO Cleanup parameters and maybe unify handling in special object
     private async handleCallApply(packet, page, command, on, func, parameters, expects?) {
+        await this.emitAsync('call:apply:before', {command, page});
+        
         try {
             let returnValue = func.call(on, ...parameters);
             
@@ -446,6 +450,8 @@ class Context extends Generic {
     
     private async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
         let beforeReturn = async () => {
+            await this.emitAsync('call:apply:after', {command, page});
+            
             if (! this.isPageBlockedByDialog(page)) {
                 // await Snapshots.createAfter(this, page, command);
             }

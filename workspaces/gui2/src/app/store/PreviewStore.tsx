@@ -1,7 +1,6 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import Events from '../Events';
-import {ICommand} from '../Types.ts';
-import {SnapshotMode, SnapshotState} from '@puth/core/src/Types';
+import {ICommand, SnapshotMode, SnapshotState} from '@puth/core/src/Types';
 import ContextStore from '@/app/store/ContextStore';
 
 // do not put this inside PreviewStoreClass because this must not be observed
@@ -149,7 +148,9 @@ class PreviewStore {
     }
     
     set activeCommand(command) {
-        this.activeContext = command?.context;
+        if (command) {
+            this.activeContext = command.context;
+        }
         this._activeCommand = command;
     }
     
