@@ -9,7 +9,6 @@ let _lastActiveScreencastUrl: string|null = null;
 class PreviewStore {
     _activeContext: ContextStore|undefined;
     _activeCommand: ICommand|undefined;
-    activeState: SnapshotState = SnapshotState.BEFORE;
     highlightCommand: ICommand|undefined;
     highlightState: SnapshotState = SnapshotState.AFTER;
     highlightScreencast: any = null;
@@ -31,7 +30,6 @@ class PreviewStore {
         makeObservable(this, {
             _activeContext: observable,
             _activeCommand: observable,
-            activeState: observable,
             highlightCommand: observable,
             highlightState: observable,
             highlightScreencast: observable,
@@ -140,7 +138,7 @@ class PreviewStore {
     }
     
     get visibleHighlightState() {
-        return this.highlightCommand ? this.highlightState : this.activeState;
+        return this.highlightCommand ? this.highlightState : this.state;
     }
     
     get isVisibleHighlight() {
