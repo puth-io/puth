@@ -14,8 +14,6 @@
     "@fastify/websocket": "^8.2.0",
     "@inquirer/prompts": "^3.1.1",
     "@msgpack/msgpack": "^2.8.0",
-    "@types/diff-match-patch": "^1.0.32",
-    "axios": "^1.2.1",
     "chokidar": "^3.5.3",
     "diff-match-patch": "^1.0.5",
     "fastify": "^4.23.2",
@@ -23,7 +21,6 @@
     "mitt": "^3.0.1",
     "puppeteer-core": "^21.3.4",
     "tmp-promise": "^2.1.1",
-    "typedoc": "^0.23.22",
     "uuid": "^9.0.1",
     "pino": "^8.15.1",
     "pino-pretty": "^10.2.0",
@@ -32,10 +29,10 @@
   "devDependencies": {
     "@puth/client": "*",
     "@types/assert": "^1.5.7",
-    "@types/axios": "^0.14.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.7.0",
     "@types/uuid": "^9.0.4",
+    "@types/diff-match-patch": "^1.0.32",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "mocha": "^10.2.0",
@@ -44,6 +41,7 @@
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^4.9.4",
+    "typedoc": "^0.23.22",
     "tsconfig-paths": "^4.2.0"
   },
   "files": [
