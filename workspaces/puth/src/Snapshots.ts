@@ -1,7 +1,7 @@
-import Context from '@/context';
 import {Page} from 'puppeteer-core';
 import WebsocketConnections from './WebsocketConnections';
 import {ICommand, ICommandError, IPacket} from '@puth/core/src/Types';
+import Context from './Context';
 
 class SnapshotHandler {
     private cache = new Map<Context, IPacket[]>();

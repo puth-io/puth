@@ -18,17 +18,17 @@
     "strict": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@/context": [
+        "./src/Context"
+      ]
+    }
   },
   "include": [
     "src"
   ],
   "exclude": [
     "node_modules"
-  ],
-  "paths": {
-    "@/context": [
-      "./src/Context"
-    ]
-  }
+  ]
 }

@@ -145,7 +145,7 @@ class PreviewStore {
         return this.highlightCommand !== undefined;
     }
     
-    set activeCommand(command) {
+    set activeCommand(command: TODO) {
         if (command) {
             this.activeContext = command.context;
         }
@@ -223,19 +223,19 @@ class PreviewStore {
                 }
                 
                 this.activeCommand = command;
-                this.activeState = SnapshotState.BEFORE;
+                this.state = SnapshotState.BEFORE;
                 
-                let idx = command.context.commands.indexOf(command);
+                let idx = (command.context as TODO).commands.indexOf(command);
                 // if (idx !== 0) { // find last frame before inBetween sector to display as entry point
                 //     this.screencast.lastFrameBeforeSector = this.findLastScreencastForCommand(command.context.commands[idx - 1]).screencast;
                 // }
-                let until = idx === (command.context.commands.length - 1) ? (command.time.finished + 1) : command.context.commands[idx + 1].time.started;
-                this.screencast.inBetween = this.findEventsBetween(command.time.started, until, command.context.screencasts);
+                let until = idx === ((command.context as TODO).commands.length - 1) ? (command.time.finished + 1) : (command.context as TODO).commands[idx + 1].time.started;
+                this.screencast.inBetween = this.findEventsBetween(command.time.started, until, (command.context as TODO).screencasts);
                 
                 // find last frame before inBetween sector to display as entry point
-                this.screencast.lastFrameBeforeSector = this.findLastEventUntil(command.time.started, command.context.screencasts);
+                this.screencast.lastFrameBeforeSector = this.findLastEventUntil(command.time.started, (command.context as TODO).screencasts);
                 
-                Events.emit('command:active', command);
+                Events.emit('command:active', command as TODO);
             }),
         );
         // @ts-ignore

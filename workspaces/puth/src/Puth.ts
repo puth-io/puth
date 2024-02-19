@@ -1,4 +1,4 @@
-import path from 'path';
+import  path from 'path';
 import Fastify from 'fastify';
 import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
@@ -34,6 +34,7 @@ export default class Puth {
     debug: boolean | undefined;
     plugins: string[] | undefined;
     dev: boolean | undefined;
+    staticDir: string | undefined;
     server: {
       allowOrigins: string[];
     };
@@ -167,7 +168,7 @@ export default class Puth {
     // TODO do GUI and probably move to another place but without
     //      server, idk where the gui should be served from
     this.server.register(require('@fastify/static'), {
-      root: path.join(__dirname, '../static/gui'),
+      root: this.options?.staticDir ?? path.join(__dirname, '../static/gui'),
       // prefix: '/assets',
     });
 

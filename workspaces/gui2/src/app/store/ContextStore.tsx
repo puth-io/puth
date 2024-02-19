@@ -38,7 +38,7 @@ export default class ContextStore {
     
     constructor(
         packet: any,
-        connectionStore: any,
+        connectionStore?: any,
     ) {
         this.original = packet;
         this.connectionStore = connectionStore;
@@ -94,7 +94,7 @@ export default class ContextStore {
             this.unspecific.push(packet);
         } else if (packet.type === 'screencasts') {
             this.screencasts.push(packet);
-            Events.emit('context:event:screencast', {context: this, packet});
+            Events.emit('context:event:screencast', {context: this as TODO, packet});
             // this.emit('context:event:screencast', {context: this, packet});
             
             // TODO update

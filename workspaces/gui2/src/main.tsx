@@ -8,6 +8,10 @@ import {AppContext} from './shared/Contexts';
 import AppStore from "@/app/store/AppStore";
 import Events from "./app/Events.tsx";
 
+declare global {
+    type TODO = any;
+}
+
 const app = new AppStore();
 if (process.env.NODE_ENV === 'development') {
     app.connectionSuggestions = ['ws://127.0.0.1:7345/websocket', ...app.connectionSuggestions];

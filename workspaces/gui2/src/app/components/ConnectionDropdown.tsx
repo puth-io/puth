@@ -6,7 +6,7 @@ import {Icon} from "../../components/icon.tsx";
 import {Input} from "../../components/ui/input.tsx";
 import {AppContext} from "../../shared/Contexts.tsx";
 
-function RoundButton({onClick, className = '', active, children}) {
+function RoundButton({onClick, className = '', active, children}: TODO) {
     return (
         <div
             className={'flex items-center rounded-full border uppercase text-xs mr-4 ' + className}

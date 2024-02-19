@@ -29,7 +29,7 @@ export type ConnectionEvents = {
     'context:event:screencast': {context: ContextStore, packet: any};
 };
 
-export function EmitContextEvent(connection: Connection, context, type, arg?) {
+export function EmitContextEvent(connection: Connection, context: TODO, type: string, arg?: TODO) {
     connection.send({
         // namespace: 'events',
         type: 'event',
@@ -42,7 +42,7 @@ export function EmitContextEvent(connection: Connection, context, type, arg?) {
     });
 }
 
-export function EmitPuthEvent(connection: Connection, type, arg?) {
+export function EmitPuthEvent(connection: Connection, type: string, arg?: TODO) {
     connection.send({
         // namespace: 'events',
         type: 'event',
@@ -106,11 +106,11 @@ export class Connection {
             }
         }, this.connectionTimeout);
         
-        this.websocket.onopen = (event) => {
+        this.websocket.onopen = () => {
             clearTimeout(timeoutTimer);
             this.connectionState = this.websocket.readyState;
         };
-        this.websocket.onclose = (event) => {
+        this.websocket.onclose = () => {
             setTimeout(() => {
                 if (this.connectionState === WebSocket.CLOSED) {
                     this.connect(this.uri);
