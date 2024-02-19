@@ -1,4 +1,4 @@
-import {IExpects} from '@puth/core/src/Types';
+import {IExpects} from '@puth/core';
 
 const Expects: IExpects = {
   Element: {

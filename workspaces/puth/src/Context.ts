@@ -15,7 +15,7 @@ import Return from './Context/Return';
 import Constructors from './Context/Constructors';
 import {tmpdir} from 'os';
 import {PuthBrowser} from './HandlesBrowsers';
-import {ContextStatus, ICommand, IExpectation} from '@puth/core/src/Types';
+import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import {CdpPage} from 'puppeteer-core/lib/cjs/puppeteer/cdp/Page';
 
 const {writeFile} = fsPromise;

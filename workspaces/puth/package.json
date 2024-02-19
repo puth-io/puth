@@ -7,32 +7,32 @@
   },
   "description": "Puth (Puppet-Theater) is a versatile browser testing framework with a powerful GUI.",
   "dependencies": {
-    "@puth/core": "*",
     "@fastify/cors": "^8.4.0",
     "@fastify/http-proxy": "^9.2.1",
     "@fastify/static": "^6.11.2",
     "@fastify/websocket": "^8.2.0",
     "@inquirer/prompts": "^3.1.1",
     "@msgpack/msgpack": "^2.8.0",
+    "@puth/core": "^0.0.0",
     "chokidar": "^3.5.3",
     "diff-match-patch": "^1.0.5",
     "fastify": "^4.23.2",
     "meow": "^9.0.0",
     "mitt": "^3.0.1",
-    "puppeteer-core": "^21.3.4",
-    "tmp-promise": "^2.1.1",
-    "uuid": "^9.0.1",
     "pino": "^8.15.1",
     "pino-pretty": "^10.2.0",
-    "sharp": "^0.32.6"
+    "puppeteer-core": "^21.3.4",
+    "sharp": "^0.32.6",
+    "tmp-promise": "^2.1.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@puth/client": "*",
     "@types/assert": "^1.5.7",
+    "@types/diff-match-patch": "^1.0.32",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.7.0",
     "@types/uuid": "^9.0.4",
-    "@types/diff-match-patch": "^1.0.32",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "mocha": "^10.2.0",
@@ -40,9 +40,10 @@
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^4.9.4",
+    "tsc-alias": "^1.8.8",
+    "tsconfig-paths": "^4.2.0",
     "typedoc": "^0.23.22",
-    "tsconfig-paths": "^4.2.0"
+    "typescript": "^4.9.4"
   },
   "files": [
     "bin/**/*",
@@ -51,7 +52,7 @@
     "static/**/*"
   ],
   "scripts": {
-    "build": "rm -rf lib/ && tsc",
+    "build": "rm -rf lib/ && tsc --build --verbose",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha --exit --timeout 15000 -r ts-node/register 'test/**/*.ts'",
     "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 15000 -r ts-node/register 'test/api.test.ts'",

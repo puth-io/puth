@@ -1,6 +1,6 @@
 import {Page} from 'puppeteer-core';
 import WebsocketConnections from './WebsocketConnections';
-import {ICommand, ICommandError, IPacket} from '@puth/core/src/Types';
+import {ICommand, ICommandError, IPacket} from '@puth/core';
 import Context from './Context';
 
 class SnapshotHandler {
