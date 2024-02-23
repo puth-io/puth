@@ -3,6 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
-    "puth": "*"
+    "puth": "^0.6.0"
   }
 }
