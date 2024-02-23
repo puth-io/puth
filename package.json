@@ -5,7 +5,6 @@
     "workspaces/core",
     "workspaces/puth",
     "workspaces/gui",
-    "workspaces/gui2",
     "workspaces/dev",
     "workspaces/clients/js/client"
   ],
