@@ -2,7 +2,7 @@ import path from 'path';
 import Fastify from 'fastify';
 import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
-import Context from './Context';
+import Context from '@/context';
 import WebsocketConnections from './WebsocketConnections';
 import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';
@@ -19,7 +19,7 @@ type PuthEvents = {
 }
 
 export default class Puth {
-  private contexts: Context[] = [];
+  private contexts: {[key: string]: Context} = {};
   private contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
   private instancePlugins: PuthInstancePlugin[] = [];
   private emitter: Emitter<PuthEvents>;
@@ -34,6 +34,7 @@ export default class Puth {
     debug: boolean | undefined;
     plugins: string[] | undefined;
     dev: boolean | undefined;
+    staticDir: string | undefined;
     server: {
       allowOrigins: string[];
     };
@@ -99,7 +100,7 @@ export default class Puth {
   serve(port = 7345, address = '127.0.0.1', log = true) {
     let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
 
-    this.server = Fastify({ logger: this.logger });
+    this.server = Fastify({ logger: this.logger, disableRequestLogging: true });
     this.setupFastify(allowedOrigins);
     this.server.listen({ port, host: address });
   }
@@ -144,9 +145,11 @@ export default class Puth {
     let { id } = packet as { id: string };
 
     if (id in this.contexts) {
-      await this.contexts[id].destroy(packet?.options);
-      this.emitter.emit('context:destroyed', {context: this.contexts[id]});
-      delete this.contexts[id];
+      let destroyed = await this.contexts[id].destroy(packet?.options);
+      if (destroyed) {
+        this.emitter.emit('context:destroyed', {context: this.contexts[id]});
+        delete this.contexts[id];
+      }
 
       return true;
     }
@@ -165,7 +168,7 @@ export default class Puth {
     // TODO do GUI and probably move to another place but without
     //      server, idk where the gui should be served from
     this.server.register(require('@fastify/static'), {
-      root: path.join(__dirname, '../static/gui'),
+      root: this.options?.staticDir ?? path.join(__dirname, '../static/gui'),
       // prefix: '/assets',
     });
 
@@ -225,8 +228,6 @@ export default class Puth {
         if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
           return connection.destroy();
         }
-
-        WebsocketConnections.push(connection);
   
         connection.socket.on('message', data => {
           let message: any = WebsocketConnections.decode(data);
@@ -243,6 +244,7 @@ export default class Puth {
         });
 
         connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+        WebsocketConnections.push(connection);
       });
     });
   }

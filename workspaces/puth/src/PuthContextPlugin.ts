@@ -1,5 +1,5 @@
-import Context from './Context';
 import { PuthPlugin, PuthPluginType } from './PuthPluginGeneric';
+import Context from './Context';
 
 /**
  * PuthContextPlugin are used to extend the Context instances.

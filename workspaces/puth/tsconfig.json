@@ -1,4 +1,9 @@
 {
+  "ts-node": {
+    "require": [
+      "tsconfig-paths/register"
+    ]
+  },
   "compilerOptions": {
     "module": "commonjs",
     "target": "es6",
@@ -15,12 +20,23 @@
     "strict": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "baseUrl": ["."],
+      "@/context": [
+        "./src/Context"
+      ]
+    }
   },
   "include": [
     "src"
   ],
   "exclude": [
     "node_modules"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    }
   ]
 }

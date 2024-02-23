@@ -1,20 +1,22 @@
 import {v4} from 'uuid';
-import puppeteer, {Page, Target, Dialog} from 'puppeteer-core';
+import puppeteer, {Dialog, Page, Target} from 'puppeteer-core';
 import Generic from './Generic';
-import Snapshots, {ICommand} from './Snapshots';
+import Snapshots from './Snapshots';
 import * as Utils from './Utils';
 import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
-import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
+import mitt, {Emitter, Handler, WildcardHandler} from './Utils/Emitter';
 import path from 'path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'fs';
 import {mkdtemp} from 'node:fs/promises';
 import Return from './Context/Return';
 import Constructors from './Context/Constructors';
-import {tmpdir} from "os";
-import {PuthBrowser} from "./HandlesBrowsers";
+import {tmpdir} from 'os';
+import {PuthBrowser} from './HandlesBrowsers';
+import {ContextStatus, ICommand, IExpectation} from '@puth/core';
+import {CdpPage} from 'puppeteer-core/lib/cjs/puppeteer/cdp/Page';
 
 const {writeFile} = fsPromise;
 
@@ -28,6 +30,10 @@ type ContextEvents = {
     'browser:disconnected': {browser: PuthBrowser},
     'page:created': {browser: PuthBrowser, page: Page},
     'page:closed': {browser: PuthBrowser, page: Page},
+    'call:apply:before': {command: ICommand|undefined, page: CdpPage},
+    'call:apply:after': {command: ICommand|undefined, page: CdpPage},
+    'call:apply:error': {error: any, command: ICommand|undefined, page: CdpPage},
+    'call:expectation:error': {expectation: IExpectation, command: ICommand|undefined, page: CdpPage},
 }
 
 type ContextOptions = {
@@ -35,7 +41,7 @@ type ContextOptions = {
     snapshot: boolean|undefined;
     test: {
         name: undefined|string;
-        status: undefined|'failed'|'success';
+        status: undefined|ContextStatus.FAILED|ContextStatus.SUCCESSFUL|ContextStatus.PENDING;
     };
     group: string|undefined;
     status: string|undefined;
@@ -46,9 +52,6 @@ type ContextOptions = {
     track: string[]|undefined;
 }
 type ContextCaches = {
-    snapshot: {
-        lastHtml: string;
-    };
     dialog: Map<Page, Dialog>;
 }
 
@@ -58,6 +61,7 @@ class Context extends Generic {
     private readonly _puth: Puth;
     private readonly _emitter: Emitter<ContextEvents>;
     private readonly _createdAt: number;
+    private _lastActivity: number;
     
     private options: ContextOptions;
     private plugins: PuthContextPlugin[] = [];
@@ -66,13 +70,20 @@ class Context extends Generic {
     
     public browsers: PuthBrowser[] = [];
     public caches: ContextCaches = {
-        snapshot: {
-            lastHtml: '',
-        },
         dialog: new Map<Page, Dialog>(),
     };
     
     public shouldSnapshot: boolean = false;
+    
+    public test: {
+        name: string;
+        status: ContextStatus.FAILED|ContextStatus.SUCCESSFUL|ContextStatus.PENDING;
+    } = {
+        name: '',
+        status: ContextStatus.PENDING,
+    };
+    
+    public destroying: boolean = false;
     
     constructor(puth: Puth, options: any = {}) {
         super();
@@ -80,9 +91,12 @@ class Context extends Generic {
         this._puth = puth;
         this._emitter = mitt<ContextEvents>();
         this._createdAt = Date.now();
+        this._lastActivity = this._createdAt;
         
         this.options = options;
         this.shouldSnapshot = this.options?.snapshot === true;
+        
+        this.test.name = options?.test?.name ?? '';
         
         if (this.shouldSnapshot) { // Track context creation
             Snapshots.pushToCache(this, {
@@ -126,14 +140,26 @@ class Context extends Generic {
             .then(() => browser);
     }
     
+    // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
+    // this is to catch all screencast frames when the call ends too fast
     public async destroy(options: any = {}) {
-        if (this.getTest()?.status !== 'failed') { // succeed test if not defined by client
+        if (! options?.immediately) {
+            this.destroying = true;
+            if (options == null) {
+                options = {};
+            }
+            options.immediately = true;
+            setTimeout(() => this.destroy(options), 400);
+            
+            return false;
+        }
+        
+        if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
         }
         if (options?.save) {
             await this.saveContextSnapshot(options.save);
         }
-        
         // unregister all event listeners
         this.eventFunctions.forEach(([page, event, func]) => {
             page.off(event, func);
@@ -215,18 +241,14 @@ class Context extends Generic {
         this.eventFunctions = this.eventFunctions.filter((listener) => listener[0] !== object);
     }
     
-    public exception() {
-        // pro feature
-    }
-    
     public testFailed() { // used by clients
-        this.options.test.status = 'failed';
+        this.test.status = ContextStatus.FAILED;
         
         if (this.shouldSnapshot) {
             Snapshots.pushToCache(this, {
                 type: 'test',
                 specific: 'status',
-                status: 'failed',
+                status: ContextStatus.FAILED,
                 context: this.serialize(),
                 timestamp: Date.now(),
             });
@@ -234,17 +256,21 @@ class Context extends Generic {
     }
     
     public testSuccess() {
-        this.options.test.status = 'success';
+        this.test.status = ContextStatus.SUCCESSFUL;
         
         if (this.shouldSnapshot) {
             Snapshots.pushToCache(this, {
                 type: 'test',
                 specific: 'status',
-                status: 'success',
+                status: ContextStatus.SUCCESSFUL,
                 context: this.serialize(),
                 timestamp: Date.now(),
             });
         }
+    }
+    
+    public testSucceeded() {
+        return this.testSuccess();
     }
     
     async saveContextSnapshot(options) {
@@ -270,17 +296,11 @@ class Context extends Generic {
         }
     }
     
-    snapshot(func: () => any): void {
-        if (! this.shouldSnapshot) {
-            return;
-        }
-        func();
-    }
-    
     private async createCommandInstance(packet, on): Promise<ICommand|undefined> {
         if (! this.shouldSnapshot) {
             return;
         }
+        const now = Date.now();
         
         return {
             id: v4(),
@@ -298,10 +318,11 @@ class Context extends Generic {
                 path: await Utils.getAbsolutePaths(on),
             },
             time: {
-                elapsed: Date.now() - this.createdAt,
-                started: Date.now(),
+                elapsed: now - this.createdAt,
+                started: now,
+                finished: 0,
             },
-            timestamp: Date.now(),
+            timestamp: now,
         };
     }
     
@@ -318,17 +339,17 @@ class Context extends Generic {
     }
     
     public async call(packet) {
-        let on = this.resolveOn(packet);
+        this._lastActivity = Date.now();
         
+        let on = this.resolveOn(packet);
         // resolve page object
-        let page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
+        let page: CdpPage = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
         
         // Create command
-        const command: ICommand|undefined = await this.createCommandInstance(packet, on);
-        
+        const command = await this.createCommandInstance(packet, on);
         // Create snapshot before command
         if (! this.isPageBlockedByDialog(page)) {
-            await Snapshots.createBefore(this, page, command);
+            // await Snapshots.createBefore(this, page, command);
         }
         
         // Turn object representations into the actual object
@@ -368,11 +389,13 @@ class Context extends Generic {
         }
         
         // Call original function on object
-        return this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters);
+        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters);
     }
     
     // TODO Cleanup parameters and maybe unify handling in special object
     private async handleCallApply(packet, page, command, on, func, parameters, expects?) {
+        await this.emitAsync('call:apply:before', {command, page});
+        
         try {
             let returnValue = func.call(on, ...parameters);
             
@@ -384,19 +407,29 @@ class Context extends Generic {
                 });
             }
             
-            command.time.took = Date.now() - command.time.started;
+            command.time.finished = Date.now();
+            command.time.took = command.time.finished - command.time.started;
             
             return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
         } catch (error: any) {
-            command.time.took = Date.now() - command.time.started;
+            // call event before any pushToCache call
+            await this.emitAsync('call:apply:error', {error, command, page});
+            
             if (this.shouldSnapshot) {
+                command.time.finished = Date.now();
+                command.time.took = command.time.finished - command.time.started;
+                
                 Snapshots.error(this, page, command, {
                     type: 'error',
                     specific: 'apply',
-                    error,
+                    error: {
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack,
+                    },
                     time: Date.now(),
                 });
-                Snapshots.broadcast(command);
+                Snapshots.pushToCache(this, command);
             }
             
             return {
@@ -410,23 +443,28 @@ class Context extends Generic {
     
     private async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
         let beforeReturn = async () => {
-            if (this.isPageBlockedByDialog(page)) {
-                return;
+            await this.emitAsync('call:apply:after', {command, page});
+            
+            if (! this.isPageBlockedByDialog(page)) {
+                // await Snapshots.createAfter(this, page, command);
             }
             
             // TODO Implement this in events. Event: 'function:call:return'
-            await Snapshots.createAfter(this, page, command);
+            Snapshots.pushToCache(this, command);
         };
         
         if (expectation) {
             if (expectation.test && ! expectation.test(returnValue)) {
+                // call event before any pushToCache call
+                await this.emit('call:expectation:error', {expectation, command, page});
+                
                 if (this.shouldSnapshot) {
                     Snapshots.error(this, page, command, {
                         type: 'expectation',
                         expectation,
                         time: Date.now(),
                     });
-                    Snapshots.broadcast(command);
+                    Snapshots.pushToCache(this, command);
                 }
                 
                 return {
@@ -438,6 +476,7 @@ class Context extends Generic {
             
             if ('return' in expectation) {
                 await beforeReturn();
+                
                 return expectation.return(returnValue);
             }
             
@@ -516,8 +555,9 @@ class Context extends Generic {
     }
     
     public async get(action) {
-        let on = this.resolveOn(action);
+        this._lastActivity = Date.now();
         
+        let on = this.resolveOn(action);
         let resolvedTo = on[action.property];
         
         if (resolvedTo === undefined) {
@@ -527,7 +567,6 @@ class Context extends Generic {
                 ).jsonValue();
             }
         }
-        
         // If still undefined, return undefined exception
         if (resolvedTo === undefined) {
             return {
@@ -546,8 +585,9 @@ class Context extends Generic {
     }
     
     public async set(action) {
-        let on = this.resolveOn(action);
+        this._lastActivity = Date.now();
         
+        let on = this.resolveOn(action);
         let {property, value} = action;
         
         try {
@@ -562,6 +602,8 @@ class Context extends Generic {
     }
     
     public async delete(action) {
+        this._lastActivity = Date.now();
+        
         let on = this.resolveOn(action);
         
         try {
@@ -616,7 +658,7 @@ class Context extends Generic {
             id: this.id,
             type: this.type,
             represents: 'PuthContext',
-            test: this.getTest(),
+            test: this.test,
             group: this.getGroup(),
         };
     }
@@ -641,18 +683,12 @@ class Context extends Generic {
         return this._createdAt;
     }
     
-    getTest() {
-        if (! this.options?.test) {
-            this.options.test = {
-                name: undefined,
-                status: undefined,
-            };
-        }
-        return this.options.test;
+    get lastActivity() {
+        return this._lastActivity;
     }
     
     getGroup() {
-        return this.options?.group;
+        return this.options?.group ?? '';
     }
     
     getPuth(): Puth {
@@ -687,6 +723,12 @@ class Context extends Generic {
     emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
     emit(type, event?) {
         return this.emitter.emit(type, event);
+    }
+    
+    async emitAsync<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): Promise<void>;
+    async emitAsync<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): Promise<void>;
+    async emitAsync(type, event?) {
+        return this.emitter.emitAsync(type, event);
     }
 }
 

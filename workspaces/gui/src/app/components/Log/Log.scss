@@ -1,0 +1,30 @@
+$danger: #e22134;
+$dangerDark: #cc1022;
+$dangerBg: rgba(84, 4, 4, 0.25);
+$info: #158fe6;
+$infoBg: rgba(0, 75, 127, 0.25);
+
+.log {
+  cursor: pointer;
+
+  &[data-messagetype='log'] {
+    background-color: $infoBg;
+  }
+
+  &[data-messagetype='error'] {
+    background-color: $dangerBg;
+  }
+
+  td {
+    padding: 0.125rem 0.5rem;
+  }
+
+  &.active,
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &.active > td > *[data-messagetype='error'] {
+    border-color: $dangerDark !important;
+  }
+}

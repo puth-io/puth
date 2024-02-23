@@ -1,11 +1,4 @@
-export type IExpectation = {
-  test: (value: any) => boolean;
-  message: string;
-};
-
-export type IExpects = {
-  [key: string]: IExpectation;
-};
+import {IExpects} from '@puth/core';
 
 const Expects: IExpects = {
   Element: {

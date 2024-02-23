@@ -11,7 +11,7 @@ const {PUPPETEER_REVISIONS} = require("puppeteer-core");
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
-const {installedBrowsers, makeLogger, PuthStandardPlugin} = require("../lib");
+const {installedBrowsers, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin} = require("../lib");
 
 const cli = meow(`
 Usage
@@ -125,7 +125,7 @@ if (input[0] === 'start') {
 }
 
 function version() {
-  logger.info('Puth version ' + pkg.version)
+  logger.info('Puth version: ' + pkg.version)
 }
 
 async function ensureChromeInstallation() {
@@ -191,9 +191,12 @@ async function browserInstaller(cache) {
 
 async function start() {
   puthConfig.installedBrowser = installedBrowsers[0];
+  logger.info(`Installed browsers: ${installedBrowsers.map((i)  => `${i.browser} ${i.buildId} (${i.platform})`).join(', ')}`);
   
   let instance = new Puth(puthConfig);
   instance.use(PuthStandardPlugin);
+  instance.use(LiveViewContextPlugin);
+  instance.use(LiveViewSnapshotPlugin);
   await instance.serve(puthConfig.port, puthConfig.address);
 }
 

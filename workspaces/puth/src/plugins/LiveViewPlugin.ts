@@ -1,12 +1,12 @@
 import {v4} from 'uuid';
 import {Page} from 'puppeteer-core';
-import Context from "puth/src/Context";
-import PuthInstancePlugin from "puth/src/PuthInstancePlugin";
-import Puth from "puth";
-import {PuthBrowser} from "puth/src/HandlesBrowsers";
-import Snapshots from "puth/src/Snapshots";
-import PuthContextPlugin from "puth/src/PuthContextPlugin";
-import Constructors from "puth/src/Context/Constructors";
+import Context from "@/context";
+import PuthInstancePlugin from "../PuthInstancePlugin";
+import Puth from "../";
+import {PuthBrowser} from "../HandlesBrowsers";
+import Snapshots from "../Snapshots";
+import PuthContextPlugin from "../PuthContextPlugin";
+import Constructors from "../Context/Constructors";
 import sharp from "sharp";
 
 export class LiveViewContextPlugin extends PuthContextPlugin {
@@ -130,6 +130,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         client.send('Page.startScreencast', {
             format: 'jpeg',
             quality: 75,
+            everyNthFrame: 1,
         });
     }
     
