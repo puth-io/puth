@@ -52,7 +52,8 @@
     "static/**/*"
   ],
   "scripts": {
-    "build": "rm -rf lib/ && tsc --build --verbose",
+    "build": "rm -rf lib/ && tsc --build --verbose && tsc-alias",
+    "dev:server": "NODE_ENV=development ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/dev/server.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha --exit --timeout 15000 -r ts-node/register 'test/**/*.ts'",
     "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 15000 -r ts-node/register 'test/api.test.ts'",

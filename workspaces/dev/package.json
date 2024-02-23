@@ -4,8 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev:client:watch": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only client.ts",
-    "dev:client": "ts-node-dev -r tsconfig-paths/register --transpile-only client.ts",
-    "dev:server": "NODE_ENV=development ts-node-dev -r tsconfig-paths/register --respawn --transpile-only server.ts"
+    "dev:client": "ts-node-dev -r tsconfig-paths/register --transpile-only client.ts"
   },
   "dependencies": {
     "@puth/client": "*",

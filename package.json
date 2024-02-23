@@ -1,4 +1,5 @@
 {
+  "name": "@puth/monorepo",
   "private": true,
   "workspaces": [
     "workspaces/core",
@@ -8,7 +9,6 @@
     "workspaces/dev",
     "workspaces/clients/js/client"
   ],
-  "name": "@puth/monorepo",
   "devDependencies": {
     "lerna": "^7.3.0"
   }
