@@ -15,7 +15,8 @@
     "@changesets/cli": "^2.27.1"
   },
   "scripts": {
-    "release": "npm run build --workspace=workspaces/gui && changeset publish"
+    "release": "npm run build --workspace=workspaces/gui && npm run build --workspace=workspaces/puth && npm run test --workspace=workspaces/puth && changeset publish",
+    "wip": "npm run build --workspace=workspaces/gui && npm run build --workspace=workspaces/puth && npm run test --workspace=workspaces/puth"
   },
   "license": "SEE LICENSE IN LICENCE"
 }
