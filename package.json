@@ -13,5 +13,9 @@
   },
   "dependencies": {
     "@changesets/cli": "^2.27.1"
-  }
+  },
+  "scripts": {
+    "release": "changeset publish"
+  },
+  "license": "SEE LICENSE IN LICENCE"
 }

@@ -1,9 +1,15 @@
 {
   "name": "@puth/core",
+  "author": "puth.io",
+  "type": "commonjs",
   "main": "./lib/index.js",
-  "private": true,
+  "types": "./lib/Types.d.ts",
   "version": "0.0.0",
   "scripts": {
-    "build": "tsc --build"
-  }
+    "build": "tsc --build",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "lib/"
+  ]
 }
