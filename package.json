@@ -15,7 +15,7 @@
     "@changesets/cli": "^2.27.1"
   },
   "scripts": {
-    "release": "changeset publish"
+    "release": "npm run build --workspace=workspaces/gui && changeset publish"
   },
   "license": "SEE LICENSE IN LICENCE"
 }

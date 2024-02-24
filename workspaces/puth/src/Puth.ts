@@ -165,11 +165,8 @@ export default class Puth {
     }
     this.server.register(fastifyWebsocket);
 
-    // TODO do GUI and probably move to another place but without
-    //      server, idk where the gui should be served from
     this.server.register(require('@fastify/static'), {
-      root: this.options?.staticDir ?? path.join(__dirname, '../static/gui'),
-      // prefix: '/assets',
+      root: this.options?.staticDir ?? path.dirname(require.resolve('@puth/gui/dist/index.html')),
     });
 
     this.server.register(async (fastify) => {
