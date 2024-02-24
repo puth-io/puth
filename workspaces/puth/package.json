@@ -1,6 +1,6 @@
 {
   "name": "puth",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "author": {
     "name": "Sebastian Uehlin",
     "email": "s.uehlin@proton.me"
@@ -14,7 +14,7 @@
     "@inquirer/prompts": "^3.1.1",
     "@msgpack/msgpack": "^2.8.0",
     "@puth/core": "^0.0.0",
-    "@puth/gui": "^0.0.0",
+    "@puth/gui": "^0.1.0",
     "chokidar": "^3.5.3",
     "diff-match-patch": "^1.0.5",
     "fastify": "^4.23.2",
