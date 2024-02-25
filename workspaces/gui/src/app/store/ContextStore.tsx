@@ -1,5 +1,5 @@
 import {action, computed, makeObservable, observable, toJS} from 'mobx';
-import Constructors from 'puth/src/Context/Constructors';
+import Constructors from 'puth/src/context/Constructors';
 import {encode} from "@msgpack/msgpack";
 import {ICommand} from "../Types";
 import Events from "../Events";
