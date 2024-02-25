@@ -2,10 +2,10 @@ import Puth from "puth";
 import { RemoteContext } from "./RemoteObject";
 import { PuthPlugin, PuthPluginGeneric } from "puth/src/PuthPluginGeneric";
 
-export default class LocalPuthClient {
+export class LocalPuthClient {
   private readonly puth: Puth;
   private options: any;
-  private assertionHandler: ((assertion) => any) | undefined;
+  private assertionHandler: ((assertion: any) => any) | undefined;
 
   constructor(serverOptions?, clientOptions?) {
     this.puth = new Puth({

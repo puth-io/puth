@@ -1,3 +1,4 @@
+// @ts-nocheck
 export function magicClassMethods(classDef) {
   const classHandler = Object.create(null);
 

@@ -6,7 +6,7 @@ import Puth from "../";
 import {PuthBrowser} from "../HandlesBrowsers";
 import Snapshots from "../Snapshots";
 import PuthContextPlugin from "../PuthContextPlugin";
-import Constructors from "../Context/Constructors";
+import Constructors from "../context/Constructors";
 import sharp from "sharp";
 
 export class LiveViewContextPlugin extends PuthContextPlugin {

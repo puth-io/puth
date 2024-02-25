@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "strict": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "rootDir": "./src",
+    "outDir": "./lib",
+    "composite": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "baseUrl": ["."],
+      "@/context": [
+        "../../../puth/src/Context"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

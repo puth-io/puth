@@ -1,4 +1,4 @@
-import Constructors from './Context/Constructors';
+import Constructors from './context/Constructors';
 
 export async function getAbsolutePaths(on: any): Promise<[[string, number][] | string][]> {
   if (!Array.isArray(on)) {

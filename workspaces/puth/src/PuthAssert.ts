@@ -1,5 +1,5 @@
 import * as Utils from './Utils';
-import Constructors from './Context/Constructors';
+import Constructors from './context/Constructors';
 
 export const Assertion = (name, actual, expected, result, message) => {
   return {

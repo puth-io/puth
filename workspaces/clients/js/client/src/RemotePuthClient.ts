@@ -1,7 +1,7 @@
 import axios from "axios";
 import { RemoteContext } from "./RemoteObject";
 
-export default class RemotePuthClient {
+export class RemotePuthClient {
   private readonly externalUri: string;
   private axios: any;
   private options: any;

@@ -1,8 +1,16 @@
 {
   "name": "@puth/client",
-  "private": true,
+  "author": "puth.io",
+  "type": "commonjs",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "version": "0.0.0",
-  "dependencies": {
-    "puth": "^0.6.0"
-  }
+  "scripts": {
+    "build": "tsc --build",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "lib/",
+    "LICENCE"
+  ]
 }

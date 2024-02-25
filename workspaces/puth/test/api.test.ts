@@ -1,8 +1,8 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {PuthStandardPlugin} from '../';
-import RemotePuthClient from '@puth/client/RemotePuthClient';
-import Constructors from "../src/Context/Constructors";
+import {RemotePuthClient} from '@puth/client';
+import Constructors from "../src/context/Constructors";
 import {makeLocalPuthClient, makePuthServer} from "./helper";
 import {sleep} from "../src/Utils";
 

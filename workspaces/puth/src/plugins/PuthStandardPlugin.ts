@@ -3,8 +3,8 @@ import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { capitalizeFirstLetter, retryFor } from '../Utils';
 import { ElementHandle } from 'puppeteer-core';
-import Return from '../Context/Return';
-import Constructors from '../Context/Constructors';
+import Return from '../context/Return';
+import Constructors from '../context/Constructors';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {

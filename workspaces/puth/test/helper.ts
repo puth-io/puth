@@ -1,5 +1,5 @@
 import Puth, {installedBrowsers, PuthStandardPlugin} from '../';
-import LocalPuthClient from '@puth/client/LocalPuthClient';
+import {LocalPuthClient} from '@puth/client';
 import * as assert from "assert";
 
 export const installedBrowser = installedBrowsers[0];
