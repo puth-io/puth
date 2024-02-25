@@ -54,6 +54,7 @@
   ],
   "scripts": {
     "build": "rm -rf lib/ && tsc --build --verbose && tsc-alias",
+    "dev": "npm run dev:server",
     "dev:server": "NODE_ENV=development ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/dev/server.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha --exit --timeout 15000 -r ts-node/register 'test/**/*.ts'",
@@ -76,6 +77,6 @@
     "url": "https://github.com/puth-io/puth"
   },
   "bin": "./bin/puth.js",
-  "homepage": "https://puth.dev",
+  "homepage": "https://puth.io",
   "license": "SEE LICENSE IN LICENCE"
 }

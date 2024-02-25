@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, {Dialog, Page, Target} from 'puppeteer-core';
+import puppeteer, {Dialog, Page, Target, ConsoleMessage} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -221,6 +221,29 @@ class Context extends Generic {
     private trackPage(page) {
         page.on('close', () => this.removeEventListenersFrom(page));
         page.on('dialog', (dialog) => this.caches.dialog.set(page, dialog));
+        
+        this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
+            let args: any = [];
+            
+            try {
+                args = await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue()));
+            } catch (e) {
+                // tslint:disable-next-line:no-console
+                console.warn('Could not serialize args from console message');
+            }
+            
+            Snapshots.pushToCache(this, {
+                id: v4(),
+                type: 'log',
+                context: this.serialize(),
+                timestamp: Date.now(),
+                messageType: consoleMessage.type(),
+                args,
+                location: consoleMessage.location(),
+                text: consoleMessage.text(),
+                stackTrace: consoleMessage.stackTrace(),
+            });
+        });
     }
     
     public getSnapshotsByType(type) { // used by clients
