@@ -15,6 +15,7 @@
     "@changesets/cli": "^2.27.1"
   },
   "scripts": {
+    "build": "npm run build --workspace workspaces/core && npm run build --workspace workspaces/gui && npm run build --workspace workspaces/clients/js/client && npm run build --workspace workspaces/puth",
     "release": "changeset publish"
   },
   "license": "SEE LICENSE IN LICENCE"

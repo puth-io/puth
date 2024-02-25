@@ -1,0 +1,44 @@
+name: Release Docker
+
+on:
+  push:
+    tags:
+      - 'puth@*'
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - id: version
+        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
+
+  image:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build Image
+        env:
+          TAG: ${{ needs.version.outputs.version }}
+        run: |
+          docker build --file docker/Dockerfile --build-arg TAG=$TAG --tag puth-test-image .
+      - name: Test image
+        run: |
+          npm ci --workspace workspaces/puth
+          docker run --name puth-test-image -d --network host puth-test-image
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
+          docker save -o /tmp/puth-test-image.tar puth-test-image
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: puth-test-image
+          path: /tmp/puth-test-image.tar
