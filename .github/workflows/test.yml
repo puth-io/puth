@@ -26,21 +26,25 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
+      - name: npm cache dir
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - id: cache
         uses: actions/cache@v4
         with:
           key: node-${{ hashFiles('**/package-lock.json') }}
           path: |
-            .npm
+            ${{ steps.npm-cache-dir.outputs.dir }}
             workspaces/puth/.cache
-      - name: Install & Build
+      - name: install & build
         run: |
           npm ci
           npm run build
-      - name: Download Browser
+      - name: download browser
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
-      - name: Test
+      - name: test
         run: npm run test --workspace workspaces/puth
 
   build-image:
@@ -51,12 +55,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - uses: actions/cache/restore@v3
+      - id: cache
+        uses: actions/cache@v4
         with:
+          key: node-${{ hashFiles('**/package-lock.json') }}
           path: |
             .npm
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/package-lock.json') }}
       - name: Build Image
         run: |
           npm ci
