@@ -259,11 +259,18 @@ jobs:
       - name: test
         run: |
           cd workspaces/puth && bin/puth.js start &
-          cd workspaces/clients/php/workspaces/laravel && cp .env.example .env
-          cd workspaces/clients/php/workspaces/laravel && php artisan serve > storage/logs/server.log 2>&1 &
+          echo $(pwd)
+          cd workspaces/clients/php/workspaces/laravel
+          echo $(pwd)
+          cp .env.example .env
+          echo $(pwd)
+          php artisan serve > storage/logs/server.log 2>&1 &
+          echo $(pwd)
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          cd workspaces/clients/php/workspaces/laravel && php artisan migrate --force
-          cd workspaces/clients/php/workspaces/laravel && php artisan test --without-tty
+          echo $(pwd)
+          php artisan migrate --force
+          echo $(pwd)
+          php artisan test --without-tty
         env:
           RUNNING_IN_CI: true
       - name: Collect logs
