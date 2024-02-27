@@ -246,6 +246,7 @@ jobs:
           tools: composer:v2
           coverage: none
       - name: composer install
+        working-directory: workspaces/clients/php/workspaces/laravel
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
           composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
