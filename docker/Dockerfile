@@ -47,7 +47,7 @@ COPY puth-core-latest.tgz puth-gui-latest.tgz puth-client-latest.tgz puth-latest
 RUN npm i ./puth-core-latest.tgz ./puth-gui-latest.tgz ./puth-client-latest.tgz ./puth-latest.tgz \
     && rm ./puth-core-latest.tgz ./puth-gui-latest.tgz ./puth-client-latest.tgz ./puth-latest.tgz
 
-RUN node_modules/.bin/puth browser install cwd --cleanup-other-installs
+COPY workspaces/puth/.cache .cache
 
 EXPOSE 7345
 

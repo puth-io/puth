@@ -5,10 +5,10 @@ npm pack --workspace workspaces/gui
 npm pack --workspace workspaces/clients/js/client
 npm pack --workspace workspaces/puth
 
-rm puth-core-latest.tgz
-rm puth-gui-latest.tgz
-rm puth-client-latest.tgz
-rm puth-latest.tgz
+rm puth-core-latest.tgz || true
+rm puth-gui-latest.tgz || true
+rm puth-client-latest.tgz || true
+rm puth-latest.tgz || true
 
 mv puth-core-*.tgz puth-core-latest.tgz
 mv puth-gui-*.tgz puth-gui-latest.tgz
