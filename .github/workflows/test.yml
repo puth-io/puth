@@ -108,10 +108,11 @@ jobs:
           npm ci
           npm run build
           ./docker/pack.sh
-          docker build -f docker/Dockerfile -t puth-test-image .
       - name: download browser
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
+      - name: build image
+        run: docker build -f docker/Dockerfile -t puth-test-image .
       - name: Test image
         run: |
           docker run --network host puth-test-image
