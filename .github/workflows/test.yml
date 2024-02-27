@@ -89,9 +89,9 @@ jobs:
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
   test-image:
-#    needs: [test-puth-node]
     name: Test image
     runs-on: ubuntu-latest
+    #    needs: [test-puth-node]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
