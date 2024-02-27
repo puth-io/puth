@@ -11,14 +11,13 @@ on:
   workflow_call:
 
 jobs:
-
   test-puth-node:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version:
-#          - 16
-#          - 18
+          - 16
+          - 18
           - 20
     name: puth | Node ${{ matrix.node-version }}
     steps:
@@ -26,16 +25,12 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
-      - name: npm cache dir
-        id: npm-cache-dir
-        shell: bash
-        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
       - id: cache
         uses: actions/cache@v4
         with:
           key: node-${{ hashFiles('**/package-lock.json') }}
           path: |
-            ${{ steps.npm-cache-dir.outputs.dir }}
+            /home/runner/.npm
             workspaces/puth/.cache
       - name: install & build
         run: |
@@ -46,6 +41,59 @@ jobs:
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: npm run test --workspace workspaces/puth
+
+  php-client-wip:
+    needs: [test-puth-node]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ '8.0', 8.1, 8.2 ]
+#        php: [ 8.2 ]
+    name: PHP ${{ matrix.php }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: cache-npm
+        uses: actions/cache@v4
+        with:
+          key: node-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            /home/runner/.npm
+            workspaces/puth/.cache
+            /root/.cache/composer/files
+      - id: cache-composer
+        uses: actions/cache@v4
+        with:
+          key: composer-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/client/composer.json') }}
+          path: /root/.cache/composer/files
+      - name: setup php & composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
+          tools: composer:v2
+          coverage: none
+      - name: get composer cache directory
+        id: composer-cache
+        working-directory: workspaces/clients/php/client
+        run: echo "$(composer config cache-files-dir)"
+      - run: php --version
+      - name: composer update
+        working-directory: workspaces/clients/php/client
+        run: composer update --prefer-stable --no-interaction --no-suggest
+      - name: install & build
+        run: |
+          npm ci
+          npm run build --workspace workspaces/gui
+          npm run build --workspace workspaces/puth
+      - name: download browser
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm run ci:browser:install --workspace workspaces/puth
+      - name: test
+        run: |
+          cd workspaces/puth && bin/puth.js start &
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
   build-image:
     name: Build test image
