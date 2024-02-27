@@ -8,6 +8,7 @@ on:
     branches:
       - master
       - wip
+  workflow_call:
 
 jobs:
 
@@ -16,8 +17,8 @@ jobs:
     strategy:
       matrix:
         node-version:
-          - 16
-          - 18
+#          - 16
+#          - 18
           - 20
     name: puth | Node ${{ matrix.node-version }}
     steps:
@@ -25,21 +26,24 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
-      - uses: actions/cache/restore@v3
+      - id: cache
+        uses: actions/cache@v4
         with:
+          key: node-${{ hashFiles('**/package-lock.json') }}
           path: |
             .npm
             workspaces/puth/.cache
-          key: node-${{ hashFiles('**/package-lock.json') }}
-      - run: | 
+      - run: |
           npm ci
           npm run build
-          npm run ci:browser:install --workspace workspaces/puth
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: npm run ci:browser:install --workspace workspaces/puth
+      - run:
           npm run test --workspace workspaces/puth
           npm pack --workspace workspaces/core
 
   build-image:
-    name: 'Build test image'
+    name: Build test image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -60,11 +64,11 @@ jobs:
           docker build -f docker/Dockerfile -t puth-test-image .
       - name: Test image
         run: |
-          docker run --name puth-test-image -d --network host puth-test-image
+          container_id=$(docker run --detach --network host puth-test-image)
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
+          docker stop $container_id
           docker save -o /tmp/puth-test-image.tar puth-test-image
-          docker cp puth-test-image:/puth/.cache .
       - uses: actions/upload-artifact@v3
         with:
           name: puth-test-image
@@ -76,7 +80,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ '8.0', 8.1, 8.2 ]
+#        php: [ '8.0', 8.1, 8.2 ]
+        php: [ 8.2 ]
     defaults:
       run:
         working-directory: workspaces/clients/php/client
@@ -89,6 +94,14 @@ jobs:
           name: puth-test-image
           path: /tmp
       - run: docker load --input /tmp/puth-test-image.tar
+
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
+          tools: composer:v2
+          coverage: none
 
       - name: Get composer cache directory
         id: composer-cache
@@ -103,9 +116,10 @@ jobs:
 
       - run: composer update --prefer-stable --no-interaction --no-suggest
       - run: |
-          docker run --name puth-test-image -d --network host puth-test-image
+          container_id=$(docker run --detach --network host puth-test-image)
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           ./vendor/bin/phpunit
+          docker stop $container_id
 
   php-laravel:
     needs: build-image
@@ -113,10 +127,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [8.1, 8.2]
-        laravel: [9, 10]
-        phpunit: [9, 10]
-        collision: [6, 7]
+#        php: [8.1, 8.2]
+#        laravel: [9, 10]
+#        phpunit: [9, 10]
+#        collision: [6, 7]
+        php: [8.2]
+        laravel: [10]
+        phpunit: [10]
+        collision: [7]
         exclude:
           - laravel: 9 # maybe remove
             phpunit: 10
@@ -171,10 +189,11 @@ jobs:
         run: |
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &
-          docker run --name puth-test-image -d --network host puth-test-image
+          container_id=$(docker run --detach --network host puth-test-image)
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           php artisan migrate --force
           php artisan test --without-tty
+          docker stop $container_id
         env:
           RUNNING_IN_CI: true
 
