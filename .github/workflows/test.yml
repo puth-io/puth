@@ -33,14 +33,15 @@ jobs:
           path: |
             .npm
             workspaces/puth/.cache
-      - run: |
+      - name: Install & Build
+        run: |
           npm ci
           npm run build
-      - if: steps.cache.outputs.cache-hit != 'true'
+      - name: Download Browser
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
-      - run:
-          npm run test --workspace workspaces/puth
-          npm pack --workspace workspaces/core
+      - name: Test
+        run: npm run test --workspace workspaces/puth
 
   build-image:
     name: Build test image
