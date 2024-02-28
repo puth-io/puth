@@ -122,86 +122,6 @@ jobs:
           PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
           docker stop $container_id
 
-#  build-image:
-#    name: Build test image
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: actions/setup-node@v3
-#        with:
-#          node-version: 20
-#      - id: cache
-#        uses: actions/cache@v4
-#        with:
-#          key: node-${{ hashFiles('**/package-lock.json') }}
-#          path: |
-#            .npm
-#            workspaces/puth/.cache
-#      - name: Build Image
-#        run: |
-#          npm ci
-#          npm run build
-#          ./docker/pack.sh
-#          docker build -f docker/Dockerfile -t puth-test-image .
-#      - name: Test image
-#        run: |
-#          container_id=$(docker run --detach --network host puth-test-image)
-#          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-#          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
-#          docker stop $container_id
-#          docker save -o /tmp/puth-test-image.tar puth-test-image
-#      - uses: actions/upload-artifact@v3
-#        with:
-#          name: puth-test-image
-#          path: /tmp/puth-test-image.tar
-
-#  php-client:
-#    needs: build-image
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: true
-#      matrix:
-##        php: [ '8.0', 8.1, 8.2 ]
-#        php: [ 8.2 ]
-#    defaults:
-#      run:
-#        working-directory: workspaces/clients/php/client
-#    name: PHP ${{ matrix.php }}
-#    steps:
-#      - uses: actions/checkout@v3
-#
-#      - uses: actions/download-artifact@v3
-#        with:
-#          name: puth-test-image
-#          path: /tmp
-#      - run: docker load --input /tmp/puth-test-image.tar
-#
-#      - name: Setup PHP, with composer and extensions
-#        uses: shivammathur/setup-php@v2
-#        with:
-#          php-version: ${{ matrix.php }}
-#          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
-#          tools: composer:v2
-#          coverage: none
-#
-#      - name: Get composer cache directory
-#        id: composer-cache
-#        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-#
-#      - name: Cache composer dependencies
-#        uses: actions/cache@v3
-#        with:
-#          path: ${{ steps.composer-cache.outputs.dir }}
-#          key: composer-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/laravel/composer.json') }}
-#          restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
-#
-#      - run: composer update --prefer-stable --no-interaction --no-suggest
-#      - run: |
-#          container_id=$(docker run --detach --network host puth-test-image)
-#          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-#          ./vendor/bin/phpunit
-#          docker stop $container_id
-
   php-laravel:
     needs: [test-puth-node]
     runs-on: ubuntu-latest
@@ -290,6 +210,8 @@ jobs:
             workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
             workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
             workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log
+
+
 #  php-laravel:
 #    needs: build-image
 #    runs-on: ubuntu-latest
@@ -381,3 +303,84 @@ jobs:
 #            workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
 #            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
 #            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log
+
+
+#  build-image:
+#    name: Build test image
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: 20
+#      - id: cache
+#        uses: actions/cache@v4
+#        with:
+#          key: node-${{ hashFiles('**/package-lock.json') }}
+#          path: |
+#            .npm
+#            workspaces/puth/.cache
+#      - name: Build Image
+#        run: |
+#          npm ci
+#          npm run build
+#          ./docker/pack.sh
+#          docker build -f docker/Dockerfile -t puth-test-image .
+#      - name: Test image
+#        run: |
+#          container_id=$(docker run --detach --network host puth-test-image)
+#          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+#          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
+#          docker stop $container_id
+#          docker save -o /tmp/puth-test-image.tar puth-test-image
+#      - uses: actions/upload-artifact@v3
+#        with:
+#          name: puth-test-image
+#          path: /tmp/puth-test-image.tar
+
+#  php-client:
+#    needs: build-image
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: true
+#      matrix:
+##        php: [ '8.0', 8.1, 8.2 ]
+#        php: [ 8.2 ]
+#    defaults:
+#      run:
+#        working-directory: workspaces/clients/php/client
+#    name: PHP ${{ matrix.php }}
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - uses: actions/download-artifact@v3
+#        with:
+#          name: puth-test-image
+#          path: /tmp
+#      - run: docker load --input /tmp/puth-test-image.tar
+#
+#      - name: Setup PHP, with composer and extensions
+#        uses: shivammathur/setup-php@v2
+#        with:
+#          php-version: ${{ matrix.php }}
+#          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
+#          tools: composer:v2
+#          coverage: none
+#
+#      - name: Get composer cache directory
+#        id: composer-cache
+#        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+#
+#      - name: Cache composer dependencies
+#        uses: actions/cache@v3
+#        with:
+#          path: ${{ steps.composer-cache.outputs.dir }}
+#          key: composer-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/laravel/composer.json') }}
+#          restore-keys: dependencies-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-composer-
+#
+#      - run: composer update --prefer-stable --no-interaction --no-suggest
+#      - run: |
+#          container_id=$(docker run --detach --network host puth-test-image)
+#          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+#          ./vendor/bin/phpunit
+#          docker stop $container_id
