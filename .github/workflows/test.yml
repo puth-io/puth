@@ -109,7 +109,6 @@ jobs:
           npm run build
           ./docker/pack.sh
       - name: download browser
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: build image
         run: docker build -f docker/Dockerfile -t puth-test-image .
@@ -117,6 +116,7 @@ jobs:
         run: |
           ls -lah
           ls -lah workspaces/puth
+          docker run -it --rm --entrypoint="" puth:build-test ls -lah .cache/puppeteer/chrome
           docker run --network host puth-test-image
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
