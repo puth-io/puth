@@ -19,5 +19,7 @@ function remote()
 remote php puth-io/php.git
 remote laravel puth-io/laravel.git
 
-split 'workspaces/clients/php/client' php
-split 'workspaces/clients/php/laravel' laravel
+split "$@"
+
+#split 'workspaces/clients/php/client' php
+#split 'workspaces/clients/php/laravel' laravel
