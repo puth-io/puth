@@ -16,9 +16,6 @@ if (args[0] === 'version-from-package') {
     version = args[0];
 }
 
-console.log(version);
-process.exit(0);
-
 let composer = JSON.parse(fs.readFileSync('workspaces/clients/php/laravel/composer.json', 'utf8'));
 
 composer.require['puth/php'] = version;
