@@ -6,7 +6,9 @@
     "workspaces/puth",
     "workspaces/gui",
     "workspaces/dev",
-    "workspaces/clients/js/client"
+    "workspaces/clients/js/client",
+    "workspaces/clients/php/client",
+    "workspaces/clients/php/laravel"
   ],
   "devDependencies": {
     "lerna": "^7.3.0"
