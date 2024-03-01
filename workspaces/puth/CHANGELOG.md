@@ -1,5 +1,11 @@
 # puth
 
+## 0.6.8
+
+### Patch Changes
+
+- edf9740: test new ci/cd
+
 ## 0.6.7
 
 ### Patch Changes
