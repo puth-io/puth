@@ -9,23 +9,19 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
-
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
-
+          node-version: 20
       - name: 'Make dev release'
-        run: ./bin/make-release.js version dev-master
-
+        run: ./bin/make-release.js dev-master
       - name: 'Commit release'
         run: |
           git config user.email "release@puth.io"
           git config user.name "Puth Release"
           git commit -am "Sync release dev-master"
-
       - name: Split php repo
         run: ./bin/php-split.sh

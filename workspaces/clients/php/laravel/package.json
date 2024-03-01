@@ -1,0 +1,8 @@
+{
+  "name": "@puth/client-laravel",
+  "private": true,
+  "version": "0.6.5",
+  "dependencies": {
+    "@puth/client-php": "^0.6.0"
+  }
+}

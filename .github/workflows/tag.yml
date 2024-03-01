@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'puth@*'
+      - '@puth/client-php@*'
+      - '@puth/client-laravel@*'
+
+jobs:
+
+  call-workflow-test:
+    uses: ./.github/workflows/test.yml
+
+  # PUTH ###############################################################################################################
+  version-puth:
+    needs: [call-workflow-test]
+    if: startsWith(github.ref, 'refs/tags/puth@')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - id: version
+        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
+
+  release-image-puth:
+    needs: [version-puth]
+    if: startsWith(github.ref, 'refs/tags/puth@')
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.version-puth.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: build image
+        run: |
+          docker build --file docker/Dockerfile.prod --build-arg TAG=$TAG --tag puth-test-image .
+      - name: test image
+        run: |
+          npm ci
+          npm run build --workspace workspaces/core
+          npm run build --workspace workspaces/clients/js/client
+          container_id=$(docker run --detach --network host puth-test-image)
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
+          docker stop $container_id
+      - name: push image
+        run: |
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
+          docker tag puth-test-image ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+          docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+
+  # PHP ################################################################################################################
+  version-puth-client-php:
+    if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - id: version
+        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
+
+  release-client-php:
+    if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
+    needs: [version-puth-client-php]
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.version-puth-client-php.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: split
+        run: ./bin/php-split.sh 'workspaces/clients/php/client' php
+      - name: create tag
+        env:
+          PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+        run: ./bin/tag-release.sh $TAG php
+
+
+  # LARAVEL ############################################################################################################
+  version-puth-client-laravel:
+    if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - id: version
+        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
+
+  release-client-laravel:
+    if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
+    needs: [version-puth-client-laravel]
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.version-puth-client-laravel.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: fix package composer.json
+        run: ./bin/make-laravel-release.js version-from-package
+      - name: commit release
+        run: |
+          git config user.email "release@puth.io"
+          git config user.name "Puth Release"
+          git commit -am "Sync release $TAG"
+      - name: split
+        run: ./bin/php-split.sh 'workspaces/clients/php/laravel' laravel
+      - name: create tag
+        env:
+          PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
+        run: ./bin/tag-release.sh $TAG laravel
+
+
+
