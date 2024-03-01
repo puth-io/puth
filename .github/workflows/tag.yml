@@ -8,7 +8,6 @@ on:
       - '@puth/client-laravel@*'
 
 jobs:
-
   call-workflow-test:
     uses: ./.github/workflows/test.yml
 
@@ -57,6 +56,7 @@ jobs:
 
   # PHP ################################################################################################################
   version-puth-client-php:
+    needs: [call-workflow-test]
     if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
     runs-on: ubuntu-latest
     outputs:
@@ -92,6 +92,7 @@ jobs:
 
   # LARAVEL ############################################################################################################
   version-puth-client-laravel:
+    needs: [call-workflow-test]
     if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
     runs-on: ubuntu-latest
     outputs:
