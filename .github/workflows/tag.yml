@@ -66,7 +66,7 @@ jobs:
       - id: get_version
         uses: battila7/get-version-action@v2
       - id: version
-        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
+        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c18-)" >> "$GITHUB_OUTPUT"
 
   release-client-php:
     if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
@@ -101,7 +101,7 @@ jobs:
       - id: get_version
         uses: battila7/get-version-action@v2
       - id: version
-        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
+        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c22-)" >> "$GITHUB_OUTPUT"
 
   release-client-laravel:
     if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
