@@ -24,4 +24,6 @@ jobs:
           git config user.name "Puth Release"
           git commit -am "Sync release dev-master"
       - name: Split php repo
-        run: ./bin/php-split.sh
+        run: |
+          ./bin/php-split.sh 'workspaces/clients/php/client' php
+          ./bin/php-split.sh 'workspaces/clients/php/laravel' laravel
