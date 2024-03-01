@@ -1,5 +1,11 @@
 # puth
 
+## 0.6.11
+
+### Patch Changes
+
+- 8bfe56d: test new ci/cd
+
 ## 0.6.10
 
 ### Patch Changes
