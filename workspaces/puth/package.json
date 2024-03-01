@@ -65,7 +65,7 @@
     "test:api": "mocha --exit -r ts-node/register 'test/api.test.ts'",
     "test:watch": "mocha -r ts-node/register --recursive -w --watch-files src,test 'test/**/*.ts'",
     "generate:doc": "typedoc node_modules/puppeteer/lib/types.d.ts --json doc/src/test.json",
-    "prepublishOnly": "npm run build && npm run ci:browser:install && npm test",
+    "prepublishOnly": "npm run build && (cd ../gui && npm run build) && npm run ci:browser:install && npm test",
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
     "image:install": "npm install && cd gui && npm install",
