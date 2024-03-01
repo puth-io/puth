@@ -1,5 +1,11 @@
 # puth
 
+## 0.6.9
+
+### Patch Changes
+
+- 2d52e28: test new ci/cd
+
 ## 0.6.8
 
 ### Patch Changes
