@@ -21,7 +21,7 @@ jobs:
       - name: 'Commit release'
         run: |
           git config user.email "release@puth.io"
-          git config user.name "Puth Release"
+          git config user.name "puth-release"
           git commit -am "Sync release dev-master"
       - name: Split php repo
         run: |

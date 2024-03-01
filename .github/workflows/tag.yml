@@ -12,25 +12,10 @@ jobs:
     uses: ./.github/workflows/test.yml
 
   # PUTH ###############################################################################################################
-  version-puth:
+  release-image-puth:
     needs: [call-workflow-test]
     if: startsWith(github.ref, 'refs/tags/puth@')
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.TAG }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: get_version
-        uses: battila7/get-version-action@v2
-      - id: version
-        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c6-)" >> "$GITHUB_OUTPUT"
-
-  release-image-puth:
-    needs: [version-puth]
-    if: startsWith(github.ref, 'refs/tags/puth@')
-    runs-on: ubuntu-latest
-    env:
-      TAG: ${{ needs.version-puth.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,7 +23,7 @@ jobs:
           node-version: 20
       - name: build image
         run: |
-          docker build --file docker/Dockerfile.prod --build-arg TAG=$TAG --tag puth-test-image .
+          docker build --file docker/Dockerfile.prod --build-arg TAG=$(echo $GITHUB_REF_NAME | cut -c6-) --tag puth-test-image .
       - name: test image
         run: |
           npm ci
@@ -51,29 +36,14 @@ jobs:
       - name: push image
         run: |
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
-          docker tag puth-test-image ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
-          docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$TAG
+          docker tag puth-test-image ${{ secrets.DOCKER_HUB_REPOSITORY }}:$(echo $GITHUB_REF_NAME | cut -c6-)
+          docker push ${{ secrets.DOCKER_HUB_REPOSITORY }}:$(echo $GITHUB_REF_NAME | cut -c6-)
 
   # PHP ################################################################################################################
-  version-puth-client-php:
-    needs: [call-workflow-test]
-    if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.TAG }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: get_version
-        uses: battila7/get-version-action@v2
-      - id: version
-        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c18-)" >> "$GITHUB_OUTPUT"
-
   release-client-php:
     if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
-    needs: [version-puth-client-php]
+    needs: [call-workflow-test]
     runs-on: ubuntu-latest
-    env:
-      TAG: ${{ needs.version-puth-client-php.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,29 +57,14 @@ jobs:
       - name: create tag
         env:
           PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
-        run: ./bin/tag-release.sh $TAG php
+        run: ./bin/tag-release.sh $(echo $GITHUB_REF_NAME | cut -c18-) php
 
 
   # LARAVEL ############################################################################################################
-  version-puth-client-laravel:
-    needs: [call-workflow-test]
-    if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.TAG }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: get_version
-        uses: battila7/get-version-action@v2
-      - id: version
-        run: echo "TAG=$(echo ${{ steps.get_version.outputs.version-without-v }} | cut -c22-)" >> "$GITHUB_OUTPUT"
-
   release-client-laravel:
     if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
-    needs: [version-puth-client-laravel]
+    needs: [call-workflow-test]
     runs-on: ubuntu-latest
-    env:
-      TAG: ${{ needs.version-puth-client-laravel.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,14 +78,14 @@ jobs:
       - name: commit release
         run: |
           git config user.email "release@puth.io"
-          git config user.name "Puth Release"
-          git commit -am "Sync release $TAG"
+          git config user.name "puth-release"
+          git commit -am "Sync release $(echo $GITHUB_REF_NAME | cut -c6-)"
       - name: split
         run: ./bin/php-split.sh 'workspaces/clients/php/laravel' laravel
       - name: create tag
         env:
           PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
-        run: ./bin/tag-release.sh $TAG laravel
+        run: ./bin/tag-release.sh $(echo $GITHUB_REF_NAME | cut -c22-) laravel
 
 
 
