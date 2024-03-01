@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 20
       - name: 'Make dev release'
-        run: ./bin/make-release.js dev-master
+        run: ./bin/make-laravel-release.js dev-master
       - name: 'Commit release'
         run: |
           git config user.email "release@puth.io"
