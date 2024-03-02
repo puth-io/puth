@@ -1,6 +1,7 @@
 name: Tests
 
 on:
+  workflow_call:
   push:
     branches:
       - master
@@ -9,7 +10,6 @@ on:
     branches:
       - master
       - wip
-  workflow_call:
 
 jobs:
   test-puth-node:
@@ -20,7 +20,7 @@ jobs:
           - 16
           - 18
           - 20
-    name: puth | Node ${{ matrix.node-version }}
+    name: puth | node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -91,7 +91,7 @@ jobs:
 
   test-image:
     needs: [test-puth-node]
-    name: Test image
+    name: test image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

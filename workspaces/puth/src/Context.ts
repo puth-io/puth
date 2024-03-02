@@ -52,6 +52,9 @@ type ContextOptions = {
     track: string[]|undefined;
 }
 type ContextCaches = {
+    snapshot: {
+        lastHtml: string;
+    };
     dialog: Map<Page, Dialog>;
 }
 
@@ -70,6 +73,9 @@ class Context extends Generic {
     
     public browsers: PuthBrowser[] = [];
     public caches: ContextCaches = {
+        snapshot: {
+            lastHtml: '',
+        },
         dialog: new Map<Page, Dialog>(),
     };
     

@@ -106,7 +106,7 @@ export default class Puth {
   }
 
   public async contextCreate(options = {}) {
-    let context = new Context(this, options);
+    let context = new Context(this as TODO, options);
     this.contexts[context.id] = context;
     await context.setup();
     this.emitter.emit('context:created', {context});

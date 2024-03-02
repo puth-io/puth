@@ -59,7 +59,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     private async handleContextCreated(context: Context) {
         await Promise.all([context.browsers.map(async browser => {
             return Promise.all([(await browser.pages()).map(page => {
-                return this.attachScreencastEvents({context, browser, page});
+                return this.attachScreencastEvents({context, browser, page} as TODO);
             })]);
         })]);
         
@@ -81,7 +81,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         browser: PuthBrowser
     }) {
         let pageIdx = this.pages.push(page);
-        let browserIdx = context.browsers.indexOf(browser);
+        let browserIdx = context.browsers.indexOf(browser as TODO);
         
         const client = await page.target().createCDPSession();
         const handler = async ({data, metadata, sessionId}) => {
@@ -107,7 +107,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
                     .toBuffer();
             }
             
-            Snapshots.pushToCache(context, {
+            Snapshots.pushToCache(context as TODO, {
                 id: v4(),
                 type: 'screencasts',
                 version: 1,

@@ -1,14 +1,12 @@
 {
   "ts-node": {
-    "require": [
-      "tsconfig-paths/register"
-    ]
+    "require": ["tsconfig-paths/register"]
   },
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es6",
+    "target": "ES2022",
     "lib": [
-      "es2021",
+      "ES2022",
       "dom"
     ],
     "declaration": true,

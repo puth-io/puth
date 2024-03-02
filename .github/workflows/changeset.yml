@@ -1,6 +1,7 @@
 name: Changeset
 
 on:
+  workflow_call:
   push:
     branches:
       - master
