@@ -138,7 +138,7 @@ class PreviewStore {
     }
     
     get visibleHighlightState() {
-        return this.highlightCommand ? this.highlightState : this.state;
+        return this.highlightCommand ? SnapshotState.BEFORE : this.state;
     }
     
     get isVisibleHighlight() {
@@ -223,7 +223,6 @@ class PreviewStore {
                 }
                 
                 this.activeCommand = command;
-                this.state = SnapshotState.BEFORE;
                 
                 let idx = (command.context as TODO).commands.indexOf(command);
                 // if (idx !== 0) { // find last frame before inBetween sector to display as entry point

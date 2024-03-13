@@ -1,6 +1,6 @@
 const {RemotePuthClient} = require('@puth/client/lib/RemotePuthClient');
 
-let base = process.env.PUTH_URL ?? process.argv[2];
+let base = process.argv[2] ?? process.env.PUTH_URL;
 if (!base.startsWith('http')) {
     base = 'http://' + base;
 }
@@ -56,9 +56,7 @@ test('context create', ({context}) => {
 
 test('context basics', async ({page}) => {
     await page.visit('https://playground.puth.dev');
-    
     error_until(await page.url() === 'https://playground.puth.dev/');
-    
     error_until(await page.$('#properties-value input').value() === 'input with value');
     error_until(await page.$('#properties-innertext').innerText() === 'div with this innertext');
     
