@@ -45,6 +45,7 @@ const Dropzone = observer(() => {
                 app.setActive(context);
             } else {
                 // TODO display error
+                throw new Error('Tried to import non context packet.');
             }
             
             reset();
@@ -55,17 +56,18 @@ const Dropzone = observer(() => {
         accept: '.puth',
         maxFiles: 1,
         onDropAccepted,
+        noDragEventsBubbling: true,
     });
     
     return (
-        <div className={`dropzone-wrapper ${DropzoneStore.active > 0 ? 'active' : null}`}>
+        <div {...getRootProps({className: `dropzone-wrapper ${DropzoneStore.active > 0 ? 'active' : null}`})}>
+            <input {...getInputProps()} />
             {importing ? (
                 <div>Importing snapshot...</div>
             ) : (
-                <div {...getRootProps({className: 'dropzone'})}>
-                    <input {...getInputProps()} />
+                <div className={'dropzone'}>
                     <p>Drag and drop a snapshot here</p>
-                    <em>(Only *.puth files will be accepted)</em>
+                    <em>(Only .puth files will be accepted)</em>
                 </div>
             )}
         </div>
