@@ -37,6 +37,8 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
     const {app} = useContext(AppContext);
     const [open, setOpen] = useState(true);
     const isConnected = app.connections.length !== 0;
+    const [connecting, setConnecting] = useState(false);
+    const [input, setInput] = useState('');
     
     if (app.view === 'local') {
         return (
@@ -47,6 +49,16 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
                 Switch to instance
             </RoundButton>
         );
+    }
+    
+    const connect = () => {
+        setConnecting(true);
+        app.tryConnectingTo(input)
+            .then(_ => console.log('test'))
+            .finally(_ => {
+                setConnecting(false);
+                setInput('');
+            });
     }
     
     return (
@@ -106,6 +118,8 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
                             <Input
                                 className={'mt-4'}
                                 placeholder={'Enter an IP or hostname or select one of the suggestions'}
+                                onChange={event => setInput(event.target.value)}
+                                value={input}
                             />
                             
                             {app.connectionSuggestions.map((suggestion: string, idx: number) => (
@@ -117,7 +131,7 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
                                 >{suggestion}</Button>
                             ))}
                             
-                            <Button className={'mt-6 ml-auto'}>CONNECT</Button>
+                            <Button className={'mt-6 ml-auto'} onClick={connect} disabled={connecting}>CONNECT</Button>
                         </div>
                     </PopoverContent>
                 </Popover>

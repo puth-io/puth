@@ -77,10 +77,15 @@ export default class AppStore {
         });
     }
     
-    public tryConnectingTo(host: string) {
-        let connection = new Connection(host, new PreviewStore());
-        this.connections.push(connection);
-        this.active.connection = connection;
+    public async tryConnectingTo(host: string) {
+        return (new Connection(host, new PreviewStore()))
+            .connect(host)
+            .then(connection => {
+                this.connections.push(connection);
+                this.active.connection = connection;
+                
+                return connection;
+            });
     }
     
     get history() {

@@ -77,50 +77,54 @@ export class Connection {
     public preview :any;
     
     constructor(uri: string, previewStore: any) {
-        this.uri = uri;
-        this.connect(this.uri);
-        
-        this.preview = previewStore;
-        
         makeAutoObservable(this);
+        
+        this.uri = uri;
+        this.preview = previewStore;
+        // this.connect(this.uri);
     }
     
-    retry() {
+    async retry() {
         if (this.connectionState !== WebSocket.CLOSED) {
             return;
         }
         
-        this.connect(this.uri);
+        return this.connect(this.uri);
     }
     
     connect(uri: string) {
-        this.uri = uri;
-        this.websocket = new WebSocket(this.uri);
-        this.websocket.binaryType = 'arraybuffer';
-        
-        this.connectionState = this.websocket.readyState;
-        
-        const timeoutTimer = setTimeout(() => {
-            if (this.websocket.readyState === WebSocket.CONNECTING) {
-                this.websocket.close();
-            }
-        }, this.connectionTimeout);
-        
-        this.websocket.onopen = () => {
-            clearTimeout(timeoutTimer);
+        return new Promise<Connection>((resolve, reject) => {
+            this.uri = uri;
+            this.websocket = new WebSocket(this.uri);
+            this.websocket.binaryType = 'arraybuffer';
+            
             this.connectionState = this.websocket.readyState;
-        };
-        this.websocket.onclose = () => {
-            setTimeout(() => {
-                if (this.connectionState === WebSocket.CLOSED) {
-                    this.connect(this.uri);
+            
+            const timeoutTimer = setTimeout(() => {
+                if (this.websocket.readyState === WebSocket.CONNECTING) {
+                    this.websocket.close();
+                    reject('timeout');
                 }
-            }, this.retryTimeout);
-            this.connectionState = this.websocket.readyState;
-        };
-        this.websocket.onmessage = event => {
-            this.received(event.data);
-        };
+            }, this.connectionTimeout);
+            
+            this.websocket.onopen = () => {
+                clearTimeout(timeoutTimer);
+                this.connectionState = this.websocket.readyState;
+                resolve(this);
+            };
+            this.websocket.onclose = () => {
+                // setTimeout(() => {
+                //     if (this.connectionState === WebSocket.CLOSED) {
+                //         this.connect(this.uri);
+                //     }
+                // }, this.retryTimeout);
+                this.connectionState = this.websocket.readyState;
+                reject('connection closed');
+            };
+            this.websocket.onmessage = event => {
+                this.received(event.data);
+            };
+        });
     }
     
     send(packet: any) {
