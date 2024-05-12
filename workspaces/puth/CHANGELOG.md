@@ -1,5 +1,11 @@
 # puth
 
+## 0.6.11
+
+### Patch Changes
+
+- 385f5bf: move image repo
+
 ## 0.6.10
 
 ### Patch Changes
