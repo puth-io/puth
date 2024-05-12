@@ -12,6 +12,10 @@ import mitt, {Emitter, Handler, WildcardHandler} from 'mitt';
 import {Logger} from "pino";
 import Snapshots from "./Snapshots";
 
+declare global {
+  type TODO = any;
+}
+
 type PuthEvents = {
   'context:created': {context: Context};
   'context:destroyed': {context: Context};
