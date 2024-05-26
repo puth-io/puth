@@ -143,7 +143,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
                 ->assertNotSelected('#actions-select-multiple', 'not-selected')
                 ->assertSelectHasOptions('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelectMissingOptions('#actions-select-multiple', 'not-an-options')
+                ->assertSelectMissingOptions('#actions-select-multiple', ['not-an-options'])
                 ->assertSelectHasOption('#actions-select-multiple', 'orange')
                 ->assertSelectMissingOption('#actions-select-multiple', 'not-an-options')
                 ->type('#actions-type input', 'test-1234')
