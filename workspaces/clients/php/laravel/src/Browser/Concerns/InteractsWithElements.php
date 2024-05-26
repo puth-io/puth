@@ -451,6 +451,17 @@ trait InteractsWithElements
     }
     
     /**
+     * Type the given value in an open JavaScript prompt dialog.
+     *
+     * @param  string  $value
+     * @return $this
+     */
+    public function typeInDialog($value)
+    {
+        throw new \Exception('The `typeInDialog` function is not supported. Please use `acceptDialog($value)`.');
+    }
+    
+    /**
      * Dismiss a JavaScript dialog.
      *
      * @return $this

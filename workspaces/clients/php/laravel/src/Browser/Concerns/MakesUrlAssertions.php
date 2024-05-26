@@ -209,6 +209,43 @@ trait MakesUrlAssertions
     }
     
     /**
+     * Assert that the current URL path ends with the given path.
+     *
+     * @param  string  $path
+     * @return $this
+     */
+    public function assertPathEndsWith($path)
+    {
+        $actualPath = parse_url($this->site->url(), PHP_URL_PATH) ?? '';
+        
+        Assert::assertStringEndsWith(
+            $path, $actualPath,
+            "Actual path [{$actualPath}] does not end with expected path [{$path}]."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the current URL path contains the given path.
+     *
+     * @param  string  $path
+     *
+     * @return $this
+     */
+    public function assertPathContains($path)
+    {
+        $actualPath = parse_url($this->site->url(), PHP_URL_PATH) ?? '';
+        
+        Assert::assertStringContainsString(
+            $path, $actualPath,
+            "Actual path [{$actualPath}] does not contain the expected string [{$path}]."
+        );
+        
+        return $this;
+    }
+    
+    /**
      * Assert that the current URL path matches the given pattern.
      *
      * @param string $path
@@ -368,7 +405,6 @@ trait MakesUrlAssertions
         
         return $this;
     }
-    
     
     /**
      * Assert that the given query string parameter is present.

@@ -114,6 +114,7 @@ trait MakesAssertions
      * Assert that the given encrypted cookie is not present.
      *
      * @param string $name
+     * @param bool $decrypt
      * @return $this
      */
     public function assertCookieMissing($name, $decrypt = true)
@@ -268,7 +269,6 @@ trait MakesAssertions
      * Assert that no text is present within the selector.
      *
      * @param string $selector
-     *
      * @return $this
      */
     public function assertSeeNothingIn($selector)
@@ -463,6 +463,8 @@ trait MakesAssertions
     /**
      * Assert that the given checkbox field is checked.
      *
+     * @param string $field
+     * @param string|null $value
      * @return $this
      */
     public function assertChecked($field, $value = null)
@@ -480,6 +482,8 @@ trait MakesAssertions
     /**
      * Assert that the given checkbox field is not checked.
      *
+     * @param string $field
+     * @param string|null $value
      * @return $this
      */
     public function assertNotChecked($field, $value = null)
@@ -536,6 +540,7 @@ trait MakesAssertions
      * Assert that the given radio field is not selected.
      *
      * @param string|GenericObject $element
+     * @param string|null $value
      * @return $this
      */
     public function assertRadioNotSelected($field, $value = null)
@@ -592,7 +597,7 @@ trait MakesAssertions
      * Assert that the given array of values are available to be selected.
      *
      * @param string $field
-     * @param mixed $values
+     * @param array $values
      * @return $this
      */
     public function assertSelectHasOptions($field, array $values)
@@ -616,15 +621,11 @@ trait MakesAssertions
      * Assert that the given array of values are not available to be selected.
      *
      * @param string $field
-     * @param mixed $values
+     * @param array $values
      * @return $this
      */
-    public function assertSelectMissingOptions($field, $values)
+    public function assertSelectMissingOptions($field, array $values)
     {
-        if (!is_array($values)) {
-            $values = [$values];
-        }
-        
         Assert::assertCount(
             0, $this->resolver->resolveSelectOptions($field, $values),
             'Unexpected options [' . implode(',', $values) . "] for selection field [{$field}]."
@@ -674,7 +675,7 @@ trait MakesAssertions
     /**
      * Assert that the element at the given selector has the given value.
      *
-     * @param string $element
+     * @param string $selector
      * @param string $value
      * @return $this
      */
@@ -775,6 +776,27 @@ trait MakesAssertions
     }
     
     /**
+     * Assert that the element matching the given selector is missing the provided attribute.
+     *
+     * @param  string  $selector
+     * @param  string  $attribute
+     * @return $this
+     */
+    public function assertAttributeMissing($selector, $attribute)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        $actual = $this->resolver->findOrFail($selector)->its($attribute);
+        
+        Assert::assertNull(
+            $actual,
+            "Saw unexpected attribute [{$attribute}] within element [{$fullSelector}]."
+        );
+        
+        return $this;
+    }
+    
+    /**
      * Assert that the element matching the given selector contains the given value in the provided attribute.
      *
      * @param  string  $selector
@@ -797,6 +819,34 @@ trait MakesAssertions
             $value,
             $actual,
             "Attribute '$attribute' does not contain [{$value}]. Full attribute value was [$actual]."
+        );
+        
+        return $this;
+    }
+    
+    /**
+     * Assert that the element matching the given selector does not contain the given value in the provided attribute.
+     *
+     * @param  string  $selector
+     * @param  string  $attribute
+     * @param  string  $value
+     * @return $this
+     */
+    public function assertAttributeDoesntContain($selector, $attribute, $value)
+    {
+        $fullSelector = $this->resolver->format($selector);
+        
+        $actual = $this->resolver->findOrFail($selector)->its($attribute);
+        
+        Assert::assertNotNull(
+            $actual,
+            "Did not see expected attribute [{$attribute}] within element [{$fullSelector}]."
+        );
+        
+        Assert::assertStringNotContainsString(
+            $value,
+            $actual,
+            "Attribute '$attribute' contains [{$value}]. Full attribute value was [$actual]."
         );
         
         return $this;
@@ -1089,6 +1139,19 @@ trait MakesAssertions
         Assert::assertContains($value, $attribute);
         
         return $this;
+    }
+    
+    /**
+     * Assert that a given Vue component data property is an array and does not contain the given value.
+     *
+     * @param  string  $key
+     * @param  string  $value
+     * @param  string|null  $componentSelector
+     * @return $this
+     */
+    public function assertVueDoesntContain($key, $value, $componentSelector = null)
+    {
+        return $this->assertVueDoesNotContain($key, $value, $componentSelector);
     }
     
     /**

@@ -195,6 +195,8 @@ class AllMethodsTest extends PuthTestCase
                 ->assertPortIsNot(12345)
                 ->assertPathIs('/first/second')
                 ->assertPathBeginsWith('/first')
+                ->assertPathEndsWith('/second')
+                ->assertPathContains('st/se')
                 ->assertPathIsNot('/not-path')
                 ->assertFragmentIs('starts-1234')
                 ->assertFragmentBeginsWith('starts')
@@ -268,7 +270,9 @@ class AllMethodsTest extends PuthTestCase
                 ->value('#actions-type input', 'test-1234')
                 ->assertValue('#actions-type input', 'test-1234')
                 ->assertAttribute('#actions-focus', 'type', 'text')
-                ->assertAttributeContains('#actions-focus', 'type', 'xt');
+                ->assertAttributeMissing('#actions-focus', 'missing-attribute')
+                ->assertAttributeContains('#actions-focus', 'type', 'xt')
+                ->assertAttributeDoesntContain('#actions-focus', 'type', 'wrong-value');
             
             static::assertEquals('test-1234', $browser->value('#actions-type input'));
             static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
