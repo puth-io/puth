@@ -1,6 +1,6 @@
 import path from 'path';
-import Fastify from 'fastify';
-import fastifyWebsocket, { SocketStream } from '@fastify/websocket';
+import Fastify, {FastifyRequest} from 'fastify';
+import fastifyWebsocket from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
 import Context from '@/context';
 import WebsocketConnections from './WebsocketConnections';
@@ -224,13 +224,13 @@ export default class Puth {
         return reply.code(destroyed ? 200 : 404).send();
       });
 
-      fastify.get('/websocket', { websocket: true }, (connection: SocketStream, req) => {
+      fastify.get('/websocket', { websocket: true }, (socket: WebSocket, req: FastifyRequest) => {
         // The websocket protocol doesn't care about CORS so we need to test for request origin.
-        if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin)) {
-          return connection.destroy();
+        if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin ?? '')) {
+          return socket.close();
         }
   
-        connection.socket.on('message', data => {
+        socket.addEventListener('message', data => {
           let message: any = WebsocketConnections.decode(data);
           
           if (message?.type === 'event') {
@@ -240,12 +240,12 @@ export default class Puth {
           }
         });
   
-        connection.socket.on('close', () => {
-          WebsocketConnections.pop(connection);
+        socket.addEventListener('close', () => {
+          WebsocketConnections.pop(socket);
         });
 
-        connection.socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
-        WebsocketConnections.push(connection);
+        socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+        WebsocketConnections.push(socket);
       });
     });
   }

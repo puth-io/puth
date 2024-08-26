@@ -50,55 +50,55 @@ async function laravel() {
     
     // await context.testFailed();
     
-    await context.exception({
-        origin: "default",
-        lang: "php",
-        runner: "phpunit",
-        exception: {
-            message: "ArrayNotFound",
-            code: 400,
-            trace: [
-                {
-                    file: "/test/bla.js",
-                    line: 8,
-                    function: null,
-                    args: [],
-                },
-                {
-                    file: "/test/root/bla.js",
-                    line: 7,
-                    function: "test",
-                    args: [],
-                },
-            ],
-            files: [
-                {
-                    path: "/test/bla.js",
-                    content:
-                        "" +
-                        "    /**\n" +
-                        "     * Sets up a Context, Browser and Page for every test.\n" +
-                        "     */\n" +
-                        "    protected function setUp(): void\n" +
-                        "    {\n" +
-                        "        parent::setUp();\n" +
-                        "\n" +
-                        "        $this->context = new Context($this->getPuthInstanceUrl(), [\n" +
-                        "            'snapshot' => $this->isSnapshot(),\n" +
-                        "            'test' => [\n" +
-                        "                'name' => $this->getName(),\n" +
-                        "            ],\n" +
-                        "            'group' => get_class($this),\n" +
-                        "            'dev' => $this->isDev(),\n" +
-                        "            'debug' => $this->isDebug(),\n" +
-                        "            'timeouts' => [\n" +
-                        "                'command' => $this->getTimeout(),\n" +
-                        "            ],\n" +
-                        "        ]);",
-                },
-            ],
-        },
-    });
+    // await context.exception({
+    //     origin: "default",
+    //     lang: "php",
+    //     runner: "phpunit",
+    //     exception: {
+    //         message: "ArrayNotFound",
+    //         code: 400,
+    //         trace: [
+    //             {
+    //                 file: "/test/bla.js",
+    //                 line: 8,
+    //                 function: null,
+    //                 args: [],
+    //             },
+    //             {
+    //                 file: "/test/root/bla.js",
+    //                 line: 7,
+    //                 function: "test",
+    //                 args: [],
+    //             },
+    //         ],
+    //         files: [
+    //             {
+    //                 path: "/test/bla.js",
+    //                 content:
+    //                     "" +
+    //                     "    /**\n" +
+    //                     "     * Sets up a Context, Browser and Page for every test.\n" +
+    //                     "     */\n" +
+    //                     "    protected function setUp(): void\n" +
+    //                     "    {\n" +
+    //                     "        parent::setUp();\n" +
+    //                     "\n" +
+    //                     "        $this->context = new Context($this->getPuthInstanceUrl(), [\n" +
+    //                     "            'snapshot' => $this->isSnapshot(),\n" +
+    //                     "            'test' => [\n" +
+    //                     "                'name' => $this->getName(),\n" +
+    //                     "            ],\n" +
+    //                     "            'group' => get_class($this),\n" +
+    //                     "            'dev' => $this->isDev(),\n" +
+    //                     "            'debug' => $this->isDebug(),\n" +
+    //                     "            'timeouts' => [\n" +
+    //                     "                'command' => $this->getTimeout(),\n" +
+    //                     "            ],\n" +
+    //                     "        ]);",
+    //             },
+    //         ],
+    //     },
+    // });
     
     await context.destroy();
 }

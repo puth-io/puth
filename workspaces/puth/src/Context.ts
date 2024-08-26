@@ -9,8 +9,7 @@ import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
 import path from 'path';
 import {encode} from '@msgpack/msgpack';
-import {promises as fsPromise} from 'fs';
-import {mkdtemp} from 'node:fs/promises';
+import {promises as fsPromise} from 'node:fs';
 import Return from './context/Return';
 import Constructors from './context/Constructors';
 import {tmpdir} from 'os';
@@ -18,7 +17,7 @@ import {PuthBrowser} from './HandlesBrowsers';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import {CdpPage} from 'puppeteer-core/lib/cjs/puppeteer/cdp/Page';
 
-const {writeFile} = fsPromise;
+const {writeFile, mkdtemp} = fsPromise;
 
 type ContextEvents = {
     'call': any,

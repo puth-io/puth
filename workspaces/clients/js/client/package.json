@@ -12,5 +12,8 @@
   "files": [
     "lib/",
     "LICENCE"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^22.5.0"
+  }
 }

@@ -1,6 +1,6 @@
-import tmp from "tmp-promise";
 import puppeteer, {Browser, EventType, Handler, Page} from 'puppeteer-core';
 import chromeDefaultArgs from './chromeDefaultArgs.json';
+import tmp from "tmp";
 
 export type PuthBrowser = {
     on(event: EventType, handler: Handler<any>): void;
@@ -19,24 +19,22 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
     private browsers: Map<Browser, () => Promise<void>> = new Map();
     
     async launch(options: any = {}) {
-        let {tmpDir, browserCleanup} = await tmp.dir({unsafeCleanup: true}).then((dir) => {
-            return {
-                tmpDir: dir.path,
-                browserCleanup: () => dir.cleanup(),
-            };
-        });
+        let tmpDir = tmp.dirSync({unsafeCleanup: true});
         
         const browser = await puppeteer.launch({
             headless: 'new',
             args: [
                 ...chromeDefaultArgs,
                 '--no-sandbox',
-                '--user-data-dir=' + tmpDir,
+                '--user-data-dir=' + tmpDir.name,
             ],
             ...options,
         });
     
-        this.browsers.set(browser, browserCleanup);
+        // TODO why the fuck is fs.rm saying "directory not empty"
+        // this.browsers.set(browser, () => fs.rm(tmpDir.name, {recursive: true, force: true}));
+        // this.browsers.set(browser, () => tmpDir.removeCallback());
+        
         browser.once('disconnected', () => {
             this.destroy(browser);
         });

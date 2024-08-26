@@ -26,40 +26,41 @@ Commands
     --disable-cors    Disables all CORS policies
     --json-logger     Formats logs to json
 `, {
-      booleanDefault: true,
-      flags: {
-        debug: {
-          type: 'boolean',
-          alias: 'd',
-          default: false,
+        // importMeta: import.meta,
+        booleanDefault: true,
+        flags: {
+            debug: {
+                type: 'boolean',
+                shortFlag: 'd',
+                default: false,
+            },
+            address: {
+                type: 'string',
+                default: '127.0.0.1',
+                shortFlag: 'a',
+            },
+            port: {
+                type: 'number',
+                default: 7345,
+                shortFlag: 'p',
+            },
+            disableCors: {
+                type: 'boolean',
+                default: false,
+            },
+            jsonLogger: {
+                type: 'boolean',
+                default: false,
+            },
+            prettyLogger: {
+                type: 'boolean',
+                default: false,
+            },
+            cleanupOtherInstalls: {
+                type: 'boolean',
+                default: false,
+            },
         },
-        address: {
-          type: 'string',
-          default: '127.0.0.1',
-          alias: 'a',
-        },
-        port: {
-          type: 'number',
-          default: 7345,
-          alias: 'p',
-        },
-        disableCors: {
-          type: 'boolean',
-          default: false,
-        },
-        jsonLogger: {
-          type: 'boolean',
-          default: false,
-        },
-        prettyLogger: {
-          type: 'boolean',
-          default: false,
-        },
-        cleanupOtherInstalls: {
-          type: 'boolean',
-          default: false,
-        },
-      },
     },
 );
 

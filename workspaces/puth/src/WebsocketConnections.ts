@@ -1,4 +1,3 @@
-import {SocketStream} from '@fastify/websocket';
 import {Encoder as BaseEncoder, Decoder as BaseDecoder, ExtensionCodec} from '@msgpack/msgpack';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
@@ -21,13 +20,13 @@ export const Encoder = new BaseEncoder(PUTH_EXTENSION_CODEC);
 export const Decoder = new BaseDecoder(PUTH_EXTENSION_CODEC);
 
 class WebsocketConnectionHandler {
-    sockets: SocketStream[] = [];
+    sockets: WebSocket[] = [];
     
-    push(socket: SocketStream) {
+    push(socket: WebSocket) {
         this.sockets.push(socket);
     }
     
-    pop(socket: SocketStream) {
+    pop(socket: WebSocket) {
         let index = this.sockets.indexOf(socket);
         this.sockets.splice(index, 1);
     }
@@ -36,7 +35,7 @@ class WebsocketConnectionHandler {
         let data = this.serializeSharedRef(message);
         
         for (let socket of this.sockets) {
-            socket.socket.send(data);
+            socket.send(data);
         }
     }
     

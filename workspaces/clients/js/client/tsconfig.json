@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2022",
     "module": "commonjs",
+    "target": "ES2022",
     "moduleResolution": "node",
     "declaration": true,
     "strict": true,
@@ -21,7 +21,11 @@
       "@/context": [
         "../../../puth/src/Context"
       ]
-    }
+    },
+    "lib": [
+      "ES2022",
+      "dom"
+    ]
   },
   "include": [
     "src"
