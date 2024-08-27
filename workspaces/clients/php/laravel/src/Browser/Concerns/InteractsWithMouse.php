@@ -113,7 +113,8 @@ trait InteractsWithMouse
      */
     public function clickAtXPath($expression)
     {
-        $elements = $this->site->getX($expression);
+        $expression = str_starts_with($expression, '.') ? substr($expression, 1) : $expression;
+        $elements = $this->site->getAll('xpath/.' . $expression);
         
         if (count($elements) === 0) {
             throw new Exception('No such element found');
