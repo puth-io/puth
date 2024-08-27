@@ -276,27 +276,27 @@ export class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   async parent(element) {
-    let result = await element.$x('.//parent::*');
+    let result = await element.$$('xpath/.//parent::*');
     return result.length === 0 ? undefined : result[0];
   }
 
   async parents(element) {
-    return element.$x('.//ancestor::*');
+    return element.$$('xpath/.//ancestor::*');
   }
 
   async children(element, selector) {
     if (selector) {
       return await element.$$(selector);
     }
-    return await element.$x('.//child::*');
+    return await element.$$('xpath/.//child::*');
   }
 
   async siblings(element) {
-    return await element.$x('.//preceding-sibling::* | .//following-sibling::*');
+    return await element.$$('xpath/.//preceding-sibling::* | .//following-sibling::*');
   }
 
   async prev(element) {
-    let prev = await element.$x('.//preceding-sibling::*[1]');
+    let prev = await element.$$('xpath/.//preceding-sibling::*[1]');
 
     if (prev.length === 0) {
       // throw error
@@ -306,7 +306,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
   }
 
   async next(element) {
-    let next = await element.$x('.//following-sibling::*[1]');
+    let next = await element.$$('xpath/.//following-sibling::*[1]');
 
     if (next.length === 0) {
       // throw error
