@@ -38,7 +38,6 @@ jobs:
           npm ci
           npm run build
       - name: download browser
-        if: steps.cache.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: npm run test --workspace workspaces/puth
@@ -81,7 +80,6 @@ jobs:
           npm run build --workspace workspaces/gui
           npm run build --workspace workspaces/puth
       - name: download browser
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
@@ -111,7 +109,6 @@ jobs:
           npm run build
           ./docker/pack.sh
       - name: download browser
-#        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: build image
         run: docker build -f docker/Dockerfile -t puth-test-image .
@@ -128,20 +125,12 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [8.1, 8.2]
-        laravel: [9, 10]
-        phpunit: [9, 10]
-        collision: [6, 7]
+        php: [8.1, 8.2, 8.3]
+        laravel: [10.*, 11.*]
         exclude:
-          - laravel: 9 # maybe remove
-            phpunit: 10
-          - laravel: 10
-            phpunit: 9
-          - phpunit: 10
-            collision: 6
-          - phpunit: 9
-            collision: 7
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
+          - php: 8.1
+            laravel: 11.*
+    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}
     steps:
       - uses: actions/checkout@v4
       - id: cache-npm
@@ -167,8 +156,8 @@ jobs:
         working-directory: workspaces/clients/php/workspaces/laravel
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
-          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
-          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
+#          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
+#          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
           composer update --prefer-stable --no-interaction --no-suggest
       - name: npm install & build
         run: |
@@ -176,7 +165,6 @@ jobs:
           npm run build --workspace workspaces/gui
           npm run build --workspace workspaces/puth
       - name: download browser
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
