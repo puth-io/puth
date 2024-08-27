@@ -116,7 +116,7 @@ export const AppLayout = observer(function AppLayout({
                                     </div>
                                 )}
                                 
-                                <div className={'flex flex-1 grow m-4 overflow-auto'} style={{border: '1px solid #2f333d'}}>
+                                <div className={'flex-1 grow m-4 overflow-auto'} style={{border: '1px solid #2f333d'}}>
                                     {preview}
                                 </div>
                                 
