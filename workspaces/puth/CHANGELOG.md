@@ -1,5 +1,16 @@
 # puth
 
+## 0.7.0
+
+### Minor Changes
+
+- eac694f: update dependencies, small bug fixes
+
+### Patch Changes
+
+- Updated dependencies [eac694f]
+  - @puth/gui@0.1.1
+
 ## 0.6.11
 
 ### Patch Changes
