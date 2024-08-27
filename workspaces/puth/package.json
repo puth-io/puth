@@ -1,6 +1,6 @@
 {
   "name": "puth",
-  "version": "0.6.11",
+  "version": "0.7.0",
   "author": {
     "name": "Sebastian Uehlin",
     "email": "s.uehlin@proton.me"
@@ -15,7 +15,7 @@
     "@msgpack/msgpack": "^2.8.0",
     "@puth/client": "^0.0.0",
     "@puth/core": "^0.0.0",
-    "@puth/gui": "^0.1.0",
+    "@puth/gui": "^0.1.1",
     "chokidar": "^3.6.0",
     "diff-match-patch": "^1.0.5",
     "fastify": "^4.28.1",
