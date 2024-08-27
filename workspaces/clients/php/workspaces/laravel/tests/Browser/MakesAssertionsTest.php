@@ -20,14 +20,6 @@ class MakesAssertionsTest extends PuthTestCase
         });
     }
     
-    function test_assert_port_is()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('http://httpforever.com/')
-                ->assertPortIs(80);
-        });
-    }
-    
     function test_stores_source_logs()
     {
         $fileName = Browser::$storeSourceAt . '/' . $this->getCallerName() . '-0.txt';

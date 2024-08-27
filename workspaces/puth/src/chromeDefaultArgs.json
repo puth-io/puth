@@ -43,5 +43,7 @@
 
   "--incognito",
 
-  "--window-size=1280,1020"
+  "--window-size=1280,1020",
+
+  "--disable-features=HttpsUpgrades"
 ]

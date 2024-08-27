@@ -111,7 +111,7 @@ jobs:
           npm run build
           ./docker/pack.sh
       - name: download browser
-        if: steps.cache-npm.outputs.cache-hit != 'true'
+#        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: build image
         run: docker build -f docker/Dockerfile -t puth-test-image .
