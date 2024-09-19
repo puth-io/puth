@@ -89,7 +89,16 @@ abstract class TestCase extends FoundationTestCase
     
     public function shouldSaveSnapshotOnFailure()
     {
-        return $this->saveSnapshotOnFailure ?? false;
+        if (isset($this->saveSnapshotOnFailure)) {
+            return $this->saveSnapshotOnFailure;
+        }
+        
+        $ci = env('CI');
+        if ($ci === true || $ci === '1' || $ci === 'true') {
+            return true;
+        }
+        
+        return false;
     }
     
     private function isPhpVersion10()
