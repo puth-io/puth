@@ -135,8 +135,6 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             this.puth?.logger.error({
                 debugInfo: page.browser().debugInfo,
             }, 'Could not start screencast');
-            
-            throw e;
         });
     }
     
