@@ -198,14 +198,14 @@ jobs:
         env:
           RUNNING_IN_CI: true
       - name: Collect logs
-        if: always()
+        if: failure()
         run: |
           mv workspaces/clients/php/workspaces/laravel/storage/logs/server.log workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
           mv workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
           mv workspaces/puth/puth.log workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
           mv workspaces/puth/puth.cdp.log workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
       - name: Upload logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: test-logs
