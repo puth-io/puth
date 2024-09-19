@@ -79,7 +79,7 @@ jobs:
         run: |
           git config user.email "release@puth.io"
           git config user.name "puth-release"
-          git commit -am "Sync release $(echo $GITHUB_REF_NAME | cut -c6-)"
+          git commit -am "Sync release $(echo $GITHUB_REF_NAME)"
       - name: split
         run: ./bin/php-split.sh 'workspaces/clients/php/laravel' laravel
       - name: create tag

@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ '8.0', 8.1, 8.2 ]
+        php: [ '8.0', 8.1, 8.2, 8.3 ]
     name: PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v4
@@ -126,11 +126,25 @@ jobs:
       fail-fast: true
       matrix:
         php: [8.1, 8.2, 8.3]
-        laravel: [10.*, 11.*]
+        laravel: [10, 11]
+        phpunit: [10, 11]
+        collision: [7, 8]
         exclude:
           - php: 8.1
-            laravel: 11.*
-    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}
+            laravel: 11
+          - phpunit: 10
+            collision: 8
+          - phpunit: 11
+            collision: 7
+          - php: 8.1
+            collision: 8
+          - php: 8.1
+            phpunit: 11
+          - laravel: 11
+            collision: 7
+          - laravel: 10
+            collision: 8
+    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
       - uses: actions/checkout@v4
       - id: cache-npm
@@ -156,8 +170,8 @@ jobs:
         working-directory: workspaces/clients/php/workspaces/laravel
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
-#          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
-#          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
+          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
+          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
           composer update --prefer-stable --no-interaction --no-suggest
       - name: npm install & build
         run: |
@@ -168,7 +182,7 @@ jobs:
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
-          cd workspaces/puth && bin/puth.js start &
+          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
           echo $(pwd)
           cd workspaces/clients/php/workspaces/laravel
           echo $(pwd)
@@ -184,20 +198,22 @@ jobs:
         env:
           RUNNING_IN_CI: true
       - name: Collect logs
-        if: always()
+        if: failure()
         run: |
-          docker logs puth-test-image > storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log || true
-          mv storage/logs/server.log storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log || true
-          mv storage/logs/laravel.log storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log || true
+          mv workspaces/clients/php/workspaces/laravel/storage/logs/server.log workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+          mv workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+          mv workspaces/puth/puth.log workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+          mv workspaces/puth/puth.cdp.log workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
       - name: Upload logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: test-logs
           path: |
-            workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
 
 
 #  php-laravel:
