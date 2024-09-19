@@ -156,8 +156,6 @@ jobs:
         working-directory: workspaces/clients/php/workspaces/laravel
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
-#          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
-#          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
           composer update --prefer-stable --no-interaction --no-suggest
       - name: npm install & build
         run: |
