@@ -83,7 +83,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         let pageIdx = this.pages.push(page);
         let browserIdx = context.browsers.indexOf(browser as TODO);
         
-        const client = await page.target().createCDPSession();
+        const client = await page.createCDPSession();
         const handler = async ({data, metadata, sessionId}) => {
             const serializedContext = context.serialize();
             const url = page.url();

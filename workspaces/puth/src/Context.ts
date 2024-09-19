@@ -230,12 +230,18 @@ class Context extends Generic {
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
             let args: any = [];
             
-            try {
-                args = await Promise.all(consoleMessage.args().map(async (m) => await m.jsonValue()));
-            } catch (e) {
-                // tslint:disable-next-line:no-console
-                console.warn('Could not serialize args from console message');
-            }
+            args = await Promise.all(
+                consoleMessage.args()
+                    .map(
+                        async (m) => await m.jsonValue()
+                            .catch((e) => {
+                                this.puth.logger.warn({
+                                    exception: e,
+                                    jsHandle: m,
+                                }, 'Could not serialize args from console message');
+                            }),
+                    ),
+            );
             
             Snapshots.pushToCache(this, {
                 id: v4(),

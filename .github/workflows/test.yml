@@ -182,7 +182,7 @@ jobs:
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
-          cd workspaces/puth && bin/puth.js start &
+          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
           echo $(pwd)
           cd workspaces/clients/php/workspaces/laravel
           echo $(pwd)
@@ -212,6 +212,8 @@ jobs:
             workspaces/clients/php/workspaces/laravel/storage/logs/puth-${{ matrix.php }}-${{ matrix.laravel }}.log
             workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}.log
             workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}.log
+            workspaces/puth/puth.log
+            workspaces/puth/puth.cdp.log
 
 
 #  php-laravel:
