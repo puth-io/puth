@@ -131,6 +131,12 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             format: 'jpeg',
             quality: 75,
             everyNthFrame: 1,
+        }).catch(e => {
+            this.puth?.logger.error({
+                debugInfo: page.browser().debugInfo,
+            }, 'Could not start screencast');
+            
+            throw e;
         });
     }
     
