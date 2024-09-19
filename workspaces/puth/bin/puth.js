@@ -32,17 +32,20 @@ Commands
             debug: {
                 type: 'boolean',
                 shortFlag: 'd',
+                alias: 'd',
                 default: false,
             },
             address: {
                 type: 'string',
                 default: '127.0.0.1',
                 shortFlag: 'a',
+                alias: 'a',
             },
             port: {
                 type: 'number',
                 default: 7345,
                 shortFlag: 'p',
+                alias: 'p',
             },
             disableCors: {
                 type: 'boolean',

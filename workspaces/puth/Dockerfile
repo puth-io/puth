@@ -54,4 +54,4 @@ EXPOSE 7345
 
 ENTRYPOINT ["/usr/local/bin/node", "bin/puth.js"]
 
-CMD ["start", "-p", "7345", "-a", "0.0.0.0", "--disable-cors"]
+CMD ["start", "--port", "7345", "--address", "0.0.0.0", "--disable-cors"]
