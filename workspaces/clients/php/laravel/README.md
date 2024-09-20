@@ -49,9 +49,8 @@ Console logs are different then the dusk console logs. They contain more informa
 
 ### Changed methods
 
-- `$browser->keys()`: This method no longer uses the php-webdriver keymap. **Instead** the
-  [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) is used and it is **case sensitive**!
-- `$browser->typeInDialog(selector, value)`: Please use the accept method which now takes a value `$browser->acceptDialog(value)`
+- `$browser->keys()`: This method now uses the [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) (instead of the php-webdriver keymap) is used and it is **case sensitive**!
+- `$browser->typeInDialog(selector, value)`: Use the accept method instead which takes a value `$browser->acceptDialog(value)`
 
 ### Unsupported methods
 

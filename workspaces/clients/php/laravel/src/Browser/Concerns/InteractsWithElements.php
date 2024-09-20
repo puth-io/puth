@@ -121,15 +121,7 @@ trait InteractsWithElements
      */
     public function keys($selector, ...$keys)
     {
-        $element = $this->resolver->findOrFail($selector);
-        
-        foreach ($keys as $key) {
-            if (is_array($key)) {
-                $key = implode($key);
-            }
-    
-            $element->type($key);
-        }
+        $this->resolver->findOrFail($selector)->type($this->parseKeys($keys));
         
         return $this;
     }

@@ -234,9 +234,13 @@ class Context extends Generic {
                 consoleMessage.args()
                     .map(
                         async (m) => await m.jsonValue()
-                            .catch((e) => {
+                            .catch(err => {
+                                if (err.name === 'TargetCloseError') {
+                                    // TODO handle TargetCloseError
+                                }
+                                
                                 this.puth.logger.warn({
-                                    exception: e,
+                                    exception: err,
                                     jsHandle: m,
                                 }, 'Could not serialize args from console message');
                             }),

@@ -125,6 +125,7 @@ class BrowserTest extends PuthTestCase
                         __DIR__ . '/files/test2.txt',
                     ]);
                 })
+                ->waitForTextIn('#file-attach-preview', 'test.txt content' . 'test2.txt content')
                 ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
         });
     }
