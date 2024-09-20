@@ -131,12 +131,14 @@ trait InteractsWithMouse
      * @param string|null $selector
      * @return $this
      */
-    public function clickAndHold($selector)
+    public function clickAndHold($selector = null)
     {
-        $element = $this->resolver->findOrFail($selector);
-        $element->scrollIntoView();
-        $point = $element->clickablePoint();
-        $this->site->mouse->move($point->x, $point->y);
+        if ($selector !== null) {
+            $element = $this->resolver->findOrFail($selector);
+            $element->scrollIntoView();
+            $point = $element->clickablePoint();
+            $this->site->mouse->move($point->x, $point->y);
+        }
         $this->site->mouse->down();
         
         return $this;
@@ -148,9 +150,16 @@ trait InteractsWithMouse
      * @param string|null $selector
      * @return $this
      */
-    public function doubleClick($selector)
+    public function doubleClick($selector = null)
     {
-        $this->resolver->findOrFail($selector)->click(['clickCount' => 2]);
+        if ($selector !== null) {
+            $this->resolver->findOrFail($selector)->click(['clickCount' => 2]);
+        } else {
+            $this->site->mouse->down();
+            $this->site->mouse->up();
+            $this->site->mouse->down();
+            $this->site->mouse->up();
+        }
         
         return $this;
     }
@@ -163,7 +172,12 @@ trait InteractsWithMouse
      */
     public function rightClick($selector = null)
     {
-        $this->resolver->findOrFail($selector)->click(['button' => 'right']);
+        if ($selector !== null) {
+            $this->resolver->findOrFail($selector)->click(['button' => 'right']);
+        } else {
+            $this->site->mouse->down(['button' => 'right']);
+            $this->site->mouse->up(['button' => 'right']);
+        }
         
         return $this;
     }

@@ -93,7 +93,9 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             
             client.send('Page.screencastFrameAck', {
                 sessionId,
-            }).catch(err => console.log(err));
+            }).catch(err => {
+                // TODO handle target closed
+            });
             
             if (viewport) {
                 frame = await sharp(frame)
@@ -131,7 +133,8 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             format: 'jpeg',
             quality: 75,
             everyNthFrame: 1,
-        }).catch(e => {
+        }).catch(err => {
+            // TODO handle target closed
             this.puth?.logger.error({
                 debugInfo: page.browser().debugInfo,
             }, 'Could not start screencast');

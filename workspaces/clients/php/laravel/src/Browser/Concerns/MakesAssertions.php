@@ -4,6 +4,7 @@ namespace Puth\Laravel\Browser\Concerns;
 
 use Exception;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Assert;
 use Puth\GenericObject;
 use Puth\Traits\PuthAssertions;
@@ -200,19 +201,18 @@ trait MakesAssertions
      * @param string $text
      * @return $this
      */
-    public function assertSeeIn($selector, $text)
+    public function assertSeeIn($selector, $text, $ignoreCase = false)
     {
         $fullSelector = $this->resolver->format($selector);
-    
         $element = $this->resolver->findOrFail($selector);
     
         try {
-            $result = $element->contains($text);
+            $result = Str::contains($element->innerText, $text, $ignoreCase);
         } catch (\Exception $exception) {
         };
         
-        Assert::assertNotEmpty(
-            $result ?? [],
+        Assert::assertTrue(
+            $result ?? false,
             "Did not see expected text [{$text}] within element [{$fullSelector}].",
         );
     
