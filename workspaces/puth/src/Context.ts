@@ -11,7 +11,7 @@ import path from 'path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import Return from './context/Return';
-import Constructors from './context/Constructors';
+import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'os';
 import {PuthBrowser} from './HandlesBrowsers';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
@@ -605,7 +605,7 @@ class Context extends Generic {
                 ).jsonValue();
             }
         }
-        // If still undefined, return undefined exception
+        // if still undefined, return undefined exception
         if (resolvedTo === undefined) {
             return {
                 type: 'error',
@@ -614,8 +614,7 @@ class Context extends Generic {
             };
         }
         
-        // TODO check for other types which are actual instances and not serializable objects
-        if ([Constructors.Mouse].includes(Utils.resolveConstructorName(resolvedTo))) {
+        if (ConstructorValues.includes(Utils.resolveConstructorName(resolvedTo))) {
             return this.returnCached(resolvedTo);
         }
         
@@ -677,7 +676,7 @@ class Context extends Generic {
         }
         
         if (this.options?.debug) {
-            this.puth.logger.debug(`[resolveOn] ${Utils.resolveConstructorName(on)} ${representation.function} ${JSON.stringify(representation.parameters)}`);
+            this.puth.logger.debug({representation}, `[resolveOn] ${Utils.resolveConstructorName(on)} ${representation.function ?? representation.property} ${JSON.stringify(representation.parameters) ?? ''}`);
         }
         
         return on;

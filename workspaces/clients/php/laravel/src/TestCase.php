@@ -25,7 +25,7 @@ abstract class TestCase extends FoundationTestCase
     {
         parent::setUp();
         
-        static::$debug = config('puth.debug', false);
+        static::$debug = static::$debug ?: config('puth.debug', false);
     
         $this->context = new Context(Puth::instanceUrl(), array_merge([
             'test' => [

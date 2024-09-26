@@ -64,6 +64,10 @@ class Keyboard
      */
     public function type($keys, $options = [])
     {
+        if (is_array($keys)) {
+            $keys = join('', $keys);
+        }
+        
         $this->keyboard->type($keys, $options);
         
         return $this;

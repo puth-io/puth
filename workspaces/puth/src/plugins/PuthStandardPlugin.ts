@@ -5,7 +5,7 @@ import { retryFor } from '../Utils';
 import { ElementHandle } from 'puppeteer-core';
 import Return from '../context/Return';
 import Constructors from '../context/Constructors';
-import {type} from './utils/cy';
+import {SpecialKeysMap, type} from './utils/cy';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -142,7 +142,14 @@ export class PuthStandardPlugin extends PuthContextPlugin {
       'Dialog': {
         accept: this.dialogAccept,
         dismiss: this.dialogDismiss,
-      }
+      },
+      [Constructors.Keyboard]: {
+        press: (el, key, ...params) => el.press(SpecialKeysMap[key.toLowerCase()] ?? key, ...params),
+        down: (el, key, ...params) => el.down(SpecialKeysMap[key.toLowerCase()] ?? key, ...params),
+        up: (el, key, ...params) => el.up(SpecialKeysMap[key.toLowerCase()] ?? key, ...params),
+        sendCharacter: (el, key, ...params) => el.sendCharacter(SpecialKeysMap[key.toLowerCase()] ?? key, ...params),
+        // TODO keyboard function type use special type function
+      },
     });
   }
 

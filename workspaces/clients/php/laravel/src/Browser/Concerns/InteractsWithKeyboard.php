@@ -2,8 +2,8 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Illuminate\Support\Str;
 use Puth\Laravel\Browser\Keyboard;
+use RuntimeException;
 
 trait InteractsWithKeyboard
 {
@@ -15,7 +15,8 @@ trait InteractsWithKeyboard
      */
     public function withKeyboard(callable $callback)
     {
-        return tap($this, fn () => $callback(new Keyboard($this)));
+        $callback(new Keyboard($this));
+        return $this;
     }
     
     /**
@@ -24,18 +25,12 @@ trait InteractsWithKeyboard
      * @param  array  $keys
      * @return array
      */
-    protected function parseKeys($keys)
+    public function parseKeys($keys)
     {
-        return collect($keys)->map(function ($key) {
-            if (is_string($key) && Str::startsWith($key, '{') && Str::endsWith($key, '}')) {
-                $key = constant(WebDriverKeys::class.'::'.strtoupper(trim($key, '{}')));
-            }
-            
-            if (is_array($key) && Str::startsWith($key[0], '{')) {
-                $key[0] = constant(WebDriverKeys::class.'::'.strtoupper(trim($key[0], '{}')));
-            }
-            
-            return $key;
-        })->all();
+        if (is_array($keys)) {
+            return array_map(fn ($comb) => is_array($comb) ? join('', $comb) : $comb, $keys);
+        } else {
+            throw new RuntimeException('Unsupported parameter type. Should be string or array.');
+        }
     }
 }
