@@ -348,13 +348,14 @@ trait WaitsForElements
      */
     public function waitForEvent($type, $target = '', $seconds = null)
     {
-        // TODO implement timeout
+        $seconds = $seconds === null ? static::$waitSeconds : $seconds;
+        $timeout = "setTimeout(resolve, {$seconds}000);";
         
         if ($target !== 'document' && $target !== 'window') {
-            $target = $this->resolver->findOrFail($target);
-            $target->evaluate("element => (new Promise(function (resolve, reject) { element.addEventListener('$type', resolve, { once: true }); }))");
+            $this->resolver->findOrFail($target)
+                ->evaluate("element => (new Promise(function (resolve, reject) { $timeout element.addEventListener('$type', resolve, { once: true }); }))");
         } else {
-            $this->site->evaluate("(new Promise(function (resolve, reject) { $target.addEventListener('$type', resolve, { once: true }); }))");
+            $this->site->evaluate("(new Promise(function (resolve, reject) { $timeout $target.addEventListener('$type', resolve, { once: true }); }))");
         }
 
         return $this;

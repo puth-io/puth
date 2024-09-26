@@ -19,7 +19,7 @@ class InteractsWithKeyboardTest extends PuthTestCase
         });
     }
     
-    function test_keyboard_with()
+    function test_keyboard_with_keyboard()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)

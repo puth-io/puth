@@ -93,6 +93,20 @@ class WaitsForElementsTest extends PuthTestCase
         });
     }
     
+    function test_wait_for_event_timeout()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground);
+            $time = now();
+            $browser->waitForEvent('test-event', '#wait-for-event-element', 1);
+            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+            
+            $time = now();
+            $browser->waitForEvent('test-event', 'document', 1);
+            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+        });
+    }
+    
     function test_when_available()
     {
         $this->browse(function (Browser $browser) {

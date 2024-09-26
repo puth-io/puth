@@ -1,5 +1,5 @@
 /**
- * Parts of this file are from the open source project cypress hence the copy of its licence is included.
+ * The type function is base on the type function from the open source project cypress hence a copy of its licence is included.
  *
  * MIT License
  *
