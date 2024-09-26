@@ -1,10 +1,11 @@
 import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
-import { capitalizeFirstLetter, retryFor } from '../Utils';
+import { retryFor } from '../Utils';
 import { ElementHandle } from 'puppeteer-core';
 import Return from '../context/Return';
 import Constructors from '../context/Constructors';
+import {type} from './utils/cy';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -74,7 +75,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         clickNoBlockDialog: this.clickNoBlockDialog,
         acceptDialog: this.acceptDialog,
         dismissDialog: this.dismissDialog,
-        type: async (page, selector, chars, options = {}) => await this.type(await page.$(selector), chars, options),
+        type: async (page, selector, chars, options = {}) => await type(await page.$(selector), chars, options),
         // acceptNextDialog(message)
         // acceptAllDialogs(message)
         // dismissNextDialog(message)
@@ -100,7 +101,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         submit: this.submit,
         value: this.value,
         click: this.click,
-        type: this.type,
+        type: type,
         doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
         leftClick: (el, options) => el.click(options),
         middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
@@ -143,68 +144,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         dismiss: this.dialogDismiss,
       }
     });
-  }
-
-  KeyMapping = {
-    leftarrow: 'ArrowLeft',
-    rightarrow: 'ArrowRight',
-    uparrow: 'ArrowUp',
-    downarrow: 'ArrowDown',
-    del: 'Delete',
-    option: 'Alt',
-    command: 'Meta',
-    cmd: 'Meta',
-    ctrl: 'Control',
-    selectall: async (element, options) => {
-      let page = element.frame.page();
-
-      await page.keyboard.down('Control');
-      await page.keyboard.press('A', options);
-      if (options?.delay) {
-        await page.waitForTimeout(options?.delay);
-      }
-      await page.keyboard.up('Control');
-    },
-    // TODO moveToStart
-    // TODO moveToEnd
-  };
-
-  /**
-   * https://github.com/puppeteer/puppeteer/blob/main/src/common/USKeyboardLayout.ts
-   *
-   * @param element
-   * @param chars
-   * @param options
-   */
-  async type(element, chars, options: { delay? } = {}) {
-    let split = chars.split(/({.+?})/).filter((i) => !!i);
-    let release: string[] = [];
-
-    for (let chs of split) {
-      let specialKey = /{(.+?)}/.exec(chs);
-
-      if (specialKey) {
-        let key = this.KeyMapping[specialKey[1].toLowerCase()] ?? capitalizeFirstLetter(specialKey[1]);
-
-        if (typeof key === 'function') {
-          await key(element, options);
-        } else {
-          await element.frame.page().keyboard.down(key);
-          release.push(key);
-        }
-      } else {
-        await element.type(chs, options);
-      }
-    }
-
-    await Promise.all(
-      release.map(async (key) => {
-        if (options?.delay) {
-          await element.frame.page().waitForTimeout(options?.delay);
-        }
-        await element.frame.page().keyboard.up(key);
-      }),
-    );
   }
 
   async innerText(element) {
