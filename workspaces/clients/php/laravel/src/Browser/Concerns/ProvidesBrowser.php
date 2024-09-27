@@ -53,6 +53,8 @@ trait ProvidesBrowser
      */
     protected static $afterClassCallbacks = [];
     
+    public bool|string $headless = 'new';
+    
     /**
      * Register an "after class" tear down callback.
      *
@@ -122,6 +124,7 @@ trait ProvidesBrowser
                 'width' => 1280,
                 'height' => 720,
             ],
+            'headless' => $this->headless,
         ], $this->getLaunchOptions()));
         
         return new Browser(

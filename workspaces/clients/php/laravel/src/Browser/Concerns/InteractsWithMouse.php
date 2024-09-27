@@ -3,6 +3,7 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Exception;
+use Puth\Laravel\Browser\Keyboard;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
@@ -190,9 +191,9 @@ trait InteractsWithMouse
      */
     public function controlClick($selector = null)
     {
-        // TODO implement
         return $this->withKeyboard(function (Keyboard $keyboard) use ($selector) {
-            $key = OperatingSystem::onMac() ? WebDriverKeys::META : WebDriverKeys::CONTROL;
+            // $key = OperatingSystem::onMac() ? WebDriverKeys::META : WebDriverKeys::CONTROL;
+            $key = 'Control'; // TODO check on macos
             
             $keyboard->press($key);
             $this->click($selector);
