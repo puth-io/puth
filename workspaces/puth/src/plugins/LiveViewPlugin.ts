@@ -8,6 +8,7 @@ import Snapshots from "../Snapshots";
 import PuthContextPlugin from "../PuthContextPlugin";
 import Constructors from "../context/Constructors";
 import sharp from "sharp";
+import {setWindowBounds} from './Std/PuthBrowserExtensions';
 
 export class LiveViewContextPlugin extends PuthContextPlugin {
     constructor() {
@@ -21,22 +22,13 @@ export class LiveViewContextPlugin extends PuthContextPlugin {
     }
     
     async setViewport(page: Page, viewport: any) {
-        let cdp = await page.browser().target().createCDPSession();
-        
-        const {targetInfos: [{targetId}]} = await cdp.send('Target.getTargets');
-        const {windowId} = await cdp.send(
-            'Browser.getWindowForTarget',
-            {targetId},
-        );
-        await cdp.send('Browser.setWindowBounds', {
-            bounds: {
-                width: viewport.width,
-                height: viewport.height + 300,
-            },
-            windowId,
+        await setWindowBounds(page.browser(), {
+            width: viewport.width,
+            height: viewport.height + 300,
+            windowState: 'normal',
         });
         
-        await page.setViewport(viewport);
+        return await page.setViewport(viewport);
     }
 }
 

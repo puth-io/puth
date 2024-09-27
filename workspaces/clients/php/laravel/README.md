@@ -54,7 +54,5 @@ Console logs are different then the dusk console logs. They contain more informa
 
 ### Unsupported methods
 
-- `$browser->maximize()`: Puppeteer has no way of controlling the actual browser window
-- `$browser->move($x = 100, $y = 100)`: Puppeteer has no way of controlling the actual browser window
 - `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
 - `$browser->ensurejQueryIsAvailable()`: Puppeteer doesn't come with jquery because it's not needed

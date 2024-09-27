@@ -6,6 +6,7 @@ import { ElementHandle } from 'puppeteer-core';
 import Return from '../context/Return';
 import Constructors from '../context/Constructors';
 import {SpecialKeysMap, type} from './utils/cy';
+import {bounds, maximize, move} from './Std/PuthBrowserExtensions';
 
 export class PuthStandardPlugin extends PuthContextPlugin {
   constructor() {
@@ -36,6 +37,9 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           let pages = browser.pages();
           return index != null ? (await pages)[index] : pages;
         },
+        maximize,
+        move,
+        bounds,
       },
       [Constructors.Frame]: {
         get: this.get,

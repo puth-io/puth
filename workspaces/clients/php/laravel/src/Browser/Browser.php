@@ -388,6 +388,26 @@ class Browser
         
         return $this;
     }
+    
+    /**
+     * Maximize the browser window.
+     *
+     * @return $this
+     */
+    public function maximize()
+    {
+        $this->browser->maximize();
+        
+        return $this;
+    }
+    
+    /**
+     * Maximize the browser window.
+     */
+    public function bounds(): object
+    {
+        return $this->browser->bounds();
+    }
 
     /**
      * Resize the browser window.
@@ -450,6 +470,20 @@ class Browser
     public function enableFitOnFailure()
     {
         $this->fitOnFailure = true;
+        
+        return $this;
+    }
+    
+    /**
+     * Move the browser window.
+     *
+     * @param  int  $x
+     * @param  int  $y
+     * @return $this
+     */
+    public function move($x, $y)
+    {
+        $this->browser->move($x, $y);
         
         return $this;
     }
