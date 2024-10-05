@@ -4,7 +4,8 @@ namespace Puth\Laravel\Browser;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Page.php
  *
  * The MIT License (MIT)
