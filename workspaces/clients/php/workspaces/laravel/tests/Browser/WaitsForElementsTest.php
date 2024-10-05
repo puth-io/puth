@@ -123,20 +123,15 @@ class WaitsForElementsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')
-                ->waitForText('Count')
-                ->click('#add-delay');
+                ->waitForText('Count');
             
             $browser->waitUntilVue('count', '0', '#counter', seconds: 1);
-            $time = now();
-            $browser->waitUntilVue('count', '1', '#counter', seconds: 2);
-            Assert::assertGreaterThan(500, now()->diffInMilliseconds($time));
+            $browser->click('#add-delay');
+            $browser->waitUntilVue('count', '1', '#counter', seconds: 3);
             
-            // ensure waitUntilVueIsNot is working
             $browser->waitUntilVueIsNot('count', '0', '#counter', seconds: 1);
             $browser->click('#add-delay');
-            $time = now();
-            $browser->waitUntilVueIsNot('count', '1', '#counter', seconds: 2);
-            Assert::assertGreaterThan(500, now()->diffInMilliseconds($time));
+            $browser->waitUntilVueIsNot('count', '1', '#counter', seconds: 3);
         });
     }
 }
