@@ -178,11 +178,6 @@ jobs:
           npm ci
           npm run build --workspace workspaces/gui
           npm run build --workspace workspaces/puth
-      - name: npm install & build
-        working-directory: workspaces/clients/php/workspaces/laravel
-        run: |
-          npm ci
-          npm run build
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
