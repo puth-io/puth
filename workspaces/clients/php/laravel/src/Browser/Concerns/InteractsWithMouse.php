@@ -2,7 +2,7 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Exception;
+use RuntimeException;
 use Puth\Laravel\Browser\Keyboard;
 
 /**
@@ -44,15 +44,14 @@ trait InteractsWithMouse
      * @param int $xOffset
      * @param int $yOffset
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function moveMouse($xOffset, $yOffset)
     {
-        throw new \Exception('[moveMouse] is impossible to implement in Puth.');
+        throw new RuntimeException('MoveMouse is currently not supported.');
         /**
-         * The problem is that puppeteer does not track the mouse position, therefore we
-         * can not apply any "offset". We could've implemented this if this would've moved
-         * the mouse to an absolute position.
+         * Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse
+         * by an offset. Therefor puppeteer apis only work with "absolute" mouse positions.
          */
     }
     
