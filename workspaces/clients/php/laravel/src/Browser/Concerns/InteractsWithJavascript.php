@@ -47,6 +47,6 @@ trait InteractsWithJavascript
     
     public function wrapScriptForEvaluate(string $script)
     {
-        return "(function() { $script })();";
+        return "JSON.parse(JSON.stringify((function() { $script })()));";
     }
 }

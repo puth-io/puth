@@ -119,7 +119,7 @@ class WaitsForElementsTest extends PuthTestCase
         });
     }
     
-    function test_wait_unti_vue()
+    function test_wait_until_vue()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('/')

@@ -96,4 +96,21 @@ class MakesAssertionsTest extends PuthTestCase
                 ->assertSeeNothingIn('#b');
         });
     }
+    
+    function test_assert_vue()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('/')
+                ->waitForText('Count')
+                ->assertVue('count', 0, '@counter')
+                ->assertVueIsNot('count', 1, '@counter')
+                ->assertVueDoesntContain('array', 1, '@counter')
+                ->assertVueDoesNotContain('array', 1, '@counter')
+                ->click('#add')
+                ->assertVue('count', 1, '@counter')
+                ->assertVueIsNot('count', 0, '@counter')
+                ->assertVueContains('array', 1, '@counter')
+                ->assertVueIsNot('count', '0', '@counter');
+        });
+    }
 }
