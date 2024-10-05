@@ -2,7 +2,6 @@
 
 namespace Puth\Laravel;
 
-use Exception;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
 use PHPUnit\Runner\Version;
 use Puth\Context;
@@ -137,6 +136,6 @@ abstract class TestCase extends FoundationTestCase
      */
     protected function user()
     {
-        throw new Exception('User resolver has not been set.');
+        throw new \Exception('User resolver has not been set.');
     }
 }

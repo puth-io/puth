@@ -2,7 +2,6 @@
 
 namespace Puth\Laravel\Browser;
 
-use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
@@ -361,7 +360,7 @@ class ElementResolver
     {
         try {
             return $this->findOrFail($selector);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //
         }
     }
@@ -379,7 +378,7 @@ class ElementResolver
         foreach ((array)$selectors as $selector) {
             try {
                 return $this->findOrFail($selector);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
             }
         }
@@ -418,7 +417,7 @@ class ElementResolver
                 $this->format($selector),
                 ['timeout' => 0],
             );
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //
         }
         

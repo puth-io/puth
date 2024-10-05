@@ -80,7 +80,7 @@ trait WaitsForElements
         return $this->waitUsing($seconds, 100, function () use ($selector) {
             try {
                 $missing = !$this->resolver->findOrFail($selector)->visible();
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $missing = true;
             }
             
@@ -383,7 +383,7 @@ trait WaitsForElements
                 if ($callback()) {
                     break;
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
             }
             

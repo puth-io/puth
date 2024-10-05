@@ -3,7 +3,6 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Closure;
-use Exception;
 use Illuminate\Support\Collection;
 use PHPUnit\Runner\Version;
 use Puth\Laravel\Browser\Browser;
@@ -76,7 +75,7 @@ trait ProvidesBrowser
         
         try {
             $callback(...$browsers->all());
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->captureFailuresFor($browsers);
             $this->storeSourceLogsFor($browsers);
             

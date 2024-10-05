@@ -2,7 +2,6 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Assert;
@@ -961,7 +960,7 @@ trait MakesAssertions
             $this->resolver->findOrFail($selector);
             
             $missing = false;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $missing = true;
         }
         
