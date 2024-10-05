@@ -36,23 +36,18 @@ class ExampleBrowserTest extends PuthTestCase
 
 ## Transition from Dusk
 
-The `puth/laravel` package provides a full* replacement for Dusk.
-* Four methods are not supported and never will be due to the limitations of the underlying library `puppeteer`.
+The `puth/laravel` package provides a full replacement for Dusk.
 
 Another difference is that `puth/laravel` does not start the browser process. For that you need to run `puth` (e.g. in
 Docker) and point the client to the `puth` instance. `puth/laravel` once contained code to launch the `puth` process
 but I don't think enough people would use this feature so I removed it.
 
-Iframes (in the `withinFrame()` method) are only partially supported at the moment.
-
-Console logs are different from Dusk console logs. They now contain more information but the underlying json structure changed.
-
-### Changed methods
+### Changes
 
 - `$browser->keys()`: This method now uses the [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) (instead of the php-webdriver keymap) is used (when using modifier keys you can only type/press american keyboard layout keys)
 - `$browser->typeInDialog(selector, value)`: Use the accept method instead which takes a value `$browser->acceptDialog(value)`
+- console logs are different from Dusk console logs. They now contain more information but the underlying json structure changed.
 
-### Unsupported methods
+### Unsupported
 
 - `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse by an offset
-- `$browser->ensurejQueryIsAvailable()`: Puppeteer doesn't come with jquery because it's not needed

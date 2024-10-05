@@ -729,6 +729,18 @@ class Browser
             $component->selector()
         );
     }
+    
+    /**
+     * Ensure that jQuery is available on the page.
+     *
+     * @return void
+     */
+    public function ensurejQueryIsAvailable()
+    {
+        if ($this->site->evaluate('window.jQuery == null')) {
+            $this->site->evaluate(file_get_contents(__DIR__.'/../../misc/jquery.js'));
+        }
+    }
 
     /**
      * Pause for the given amount of milliseconds.

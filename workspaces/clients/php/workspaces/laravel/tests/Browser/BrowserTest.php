@@ -56,6 +56,16 @@ class BrowserTest extends PuthTestCase
         });
     }
     
+    function test_browser_ensure_jquery_is_available()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->site->setContent('');
+            Assert::assertTrue($browser->site->evaluate('window.jQuery == null'));
+            $browser->ensurejQueryIsAvailable();
+            Assert::assertFalse($browser->site->evaluate('window.jQuery == null'));
+        });
+    }
+    
     function test_within_iframe()
     {
         $this->browse(function (Browser $browser) {
