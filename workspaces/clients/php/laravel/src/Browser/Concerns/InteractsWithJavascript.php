@@ -44,4 +44,9 @@ trait InteractsWithJavascript
             return $this->site->evaluate($script);
         })->all();
     }
+    
+    public function wrapScriptForEvaluate(string $script)
+    {
+        return "(function() { $script })();";
+    }
 }

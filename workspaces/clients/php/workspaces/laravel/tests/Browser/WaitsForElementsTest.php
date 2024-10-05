@@ -118,4 +118,25 @@ class WaitsForElementsTest extends PuthTestCase
                 });
         });
     }
+    
+    function test_wait_unti_vue()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('/')
+                ->waitForText('Count')
+                ->click('#add-delay');
+            
+            $browser->waitUntilVue('count', '0', '@counter', seconds: 1);
+            $time = now();
+            $browser->waitUntilVue('count', '1', '@counter', seconds: 2);
+            Assert::assertGreaterThan(500, now()->diffInMilliseconds($time));
+            
+            // ensure waitUntilVueIsNot is working
+            $browser->waitUntilVueIsNot('count', '0', '@counter', seconds: 1);
+            $browser->click('#add-delay');
+            $time = now();
+            $browser->waitUntilVueIsNot('count', '1', '@counter', seconds: 2);
+            Assert::assertGreaterThan(500, now()->diffInMilliseconds($time));
+        });
+    }
 }

@@ -1185,7 +1185,7 @@ trait MakesAssertions
     {
         $fullSelector = $this->resolver->format($componentSelector);
         
-        return $this->site->evaluate(
+        return $this->site->evaluate($this->wrapScriptForEvaluate(
             "var el = document.querySelector('".$fullSelector."');".
             "if (typeof el.__vue__ !== 'undefined')".
             '    return el.__vue__.'.$key.';'.
@@ -1195,7 +1195,6 @@ trait MakesAssertions
             '        return attr;'.
             '} catch (e) {}'.
             'return el.__vueParentComponent.setupState.'.$key.';'
-        );
+        ));
     }
-    
 }
