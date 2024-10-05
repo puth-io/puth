@@ -183,17 +183,11 @@ jobs:
       - name: test
         run: |
           cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
-          echo $(pwd)
           cd workspaces/clients/php/workspaces/laravel
-          echo $(pwd)
           cp .env.example .env
-          echo $(pwd)
           php artisan serve > storage/logs/server.log 2>&1 &
-          echo $(pwd)
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          echo $(pwd)
           php artisan migrate --force
-          echo $(pwd)
           php artisan test --without-tty
         env:
           RUNNING_IN_CI: true

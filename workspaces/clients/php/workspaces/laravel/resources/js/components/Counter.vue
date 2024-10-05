@@ -18,7 +18,7 @@ function incrementDelayed() {
 </script>
 
 <template>
-    <div dusk="counter">Count: {{ count }}</div>
+    <div id="counter">Count: {{ count }}</div>
     
     <button @click="increment" id="add">
         Add
