@@ -2,7 +2,6 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use RuntimeException;
 use Puth\Laravel\Browser\Keyboard;
 
 /**
@@ -44,11 +43,11 @@ trait InteractsWithMouse
      * @param int $xOffset
      * @param int $yOffset
      *
-     * @throws RuntimeException
+     * @throws \Exception
      */
     public function moveMouse($xOffset, $yOffset)
     {
-        throw new RuntimeException('MoveMouse is currently not supported.');
+        throw new \Exception('MoveMouse is currently not supported.');
         /**
          * Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse
          * by an offset. Therefor puppeteer apis only work with "absolute" mouse positions.
@@ -85,12 +84,12 @@ trait InteractsWithMouse
                 $element->click($options);
                 
                 return $this;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
             }
         }
         
-        throw $e ?? new Exception("Unable to locate element with selector [{$selector}].");
+        throw $e ?? new \Exception("Unable to locate element with selector [{$selector}].");
     }
     
     /**
@@ -119,7 +118,7 @@ trait InteractsWithMouse
         $elements = $this->site->getAll('xpath/.' . $expression);
         
         if (count($elements) === 0) {
-            throw new Exception('No such element found');
+            throw new \Exception('No such element found');
         }
     
         $elements[0]->click();
@@ -139,7 +138,10 @@ trait InteractsWithMouse
             $element = $this->resolver->findOrFail($selector);
             $element->scrollIntoView();
             $point = $element->clickablePoint();
-            $this->site->mouse->move($point->x, $point->y);
+            $this->site->mouse->click($point->x, $point->y);
+        } else {
+            $this->site->mouse->down();
+            $this->site->mouse->up();
         }
         $this->site->mouse->down();
         

@@ -3,7 +3,6 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Closure;
-use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -389,7 +388,7 @@ trait WaitsForElements
             }
             
             if ($started->lt(Carbon::now()->subSeconds($seconds))) {
-                throw new Exception($message
+                throw new \Exception($message
                     ? sprintf($message, $seconds)
                     : "Waited {$seconds} seconds for callback."
                 );

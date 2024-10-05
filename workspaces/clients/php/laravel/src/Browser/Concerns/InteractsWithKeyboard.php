@@ -3,7 +3,6 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Puth\Laravel\Browser\Keyboard;
-use RuntimeException;
 
 trait InteractsWithKeyboard
 {
@@ -30,7 +29,7 @@ trait InteractsWithKeyboard
         if (is_array($keys)) {
             return array_map(fn ($comb) => is_array($comb) ? join('', $comb) : $comb, $keys);
         } else {
-            throw new RuntimeException('Unsupported parameter type. Should be string or array.');
+            throw new \Exception('Unsupported parameter type. Should be string or array.');
         }
     }
 }
