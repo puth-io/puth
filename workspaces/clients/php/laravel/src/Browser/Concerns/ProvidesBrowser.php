@@ -3,7 +3,6 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Closure;
-use Exception;
 use Illuminate\Support\Collection;
 use PHPUnit\Runner\Version;
 use Puth\Laravel\Browser\Browser;
@@ -12,7 +11,8 @@ use Throwable;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/ProvidesBrowser.php
  *
  * The MIT License (MIT)
@@ -53,6 +53,8 @@ trait ProvidesBrowser
      */
     protected static $afterClassCallbacks = [];
     
+    public bool|string $headless = 'new';
+    
     /**
      * Register an "after class" tear down callback.
      *
@@ -73,7 +75,7 @@ trait ProvidesBrowser
         
         try {
             $callback(...$browsers->all());
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->captureFailuresFor($browsers);
             $this->storeSourceLogsFor($browsers);
             
@@ -122,6 +124,7 @@ trait ProvidesBrowser
                 'width' => 1280,
                 'height' => 720,
             ],
+            'headless' => $this->headless,
         ], $this->getLaunchOptions()));
         
         return new Browser(

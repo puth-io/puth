@@ -11,7 +11,8 @@ use Illuminate\Support\Traits\Macroable;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Browser.php
  *
  * The MIT License (MIT)
@@ -42,6 +43,7 @@ class Browser
     use Concerns\InteractsWithCookies;
     use Concerns\InteractsWithElements;
     use Concerns\InteractsWithJavascript;
+    use Concerns\InteractsWithKeyboard;
     use Concerns\InteractsWithMouse;
     use Concerns\MakesAssertions;
     use Concerns\MakesUrlAssertions;
@@ -387,6 +389,26 @@ class Browser
         
         return $this;
     }
+    
+    /**
+     * Maximize the browser window.
+     *
+     * @return $this
+     */
+    public function maximize()
+    {
+        $this->browser->maximize();
+        
+        return $this;
+    }
+    
+    /**
+     * Maximize the browser window.
+     */
+    public function bounds(): object
+    {
+        return $this->browser->bounds();
+    }
 
     /**
      * Resize the browser window.
@@ -449,6 +471,20 @@ class Browser
     public function enableFitOnFailure()
     {
         $this->fitOnFailure = true;
+        
+        return $this;
+    }
+    
+    /**
+     * Move the browser window.
+     *
+     * @param  int  $x
+     * @param  int  $y
+     * @return $this
+     */
+    public function move($x, $y)
+    {
+        $this->browser->move($x, $y);
         
         return $this;
     }
@@ -692,6 +728,18 @@ class Browser
         $this->resolver->prefix = $this->resolver->format(
             $component->selector()
         );
+    }
+    
+    /**
+     * Ensure that jQuery is available on the page.
+     *
+     * @return void
+     */
+    public function ensurejQueryIsAvailable()
+    {
+        if ($this->site->evaluate('window.jQuery == null')) {
+            $this->site->evaluate(file_get_contents(__DIR__.'/../../misc/jquery.js'));
+        }
     }
 
     /**

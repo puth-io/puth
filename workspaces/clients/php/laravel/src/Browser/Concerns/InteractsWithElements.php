@@ -6,7 +6,8 @@ use Illuminate\Support\Arr;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/InteractsWithElements.php
  *
  * The MIT License (MIT)
@@ -121,15 +122,7 @@ trait InteractsWithElements
      */
     public function keys($selector, ...$keys)
     {
-        $element = $this->resolver->findOrFail($selector);
-        
-        foreach ($keys as $key) {
-            if (is_array($key)) {
-                $key = implode($key);
-            }
-    
-            $element->type($key);
-        }
+        $this->resolver->findOrFail($selector)->type($this->parseKeys($keys));
         
         return $this;
     }
@@ -187,9 +180,12 @@ trait InteractsWithElements
      */
     public function appendSlowly($field, $value, $pause = 100)
     {
-        foreach (preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) as $char) {
-            $this->append($field, $char)->pause($pause);
-        }
+//        foreach (preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) as $char) {
+//            $this->append($field, $char)->pause($pause);
+//        }
+        
+        // TODO verify
+        $this->resolver->resolveForTyping($field)->type($value, ['delay' => $pause]);
         
         return $this;
     }

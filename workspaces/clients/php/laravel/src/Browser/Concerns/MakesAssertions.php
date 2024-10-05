@@ -2,8 +2,8 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Exception;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Assert;
 use Puth\GenericObject;
 use Puth\Traits\PuthAssertions;
@@ -11,7 +11,8 @@ use Puth\Traits\PuthUtils;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/MakesAssertions.php
  *
  * The MIT License (MIT)
@@ -200,19 +201,18 @@ trait MakesAssertions
      * @param string $text
      * @return $this
      */
-    public function assertSeeIn($selector, $text)
+    public function assertSeeIn($selector, $text, $ignoreCase = false)
     {
         $fullSelector = $this->resolver->format($selector);
-    
         $element = $this->resolver->findOrFail($selector);
     
         try {
-            $result = $element->contains($text);
+            $result = Str::contains($element->innerText, $text, $ignoreCase);
         } catch (\Exception $exception) {
         };
         
-        Assert::assertNotEmpty(
-            $result ?? [],
+        Assert::assertTrue(
+            $result ?? false,
             "Did not see expected text [{$text}] within element [{$fullSelector}].",
         );
     
@@ -960,7 +960,7 @@ trait MakesAssertions
             $this->resolver->findOrFail($selector);
             
             $missing = false;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $missing = true;
         }
         
@@ -1184,7 +1184,7 @@ trait MakesAssertions
     {
         $fullSelector = $this->resolver->format($componentSelector);
         
-        return $this->site->evaluate(
+        return $this->site->evaluate($this->wrapScriptForEvaluate(
             "var el = document.querySelector('".$fullSelector."');".
             "if (typeof el.__vue__ !== 'undefined')".
             '    return el.__vue__.'.$key.';'.
@@ -1194,7 +1194,6 @@ trait MakesAssertions
             '        return attr;'.
             '} catch (e) {}'.
             'return el.__vueParentComponent.setupState.'.$key.';'
-        );
+        ));
     }
-    
 }

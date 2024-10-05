@@ -93,6 +93,20 @@ class WaitsForElementsTest extends PuthTestCase
         });
     }
     
+    function test_wait_for_event_timeout()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground);
+            $time = now();
+            $browser->waitForEvent('test-event', '#wait-for-event-element', 1);
+            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+            
+            $time = now();
+            $browser->waitForEvent('test-event', 'document', 1);
+            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+        });
+    }
+    
     function test_when_available()
     {
         $this->browse(function (Browser $browser) {
@@ -102,6 +116,20 @@ class WaitsForElementsTest extends PuthTestCase
                     
                     Assert::assertCount(2, $browser->elements('div'));
                 });
+        });
+    }
+    
+    function test_wait_until_vue()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('/')
+                ->waitForText('Count')
+                ->waitUntilVue('count', '0', '#counter', seconds: 1)
+                ->click('#add-delay')
+                ->waitUntilVue('count', '1', '#counter', seconds: 3)
+                ->waitUntilVueIsNot('count', '0', '#counter', seconds: 1)
+                ->click('#add-delay')
+                ->waitUntilVueIsNot('count', '1', '#counter', seconds: 3);
         });
     }
 }

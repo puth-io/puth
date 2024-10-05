@@ -212,57 +212,6 @@ class AllMethodsTest extends PuthTestCase
         });
     }
     
-    function test_concern_interacts_with_mouse()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->click('#actions-click > button')
-                ->assertSeeIn('#actions-click-verify', 'clicked button')
-                ->doubleClick('#actions-click-double')
-                ->assertSeeIn('#actions-click-double-verify', 'double clicked button')
-                ->rightClick('#actions-click-mousedown')
-                ->assertSeeIn('#actions-click-mousedown-verify', 'mousedown: 3')
-                ->mouseover('#actions-hover')
-                ->assertSeeIn('#actions-hover', 'hovering');
-            
-            $browser->visit(new Playground)
-                ->clickAndHold('#actions-click > button')
-                ->releaseMouse()
-                ->assertSeeIn('#actions-click', 'clicked button');
-            
-            $browser->visit(new Playground)
-                ->clickAtXPath('//*[@id="actions-click"]/*')
-                ->assertSeeIn('#actions-click', 'clicked button');
-            $this->expectException('Exception');
-            $browser->clickAtXPath('//*[@id="non-existing-element-id"]');
-        });
-    }
-    
-    function test_mouse_click_at_point()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
-            
-            $element = $browser->resolver->findOrFail('#actions-click > button');
-            
-            $element->scrollIntoView();
-            $point = $element->clickablePoint();
-            
-            $browser->clickAtPoint($point->x, $point->y)
-                ->assertSeeIn('#actions-click', 'clicked button');
-        });
-    }
-    
-    function test_mouse_click_exception()
-    {
-        $this->browse(function (Browser $browser) {
-            $this->expectException(Exception::class);
-            
-            $browser->visit(new Playground)
-                ->click('not-an-element');
-        });
-    }
-    
     function test_concerns_interacts_with_elements_values()
     {
         $this->browse(function (Browser $browser) {

@@ -13,21 +13,56 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
-    function test_fit_content()
+    function test_browser_fit_content()
     {
         $this->browse(function (Browser $browser) {
             $page = $browser->site;
             
             $browser->resize(800, 600);
-            
             $page->setContent('<html><body style="margin: 0"><div id="test" style="width: 2000px; height: 3000px;">test</div></body></html>');
-            
             Assert::assertEquals(['width' => 800, 'height' => 600], (array)$page->viewport());
             
-            $browser->waitFor('#test')
-                ->fitContent();
-            
+            $browser->waitFor('#test')->fitContent();
             Assert::assertEquals(['width' => 2000, 'height' => 3000], (array)$page->viewport());
+        });
+    }
+    
+    function test_browser_maximize()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->maximize();
+            $bounds = $browser->bounds();
+            
+            $browser->resize($bounds->width - 100, $bounds->height - 100);
+            $boundsUpdated = $browser->bounds();
+            Assert::assertNotEquals($bounds->width, $boundsUpdated->width);
+            Assert::assertNotEquals($bounds->height, $boundsUpdated->height);
+            
+            $browser->maximize();
+            $boundsUpdated = $browser->bounds();
+            Assert::assertEquals($bounds->width, $boundsUpdated->width);
+            Assert::assertEquals($bounds->height, $boundsUpdated->height);
+        });
+    }
+    
+    function test_browser_move()
+    {
+        $this->browse(function (Browser $browser) {
+            $bounds = $browser->bounds();
+            $browser->move($bounds->left + 100, $bounds->top + 100);
+            $boundsUpdated = $browser->bounds();
+            Assert::assertEquals($bounds->left + 100, $boundsUpdated->left);
+            Assert::assertEquals($bounds->top + 100, $boundsUpdated->top);
+        });
+    }
+    
+    function test_browser_ensure_jquery_is_available()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->site->setContent('');
+            Assert::assertTrue($browser->site->evaluate('window.jQuery == null'));
+            $browser->ensurejQueryIsAvailable();
+            Assert::assertFalse($browser->site->evaluate('window.jQuery == null'));
         });
     }
     
@@ -125,6 +160,7 @@ class BrowserTest extends PuthTestCase
                         __DIR__ . '/files/test2.txt',
                     ]);
                 })
+                ->waitForTextIn('#file-attach-preview', 'test.txt content' . 'test2.txt content')
                 ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
         });
     }

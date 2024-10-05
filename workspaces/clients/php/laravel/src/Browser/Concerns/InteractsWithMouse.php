@@ -2,11 +2,13 @@
 
 namespace Puth\Laravel\Browser\Concerns;
 
-use Exception;
+use Puth\Laravel\Browser\Keyboard;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/InteractsWithMouse.php
  *
  * The MIT License (MIT)
@@ -41,15 +43,14 @@ trait InteractsWithMouse
      * @param int $xOffset
      * @param int $yOffset
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function moveMouse($xOffset, $yOffset)
     {
-        throw new \Exception('[moveMouse] is impossible to implement in Puth.');
+        throw new \Exception('MoveMouse is currently not supported.');
         /**
-         * The problem is that puppeteer does not track the mouse position, therefore we
-         * can not apply any "offset". We could've implemented this if this would've moved
-         * the mouse to an absolute position.
+         * Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse
+         * by an offset. Therefor puppeteer apis only work with "absolute" mouse positions.
          */
     }
     
@@ -83,12 +84,12 @@ trait InteractsWithMouse
                 $element->click($options);
                 
                 return $this;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
             }
         }
         
-        throw $e ?? new Exception("Unable to locate element with selector [{$selector}].");
+        throw $e ?? new \Exception("Unable to locate element with selector [{$selector}].");
     }
     
     /**
@@ -117,7 +118,7 @@ trait InteractsWithMouse
         $elements = $this->site->getAll('xpath/.' . $expression);
         
         if (count($elements) === 0) {
-            throw new Exception('No such element found');
+            throw new \Exception('No such element found');
         }
     
         $elements[0]->click();
@@ -131,12 +132,17 @@ trait InteractsWithMouse
      * @param string|null $selector
      * @return $this
      */
-    public function clickAndHold($selector)
+    public function clickAndHold($selector = null)
     {
-        $element = $this->resolver->findOrFail($selector);
-        $element->scrollIntoView();
-        $point = $element->clickablePoint();
-        $this->site->mouse->move($point->x, $point->y);
+        if ($selector !== null) {
+            $element = $this->resolver->findOrFail($selector);
+            $element->scrollIntoView();
+            $point = $element->clickablePoint();
+            $this->site->mouse->click($point->x, $point->y);
+        } else {
+            $this->site->mouse->down();
+            $this->site->mouse->up();
+        }
         $this->site->mouse->down();
         
         return $this;
@@ -148,9 +154,16 @@ trait InteractsWithMouse
      * @param string|null $selector
      * @return $this
      */
-    public function doubleClick($selector)
+    public function doubleClick($selector = null)
     {
-        $this->resolver->findOrFail($selector)->click(['clickCount' => 2]);
+        if ($selector !== null) {
+            $this->resolver->findOrFail($selector)->click(['clickCount' => 2]);
+        } else {
+            $this->site->mouse->down();
+            $this->site->mouse->up();
+            $this->site->mouse->down();
+            $this->site->mouse->up();
+        }
         
         return $this;
     }
@@ -163,7 +176,12 @@ trait InteractsWithMouse
      */
     public function rightClick($selector = null)
     {
-        $this->resolver->findOrFail($selector)->click(['button' => 'right']);
+        if ($selector !== null) {
+            $this->resolver->findOrFail($selector)->click(['button' => 'right']);
+        } else {
+            $this->site->mouse->down(['button' => 'right']);
+            $this->site->mouse->up(['button' => 'right']);
+        }
         
         return $this;
     }
@@ -176,9 +194,9 @@ trait InteractsWithMouse
      */
     public function controlClick($selector = null)
     {
-        // TODO implement
         return $this->withKeyboard(function (Keyboard $keyboard) use ($selector) {
-            $key = OperatingSystem::onMac() ? WebDriverKeys::META : WebDriverKeys::CONTROL;
+            // $key = OperatingSystem::onMac() ? WebDriverKeys::META : WebDriverKeys::CONTROL;
+            $key = 'Control'; // TODO check on macos
             
             $keyboard->press($key);
             $this->click($selector);

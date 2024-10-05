@@ -36,26 +36,18 @@ class ExampleBrowserTest extends PuthTestCase
 
 ## Transition from Dusk
 
-The `puth/laravel` package provides a full* replacement for Dusk.
-* Four methods are not supported and never will be due to the limitations of the underlying library `puppeteer`.
+The `puth/laravel` package provides a full replacement for Dusk.
 
 Another difference is that `puth/laravel` does not start the browser process. For that you need to run `puth` (e.g. in
 Docker) and point the client to the `puth` instance. `puth/laravel` once contained code to launch the `puth` process
 but I don't think enough people would use this feature so I removed it.
 
-Iframes (in the `withinFrame()` method) are only partially supported at the moment.
+### Changes
 
-Console logs are different then the dusk console logs. They contain more information but the underlying json structure changed.
+- `$browser->keys()`: This method now uses the [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) (instead of the php-webdriver keymap) is used (when using modifier keys you can only type/press american keyboard layout keys)
+- `$browser->typeInDialog(selector, value)`: Use the accept method instead which takes a value `$browser->acceptDialog(value)`
+- console logs are different from Dusk console logs. They now contain more information but the underlying json structure changed.
 
-### Changed methods
+### Unsupported
 
-- `$browser->keys()`: This method no longer uses the php-webdriver keymap. **Instead** the
-  [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) is used and it is **case sensitive**!
-- `$browser->typeInDialog(selector, value)`: Please use the accept method which now takes a value `$browser->acceptDialog(value)`
-
-### Unsupported methods
-
-- `$browser->maximize()`: Puppeteer has no way of controlling the actual browser window
-- `$browser->move($x = 100, $y = 100)`: Puppeteer has no way of controlling the actual browser window
-- `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer doesn't have an actual mouse therefore can't move it by an offset. We could track the mouse x and y location but then we need to update it on $page->click, $element->click, ...
-- `$browser->ensurejQueryIsAvailable()`: Puppeteer doesn't come with jquery because it's not needed
+- `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse by an offset

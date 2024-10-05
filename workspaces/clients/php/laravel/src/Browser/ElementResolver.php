@@ -2,14 +2,14 @@
 
 namespace Puth\Laravel\Browser;
 
-use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/ElementResolver.php
  *
  * The MIT License (MIT)
@@ -360,7 +360,7 @@ class ElementResolver
     {
         try {
             return $this->findOrFail($selector);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //
         }
     }
@@ -378,7 +378,7 @@ class ElementResolver
         foreach ((array)$selectors as $selector) {
             try {
                 return $this->findOrFail($selector);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
             }
         }
@@ -417,7 +417,7 @@ class ElementResolver
                 $this->format($selector),
                 ['timeout' => 0],
             );
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             //
         }
         

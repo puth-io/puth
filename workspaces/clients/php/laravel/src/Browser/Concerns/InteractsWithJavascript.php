@@ -4,7 +4,8 @@ namespace Puth\Laravel\Browser\Concerns;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/InteractsWithJavascript.php
  *
  * The MIT License (MIT)
@@ -42,5 +43,10 @@ trait InteractsWithJavascript
         return collect((array)$scripts)->map(function ($script) {
             return $this->site->evaluate($script);
         })->all();
+    }
+    
+    public function wrapScriptForEvaluate(string $script)
+    {
+        return "JSON.parse(JSON.stringify((function() { $script })()));";
     }
 }

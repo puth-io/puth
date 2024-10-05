@@ -3,14 +3,14 @@
 namespace Puth\Laravel\Browser\Concerns;
 
 use Closure;
-use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
- * code which is covered by the MIT license below.
+ * code which is covered by the MIT license below. However, modified parts are
+ * covered by the Puth license.
  * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/WaitsForElements.php
  *
  * The MIT License (MIT)
@@ -80,7 +80,7 @@ trait WaitsForElements
         return $this->waitUsing($seconds, 100, function () use ($selector) {
             try {
                 $missing = !$this->resolver->findOrFail($selector)->visible();
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $missing = true;
             }
             
@@ -113,14 +113,14 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitForText($text, $seconds = null)
+    public function waitForText($text, $seconds = null, $ignoreCase = false)
     {
         $text = Arr::wrap($text);
         
         $message = $this->formatTimeOutMessage('Waited %s seconds for text', implode("', '", $text));
         
-        return $this->waitUsing($seconds, 100, function () use ($text) {
-            return Str::contains($this->resolver->findOrFail('')->innerText, $text);
+        return $this->waitUsing($seconds, 100, function () use ($text, $ignoreCase) {
+            return Str::contains($this->resolver->findOrFail('')->innerText, $text, $ignoreCase);
         }, $message);
     }
     
@@ -132,12 +132,12 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitForTextIn($selector, $text, $seconds = null)
+    public function waitForTextIn($selector, $text, $seconds = null, $ignoreCase = false)
     {
         $message = 'Waited %s seconds for text "' . $text . '" in selector ' . $selector;
         
-        return $this->waitUsing($seconds, 100, function () use ($selector, $text) {
-            return $this->assertSeeIn($selector, $text);
+        return $this->waitUsing($seconds, 100, function () use ($selector, $text, $ignoreCase) {
+            return $this->assertSeeIn($selector, $text, $ignoreCase);
         }, $message);
     }
     
@@ -295,7 +295,7 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitForDialog($seconds = 3)
+    public function waitForDialog($seconds = 15) // TODO let puth context handle timeout
     {
         $this->site->waitForDialog(['timeout' => $seconds * 1000]);
         
@@ -346,15 +346,16 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitForEvent($type, $target = 'body', $seconds = null)
+    public function waitForEvent($type, $target = '', $seconds = null)
     {
-        // TODO implement timeout
+        $seconds = $seconds === null ? static::$waitSeconds : $seconds;
+        $timeout = "setTimeout(resolve, {$seconds}000);";
         
         if ($target !== 'document' && $target !== 'window') {
-            $target = $this->resolver->findOrFail($target);
-            $target->evaluate("element => (new Promise(function (resolve, reject) { element.addEventListener('$type', resolve, { once: true }); }))");
+            $this->resolver->findOrFail($target)
+                ->evaluate("element => (new Promise(function (resolve, reject) { $timeout element.addEventListener('$type', resolve, { once: true }); }))");
         } else {
-            $this->site->evaluate("(new Promise(function (resolve, reject) { $target.addEventListener('$type', resolve, { once: true }); }))");
+            $this->site->evaluate("(new Promise(function (resolve, reject) { $timeout $target.addEventListener('$type', resolve, { once: true }); }))");
         }
 
         return $this;
@@ -382,12 +383,12 @@ trait WaitsForElements
                 if ($callback()) {
                     break;
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 //
             }
             
             if ($started->lt(Carbon::now()->subSeconds($seconds))) {
-                throw new Exception($message
+                throw new \Exception($message
                     ? sprintf($message, $seconds)
                     : "Waited {$seconds} seconds for callback."
                 );
