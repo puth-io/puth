@@ -76,9 +76,15 @@ export default class AppStore {
     }
     
     public async tryConnectingTo(host: string) {
-        return (new Connection(this, host))
+        return (new Connection(this))
             .connect(host)
             .then(connection => {
+                // TODO handling in a better way for pro version
+                if (this.connections.length !== 0) {
+                    this.connections[0].destroy();
+                    this.connections = [];
+                }
+                
                 this.connections.push(connection);
                 this.active.connection = connection;
                 
