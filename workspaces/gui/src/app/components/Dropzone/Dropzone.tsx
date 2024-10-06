@@ -33,7 +33,7 @@ const Dropzone = observer(() => {
                     console.warn('Can\'t add same context multiple times.');
                     reset();
                     app.setView('local');
-                    app.setActive(exists);
+                    app.dragAndDropped.active = exists;
                     return;
                 }
                 let context = new ContextStore(packets[0]);
@@ -42,7 +42,7 @@ const Dropzone = observer(() => {
                 }
                 app.dragAndDropped.contexts.unshift(context);
                 app.setView('local');
-                app.setActive(context);
+                app.dragAndDropped.active = context;
             } else {
                 // TODO display error
                 throw new Error('Tried to import non context packet.');

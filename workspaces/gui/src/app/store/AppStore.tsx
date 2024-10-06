@@ -29,11 +29,9 @@ export default class AppStore {
     dragAndDropped: {
         contexts: ContextStore[],
         active: ContextStore|null,
-        preview: PreviewStore,
     } = {
         contexts: [],
         active: null,
-        preview: new PreviewStore(),
     };
     
     settings: {
@@ -78,7 +76,7 @@ export default class AppStore {
     }
     
     public async tryConnectingTo(host: string) {
-        return (new Connection(host, new PreviewStore()))
+        return (new Connection(this, host))
             .connect(host)
             .then(connection => {
                 this.connections.push(connection);
@@ -105,11 +103,7 @@ export default class AppStore {
     }
     
     get previewStore() {
-        if (this.view === 'instance') {
-            return this.active.connection?.preview;
-        }
-        
-        return this.dragAndDropped.preview;
+        return this.activeContext?.preview;
     }
     
     get empty() {
@@ -127,6 +121,9 @@ export default class AppStore {
     setActive(context: ContextStore) {
         if (this.view === 'instance') {
             if (! this.active.connection) {
+                return;
+            }
+            if (this.active.connection.active.context === context) {
                 return;
             }
             

@@ -5,6 +5,7 @@ import {decode, encode, ExtensionCodec} from "@msgpack/msgpack";
 import {DebugStoreClass} from "./DebugStoreClass.tsx";
 import {logData} from "../util/Debugging.ts";
 import Events from "../Events.tsx";
+import AppStore from './AppStore.tsx';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -55,6 +56,8 @@ export function EmitPuthEvent(connection: Connection, type: string, arg?: TODO) 
 }
 
 export class Connection {
+    public app: AppStore;
+    
     // @ts-ignore
     private websocket: WebSocket;
     public uri: string;
@@ -74,14 +77,17 @@ export class Connection {
         context: undefined,
     }
     
-    public preview :any;
-    
-    constructor(uri: string, previewStore: any) {
+    constructor(app: AppStore, uri: string) {
         makeAutoObservable(this);
         
+        this.app = app;
         this.uri = uri;
-        this.preview = previewStore;
         // this.connect(this.uri);
+    }
+    
+    public setActiveContext(context: ContextStore) {
+        context.initializePreviewStore(); // TODO limit number of previewstores
+        this.active.context = context;
     }
     
     async retry() {
@@ -226,6 +232,10 @@ export class Connection {
     
     get hasNoContexts() {
         return this.contexts.length === 0;
+    }
+    
+    get isForeground() {
+        return this.app.active.connection === this;
     }
     
     getTotalBytesReceived() {

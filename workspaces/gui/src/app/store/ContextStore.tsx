@@ -2,8 +2,9 @@ import {action, computed, makeObservable, observable, toJS} from 'mobx';
 import Constructors from 'puth/src/context/Constructors';
 import {encode} from "@msgpack/msgpack";
 import {ICommand} from "../Types";
-import Events from "../Events";
-import {PUTH_EXTENSION_CODEC} from "./ConnectionStore";
+// import Events from "../Events";
+import {Connection, PUTH_EXTENSION_CODEC} from './ConnectionStore';
+import PreviewStore from '@/app/store/PreviewStore';
 
 export default class ContextStore {
     readonly id: string;
@@ -12,6 +13,7 @@ export default class ContextStore {
     logs: any[] = [];
     screencasts: any[] = [];
     unspecific: any[] = [];
+    renderedEvents: any[] = [];
     
     group: string = '';
     test: {
@@ -34,14 +36,18 @@ export default class ContextStore {
     lastActivity: number;
     
     readonly original: any;
-    connectionStore: any;
+    connection: Connection;
+    
+    public preview: PreviewStore|null = null;
+    
+    public followIncoming = true;
     
     constructor(
         packet: any,
-        connectionStore?: any,
+        connection?: any,
     ) {
         this.original = packet;
-        this.connectionStore = connectionStore;
+        this.connection = connection;
         
         let {id, options, test, group, capabilities, timestamp} = packet;
         this.id = id;
@@ -51,6 +57,8 @@ export default class ContextStore {
         this.capabilities = capabilities;
         this.createdAt = timestamp;
         this.lastActivity = timestamp;
+        
+        this.preview = null;
         
         makeObservable(this, {
             commands: observable,
@@ -62,17 +70,32 @@ export default class ContextStore {
             options: observable,
             capabilities: observable,
             lastActivity: observable,
-            connectionStore: observable,
+            connection: observable,
+            followIncoming: observable,
+            renderedEvents: observable,
             
+            initializePreviewStore: action,
             received: action,
             getRenderedTypesFilter: action,
             getEventTime: action,
             packets: action,
             blob: action,
             
-            renderedEvents: computed,
             took: computed,
+            isForeground: computed,
         });
+    }
+    
+    initializePreviewStore() {
+        if (this.preview !== null) {
+            console.warn('[Context] Already initialized preview store');
+            return;
+        }
+        this.preview = new PreviewStore(this);
+        
+        if (this.renderedEvents.length !== 0) {
+            this.preview.toggleCommand(this.renderedEvents[this.renderedEvents.length - 1]);
+        }
     }
     
     received(packet: any) {
@@ -85,8 +108,13 @@ export default class ContextStore {
         
         if (packet.type === 'command') {
             this.commands.push(packet);
+            
+            if ([Constructors.Page, Constructors.ElementHandle].includes(packet.on.type)) {
+                this.pushRenderedPacket(packet);
+            }
         } else if (packet.type === 'log') {
             this.logs.push(packet);
+            this.pushRenderedPacket(packet);
         } else if (packet.type === 'test') {
             if (packet.specific === 'status') {
                 this.test.status = packet.status;
@@ -94,7 +122,8 @@ export default class ContextStore {
             this.unspecific.push(packet);
         } else if (packet.type === 'screencasts') {
             this.screencasts.push(packet);
-            Events.emit('context:event:screencast', {context: this as TODO, packet});
+            // this.pushRenderedPacket(packet);
+            // Events.emit('context:event:screencast', {context: this as TODO, packet});
             // this.emit('context:event:screencast', {context: this, packet});
             
             // TODO update
@@ -114,12 +143,22 @@ export default class ContextStore {
         };
     }
     
-    get renderedEvents() {
-        return [
-            ...this.commands.filter(this.getRenderedTypesFilter()),
-            ...this.logs,
-            ...this.screencasts,
-        ].sort((a, b) => this.getEventTime(a) - this.getEventTime(b));
+    private pushRenderedPacket(packet: any) {
+        if (this.renderedEvents.length === 0 || this.renderedEvents[this.renderedEvents.length - 1].timestamp < packet.timestamp) {
+            this.renderedEvents.push(packet);
+        } else {
+            let index = this.renderedEvents.findIndex(item => item.timestamp > packet.timestamp);
+            this.renderedEvents.splice(index, 0, packet);
+        }
+        
+        if (this.isForeground && this.followIncoming && this.preview !== null) {
+            let count = this.renderedEvents.length;
+            if (count !== 1) {
+                if (this.renderedEvents[count - 2].id === this.preview.activeCommand?.id) {
+                    this.preview.toggleCommand(this.renderedEvents[count - 1]);
+                }
+            }
+        }
     }
     
     getEventTime(event: any) {
@@ -161,5 +200,9 @@ export default class ContextStore {
             minutes,
             seconds,
         };
+    }
+    
+    get isForeground() {
+        return this.connection.isForeground && this.connection.active.context?.id === this.id;
     }
 }

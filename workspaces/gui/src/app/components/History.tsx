@@ -11,7 +11,7 @@ import {StatusIcon} from "./Context.tsx";
 export const HistoryItem = observer(function HistoryItem({context}: {context: ContextStore}) {
     const {app} = useContext(AppContext);
     
-    let onClick = () => app.setActive(context);
+    let onClick = () => context.connection.setActiveContext(context);
     let active = app.activeContext === context;
     
     return (

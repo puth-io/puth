@@ -18,15 +18,18 @@ const Command: FunctionComponent<CommandProps> = observer(({ index, command, sho
   const {app} = useContext(AppContext);
   let { on, func, args } = command;
 
-  let mouseClick = useCallback(
-    (e: any) => {
-      e.stopPropagation();
-      Events.emit('preview:toggle', command);
-    },
-    [command],
-  );
-  let mouseEnter = useCallback(() => Events.emit('preview:highlight:show', command), [command]);
-  let mouseLeave = useCallback(() => Events.emit('preview:highlight:hide', command), [command]);
+  let mouseClick = useCallback((event: any) => {
+    event.stopPropagation();
+    command.context.preview.toggleCommand(command);
+  }, [command]);
+  let mouseEnter = useCallback((event: any) => {
+    event.stopPropagation();
+    command.context.preview.highlightCommand(command);
+  }, [command]);
+  let mouseLeave = useCallback((event: any) => {
+    event.stopPropagation();
+    command.context.preview.unhighlightCommand(command);
+  }, [command]);
 
   let displayType: any = on.type;
   if (on.type === Constructors.ElementHandle) {
