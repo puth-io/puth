@@ -223,7 +223,6 @@ class PreviewStore {
     }
     
     public toggleCommand(command: ICommand) {
-        console.debug('[Preview] toggleCommand', command);
         if (this.activeCommand?.id === command?.id) {
             this.activeCommand = undefined;
             this.screencast.lastFrameBeforeSector = undefined;
