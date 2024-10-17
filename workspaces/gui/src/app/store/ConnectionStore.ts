@@ -209,7 +209,7 @@ export class Connection {
     private receivedPacket(packet: any) {
         // special case if context is created
         if (packet.type === 'context') {
-            let context = new ContextStore(packet, this);
+            let context = new ContextStore(packet, this.app, this);
             this.contexts.unshift(context);
             Events.emit('context:created', context);
             this.emit('context:created', context);

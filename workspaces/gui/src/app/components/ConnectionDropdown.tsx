@@ -42,17 +42,6 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
     const [input, setInput] = useState('');
     const [error, setError] = useState<{code: string, reason: string}|null>(null);
     
-    if (app.view === 'local') {
-        return (
-            <RoundButton
-                active={true}
-                onClick={() => app.setView('instance')}
-            >
-                Switch to instance
-            </RoundButton>
-        );
-    }
-    
     const connect = useCallback((to: string) => {
         setConnecting(true);
         app.tryConnectingTo(to)
@@ -79,6 +68,17 @@ export const ConnectionDropdown = observer(function ConnectionDropdown() {
                 });
         }
     }, [isConnected]);
+    
+    if (app.view === 'local') {
+        return (
+            <RoundButton
+                active={true}
+                onClick={() => app.setView('instance')}
+            >
+                Switch to instance
+            </RoundButton>
+        );
+    }
     
     return (
         <>

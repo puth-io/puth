@@ -18,6 +18,8 @@
   },
   "scripts": {
     "build": "npm run build --workspace workspaces/core && npm run build --workspace workspaces/gui && npm run build --workspace workspaces/clients/js/client && npm run build --workspace workspaces/puth",
+    "dev:client": "bun --filter=@puth/gui dev",
+    "dev:server": "bun --filter=puth dev",
     "release": "changeset publish"
   },
   "license": "SEE LICENSE IN LICENCE"

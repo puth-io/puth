@@ -1,6 +1,5 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import {Connection} from './ConnectionStore';
-import PreviewStore from '@/app/store/PreviewStore';
 import ContextStore from '@/app/store/ContextStore';
 
 export default class AppStore {

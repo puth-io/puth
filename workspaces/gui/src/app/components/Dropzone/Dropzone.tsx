@@ -36,7 +36,7 @@ const Dropzone = observer(() => {
                     app.dragAndDropped.active = exists;
                     return;
                 }
-                let context = new ContextStore(packets[0]);
+                let context = new ContextStore(packets[0], app);
                 for (let i = 1; i < packets.length; i++) {
                     context.received(packets[i]);
                 }

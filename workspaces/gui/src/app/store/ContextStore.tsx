@@ -5,6 +5,7 @@ import {ICommand} from "../Types";
 // import Events from "../Events";
 import {Connection, PUTH_EXTENSION_CODEC} from './ConnectionStore';
 import PreviewStore from '@/app/store/PreviewStore';
+import AppStore from './AppStore.tsx';
 
 export default class ContextStore {
     readonly id: string;
@@ -36,7 +37,8 @@ export default class ContextStore {
     lastActivity: number;
     
     readonly original: any;
-    connection: Connection;
+    app: AppStore;
+    connection?: Connection;
     
     public preview: PreviewStore|null = null;
     
@@ -44,9 +46,11 @@ export default class ContextStore {
     
     constructor(
         packet: any,
-        connection?: any,
+        app: AppStore,
+        connection?: Connection,
     ) {
         this.original = packet;
+        this.app = app;
         this.connection = connection;
         
         let {id, options, test, group, capabilities, timestamp} = packet;
@@ -59,6 +63,8 @@ export default class ContextStore {
         this.lastActivity = timestamp;
         
         this.preview = null;
+        
+        this.initializePreviewStore();
         
         makeObservable(this, {
             commands: observable,
@@ -202,7 +208,7 @@ export default class ContextStore {
         };
     }
     
-    get isForeground() {
-        return this.connection.isForeground && this.connection.active.context?.id === this.id;
+    get isForeground(): boolean {
+        return this.app.activeContext?.id === this.id;
     }
 }
