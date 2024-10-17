@@ -1,6 +1,5 @@
 import {FunctionComponent, useCallback, useContext} from 'react';
 import './Command.scss';
-import Events from '../../Events';
 import { ICommand } from '../../Types';
 import { observer } from 'mobx-react-lite';
 import Constructors from 'puth/src/context/Constructors';

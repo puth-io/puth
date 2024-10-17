@@ -1,8 +1,6 @@
 import {action, computed, makeObservable, observable, toJS} from 'mobx';
 import Constructors from 'puth/src/context/Constructors';
-import {encode} from "@msgpack/msgpack";
-import {ICommand} from "../Types";
-// import Events from "../Events";
+import {encode} from '@msgpack/msgpack';
 import {Connection, PUTH_EXTENSION_CODEC} from './ConnectionStore';
 import PreviewStore from '@/app/store/PreviewStore';
 import AppStore from './AppStore.tsx';
@@ -33,7 +31,6 @@ export default class ContextStore {
     };
     
     readonly createdAt: number;
-    readonly created: number = Date.now();
     lastActivity: number;
     
     readonly original: any;
@@ -82,7 +79,6 @@ export default class ContextStore {
             
             initializePreviewStore: action,
             received: action,
-            getRenderedTypesFilter: action,
             getEventTime: action,
             packets: action,
             blob: action,
@@ -107,11 +103,6 @@ export default class ContextStore {
     received(packet: any) {
         packet.context = this;
         
-        let last = packet?.time?.finished > packet.timestamp ? packet.time.finished : packet.timestamp;
-        if (last > this.lastActivity) {
-            this.lastActivity = last;
-        }
-        
         if (packet.type === 'command') {
             this.commands.push(packet);
             
@@ -128,25 +119,15 @@ export default class ContextStore {
             this.unspecific.push(packet);
         } else if (packet.type === 'screencasts') {
             this.screencasts.push(packet);
-            // this.pushRenderedPacket(packet);
-            // Events.emit('context:event:screencast', {context: this as TODO, packet});
-            // this.emit('context:event:screencast', {context: this, packet});
-            
-            // TODO update
-            // if (AppStore.mode === 'follow' && PreviewStore.activeContext === context) {
-            //     PreviewStore.activeScreencast = packet;
-            //     PreviewStore.timelineCursor = packet.timestamp;
-            // }
         } else {
             console.log('unhandled event packet', packet);
             this.unspecific.push(packet);
         }
-    }
-    
-    getRenderedTypesFilter() {
-        return (command: ICommand) => {
-            return [Constructors.Page, Constructors.ElementHandle].includes(command.on.type);
-        };
+        
+        let last = (packet?.time?.finished > packet.timestamp) ? packet.time.finished : packet.timestamp;
+        if (last > this.lastActivity) {
+            this.lastActivity = last;
+        }
     }
     
     private pushRenderedPacket(packet: any) {

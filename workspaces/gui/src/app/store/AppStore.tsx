@@ -132,7 +132,7 @@ export default class AppStore {
                 return;
             }
             
-            this.active.connection.active.context = context;
+            this.active.connection.setActiveContext(context);
             return;
         }
         

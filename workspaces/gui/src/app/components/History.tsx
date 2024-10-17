@@ -8,10 +8,26 @@ import {AppContext} from '../../shared/Contexts.tsx';
 import ContextStore from '@/app/store/ContextStore';
 import {StatusIcon} from './Context.tsx';
 
+function formatDate(rawDate: string|number|Date): string {
+    let date = new Date(rawDate);
+    let month = '' + (date.getMonth() + 1);
+    let day = '' + date.getDate();
+    let year = date.getFullYear();
+    
+    if (month.length < 2) {
+        month = '0' + month;
+    }
+    if (day.length < 2) {
+        day = '0' + day;
+    }
+    
+    return [year, month, day].join('-');
+}
+
 export const HistoryItem = observer(function HistoryItem({context}: {context: ContextStore}) {
     const {app} = useContext(AppContext);
     
-    let onClick = () => context.connection.setActiveContext(context);
+    let onClick = () => app.setActive(context);
     let active = app.activeContext === context;
     
     return (
@@ -23,11 +39,10 @@ export const HistoryItem = observer(function HistoryItem({context}: {context: Co
         >
             <div className={'flex items-center'}>
                 <StatusIcon status={context.test.status} className={'mr-1'}/> {context.test.name}
-                {/*{context.test.name} <StatusIcon status={context.test.status} className={'ml-1'}/>*/}
             </div>
             <div className={'mt-1'}>
                 <div className={'flex items-center text-gray-400 italic ml-auto'}>
-                    <Icon name={'history'}/> just now
+                    <Icon name={'history'}/> {formatDate(context.lastActivity)}
                 </div>
             </div>
         </div>

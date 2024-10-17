@@ -83,14 +83,9 @@ const ContextList = observer(function ContextList({updateCallback}: any) {
     );
 });
 
-const ContextTimeTook = observer(function ContextTimeTook() {
-    const {app} = useContext(AppContext);
-    if (! app.activeContext) {
-        return <></>;
-    }
-    
-    let minutes = app.activeContext.took.minutes < 10 ? '0' + app.activeContext.took.minutes : app.activeContext.took.minutes;
-    let seconds = app.activeContext.took.seconds < 10 ? '0' + app.activeContext.took.seconds : app.activeContext.took.seconds;
+const ContextTimeTook = observer(function ContextTimeTook({took}: any) {
+    let minutes = took.minutes < 10 ? '0' + took.minutes : took.minutes;
+    let seconds = took.seconds < 10 ? '0' + took.seconds : took.seconds;
     
     return <><Icon name={'timer'} className={'mr-1'}/> {minutes}:{seconds}s</>;
 })
@@ -128,11 +123,11 @@ export const Context = observer(function Context() {
                     /> {app.activeContext?.test.name}
                 </div>
                 <div className={'flex items-center text-gray-300 ml-auto'}>
-                    <ContextTimeTook/>
+                    <ContextTimeTook took={app.activeContext.took}/>
                 </div>
-                <div className={'flex items-center text-gray-300 mx-2'}>
-                    <Icon name={'history'} className={'mr-1'}/> 1min
-                </div>
+                {/*<div className={'flex items-center text-gray-300 mx-2'}>*/}
+                {/*    <Icon name={'history'} className={'mr-1'}/> 1min*/}
+                {/*</div>*/}
                 <DownloadHandler resolver={() => app.activeContext?.blob()}/>
             </div>
             
