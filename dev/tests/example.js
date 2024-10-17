@@ -115,6 +115,7 @@ async function laravel() {
     //     },
     // });
     
+    // await context.destroy({save: {to: 'file'}});
     await context.destroy();
 }
 

@@ -20,7 +20,7 @@ export function StatusIcon({status, className, ...rest}: any) {
     return <Icon name={icon} className={className} {...rest}/>;
 }
 
-export function DownloadHandler({resolver}: any) {
+export function DownloadHandler({resolver, name}: any) {
     const ref = useRef<HTMLAnchorElement>(null);
     
     const download = async () => {
@@ -29,7 +29,7 @@ export function DownloadHandler({resolver}: any) {
         }
         let blob = await resolver();
         ref.current.href = URL.createObjectURL(blob);
-        ref.current.download = 'snapshot.puth';
+        ref.current.download = name ?? 'snapshot.puth';
         ref.current.click();
         URL.revokeObjectURL(ref.current.href);
     };
@@ -128,7 +128,10 @@ export const Context = observer(function Context() {
                 {/*<div className={'flex items-center text-gray-300 mx-2'}>*/}
                 {/*    <Icon name={'history'} className={'mr-1'}/> 1min*/}
                 {/*</div>*/}
-                <DownloadHandler resolver={() => app.activeContext?.blob()}/>
+                <DownloadHandler
+                    name={`snapshot-${app.activeContext.createdAt}-${app.activeContext.id}.puth`}
+                    resolver={() => app.activeContext?.blob()}
+                />
             </div>
             
             <div
