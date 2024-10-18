@@ -66,8 +66,8 @@ const Dropzone = observer(() => {
                 <div>Importing snapshot...</div>
             ) : (
                 <div className={'dropzone'}>
-                    <p>Drag and drop a snapshot here</p>
-                    <em>(Only .puth files will be accepted)</em>
+                    <p>Drag and drop a snapshot</p>
+                    <em>(only accepts .puth files)</em>
                 </div>
             )}
         </div>
