@@ -1,12 +1,28 @@
-import {useContext, useState} from "react";
-import {observer} from "mobx-react-lite";
-import {Icon} from "../../components/icon.tsx";
-import {Input} from "../../components/ui/input.tsx";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "../../components/ui/select";
+import {useContext, useState} from 'react';
+import {observer} from 'mobx-react-lite';
+import {Icon} from '../../components/icon.tsx';
+import {Input} from '../../components/ui/input.tsx';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '../../components/ui/select';
 import {ContextStatus} from '@puth/core/src/Types';
-import {AppContext} from "../../shared/Contexts.tsx";
-import ContextStore from "@/app/store/ContextStore";
-import {StatusIcon} from "./Context.tsx";
+import {AppContext} from '../../shared/Contexts.tsx';
+import ContextStore from '@/app/store/ContextStore';
+import {StatusIcon} from './Context.tsx';
+
+function formatDate(rawDate: string|number|Date): string {
+    let date = new Date(rawDate);
+    let month = '' + (date.getMonth() + 1);
+    let day = '' + date.getDate();
+    let year = date.getFullYear();
+    
+    if (month.length < 2) {
+        month = '0' + month;
+    }
+    if (day.length < 2) {
+        day = '0' + day;
+    }
+    
+    return [year, month, day].join('-');
+}
 
 export const HistoryItem = observer(function HistoryItem({context}: {context: ContextStore}) {
     const {app} = useContext(AppContext);
@@ -23,11 +39,10 @@ export const HistoryItem = observer(function HistoryItem({context}: {context: Co
         >
             <div className={'flex items-center'}>
                 <StatusIcon status={context.test.status} className={'mr-1'}/> {context.test.name}
-                {/*{context.test.name} <StatusIcon status={context.test.status} className={'ml-1'}/>*/}
             </div>
             <div className={'mt-1'}>
                 <div className={'flex items-center text-gray-400 italic ml-auto'}>
-                    <Icon name={'history'}/> just now
+                    <Icon name={'history'}/> {formatDate(context.lastActivity)}
                 </div>
             </div>
         </div>
@@ -89,15 +104,23 @@ export const History = observer(function History() {
                             </SelectContent>
                         </Select>
                         {(search !== '' || statusFilter !== '') && (
-                            <Icon name={'cancel'} size={'1.25rem'} className={'ml-2 cursor-pointer'} onClick={() => {setSearch(''); setStatusFilter('')}}/>
+                            <Icon
+                                name={'cancel'} size={'1.25rem'} className={'ml-2 cursor-pointer'} onClick={() => {
+                                setSearch('');
+                                setStatusFilter('');
+                            }}
+                            />
                         )}
                     </div>
                     <div
                         className={'px-5 pb-3 grow overflow-y-auto'}
                     >
                         {history.length === 0 && (
-                            <div className={'p-5 flex items-center border-light border-2 border-solid italic'}>
-                                <Icon name={'error'} className={'mr-1'}/> No test ran on this instance.
+                            <div
+                                className={'p-4 flex items-center border border-solid border-white border-opacity-10 rounded text-sm text-gray-400'}
+                                style={{background: '#22252b'}}
+                            >
+                                <Icon name={'error'} className={'mr-2'}/> No tests have yet been run on this instance
                             </div>
                         )}
                         {history.map((context: any) => <HistoryItem

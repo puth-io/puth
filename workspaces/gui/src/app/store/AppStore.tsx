@@ -1,6 +1,5 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import {Connection} from './ConnectionStore';
-import PreviewStore from '@/app/store/PreviewStore';
 import ContextStore from '@/app/store/ContextStore';
 
 export default class AppStore {
@@ -29,11 +28,9 @@ export default class AppStore {
     dragAndDropped: {
         contexts: ContextStore[],
         active: ContextStore|null,
-        preview: PreviewStore,
     } = {
         contexts: [],
         active: null,
-        preview: new PreviewStore(),
     };
     
     settings: {
@@ -78,9 +75,15 @@ export default class AppStore {
     }
     
     public async tryConnectingTo(host: string) {
-        return (new Connection(host, new PreviewStore()))
+        return (new Connection(this))
             .connect(host)
             .then(connection => {
+                // TODO handling in a better way for pro version
+                if (this.connections.length !== 0) {
+                    this.connections[0].destroy();
+                    this.connections = [];
+                }
+                
                 this.connections.push(connection);
                 this.active.connection = connection;
                 
@@ -105,11 +108,7 @@ export default class AppStore {
     }
     
     get previewStore() {
-        if (this.view === 'instance') {
-            return this.active.connection?.preview;
-        }
-        
-        return this.dragAndDropped.preview;
+        return this.activeContext?.preview;
     }
     
     get empty() {
@@ -129,8 +128,11 @@ export default class AppStore {
             if (! this.active.connection) {
                 return;
             }
+            if (this.active.connection.active.context === context) {
+                return;
+            }
             
-            this.active.connection.active.context = context;
+            this.active.connection.setActiveContext(context);
             return;
         }
         

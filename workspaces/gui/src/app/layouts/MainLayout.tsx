@@ -103,10 +103,12 @@ export const AppLayout = observer(function AppLayout({
                     </div>
                     
                     <div className="flex flex-col grow overflow-auto">
-                        {! app.activeContext ? (
-                            <div className={'flex-1 flex flex-col items-center justify-center text-light text-2xl italic text-center px-8'}>
-                                <Icon className={'mb-4'} name={'cloud_off'} size={'6rem'}/>
-                                No instance connected. Please connect to a Puth instance.
+                        {! app.previewStore ? (
+                            <div className={'flex-1 flex flex-col items-center justify-center text-gray-500 text-2xl italic text-center px-8'}>
+                                <div className={'flex flex-col'} style={{maxWidth: '40rem'}}>
+                                    <Icon className={'mb-4'} name={'cloud_off'} size={'6rem'}/>
+                                    No instance connected. Please connect to a Puth instance or drag and drop a snapshot into the window.
+                                </div>
                             </div>
                         ) : (
                             <>

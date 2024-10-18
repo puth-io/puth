@@ -1,4 +1,5 @@
-const {RemotePuthClient} = require('@puth/client/lib/RemotePuthClient');
+import {RemotePuthClient} from '@puth/client/lib/RemotePuthClient';
+import {sleep} from 'puth/lib/Utils';
 
 let base = process.argv[2] ?? process.env.PUTH_URL;
 if (!base.startsWith('http')) {
@@ -6,11 +7,17 @@ if (!base.startsWith('http')) {
 }
 const client = new RemotePuthClient(base);
 
+let context = null;
+process.on('SIGINT', async () => {
+    await context.destroy();
+    process.exit();
+});
+
 async function laravel() {
-    const context = await client.contextCreate({
+    context = await client.contextCreate({
         snapshot: true,
         test: {
-            name: "Example Test",
+            name: 'Example Test',
         },
         timeout: 2000,
     });
@@ -31,10 +38,18 @@ async function laravel() {
     // TODO $browser->move() mit CDP
     // TODO docs "Dialog handling"
     
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+    await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'dark'}]);
     // await page.visit('https://puth-web-preview-1.fly.dev/');
     await page.visit('https://laravel.com');
     await page.$('body');
+    for (let i = 0; i < 25; i++) {
+        await page.$('body');
+    }
+    // for (let i = 0; i < 10; i++) {
+    //     await sleep(500);
+    //     await page.$('body');
+    // }
+    
     // await page.$('body');
     // await page.$('body');
     // await page.$('body');
@@ -100,6 +115,7 @@ async function laravel() {
     //     },
     // });
     
+    // await context.destroy({save: {to: 'file'}});
     await context.destroy();
 }
 

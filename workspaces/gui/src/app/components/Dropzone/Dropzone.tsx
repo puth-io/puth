@@ -33,16 +33,16 @@ const Dropzone = observer(() => {
                     console.warn('Can\'t add same context multiple times.');
                     reset();
                     app.setView('local');
-                    app.setActive(exists);
+                    app.dragAndDropped.active = exists;
                     return;
                 }
-                let context = new ContextStore(packets[0]);
+                let context = new ContextStore(packets[0], app);
                 for (let i = 1; i < packets.length; i++) {
                     context.received(packets[i]);
                 }
                 app.dragAndDropped.contexts.unshift(context);
                 app.setView('local');
-                app.setActive(context);
+                app.dragAndDropped.active = context;
             } else {
                 // TODO display error
                 throw new Error('Tried to import non context packet.');
@@ -66,8 +66,8 @@ const Dropzone = observer(() => {
                 <div>Importing snapshot...</div>
             ) : (
                 <div className={'dropzone'}>
-                    <p>Drag and drop a snapshot here</p>
-                    <em>(Only .puth files will be accepted)</em>
+                    <p>Drag and drop a snapshot</p>
+                    <em>(only accepts .puth files)</em>
                 </div>
             )}
         </div>

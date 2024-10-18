@@ -1,10 +1,11 @@
-import ContextStore from "@/app/store/ContextStore";
-import mitt, {Emitter, Handler} from "mitt";
+import ContextStore from '@/app/store/ContextStore';
+import mitt, {Emitter, Handler} from 'mitt';
 import {makeAutoObservable} from 'mobx';
-import {decode, encode, ExtensionCodec} from "@msgpack/msgpack";
-import {DebugStoreClass} from "./DebugStoreClass.tsx";
-import {logData} from "../util/Debugging.ts";
-import Events from "../Events.tsx";
+import {decode, encode, ExtensionCodec} from '@msgpack/msgpack';
+import {DebugStoreClass} from './DebugStoreClass.tsx';
+import {logData} from '../util/Debugging.ts';
+import Events from '../Events.tsx';
+import AppStore from './AppStore.tsx';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -55,11 +56,12 @@ export function EmitPuthEvent(connection: Connection, type: string, arg?: TODO) 
 }
 
 export class Connection {
+    public readonly app: AppStore;
+    
     // @ts-ignore
     private websocket: WebSocket;
-    public uri: string;
+    public uri: string = '';
     
-    private retryTimeout = 5000;
     private connectionTimeout = 2000;
     public connectionState: number = WebSocket.CLOSED;
     
@@ -72,24 +74,36 @@ export class Connection {
         context?: ContextStore,
     } = {
         context: undefined,
-    }
+    };
     
-    public preview :any;
-    
-    constructor(uri: string, previewStore: any) {
+    constructor(app: AppStore) {
         makeAutoObservable(this);
-        
-        this.uri = uri;
-        this.preview = previewStore;
-        // this.connect(this.uri);
+        this.app = app;
     }
     
-    async retry() {
-        if (this.connectionState !== WebSocket.CLOSED) {
-            return;
-        }
-        
-        return this.connect(this.uri);
+    public setActiveContext(context: ContextStore) {
+        context.initializePreviewStore(); // TODO limit number of previewstores
+        this.active.context = context;
+    }
+    
+    retry() {
+        return new Promise<Connection>((resolve, reject) => {
+            if (this.connectionState !== WebSocket.CLOSED) {
+                resolve(this);
+                return;
+            }
+            if (this.uri === '') {
+                console.warn('[Connection] No uri set. Hint: call connect() before retrying.', this);
+                reject({code: 'missing', reason: 'Missing uri'});
+                return;
+            }
+            
+            resolve(this.connect(this.uri));
+        });
+    }
+    
+    destroy() {
+        this.websocket.close();
     }
     
     connect(uri: string) {
@@ -97,33 +111,39 @@ export class Connection {
             this.uri = uri;
             this.websocket = new WebSocket(this.uri);
             this.websocket.binaryType = 'arraybuffer';
-            
             this.connectionState = this.websocket.readyState;
             
-            const timeoutTimer = setTimeout(() => {
-                if (this.websocket.readyState === WebSocket.CONNECTING) {
-                    this.websocket.close();
-                    reject('timeout');
-                }
-            }, this.connectionTimeout);
-            
-            this.websocket.onopen = () => {
+            const onOpen = () => {
                 clearTimeout(timeoutTimer);
                 this.connectionState = this.websocket.readyState;
                 resolve(this);
             };
-            this.websocket.onclose = () => {
-                // setTimeout(() => {
-                //     if (this.connectionState === WebSocket.CLOSED) {
-                //         this.connect(this.uri);
-                //     }
-                // }, this.retryTimeout);
+            const onClose = () => {
+                clearTimeout(timeoutTimer);
+                cleanup();
                 this.connectionState = this.websocket.readyState;
-                reject('connection closed');
+                reject({code: 'closed', reason: 'Connection closed'});
             };
-            this.websocket.onmessage = event => {
+            const onMessage = (event: {data: ArrayBuffer;}) => {
                 this.received(event.data);
             };
+            this.websocket.addEventListener('open', onOpen);
+            this.websocket.addEventListener('close', onClose);
+            this.websocket.addEventListener('message', onMessage);
+            
+            const cleanup = () => {
+                this.websocket.removeEventListener('open', onOpen);
+                this.websocket.removeEventListener('close', onClose);
+                this.websocket.removeEventListener('message', onMessage);
+            };
+            
+            const timeoutTimer = setTimeout(() => {
+                if (this.websocket.readyState === WebSocket.CONNECTING) {
+                    cleanup();
+                    this.websocket.close();
+                    reject({code: 'timeout', reason: 'Connection timeout reached (2s)'});
+                }
+            }, this.connectionTimeout);
         });
     }
     
@@ -189,7 +209,7 @@ export class Connection {
     private receivedPacket(packet: any) {
         // special case if context is created
         if (packet.type === 'context') {
-            let context = new ContextStore(packet, this);
+            let context = new ContextStore(packet, this.app, this);
             this.contexts.unshift(context);
             Events.emit('context:created', context);
             this.emit('context:created', context);
@@ -203,18 +223,12 @@ export class Connection {
         }
         
         let context = this.getContext(packet.context.id);
-        if (!context) {
+        if (! context) {
             console.log('ignored packet because no context was initialized', packet);
             return;
         }
         
         context.received(packet);
-        
-        // TODO update
-        // if (AppStore.mode === 'follow' && AppStore.active.connection === this && ! PreviewStore.activeContext) {
-        //     PreviewStore.activeCommand = undefined;
-        //     PreviewStore.activeContext = context;
-        // }
         
         Events.emit('context:received', {context, packet});
         this.emit('context:received', {context, packet});
@@ -226,6 +240,14 @@ export class Connection {
     
     get hasNoContexts() {
         return this.contexts.length === 0;
+    }
+    
+    get isForeground() {
+        return this.app.active.connection === this;
+    }
+    
+    get isConnected() {
+        return this.connectionState === WebSocket.OPEN;
     }
     
     getTotalBytesReceived() {
