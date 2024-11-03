@@ -2,16 +2,9 @@ import puppeteer, {Browser, EventType, Handler, Page} from 'puppeteer-core';
 import chromeDefaultArgs from './chromeDefaultArgs.json';
 import tmp from "tmp";
 
-export type PuthBrowser = {
-    on(event: EventType, handler: Handler<any>): void;
-    once(event: EventType, handler: Handler<any>): void;
-    pages(): Promise<Page[]>;
-    close(): Promise<void>;
-}
-
 export type HandlesBrowsers = {
-    launch: (options: any) => Promise<PuthBrowser>;
-    connect: (options: any) => Promise<PuthBrowser>;
+    launch: (options: any) => Promise<Browser>;
+    connect: (options: any) => Promise<Browser>;
     destroy: (browser: Browser) => Promise<void>;
 };
 

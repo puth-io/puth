@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, {Dialog, Page, Target, ConsoleMessage} from 'puppeteer-core';
+import puppeteer, {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -13,8 +13,8 @@ import {promises as fsPromise} from 'node:fs';
 import Return from './context/Return';
 import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'os';
-import {PuthBrowser} from './HandlesBrowsers';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
+import {Browser} from './shims/Browser';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -24,10 +24,10 @@ type ContextEvents = {
     'set': any,
     'delete': any,
     'destroying',
-    'browser:connected': {browser: PuthBrowser},
-    'browser:disconnected': {browser: PuthBrowser},
-    'page:created': {browser: PuthBrowser, page: Page},
-    'page:closed': {browser: PuthBrowser, page: Page},
+    'browser:connected': {browser: PPTRBrowser},
+    'browser:disconnected': {browser: PPTRBrowser},
+    'page:created': {browser: PPTRBrowser, page: Page},
+    'page:closed': {browser: PPTRBrowser, page: Page},
     'call:apply:before': {command: ICommand|undefined, page: Page},
     'call:apply:after': {command: ICommand|undefined, page: Page},
     'call:apply:error': {error: any, command: ICommand|undefined, page: Page},
@@ -56,6 +56,9 @@ type ContextCaches = {
     dialog: Map<Page, Dialog>;
 }
 
+/**
+ * @codegen
+ */
 class Context extends Generic {
     private readonly _id: string = v4();
     private readonly _type: string = 'Context';
@@ -69,7 +72,7 @@ class Context extends Generic {
     private eventFunctions: [any, string, () => {}][] = [];
     private cleanupCallbacks: any = [];
     
-    public browsers: PuthBrowser[] = [];
+    public browsers: PPTRBrowser[] = [];
     public caches: ContextCaches = {
         snapshot: {
             lastHtml: '',
@@ -121,13 +124,12 @@ class Context extends Generic {
             this.plugins.push(plugin);
         }
     }
-    
-    public async connectBrowser(options) {
+
+    public async connectBrowser(options): Promise<PPTRBrowser> {
         return await puppeteer.connect(options)
             .then(browser => this.handleNewBrowser(browser));
     }
-    
-    public async createBrowser(options: any = {}): Promise<PuthBrowser> {
+    public async createBrowser(options: any = {}): Promise<PPTRBrowser> {
         if (! options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
             options.executablePath = this.puth.getInstalledBrowser().executablePath;
         }
@@ -136,14 +138,19 @@ class Context extends Generic {
             .then(browser => this.handleNewBrowser(browser));
     }
     
-    private async handleNewBrowser(browser: PuthBrowser) {
+    private async handleNewBrowser(browser: PPTRBrowser) {
         this.browsers.push(browser);
         
         return await this.trackBrowser(browser)
             .then(() => this.emitter.emit('browser:connected', {browser}))
             .then(() => browser);
     }
-    
+
+    // @codegen
+    public async createBrowserShim(page: Page, baseUrl: string): Promise<Browser> {
+        return new Browser(this, page, baseUrl);
+    }
+
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
     public async destroy(options: any = {}) {
@@ -179,7 +186,7 @@ class Context extends Generic {
             .then(() => this.removeBrowser(browser));
     }
     
-    private removeBrowser(browser: PuthBrowser) {
+    private removeBrowser(browser: PPTRBrowser) {
         this.browsers.splice(
             this.browsers.findIndex(b => b === browser),
             1,
@@ -190,7 +197,7 @@ class Context extends Generic {
         return this.caches.dialog.has(page);
     }
     
-    private async trackBrowser(browser: PuthBrowser) {
+    private async trackBrowser(browser: PPTRBrowser) {
         browser.once('disconnected', () => {
             this.removeEventListenersFrom(browser);
             this.emitter.emit('browser:disconnected', {browser});
@@ -277,7 +284,8 @@ class Context extends Generic {
         
         this.eventFunctions = this.eventFunctions.filter((listener) => listener[0] !== object);
     }
-    
+
+    // @codegen
     public testFailed() { // used by clients
         this.test.status = ContextStatus.FAILED;
         
@@ -653,9 +661,8 @@ class Context extends Generic {
         }
     }
     
-    /**
-     * Needed by clients to use the browsers file chooser.
-     */
+    // Used by clients to upload temporary files to the server so that the browser can access them
+    // @codegen
     public async saveTemporaryFile(name, content) {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);

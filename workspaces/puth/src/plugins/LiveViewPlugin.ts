@@ -1,9 +1,8 @@
 import {v4} from 'uuid';
-import {Page} from 'puppeteer-core';
+import {Browser, Page} from 'puppeteer-core';
 import Context from "@/context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
 import Puth from "../";
-import {PuthBrowser} from "../HandlesBrowsers";
 import Snapshots from "../Snapshots";
 import PuthContextPlugin from "../PuthContextPlugin";
 import Constructors from "../context/Constructors";
@@ -70,7 +69,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     private async attachScreencastEvents({context, page, browser}: {
         context: Context,
         page: Page,
-        browser: PuthBrowser
+        browser: Browser
     }) {
         let pageIdx = this.pages.push(page);
         let browserIdx = context.browsers.indexOf(browser as TODO);
