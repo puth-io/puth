@@ -4,6 +4,8 @@ namespace Puth\Traits;
 
 use PHPUnit\Runner\Version;
 use Puth\Context;
+use Puth\Generics\Puppeteer\Browser;
+use Puth\Generics\Puppeteer\Page;
 
 /**
  * PuthTestCaseTrait
@@ -18,8 +20,8 @@ use Puth\Context;
 trait PuthTestCaseTrait
 {
     public Context $context;
-    public $browser;
-    public $page;
+    public Browser $browser;
+    public Page $page;
 
     /**
      * Set to connect to custom browser ws endpoint instead of the puth server creating a new one.

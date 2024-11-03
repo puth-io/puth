@@ -4,9 +4,10 @@ namespace Puth;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use Puth\Generics\Puppeteer\Browser;
 
 /**
- * @method connectBrowser(string[] $array)
+// * @method connectBrowser(string[] $array)
  * @method createBrowser(string[] $array)
  */
 class Context extends GenericObject
@@ -43,6 +44,11 @@ class Context extends GenericObject
             null,
             $this,
         );
+    }
+    
+    public function connectBrowser(array $config): Browser
+    {
+        return $this->callMethod('connectBrowser', [$config]);
     }
 
     public function destroy($options)
