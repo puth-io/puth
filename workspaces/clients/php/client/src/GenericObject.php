@@ -10,13 +10,13 @@ use Puth\Utils\DontProxy;
 class GenericObject
 {
     protected Context $context;
-
+    
     protected $parent;
     
     protected $id;
     protected $type;
     protected $represents;
-
+    
     protected $actionTranslations = [
         'get' => '$',
         'getAll' => '$$',
@@ -24,7 +24,7 @@ class GenericObject
         'getEval' => '$eval',
         'getX' => '$x',
     ];
-
+    
     function __construct($id, $type, $represents, $parent, $context)
     {
         $this->id = $id;
@@ -67,7 +67,7 @@ class GenericObject
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
             throw new Exception(BackTrace::message(
                 BackTrace::filter(debug_backtrace()),
-                $body->message
+                $body->message,
             ));
         });
     }
@@ -83,33 +83,33 @@ class GenericObject
             'context' => $this->context->serialize(),
             'calls' => $this->context->accumulatedCalls,
         ]]);
-    
+        
         if ($this->context->debug) {
             $this->log('return: ', false);
             var_export(json_decode($response->getBody()));
             print("\n\n");
         }
-    
+        
         $parts = json_decode($response->getBody());
         
         $return = [];
         foreach ($parts as $idx => $part) {
             $call = $this->context->accumulatedCalls[$idx];
-        
+            
             $return[] = $this->parseGeneric(
                 $part,
                 [$call['function'], $call['parameters']],
                 function ($body, $arguments) {
                     throw new Exception(BackTrace::message(
                         BackTrace::filter(debug_backtrace()),
-                        $body->message
+                        $body->message,
                     ));
-                }
+                },
             );
         }
         
         $this->context->accumulatedCalls = [];
-    
+        
         return $return;
     }
     
@@ -124,12 +124,14 @@ class GenericObject
         
         $this->log('get: ' . $property);
         
-        return $this->handleResponse($response, [$property], function ($body, $arguments) {
-            throw new Exception(BackTrace::message(
+        return $this->handleResponse(
+            $response,
+            [$property],
+            fn($body, $arguments) => throw new Exception(BackTrace::message(
                 BackTrace::filter(debug_backtrace()),
-                "Undefined property: '{$arguments[0]}' (" . get_class($this) . "::\${$arguments[0]})"
-            ));
-        });
+                "Undefined property: '{$arguments[0]}' (" . get_class($this) . "::\${$arguments[0]})",
+            )),
+        );
     }
     
     protected function handleResponse($response, $arguments, $onError)
@@ -171,11 +173,11 @@ class GenericObject
             'GenericObject' => $this->resolveGenericObject($generic),
             'GenericObjects' => array_map(
                 fn($item) => $this->resolveGenericObject($item),
-                $generic->value
+                $generic->value,
             ),
             'GenericArray' => array_map(
                 fn($item) => $this->parseGeneric($item, $arguments, $onError),
-                $generic->value
+                $generic->value,
             ),
             'GenericNull' => null,
             'GenericSelf', 'GenericUndefined' => $this,
@@ -185,12 +187,21 @@ class GenericObject
         };
     }
     
-    private function resolveGenericObject($generic)
+    private function resolveGenericObject($generic): mixed
     {
-        return match ($generic->represents) {
-            'FileChooser' => new FileChooser($generic->id, $generic->type, $generic->represents, $this, $this->context),
-            default => new GenericObject($generic->id, $generic->type, $generic->represents, $this, $this->context),
-        };
+        $represents = $generic->represents;
+        if (str_starts_with($represents, 'Cdp')) {
+            $represents = str_replace('Cdp', '', $represents);
+        }
+        
+        if (class_exists($class = "\\Puth\\Proxies\\$represents")) {
+            return new $class($generic->id, $generic->type, $generic->represents, $this, $this->context);
+        }
+        if (class_exists($class = "\\Puth\\Generics\\Puppeteer\\$represents")) {
+            return new $class($generic->id, $generic->type, $generic->represents, $this, $this->context);
+        }
+        
+        return new GenericObject($generic->id, $generic->type, $generic->represents, $this, $this->context);
     }
     
     public function __call($name, $arguments)
@@ -245,15 +256,15 @@ class GenericObject
         
         return $action;
     }
-
+    
     protected function log($string, $newline = true)
     {
         $this->parent->log('[GEN ' . $this->getRepresents() . '] ' . $string, $newline);
     }
     
     /**
-     * @internal
      * @return mixed
+     * @internal
      */
     public function getId()
     {
@@ -261,8 +272,8 @@ class GenericObject
     }
     
     /**
-     * @internal
      * @return mixed
+     * @internal
      */
     public function getType()
     {
@@ -270,8 +281,8 @@ class GenericObject
     }
     
     /**
-     * @internal
      * @return mixed
+     * @internal
      */
     public function getRepresents()
     {
@@ -279,8 +290,8 @@ class GenericObject
     }
     
     /**
-     * @internal
      * @return mixed
+     * @internal
      */
     public function getClient()
     {
@@ -288,10 +299,11 @@ class GenericObject
     }
     
     /**
-     * @internal
      * @return array
+     * @internal
      */
-    public function serialize() {
+    public function serialize()
+    {
         return [
             'id' => $this->getId(),
             'type' => $this->getType(),
@@ -300,10 +312,11 @@ class GenericObject
     }
     
     /**
-     * @internal
      * @return string
+     * @internal
      */
-    public function __toString() {
+    public function __toString()
+    {
         return "GenericObject({$this->getRepresents()}, {$this->getId()})";
     }
 }

@@ -123,7 +123,10 @@ class Context extends Generic {
         }
     }
     
-    public async connectBrowser(options) {
+    /**
+     * @codegen
+     */
+    public async connectBrowser(options): Promise<PuthBrowser> {
         return await puppeteer.connect(options)
             .then(browser => this.handleNewBrowser(browser));
     }
