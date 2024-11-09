@@ -1,15 +1,19 @@
 # Development
 
+```bash
+bun dev
+```
+
 ## Puth Dev Server
 
 ```bash
-npx lerna run dev:server
+bun run dev:server
 ```
 
 ## Puth Dev GUI
 
 ```bash
-npx lerna run gui:dev
+bun run dev:client
 ```
 
 ## PHP
