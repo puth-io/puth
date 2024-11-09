@@ -46,8 +46,8 @@ puth start
 
 ### Laravel
 
-Puth has a Laravel integration package. You can find more information in [the package readme](workspaces/clients/php/laravel/README.md).
+Puth has a Laravel integration package. You can find more information in the [documentation](https://puth.io/docs/0_x/integrations/laravel).
 
 ### PHP
 
-Puth has a client package for PHP. You can find more information in [the package readme](workspaces/clients/php/client/README.md).
+Puth has a client package for PHP. Currently undocumented.
