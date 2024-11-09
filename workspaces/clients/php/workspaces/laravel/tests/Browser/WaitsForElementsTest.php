@@ -22,9 +22,9 @@ class WaitsForElementsTest extends PuthTestCase
     function test_wait_for_location()
     {
         $this->browse(function (Browser $browser) {
-            $browser->waitUntil('window.location = "https://puth.dev"')
-                ->waitForLocation('https://puth.dev/', 10)
-                ->assertUrlIs('https://puth.dev/');
+            $browser->waitUntil('window.location = "https://puth.io"')
+                ->waitForLocation('https://puth.io/', 10)
+                ->assertUrlIs('https://puth.io/');
         });
     }
     

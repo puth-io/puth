@@ -54,7 +54,7 @@ class AllMethodsTest extends PuthTestCase
     function test_navigation()
     {
         $this->browse(function (Browser $browser) {
-            $next = 'https://puth.dev/';
+            $next = 'https://puth.io/';
             $playground = 'https://playground.puth.dev/';
             
             $browser->visit($playground)
