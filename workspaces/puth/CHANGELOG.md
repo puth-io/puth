@@ -1,5 +1,11 @@
 # puth
 
+## 0.7.1
+
+### Patch Changes
+
+- eebe942: fixed puth inside docker image not binding to any interface
+
 ## 0.7.0
 
 ### Minor Changes
