@@ -10,9 +10,6 @@
     "workspaces/clients/php/client",
     "workspaces/clients/php/laravel"
   ],
-  "devDependencies": {
-    "lerna": "^7.3.0"
-  },
   "dependencies": {
     "@changesets/cli": "^2.27.1"
   },
