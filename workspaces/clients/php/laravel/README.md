@@ -3,7 +3,7 @@
 ### Installation
 
 ```bash
-composer require --dev puth/laravel:0.8.0
+composer require --dev puth/laravel
 ```
 
 After installing the Puth package, run the `puth:install` Artisan command.
@@ -20,7 +20,7 @@ You can find the configuration file for this package in `config/puth.php`.
 
 ```php
 use Tests\PuthTestCase;
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 
 class ExampleBrowserTest extends PuthTestCase
 {
