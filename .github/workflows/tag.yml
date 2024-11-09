@@ -59,7 +59,6 @@ jobs:
           PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
         run: ./bin/tag-release.sh $(echo $GITHUB_REF_NAME | cut -c18-) php
 
-
   # LARAVEL ############################################################################################################
   release-client-laravel:
     if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
@@ -86,6 +85,3 @@ jobs:
         env:
           PUTH_SPLIT_PUTH_TOKEN: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
         run: ./bin/tag-release.sh $(echo $GITHUB_REF_NAME | cut -c22-) laravel
-
-
-
