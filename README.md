@@ -35,10 +35,10 @@ docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1
 
 ### npm
 
-You can also install the `puth` npm package into your projects. The package is quite small but it automatically caches the needed chrome installations either in your home directory or in the current working directory (don't worry it will prompt you when you first run it).
+Install the `puth` npm package globally. On startup, it automatically downloads and caches the needed chrome installation either in your home directory or in the current working directory (don't worry it will prompt you so you can choose).
 
 ```bash
-npm install puth
+npm install --global puth
 puth start
 ```
 
