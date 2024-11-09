@@ -15,9 +15,9 @@ class InteractsWithElementsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->clickLink('https://puth.dev/docs')
-                ->waitForLocation('https://puth.dev/docs/')
-                ->assertUrlIs('https://puth.dev/docs/');
+                ->clickLink('https://puth.io/docs/0_x')
+                ->waitForLocation('https://puth.io/docs/0_x')
+                ->assertUrlIs('https://puth.io/docs/0_x');
         });
     }
     

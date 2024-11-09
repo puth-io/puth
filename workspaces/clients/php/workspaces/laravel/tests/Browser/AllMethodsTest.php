@@ -106,7 +106,7 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->assertTitle('Playground - Puth')
+                ->assertTitle('Playground | Puth')
                 ->assertTitleContains('Playground')
                 ->plainCookie('plain', '1234')
                 ->assertCookieValue('plain', '1234', false)
@@ -124,9 +124,9 @@ class AllMethodsTest extends PuthTestCase
                 ->assertSeeIn('.example', 'Div')
                 ->assertDontSee('This text does not exists')
                 ->assertDontSeeIn('.querying-get', 'This text does not exists')
-                ->assertSourceHas('<title>Playground - Puth</title>')
+                ->assertSourceHas('<title>Playground | Puth</title>')
                 ->assertSourceMissing('<div>__not in dom__</div>')
-                ->assertSeeLink('https://puth.dev/')
+                ->assertSeeLink('https://puth.io/')
                 ->assertDontSeeLink('https://notalink.io')
                 ->assertVisible('body')
                 ->assertInputValue('#properties-value input', 'input with value')

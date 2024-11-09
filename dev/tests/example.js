@@ -40,11 +40,11 @@ async function laravel() {
     
     await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'dark'}]);
     // await page.visit('https://puth-web-preview-1.fly.dev/');
-    await page.visit('https://laravel.com');
-    await page.$('body');
-    for (let i = 0; i < 25; i++) {
-        await page.$('body');
-    }
+    await page.visit('https://playground.puth.dev');
+    // await page.$('body');
+    // for (let i = 0; i < 25; i++) {
+    //     await page.$('body');
+    // }
     // for (let i = 0; i < 10; i++) {
     //     await sleep(500);
     //     await page.$('body');

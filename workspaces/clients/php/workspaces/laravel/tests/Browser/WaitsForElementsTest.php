@@ -77,7 +77,7 @@ class WaitsForElementsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->waitForLink('https://puth.dev/')
+                ->waitForLink('https://puth.io/')
                 ->waitForInput('properties-value-input');
         });
     }
@@ -129,7 +129,8 @@ class WaitsForElementsTest extends PuthTestCase
                 ->waitUntilVue('count', '1', '#counter', seconds: 3)
                 ->waitUntilVueIsNot('count', '0', '#counter', seconds: 1)
                 ->click('#add-delay')
-                ->waitUntilVueIsNot('count', '1', '#counter', seconds: 3);
+                ->waitUntilVueIsNot('count', '1', '#counter', seconds: 3)
+                ->assertVue('count', '2', '#counter');
         });
     }
 }

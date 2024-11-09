@@ -1,49 +1,44 @@
 # Puth
 
 [Puth](https://puth.dev) is a nice browser testing framework with focus on stability, performance and extensive
-feedback. Currently supporting: JS, TS, PHP and Laravel (next up is Java (Spring)).
+feedback. Currently supported: PHP and Laravel.
 
 Current features are:
 
-- Native Javascript and PHP clients (also Laravel integration)
+- Native PHP client (with Laravel integration)
 - Snapshots which can be drag & dropped into the GUI
-- Live GUI where you can see what happened before and after each command
-- Also captures console log and network activity
-- Client exceptions can be appended to a test
-- Client logs can be appended
-- Client files can be appended (e.g. environment/config files)
-- See for yourself in the Screenshot, and yes, what you see can be exported if a test fails (or whenever you want to)
-by your favourite CI/CD so you can simply drag it into you locally running GUI :)
+- Realtime GUI where you can see what's happening before and after each command
+- Captures console log
+- See for yourself in the Screenshot. What you see can be exported if a test fails (or whenever you want to)
+by your favourite CI/CD so when your tests fail you can simply drag the snapshot of the failed test into your locally running GUI
 
-![GUI Preview](assets/gui-preview.png)
+![GUI Preview](assets/gui-preview_2024-11.png)
 
 ## Important
 
-Puth is a browser testing tool designed for development and CI/CD pipelines. Do **not** expose Puth to the public.
-The problem is not Puppeteer/Chrome, but Puth allows calling **any** function that exists on the remote object.
+Puth is a browser testing tool designed for development and CI/CD pipelines. Do **not** expose Puth to the internet, only run Puth with the least access needed.
+The security risk with Puth has nothing to do with Puppeteer/Chrome, but with Puth allowing calling **any** function that exists on remote objects (basically every object in a Puth Context that can be accessed via the API).
 
 ## Usage
 
-Using Puth with docker is recommended. Puth default port is `7345`.
+You can run Puth either via docker image or via npm package. Choose what fits best for your project/workflow.
 
 ### Docker
 
-You can find Puth on [Dockerhub](https://hub.docker.com/r/seuh/puth). **Keep in mind**, if you run Puth in a Docker
-container, you can't access localhost domains. If you e.g. use Vite then you need to start Puth with the
-`--network host` flag and remove `-p 127.0.0.1:7345:7345` so that it can access e.g. `localhost:3000`.
+You can find Puth on [Dockerhub](https://hub.docker.com/r/puthio/puth). **Keep in mind**, if you run Puth in a Docker
+container, you can't access the host network by default. If you e.g. use Vite then you need to start Puth with the
+`--network host` flag and remove `-p 127.0.0.1:7345:7345` from the command below so that it can access Vite running on the host.
 
 ```bash
-docker run -it --rm -p 127.0.0.1:7345:7345 seuh/puth:0.6.4
+docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1
 ```
 
-### npm (not recommended)
+### npm
 
-You can install the `puth` npm package into your project but this is **not** recommended. If you can't use docker, i
-recommend you install `puth` as a global package, but that might have some problems due to puppeteer not having enough
-privilege to successfully install (you might have to sudo install).
+You can also install the `puth` npm package into your projects. The package is quite small but it automatically caches the needed chrome installations either in your home directory or in the current working directory (don't worry it will prompt you when you first run it).
 
 ```bash
-npm install --global puth
+npm install puth
 puth start
 ```
 
@@ -56,16 +51,3 @@ Puth has a Laravel integration package. You can find more information in [the pa
 ### PHP
 
 Puth has a client package for PHP. You can find more information in [the package readme](workspaces/clients/php/client/README.md).
-
-
-### JS/TS
-
-Puth has a JS/TS client package currently bundled in `puth`. A standalone client package should be available soon.
-
-You can find [the javascript client instructions here](https://puth.dev/docs/javascript).
-
-## Known Bugs
-
-### Subsequent keyboard down() calls ignore modifier keys
-
-https://github.com/puppeteer/puppeteer/issues/9770

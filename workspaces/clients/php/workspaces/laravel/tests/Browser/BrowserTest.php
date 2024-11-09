@@ -71,7 +71,7 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->withinFrame('#iframe-example', function (Browser $iframe) {
-                    $iframe->assertUrlIs('https://puth.dev/');
+                    $iframe->assertUrlIs('https://playground.puth.dev/');
                 });
         });
     }
@@ -113,9 +113,9 @@ class BrowserTest extends PuthTestCase
             $browser->visit(new Playground)
                 ->all(fn() => [
                     $site->waitForNavigation(),
-                    $site->click('a[href="https://puth.dev/docs"]'),
+                    $site->click('a[href="https://puth.io/docs/0_x"]'),
                 ])
-                ->assertUrlIs('https://puth.dev/docs/');
+                ->assertUrlIs('https://puth.io/docs/0_x');
         });
     }
     

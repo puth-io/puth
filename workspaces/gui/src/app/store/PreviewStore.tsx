@@ -241,10 +241,7 @@ class PreviewStore {
         this.activeCommand = command;
         
         let idx = (command.context as TODO).commands.findIndex((item: any) => command.id === item.id);
-        // if (idx !== 0) { // find last frame before inBetween sector to display as entry point
-        //     this.screencast.lastFrameBeforeSector = this.findLastScreencastForCommand(command.context.commands[idx - 1]).screencast;
-        // }
-        let until = idx === ((command.context as TODO).commands.length - 1) ? (command.time.finished + 1) : (command.context as TODO).commands[idx + 1].time.started;
+        let until = idx === ((command.context as TODO).commands.length - 1) ? (command.time.finished + 100) : (command.context as TODO).commands[idx + 1].time.started;
         this.screencast.inBetween = this.findEventsBetween(command.time.started, until, (command.context as TODO).screencasts);
         
         // find last frame before inBetween sector to display as entry point
