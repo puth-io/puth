@@ -2,8 +2,8 @@
 
 namespace tests\Browser;
 
-use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\Browser\Keyboard;
+use Puth\Laravel\Browser;
+use Puth\Laravel\Keyboard;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 

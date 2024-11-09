@@ -2,7 +2,7 @@
 
 namespace tests\Browser;
 
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 

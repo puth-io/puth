@@ -1,8 +1,8 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
-use Puth\Laravel\Browser\Keyboard;
+use Puth\Laravel\Keyboard;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk

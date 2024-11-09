@@ -1,12 +1,12 @@
 <?php
 
-namespace Puth\Laravel\Browser;
+namespace Puth\Laravel\Concerns;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
  * code which is covered by the MIT license below. However, modified parts are
  * covered by the Puth license.
- * Source: https://github.com/laravel/dusk/blob/7.x/src/Page.php
+ * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/InteractsWithJavascript.php
  *
  * The MIT License (MIT)
  *
@@ -30,43 +30,23 @@ namespace Puth\Laravel\Browser;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-abstract class Page
+trait InteractsWithJavascript
 {
     /**
-     * Get the URL for the page.
+     * Execute JavaScript within the browser.
      *
-     * @return string
-     */
-    abstract public function url();
-    
-    /**
-     * Assert that the browser is on the page.
-     *
-     * @param Browser $browser
-     * @return void
-     */
-    public function assert(Browser $browser)
-    {
-        //
-    }
-    
-    /**
-     * Get the element shortcuts for the page.
-     *
+     * @param string|array $scripts
      * @return array
      */
-    public function elements()
+    public function script($scripts)
     {
-        return [];
+        return collect((array)$scripts)->map(function ($script) {
+            return $this->site->evaluate($script);
+        })->all();
     }
     
-    /**
-     * Get the global element shortcuts for the site.
-     *
-     * @return array
-     */
-    public static function siteElements()
+    public function wrapScriptForEvaluate(string $script)
     {
-        return [];
+        return "JSON.parse(JSON.stringify((function() { $script })()));";
     }
 }

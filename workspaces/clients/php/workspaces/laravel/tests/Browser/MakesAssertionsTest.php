@@ -3,7 +3,7 @@
 namespace Browser;
 
 use PHPUnit\Framework\ExpectationFailedException;
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use Tests\PuthTestCase;
 use PHPUnit\Framework\Assert;
 

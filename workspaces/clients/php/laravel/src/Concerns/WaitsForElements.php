@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
 use Closure;
 use Illuminate\Support\Arr;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\Browser;
+namespace Puth\Laravel;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;

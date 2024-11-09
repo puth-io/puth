@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\Browser;
+namespace Puth\Laravel;
 
 use BadMethodCallException;
 use Illuminate\Support\Traits\Macroable;
@@ -14,7 +14,7 @@ class Keyboard
     /**
      * The browser instance.
      *
-     * @var \Puth\Laravel\Browser\Browser
+     * @var \Puth\Laravel\Browser
      */
     public $browser;
     
@@ -23,7 +23,7 @@ class Keyboard
     /**
      * Create a keyboard instance.
      *
-     * @param  \Puth\Laravel\Browser\Browser  $browser
+     * @param  \Puth\Laravel\Browser  $browser
      * @return void
      */
     public function __construct(Browser $browser)

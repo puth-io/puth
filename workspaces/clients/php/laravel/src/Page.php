@@ -1,12 +1,12 @@
 <?php
 
-namespace Puth\Laravel\Browser;
+namespace Puth\Laravel;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
  * code which is covered by the MIT license below. However, modified parts are
  * covered by the Puth license.
- * Source: https://github.com/laravel/dusk/blob/7.x/src/ElementResolver.php
+ * Source: https://github.com/laravel/dusk/blob/7.x/src/Page.php
  *
  * The MIT License (MIT)
  *
@@ -30,18 +30,19 @@ namespace Puth\Laravel\Browser;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-abstract class Component
+abstract class Page
 {
     /**
-     * Get the root selector associated with this component.
+     * Get the URL for the page.
      *
      * @return string
      */
-    abstract public function selector();
+    abstract public function url();
     
     /**
-     * Assert that the current page contains this component.
+     * Assert that the browser is on the page.
      *
+     * @param Browser $browser
      * @return void
      */
     public function assert(Browser $browser)
@@ -60,12 +61,12 @@ abstract class Component
     }
     
     /**
-     * Allow this class to be used in place of a selector string.
+     * Get the global element shortcuts for the site.
      *
-     * @return string
+     * @return array
      */
-    public function __toString()
+    public static function siteElements()
     {
-        return '';
+        return [];
     }
 }

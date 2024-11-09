@@ -6,7 +6,7 @@ use Error;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Assert;
 use Puth\Exceptions\UnreachableActionException;
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use Puth\Proxies\FileChooser;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;

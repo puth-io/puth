@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Constraint\RegularExpression;

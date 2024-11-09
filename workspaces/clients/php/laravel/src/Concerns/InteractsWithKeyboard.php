@@ -1,15 +1,15 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
-use Puth\Laravel\Browser\Keyboard;
+use Puth\Laravel\Keyboard;
 
 trait InteractsWithKeyboard
 {
     /**
      * Execute the given callback while interacting with the keyboard.
      *
-     * @param  callable(\Puth\Laravel\Browser\Keyboard):void  $callback
+     * @param  callable(\Puth\Laravel\Keyboard):void  $callback
      * @return $this
      */
     public function withKeyboard(callable $callback)

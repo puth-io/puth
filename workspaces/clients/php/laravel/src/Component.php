@@ -1,12 +1,12 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
  * code which is covered by the MIT license below. However, modified parts are
  * covered by the Puth license.
- * Source: https://github.com/laravel/dusk/blob/7.x/src/Concerns/InteractsWithJavascript.php
+ * Source: https://github.com/laravel/dusk/blob/7.x/src/ElementResolver.php
  *
  * The MIT License (MIT)
  *
@@ -30,23 +30,42 @@ namespace Puth\Laravel\Browser\Concerns;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-trait InteractsWithJavascript
+abstract class Component
 {
     /**
-     * Execute JavaScript within the browser.
+     * Get the root selector associated with this component.
      *
-     * @param string|array $scripts
-     * @return array
+     * @return string
      */
-    public function script($scripts)
+    abstract public function selector();
+    
+    /**
+     * Assert that the current page contains this component.
+     *
+     * @return void
+     */
+    public function assert(Browser $browser)
     {
-        return collect((array)$scripts)->map(function ($script) {
-            return $this->site->evaluate($script);
-        })->all();
+        //
     }
     
-    public function wrapScriptForEvaluate(string $script)
+    /**
+     * Get the element shortcuts for the page.
+     *
+     * @return array
+     */
+    public function elements()
     {
-        return "JSON.parse(JSON.stringify((function() { $script })()));";
+        return [];
+    }
+    
+    /**
+     * Allow this class to be used in place of a selector string.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return '';
     }
 }

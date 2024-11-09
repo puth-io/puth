@@ -2,7 +2,7 @@
 
 namespace Tests\Browser\Pages;
 
-use Puth\Laravel\Browser\Page;
+use Puth\Laravel\Page;
 
 class Playground extends Page
 {

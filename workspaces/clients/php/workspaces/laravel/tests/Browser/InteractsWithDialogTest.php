@@ -2,8 +2,8 @@
 
 namespace Tests\Browser;
 
-use Puth\Laravel\Browser\Browser;
-use Puth\Laravel\Browser\Concerns\LegacyBrowserHandling;
+use Puth\Laravel\Browser;
+use Puth\Laravel\Concerns\LegacyBrowserHandling;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 

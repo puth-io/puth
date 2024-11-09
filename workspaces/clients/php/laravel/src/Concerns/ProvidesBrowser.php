@@ -1,11 +1,11 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
 use Closure;
 use Illuminate\Support\Collection;
 use PHPUnit\Runner\Version;
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use ReflectionFunction;
 use Throwable;
 
@@ -95,7 +95,7 @@ trait ProvidesBrowser
      * Create the browser instances needed for the given callback.
      *
      * @param \Closure $callback
-     * @return array
+     * @return Collection
      *
      * @throws \ReflectionException
      */

@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\Browser;
+namespace Puth\Laravel;
 
 use JetBrains\PhpStorm\ExpectedValues;
 use Puth\Context;
@@ -738,7 +738,7 @@ class Browser
     public function ensurejQueryIsAvailable()
     {
         if ($this->site->evaluate('window.jQuery == null')) {
-            $this->site->evaluate(file_get_contents(__DIR__.'/../../misc/jquery.js'));
+            $this->site->evaluate(file_get_contents(__DIR__.'/../misc/jquery.js'));
         }
     }
 

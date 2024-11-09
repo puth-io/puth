@@ -1,8 +1,8 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use PHPUnit\Framework\Assert;
 
 /**

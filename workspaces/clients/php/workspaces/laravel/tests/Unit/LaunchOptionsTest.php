@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use PHPUnit\Framework\Assert;
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use Tests\PuthTestCase;
 
 class LaunchOptionsTest extends PuthTestCase

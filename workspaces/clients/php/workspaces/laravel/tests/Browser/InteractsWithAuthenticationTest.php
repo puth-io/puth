@@ -3,7 +3,7 @@
 namespace Tests\Browser;
 
 use App\Models\User;
-use Puth\Laravel\Browser\Browser;
+use Puth\Laravel\Browser;
 use Tests\PuthTestCase;
 
 class InteractsWithAuthenticationTest extends PuthTestCase

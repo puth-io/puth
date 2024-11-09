@@ -1,6 +1,6 @@
 <?php
 
-namespace Puth\Laravel\Browser\Concerns;
+namespace Puth\Laravel\Concerns;
 
 use DateTimeInterface;
 use Illuminate\Cookie\CookieValuePrefix;
