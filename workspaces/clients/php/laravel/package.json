@@ -1,7 +1,7 @@
 {
   "name": "@puth/client-laravel",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.8.0",
   "dependencies": {
     "@puth/client-php": "^0.7.1"
   }

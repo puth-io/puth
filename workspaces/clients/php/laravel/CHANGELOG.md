@@ -1,5 +1,11 @@
 # @puth/client-laravel
 
+## 0.8.0
+
+### Minor Changes
+
+- fde46d4: updated browser namespace
+
 ## 0.7.1
 
 ### Patch Changes
