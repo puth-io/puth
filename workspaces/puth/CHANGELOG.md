@@ -1,5 +1,11 @@
 # puth
 
+## 0.7.2
+
+### Patch Changes
+
+- 2bfd053: bump @puth/gui to v0.1.2
+
 ## 0.7.1
 
 ### Patch Changes
