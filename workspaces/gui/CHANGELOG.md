@@ -1,5 +1,11 @@
 # @puth/gui
 
+## 0.1.2
+
+### Patch Changes
+
+- 9a0fd5c: updates for release
+
 ## 0.1.1
 
 ### Patch Changes
