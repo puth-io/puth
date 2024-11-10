@@ -15,7 +15,7 @@
     "@msgpack/msgpack": "^2.8.0",
     "@puth/client": "^0.0.0",
     "@puth/core": "^0.0.0",
-    "@puth/gui": "^0.1.1",
+    "@puth/gui": "^0.1.2",
     "chokidar": "^3.6.0",
     "diff-match-patch": "^1.0.5",
     "fastify": "^4.28.1",
