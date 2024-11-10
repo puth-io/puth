@@ -12,6 +12,9 @@ Current features are:
 - See for yourself in the Screenshot. What you see can be exported if a test fails (or whenever you want to)
 by your favourite CI/CD so when your tests fail you can simply drag the snapshot of the failed test into your locally running GUI
 
+Known problems:
+- The preview in the GUI is slightly delayed, the actual delay depends on what function is called and on system performance. The slower the system, the bigger the potential delay. The problem being that the browser always renders after the dom changes but Puth finishes the call when the "dom" is done, not when change is rendered.
+
 ![GUI Preview](assets/gui-preview_2024-11.png)
 
 ## Important
