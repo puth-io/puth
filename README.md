@@ -1,6 +1,6 @@
 # Puth
 
-[Puth](https://puth.io) is a nice browser testing framework with focus on stability, performance and extensive
+[Puth](https://puth.io) is a nice browser testing tool with focus on stability, performance and extensive
 feedback. Currently supported: PHP and Laravel.
 
 Current features are:
