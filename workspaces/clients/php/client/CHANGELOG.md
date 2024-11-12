@@ -1,5 +1,11 @@
 # @puth/client-php
 
+## 0.7.2
+
+### Patch Changes
+
+- 64cc867: support phpunit v11
+
 ## 0.7.1
 
 ### Patch Changes
