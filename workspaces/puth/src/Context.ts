@@ -15,7 +15,6 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'os';
 import {PuthBrowser} from './HandlesBrowsers';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
-import {CdpPage} from 'puppeteer-core/lib/cjs/puppeteer/cdp/Page';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -29,10 +28,10 @@ type ContextEvents = {
     'browser:disconnected': {browser: PuthBrowser},
     'page:created': {browser: PuthBrowser, page: Page},
     'page:closed': {browser: PuthBrowser, page: Page},
-    'call:apply:before': {command: ICommand|undefined, page: CdpPage},
-    'call:apply:after': {command: ICommand|undefined, page: CdpPage},
-    'call:apply:error': {error: any, command: ICommand|undefined, page: CdpPage},
-    'call:expectation:error': {expectation: IExpectation, command: ICommand|undefined, page: CdpPage},
+    'call:apply:before': {command: ICommand|undefined, page: Page},
+    'call:apply:after': {command: ICommand|undefined, page: Page},
+    'call:apply:error': {error: any, command: ICommand|undefined, page: Page},
+    'call:expectation:error': {expectation: IExpectation, command: ICommand|undefined, page: Page},
 }
 
 type ContextOptions = {
@@ -381,7 +380,7 @@ class Context extends Generic {
         
         let on = this.resolveOn(packet);
         // resolve page object
-        let page: CdpPage = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
+        let page: Page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
         
         // Create command
         const command = await this.createCommandInstance(packet, on);
