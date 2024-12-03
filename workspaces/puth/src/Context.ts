@@ -15,6 +15,7 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'os';
 import {PuthBrowser} from './HandlesBrowsers';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
+import {SimpleBrowser} from './wrapper/SimpleBrowser';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -134,6 +135,10 @@ class Context extends Generic {
         
         return await this.puth.browserHandler.launch(options)
             .then(browser => this.handleNewBrowser(browser));
+    }
+    
+    public async createBrowserWrapper(page: Page, baseUrl: string) {
+        return new SimpleBrowser(this, page, baseUrl);
     }
     
     private async handleNewBrowser(browser: PuthBrowser) {

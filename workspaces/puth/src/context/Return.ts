@@ -35,6 +35,12 @@ export default class Return {
         return Return.make('GenericObjects', value);
     }
 
+    static Error(value) {
+        return Return.make('GenericError', value);
+    }
+    
+    // add Multiple which can contain multiple returns but the main return value must be at pos 0
+
     static make(type, value?) {
         return new Return(type, value);
     }
