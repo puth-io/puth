@@ -1,6 +1,24 @@
 import * as ts from 'typescript';
 import fs from 'node:fs';
 
+const program = ts.createProgram(['src/index.ts'], {
+    target: ts.ScriptTarget.ES2022,
+    module: ts.ModuleKind.CommonJS,
+    lib: [
+        'ES2022',
+        'dom',
+    ],
+    noImplicitAny: true,
+    // moduleResolution: 'node',
+    resolveJsonModule: true,
+    esModuleInterop: true,
+    allowSyntheticDefaultImports: true,
+});
+const typeChecker = program.getTypeChecker();
+const ast = program.getSourceFile('src/Context.ts');
+const classes = [];
+const visitedTypes = new Set();
+
 function extractTypes(typeNode) {
     if (!typeNode) {
         throw new Error('undefined typeNode');
@@ -19,21 +37,6 @@ function extractTypes(typeNode) {
 
     return [typeNode.getFullText(ast).trim()];
 }
-
-// function extractPromiseTypes(typeNode) {
-//     if (typeNode.kind === ts.SyntaxKind.TypeReference && typeNode.typeName.escapedText === 'Promise') {
-//         const typeArguments = typeNode.typeArguments;
-//         if (typeArguments && typeArguments.length > 0) {
-//             const innerType = typeArguments[0];
-//             if (innerType.kind === ts.SyntaxKind.UnionType) {
-//                 return innerType.types.map(t => t.getFullText(ast).trim());
-//             } else {
-//                 return [innerType.getFullText(ast).trim()];
-//             }
-//         }
-//     }
-//     return null;
-// }
 
 function extractParameters(parameters) {
     return parameters.map(param => {
@@ -63,14 +66,27 @@ function returns(typeNode) {
     };
 }
 
+function resolveTypeToClass(typeName, typeChecker) {
+    const symbol = typeChecker.resolveName(typeName, undefined, ts.SymbolFlags.Type, false);
+    if (!symbol || !symbol.declarations) return;
 
-function visit(node) {
-    console.log('---------------------------------------------------------------');
+    for (const decl of symbol.declarations) {
+        if (ts.isClassDeclaration(decl)) {
+            visit(decl, typeChecker);
+        }
+    }
+}
+
+function visit(node, typeChecker) {
+    console.log('-----------------------------');
     console.log(node.kind);
     if (node.kind === ts.SyntaxKind.ClassDeclaration && node.name) {
-        // console.log(node);
+        const className = node.name.text;
+        if (visitedTypes.has(className)) return;
+        visitedTypes.add(className);
+
         const classInfo = {
-            name: node.name.text,
+            name: className,
             methods: new Map(),
         };
 
@@ -87,12 +103,12 @@ function visit(node) {
                 if (methodInfo.parameters.find(param => param.name === 'this')) {
                     return;
                 }
-                console.log('-----------------------');
-                console.log(methodInfo.parameters.find(param => param.name === 'this'));
-                console.log(methodInfo.parameters);
-                // if (methodInfo.name === 'contentFrame') {
-                //     throw new Error('');
-                // }
+
+                methodInfo.returns.types.forEach(retType => {
+                    if (!retType.match(/^(string|number|boolean|any|void|null|undefined|Array|mixed|this|Uint8Array|\[.*\]|\(.*\))$/)) {
+                        resolveTypeToClass(retType, typeChecker);
+                    }
+                });
 
                 if (classInfo.methods.has(methodInfo.name)) {
                     let first = classInfo.methods.get(methodInfo.name);
@@ -103,57 +119,25 @@ function visit(node) {
             }
         });
         classInfo.methods = [...classInfo.methods.values()];
-
         classes.push(classInfo);
+        console.log(classInfo);
     }
 
-    ts.forEachChild(node, visit);
+    ts.forEachChild(node, n => visit(n, typeChecker));
 }
 
-// console.log(classes[13].methods[8]);
-
-// import * as Test from 'puppeteer-core/lib/types';
-// console.log(Test);
-
 function mapTypeToPHP(type, classes) {
-    if (type === 'string') {
-        return 'string';
-    }
-    if (type === 'number') {
-        return 'float';
-    }
-    if (type === 'boolean') {
-        return 'bool';
-    }
-    if (type === 'any') {
-        return 'mixed';
-    }
-    if (type === 'void') {
-        return 'void';
-    }
-    if (type === 'mixed') {
-        return 'mixed';
-    }
-    if (type === 'Promise') {
-        return '';
-    }
-    if (type === 'undefined') {
-        return 'null';
-    }
-    if (type === 'null') {
-        return 'null';
-    }
-    if (type === 'this') {
-        return 'static';
-    }
-    if (type === 'Uint8Array') {
-        return 'array';
-    }
-
-    if (classes.find(def => def.name === type)) {
-        return type;
-    }
-
+    if (type === 'string') return 'string';
+    if (type === 'number') return 'float';
+    if (type === 'boolean') return 'bool';
+    if (type === 'any') return 'mixed';
+    if (type === 'void') return 'void';
+    if (type === 'mixed') return 'mixed';
+    if (type === 'Promise') return '';
+    if (type === 'undefined' || type === 'null') return 'null';
+    if (type === 'this') return 'static';
+    if (type === 'Uint8Array') return 'array';
+    if (classes.find(def => def.name === type)) return type;
     return 'mixed';
 }
 
@@ -174,19 +158,13 @@ function generatePHPMethod(className, method, classes) {
         returnTypeHint = mapTypeToPHP(types[0], classes);
     } else {
         let a = types.map(type => mapTypeToPHP(type, classes));
-        if (a.includes('mixed')) {
-            a = ['mixed'];
-        }
-        if (a.includes('void')) {
-            a = ['void'];
-        }
+        if (a.includes('mixed')) a = ['mixed'];
+        if (a.includes('void')) a = ['void'];
         returnTypeHint = a.filter(i => !!i).join('|');
     }
 
     let phpParameters = parameters.map(param => `${mapTypeToPHP(param.type, classes)} $${param.name}`).join(', ');
-
-    let args = parameters.length === 0 ? ''
-        : `, [${parameters.map(param => `$${param.name}`).join(', ')}]`;
+    let args = parameters.length === 0 ? '' : `, [${parameters.map(param => `$${param.name}`).join(', ')}]`;
     let call = `${returnTypeHint === 'void' ? '' : 'return '}$this->callMethod('${name}'${args});`;
 
     return [
@@ -202,7 +180,6 @@ function generatePHPMethod(className, method, classes) {
 
 function generatePHPClasses(classData, classes) {
     const {name, methods} = classData;
-
     return `<?php
 
 namespace Puth\\Generics\\Puppeteer;
@@ -222,20 +199,12 @@ function generatePhp(classes) {
     }));
 }
 
+// const content = fs.readFileSync(path, 'utf8');
+// let ast = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true);
 
-// const path = '../../node_modules/puppeteer-core/lib/esm/puppeteer/index.d.ts';
-// const path = 'src/index.ts';
-const path = 'src/Context.ts';
+visit(ast, typeChecker);
 
-const content = fs.readFileSync(path, 'utf8');
-
-let ast = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true);
-const classes = [];
-
-visit(ast);
-
-// console.log(classes[1]);
+console.log(JSON.stringify(classes));
 
 let php = generatePhp(classes);
-// php.forEach(def => fs.writeFileSync('../clients/php/client/src/Generics/Puppeteer/' + def.name + '.php', def.content, 'utf8'));
-php.forEach(def => fs.writeFileSync('../clients/php/client/src/Generics/Puth/' + def.name + '.php', def.content, 'utf8'));
+php.forEach(def => fs.writeFileSync(`../clients/php/client/src/Generics/Puth/${def.name}.php`, def.content, 'utf8'));
