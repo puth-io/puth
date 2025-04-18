@@ -1,8 +1,8 @@
-import Puth, {installedBrowsers, PuthStandardPlugin} from '../';
+import Puth, {usableBrowserInstallations, PuthStandardPlugin} from '../';
 import {LocalPuthClient, RemotePuthClient} from '@puth/client';
 import * as assert from "assert";
 
-export const installedBrowser = installedBrowsers[0];
+export const installedBrowser = usableBrowserInstallations[0];
 
 export function makeLocalPuthClient() {
     return new LocalPuthClient({installedBrowser});

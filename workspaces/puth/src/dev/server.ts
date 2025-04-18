@@ -1,18 +1,20 @@
-import Puth, {
-    installedBrowsers,
-    makeLogger,
-    PuthStandardPlugin,
-    LiveViewContextPlugin,
-    LiveViewSnapshotPlugin,
-} from "../";
+import Puth, {usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin, allBrowserInstallations, unusableBrowserInstallations} from '../';
+
+const stringifyBrowsers = browsers => browsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ');
 
 const logger = makeLogger(true);
-logger.info(`Installed browsers: ${installedBrowsers.map((i: any)  => `${i.browser} ${i.buildId} (${i.platform})`).join(', ')}`);
+logger.info(`All browsers: ${stringifyBrowsers(allBrowserInstallations)}`);
+logger.info(`Unusable browsers: ${stringifyBrowsers(unusableBrowserInstallations)}`);
+logger.info(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`);
+
+if (usableBrowserInstallations.length === 0) {
+    logger.error('No usable browser installation found. Please install one.');
+}
 
 const instance = new Puth({
     debug: true,
     disableCors: true,
-    installedBrowser: installedBrowsers[0],
+    installedBrowser: usableBrowserInstallations[0],
     logger,
 });
 

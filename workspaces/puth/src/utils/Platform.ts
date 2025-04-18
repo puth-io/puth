@@ -28,8 +28,12 @@ function checkInstalledBrowsers(browsers) {
     return checked;
 }
 
-// TODO add --browser={system|home|cwd} parameter
-export const installedBrowsers = [
+export const allBrowserInstallations = [
     ...checkInstalledBrowsers(browserCacheCWD.getInstalledBrowsers()).reverse(),
     ...checkInstalledBrowsers(browserCacheHomedir.getInstalledBrowsers()).reverse(),
-].filter(browser => browser.buildId === PUPPETEER_REVISIONS.chrome);
+];
+
+export const unusableBrowserInstallations = allBrowserInstallations.filter(browser => browser.buildId != PUPPETEER_REVISIONS.chrome);
+
+// TODO add --browser={system|home|cwd} parameter
+export const usableBrowserInstallations = allBrowserInstallations.filter(browser => browser.buildId == PUPPETEER_REVISIONS.chrome);

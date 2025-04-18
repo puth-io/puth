@@ -11,7 +11,7 @@ const {PUPPETEER_REVISIONS} = require("puppeteer-core");
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;
-const {installedBrowsers, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin} = require("../lib");
+const {usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin} = require("../lib");
 
 const cli = meow(`
 Usage
@@ -119,7 +119,7 @@ if (input[0] === 'start') {
   console.log(pkg.version);
 } else if (input[0] === 'info') {
   version();
-  logger.info(`Using browser: ${installedBrowsers[0].browser} ${installedBrowsers[0].buildId} (${installedBrowsers[0].platform})`);
+  logger.info(`Using browser: ${usableBrowserInstallations[0].browser} ${usableBrowserInstallations[0].buildId} (${usableBrowserInstallations[0].platform})`);
 }  else if (input[0] === 'browser') {
   if (input[1] === 'install') {
     browserInstaller(input[2]);
@@ -133,7 +133,7 @@ function version() {
 }
 
 async function ensureChromeInstallation() {
-  if (installedBrowsers.length !== 0) {
+  if (usableBrowserInstallations.length !== 0) {
     return; // applicable browser found
   }
   
@@ -189,13 +189,13 @@ async function browserInstaller(cache) {
   const browser = await install(installOptions); // cleanup progress bar
   
   logger.info(`Successfully downloaded ${browser.browser} ${browser.buildId} (${browser.platform})`);
-  
-  installedBrowsers.push(browser);
+
+  usableBrowserInstallations.push(browser);
 }
 
 async function start() {
-  puthConfig.installedBrowser = installedBrowsers[0];
-  logger.info(`Installed browsers: ${installedBrowsers.map((i)  => `${i.browser} ${i.buildId} (${i.platform})`).join(', ')}`);
+  puthConfig.installedBrowser = usableBrowserInstallations[0];
+  logger.info(`Installed browsers: ${usableBrowserInstallations.map((i)  => `${i.browser} ${i.buildId} (${i.platform})`).join(', ')}`);
   
   let instance = new Puth(puthConfig);
   instance.use(PuthStandardPlugin);

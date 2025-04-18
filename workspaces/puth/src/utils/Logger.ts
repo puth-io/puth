@@ -1,8 +1,8 @@
 import pino, {Logger} from 'pino';
 
-export function makeLogger(pretty = false) {
+export function makeLogger(pretty: boolean = false, level?: string) {
     let conf: any = {
-        level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+        level: level ?? (process.env.NODE_ENV === 'development' ? 'debug' : 'info'),
     };
     if (process.env.NODE_ENV === 'development' || pretty) {
         conf.transport = {

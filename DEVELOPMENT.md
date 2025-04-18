@@ -1,3 +1,10 @@
+# Setup
+
+```bash
+npm install
+cd workspaces/puth && bun run dev:browser:install && cd -
+```
+
 # Development
 
 ```bash
