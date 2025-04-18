@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import {Browser} from 'puppeteer-core';
 
 const program = ts.createProgram(['src/index.ts'], {
     target: ts.ScriptTarget.ES2022,
@@ -56,7 +57,7 @@ function analyzeSourceFile(sourceFile) {
         
         
         // console.log(member);
-        if (member?.type?.getFullText(sourceFile).trim() === 'Promise<PuthBrowser>') {
+        if (member?.type?.getFullText(sourceFile).trim() === 'Promise<Browser>') {
             console.log('--------------------------------------------');
             // console.log(member);
             if (ts.getJSDocTags(member).find(node => node.tagName.escapedText === ''))
