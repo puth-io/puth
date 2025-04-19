@@ -1,10 +1,10 @@
 <?php
 
-namespace Puth\Generics\Puth;
+namespace Puth\RemoteObjects;
 
-use Puth\GenericObject;
+use Puth\RemoteObject;
 
-class Browser extends GenericObject
+class Browser extends RemoteObject
 {
     /**
      * @debug-ts-return-types void

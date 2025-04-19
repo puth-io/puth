@@ -4,30 +4,26 @@ namespace Puth;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use Puth\Generics\Puppeteer\Browser;
+use Puth\RemoteObjects\Context as BaseContext;
 
-/**
-// * @method connectBrowser(string[] $array)
- * @method createBrowser(string[] $array)
- */
-class Context extends GenericObject
+class Context extends BaseContext
 {
     protected string $baseUrl;
     protected array $options;
-    
-    protected Client $client;
-    
+
+    public readonly Client $client;
+
     protected bool $accumulateCalls = false;
     protected array $accumulatedCalls = [];
     
     protected bool $dev;
     protected bool $debug;
     
-    function __construct($baseUrl, $options = [])
+    function __construct(string $baseUrl, array $options = [])
     {
         $this->baseUrl = $baseUrl;
         $this->options = $options;
-        
+
         $this->dev = $this->options['dev'] ?? false;
         $this->debug = $this->options['debug'] ?? false;
         
@@ -45,13 +41,8 @@ class Context extends GenericObject
             $this,
         );
     }
-    
-    public function connectBrowser(array $config): Browser
-    {
-        return $this->callMethod('connectBrowser', [$config]);
-    }
 
-    public function destroy($options)
+    public function destroy($options): void
     {
         try {
             $this->client->delete('context', [
@@ -61,32 +52,25 @@ class Context extends GenericObject
                 ),
             ]);
             $this->log("destroyed");
-            
-            return true;
         } catch (ClientException $exception) {
             if ($exception->getResponse()?->getStatusCode() === 404) {
-                return true;
+                return;
             }
             
             throw $exception;
         }
     }
     
-    public function startAccumulatingCalls()
+    public function startAccumulatingCalls(): void
     {
         $this->accumulateCalls = true;
     }
     
-    public function stopAccumulatingCalls()
+    public function stopAccumulatingCalls(): void
     {
         $this->accumulateCalls = false;
     }
-    
-    public function getClient(): Client
-    {
-        return $this->client;
-    }
-    
+
     public function log($string, $newline = true)
     {
         if ($this->debug) {

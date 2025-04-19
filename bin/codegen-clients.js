@@ -9,10 +9,10 @@ import path from 'node:path';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PROJECT_SRC = path.join(__dirname, '../workspaces/puth/src');
-const PHP_OUT_BASE = path.join(__dirname, '../workspaces/clients/php/client/src/Generics');
+const PHP_OUT_BASE = path.join(__dirname, '../workspaces/clients/php/client/src/RemoteObjects');
 
-const NS_INTERNAL = 'Puth\\Generics\\Puth';
-const NS_EXTERNAL = 'Puth\\Generics\\External';
+const NS_INTERNAL = 'Puth\\RemoteObjects';
+const NS_EXTERNAL = 'Puth\\RemoteObjects\\External';
 
 // skips all files for resolving that are not inside project src
 const skipResolvingNonProjectFiles = true;
@@ -414,17 +414,17 @@ function emitPHPClass(cls) {
         '',
         `namespace ${ns};`,
         '',
-        'use Puth\\GenericObject;',
+        'use Puth\\RemoteObject;',
         ...Array.from(uses).map(u => `use ${u};`),
         '',
-        `class ${cls.name} extends GenericObject`,
+        `class ${cls.name} extends RemoteObject`,
         '{',
         methodsArray.map(m => generatePHPMethod(cls.name, m)).join('\n\n'),
         '}',
         '',
     ].join('\n');
 
-    const dir = path.join(PHP_OUT_BASE, cls.isExternal ? 'External' : 'Puth');
+    const dir = path.join(PHP_OUT_BASE, cls.isExternal ? 'External' : '');
     fs.mkdirSync(dir, {recursive: true});
     fs.writeFileSync(path.join(dir, `${cls.name}.php`), content, 'utf8');
 }

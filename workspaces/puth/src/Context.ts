@@ -153,7 +153,6 @@ class Context extends Generic {
 
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
-    // @codegen
     public async destroy(options: any = {}) {
         if (! options?.immediately) {
             this.destroying = true;

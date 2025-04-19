@@ -2,9 +2,9 @@
 
 namespace Puth\Proxies;
 
-use Puth\GenericObject;
+use Puth\RemoteObject;
 
-class FileChooser extends GenericObject
+class FileChooser extends RemoteObject
 {
     public function accept($filePaths)
     {
@@ -13,16 +13,16 @@ class FileChooser extends GenericObject
             $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
         }
         
-        return $this->callMethod('accept', [$tmpFilePaths]);
+        return $this->call('accept', [$tmpFilePaths]);
     }
     
     public function cancel()
     {
-        return $this->callMethod('cancel');
+        return $this->call('cancel');
     }
     
     public function isMultiple()
     {
-        return $this->callMethod('isMultiple');
+        return $this->call('isMultiple');
     }
 }
