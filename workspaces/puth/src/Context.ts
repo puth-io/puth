@@ -146,15 +146,14 @@ class Context extends Generic {
             .then(() => browser);
     }
 
-    /**
-     * @codegen
-     */
+    // @codegen
     public async createBrowserShim(page: Page, baseUrl: string): Promise<Browser> {
         return new Browser(this, page, baseUrl);
     }
 
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
+    // @codegen
     public async destroy(options: any = {}) {
         if (! options?.immediately) {
             this.destroying = true;
@@ -286,7 +285,8 @@ class Context extends Generic {
         
         this.eventFunctions = this.eventFunctions.filter((listener) => listener[0] !== object);
     }
-    
+
+    // @codegen
     public testFailed() { // used by clients
         this.test.status = ContextStatus.FAILED;
         
@@ -662,9 +662,8 @@ class Context extends Generic {
         }
     }
     
-    /**
-     * Needed by clients to use the browsers file chooser.
-     */
+    // Used by clients to upload temporary files to the server so that the browser can access them
+    // @codegen
     public async saveTemporaryFile(name, content) {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);
