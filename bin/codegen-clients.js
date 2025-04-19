@@ -441,7 +441,7 @@ function generatePHPMethod(className, method) {
 
     const phpParams = parameters.map(p => `${mapTypeToPHP(p.type, className)} $${p.name}${functionParameterOptional(p, className)}`).join(', ');
     const argArray = parameters.length ? `, [${parameters.map(p => `$${p.name}`).join(', ')}]` : '';
-    const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->call('${name}'${argArray});`;
+    const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->callFunc('${name}'${argArray});`;
 
     return [
         '    /**',

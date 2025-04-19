@@ -36,7 +36,7 @@ class RemoteObject
         );
     }
 
-    protected function call($function, $parameters = []): mixed
+    protected function callFunc($function, $parameters = []): mixed
     {
         // Serialize parameters if needed
         $parameters = array_map(function ($item) {
@@ -115,7 +115,7 @@ class RemoteObject
         return $return;
     }
 
-    protected function get($property)
+    protected function getProperty($property)
     {
         $response = $this->context->client->patch('context/get', ['json' => [
             'context' => $this->context->serialize(),
@@ -207,14 +207,14 @@ class RemoteObject
     {
         $this->log('__call > ' . $name);
 
-        return $this->call($this->translateAction($name), $arguments);
+        return $this->callFunc($this->translateAction($name), $arguments);
     }
 
     public function __get($property)
     {
         $this->log('__get > ' . $property);
 
-        return $this->get($property);
+        return $this->getProperty($property);
     }
 
     protected function hasActionTranslation($action)

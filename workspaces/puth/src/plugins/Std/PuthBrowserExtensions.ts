@@ -24,7 +24,7 @@ export async function setWindowBounds(browser: Browser, bounds: Protocol.Browser
         .then(async () => autoClose ? await cdp.detach() : cdp);
 }
 
-function getWindowBounds(browser: Browser) {
+export function getWindowBounds(browser: Browser) {
     return browser.target().createCDPSession()
         .then(cdp => getWindowForTarget(browser, cdp)
             .then(({windowId}) => cdp.send('Browser.getWindowBounds', {windowId}))

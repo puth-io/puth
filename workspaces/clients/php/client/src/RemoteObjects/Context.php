@@ -14,7 +14,7 @@ class Context extends RemoteObject
      */
     public function createBrowserShim(mixed $options = []): Browser
     {
-        return $this->call('createBrowserShim', [$options]);
+        return $this->callFunc('createBrowserShim', [$options]);
     }
 
     /**
@@ -22,7 +22,7 @@ class Context extends RemoteObject
      */
     public function createBrowserShimForPage(mixed $page): Browser
     {
-        return $this->call('createBrowserShimForPage', [$page]);
+        return $this->callFunc('createBrowserShimForPage', [$page]);
     }
 
     /**
@@ -30,7 +30,7 @@ class Context extends RemoteObject
      */
     public function testFailed(): void
     {
-        $this->call('testFailed');
+        $this->callFunc('testFailed');
     }
 
     /**
@@ -40,6 +40,6 @@ class Context extends RemoteObject
      */
     public function saveTemporaryFile(mixed $name, mixed $content): void
     {
-        $this->call('saveTemporaryFile', [$name, $content]);
+        $this->callFunc('saveTemporaryFile', [$name, $content]);
     }
 }

@@ -35,6 +35,10 @@ export default class Return {
         return Return.make('GenericObjects', value);
     }
 
+    static Error(value) {
+        return Return.make('GenericError', value);
+    }
+
     static make(type, value?) {
         return new Return(type, value);
     }
