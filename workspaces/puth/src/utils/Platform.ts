@@ -3,8 +3,8 @@ import process from 'node:process';
 import fs from 'node:fs';
 import {homedir} from "os";
 import path from "path";
-import {PUPPETEER_REVISIONS} from "puppeteer-core";
-const {Cache} = require('@puppeteer/browsers');
+import {PUPPETEER_REVISIONS} from 'puppeteer-core';
+import {Cache} from '@puppeteer/browsers';
 
 const browserCacheCWD = new Cache(path.join(process.cwd(), '.cache/puppeteer'));
 const browserCacheHomedir = new Cache(path.join(homedir(), '.cache/puth'));

@@ -11,7 +11,7 @@ class InteractsWithMouseTest extends PuthTestCase
     function test_mouse_control_click()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<html><body><a href="https://playground.puth.dev" onclick="event.preventDefault(); document.querySelector(\'#result\').innerHTML = event.ctrlKey ? \'1\' : \'0\';">playground</a><div id="result"></div></body></html>');
+            $browser->setContent('<html><body><a href="https://playground.puth.dev" onclick="event.preventDefault(); document.querySelector(\'#result\').innerHTML = event.ctrlKey ? \'1\' : \'0\';">playground</a><div id="result"></div></body></html>');
             $browser->controlClick('a')
                 ->assertSeeIn('#result', '1');
         });
@@ -20,7 +20,7 @@ class InteractsWithMouseTest extends PuthTestCase
     function test_mouse_click_without_selector()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<html><body><button onmouseup="let a = document.querySelector(\'#result\'); a.innerHTML = `${parseInt(a.innerText) + 1}`;">test</button><div id="result">0</div></body></html>');
+            $browser->setContent('<html><body><button onmouseup="let a = document.querySelector(\'#result\'); a.innerHTML = `${parseInt(a.innerText) + 1}`;">test</button><div id="result">0</div></body></html>');
             $browser->click('button')
                 ->assertSeeIn('#result', '1')
                 // assert virtual mouse stays in position

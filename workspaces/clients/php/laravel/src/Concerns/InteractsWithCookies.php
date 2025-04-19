@@ -51,7 +51,7 @@ trait InteractsWithCookies
              return $this->addCookie($name, $value, $expiry, $options);
          }
     
-         $cookie = $this->site->getCookieByName($name);
+         $cookie = $this->getCookieByName($name);
     
          if ($cookie) {
              $decryptedValue = decrypt(rawurldecode($cookie->value), $unserialize = false);
@@ -77,7 +77,7 @@ trait InteractsWithCookies
             return $this->addCookie($name, $value, $expiry, $options, false);
         }
         
-        $cookie = $this->site->getCookieByName($name);
+        $cookie = $this->getCookieByName($name);
         
         if ($cookie) {
             return rawurldecode($cookie->value);
@@ -98,27 +98,14 @@ trait InteractsWithCookies
          if ($encrypt) {
              $prefix = CookieValuePrefix::create($name, Crypt::getKey());
              
-             $value = encrypt($prefix.$value, $serialize = false);
+             $value = encrypt($prefix.$value, false);
          }
         
         if ($expiry instanceof DateTimeInterface) {
             $expiry = $expiry->getTimestamp();
         }
         
-        $this->site->setCookie(array_merge($options, compact('expiry', 'name', 'value')));
-        
-        return $this;
-    }
-    
-    /**
-     * Delete the given cookie.
-     *
-     * @param string $name
-     * @return $this
-     */
-    public function deleteCookie($name)
-    {
-        $this->site->deleteCookie(['name' => $name]);
+        $this->setCookie([array_merge($options, compact('expiry', 'name', 'value'))]);
         
         return $this;
     }

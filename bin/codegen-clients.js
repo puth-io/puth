@@ -8,8 +8,8 @@ import path from 'node:path';
 //  CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROJECT_SRC = path.join(__dirname, '../workspaces/puth/src');
-const PHP_OUT_BASE = path.join(__dirname, '../workspaces/clients/php/client/src/RemoteObjects');
+const PROJECT_SRC = path.join(import.meta.dirname, '../workspaces/puth/src');
+const PHP_OUT_BASE = path.join(import.meta.dirname, '../workspaces/clients/php/client/src/RemoteObjects');
 
 const NS_INTERNAL = 'Puth\\RemoteObjects';
 const NS_EXTERNAL = 'Puth\\RemoteObjects\\External';
@@ -47,7 +47,8 @@ const visitedSymbols = new Set();        // symbol‑level guard (alias safe)
 
 const PRIMITIVES = new Set([
     'string', 'number', 'boolean', 'any', 'void', 'null', 'undefined',
-    'bigint', 'symbol', 'never', 'mixed', 'unknown',
+    'bigint', 'symbol', 'never', 'mixed', 'unknown', 'Uint8Array',
+    'integer',
 ]);
 
 function isPrimitive(txt) {return PRIMITIVES.has(txt);} // simple check — arrays handled later
@@ -78,6 +79,40 @@ function recordAlias(id, origSym) {if (id && origSym && id.text !== origSym.getN
 
 function resolveAliasName(n) {return aliasMap.get(n) || n;}
 
+const NAME_TRANSLATION = {
+    php: {
+        default: {
+            Browser: {
+                $: 'get',
+                $$: 'getAll',
+                $$eval: 'getAllEval',
+                $eval: 'getEval',
+                $x: 'getX',
+            },
+        },
+        laravel: {
+            Browser: {
+                screenshot: '_screenshot',
+                click: '_click',
+                type: '_type',
+                typeSlowly: '_typeSlowly',
+                findOrFail: '_findOrFail',
+                firstOrFail: '_firstOrFail',
+                assertHasCookie: '_assertHasCookie',
+                assertCookieMissing: '_assertCookieMissing',
+                assertCookieValue: '_assertCookieValue',
+                waitFor: '_waitFor',
+                waitForTextIn: '_waitForTextIn',
+                waitUntil: '_waitUntil',
+                waitUntilEnabled: '_waitUntilEnabled',
+                waitUntilDisabled: '_waitUntilDisabled',
+                format: '_format',
+                withinIframe: '_withinIframe',
+            },
+        },
+    },
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  TYPE EXTRACTION
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,6 +132,13 @@ function extractTypes(node) {
             return ['void'];
         }
         node = node.typeArguments[0];
+
+        if (node.typeName?.escapedText === 'Return') {
+            if (!node.typeArguments?.length) {
+                return ['void'];
+            }
+            node = node.typeArguments[0];
+        }
     }
 
     if (ts.isUnionTypeNode(node) || ts.isIntersectionTypeNode(node)) {
@@ -137,21 +179,105 @@ function extractTypes(node) {
 }
 
 function extractParameters(params) {
-    return (params || []).map(p => ({
-        name: p.name.getText(p.getSourceFile()),
-        type: p.type ? p.type.getFullText(p.getSourceFile()).trim() : 'any',
-    }));
+    return (params || []).map(p => {
+        // if (p.name.getText(p.getSourceFile()) === 'options') {
+        //     p?.initializer?.symbol?.members.forEach((member, key) => {
+        //         console.log(key, member.valueDeclaration); // StringLiteral (text), NumericLiteral, FalseKeyword, NullKeyword, TrueKeyword
+        //     });
+        // }
+
+        let param = {
+            name: p.name.getText(p.getSourceFile()),
+            type: p.type ? p.type.getFullText(p.getSourceFile()).trim() : 'any',
+            isOptional: p?.questionToken != null,
+        };
+
+        if (p?.initializer?.kind === ts.SyntaxKind.ObjectLiteralExpression) {
+            let members = [];
+
+            p?.initializer?.symbol?.members.forEach((member, key) => {
+                let initializer = member?.valueDeclaration.initializer;
+                members.push({
+                    key,
+                    type: initializer.kind === ts.SyntaxKind.NumericLiteral ? 'numeric'
+                        : (initializer.kind === ts.SyntaxKind.StringLiteral ? 'string'
+                            : (initializer.kind === ts.SyntaxKind.FalseKeyword ? 'false'
+                            : (initializer.kind === ts.SyntaxKind.TrueKeyword ? 'true'
+                            : (initializer.kind === ts.SyntaxKind.NullKeyword ? 'null'
+                                : 'unsupported')))),
+                    value: initializer?.text,
+                });
+            });
+
+            param.initializer = {
+                type: 'object',
+                members,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.ArrayLiteralExpression) {
+            let members = [];
+
+            if (p?.initializer?.elements?.length > 0) {
+                throw new Error('Unsupported initializer: currently only empty array default values are allowed.');
+            }
+
+            param.initializer = {
+                type: 'array',
+                members,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.NullKeyword) {
+            param.initializer = {
+                type: 'null',
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.NumericLiteral) {
+            param.initializer = {
+                type: 'numeric',
+                value: p?.initializer?.text,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.StringLiteral) {
+            param.initializer = {
+                type: 'string',
+                value: p?.initializer?.text,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.FalseKeyword) {
+            param.initializer = {
+                type: 'false',
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.TrueKeyword) {
+            param.initializer = {
+                type: 'true',
+            };
+        }
+
+        return param;
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  SHIM GENERATION HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ensureClassEntry(name, isExternal) {
+function nodeComments(node) {
+    const src = node.getSourceFile().text;
+    return (ts.getLeadingCommentRanges(src, node.pos) || []).map(r => {
+        return src.slice(r.pos, r.end).split('\n').map(l => l.trim()).map(line => {
+            if (line.startsWith('////')) return '';
+            if (line.startsWith('/**')) return line.slice(3);
+            if (line.startsWith('/*')) return line.slice(2);
+            if (line.startsWith('//')) return line.slice(2);
+            if (line.startsWith('*/')) return line.slice(2);
+            if (line.startsWith('*')) return line.slice(1);
+
+            return line;
+        }).map(l => l.trim()).filter(i => i !== '');
+    }).flat();
+}
+
+function ensureClassEntry(name, isExternal, comments) {
     if (visitedNames.has(name)) {
         return classes.find(c => c.name === name);
     }
-    const entry = {name, isExternal, methods: new Map()};
+
+    const entry = {name, isExternal, methods: new Map(), comments,};
     classes.push(entry);
     visitedNames.add(name);
     return entry;
@@ -199,21 +325,38 @@ function addMemberToClass(entry, member, includeAll) {
     if (!member.name) {
         return;
     }
-    if (!member.modifiers.find(m => m.kind === ts.SyntaxKind.PublicKeyword)) {
+    if (!member.modifiers?.find(m => m.kind === ts.SyntaxKind.PublicKeyword)) {
         return;
     }
 
     const rawName = member.name.getText(member.getSourceFile());
     // Skip computed / symbol names that are not valid in PHP
     if (!isValidPhpIdentifier(rawName)) {
-        return;
+        throw new Error('Found unsupported character in function name ' + rawName);
     }
 
-    const returns = extractTypes(member.type);
+    const isAsync = member.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) || false;
+    const parameters = extractParameters(member.parameters);
+    const comments = nodeComments(member);
+    const foundReturnOverwrite = comments.find(i => i.startsWith('@gen-returns'));
+    const originalReturns = extractTypes(member.type);
+    const returns = foundReturnOverwrite ? [foundReturnOverwrite.replace('@gen-returns', '').trim()] : originalReturns;
+
+    if (comments.length !== 0) comments.push('');
+    comments.push('@debug-gen-original-name ' + JSON.stringify(rawName));
+    comments.push('@debug-gen-original-is-async ' + (isAsync ? 'true' : 'false'));
+    comments.push('@debug-gen-original-returns ' + JSON.stringify(originalReturns));
+    parameters.forEach(parameter => {
+        let clone = structuredClone(parameter);
+        delete clone['name'];
+        comments.push('@debug-gen-original-parameter' + ` ${parameter.name} ` + JSON.stringify(clone));
+    });
+
     const method = {
         name: rawName,
-        isAsync: member.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) || false,
-        parameters: extractParameters(member.parameters),
+        isAsync,
+        parameters,
+        comments,
         returns,
         multiDef: [],
     };
@@ -232,7 +375,7 @@ function visitClassOrInterface(decl, includeAll) {
     }
     const name = decl.name.text;
     const isExt = sourceIsExternal(decl.getSourceFile());
-    const entry = ensureClassEntry(name, isExt);
+    const entry = ensureClassEntry(name, isExt, nodeComments(decl));
     (decl.members || []).forEach(m => addMemberToClass(entry, m, includeAll));
 }
 
@@ -331,6 +474,9 @@ function mapTypeToPHP(type, className) {
     if (type === 'this') {
         return className;
     }
+    if (type === 'RemoteObject') {
+        return 'RemoteObject';
+    }
     if (type.endsWith('[]') || /^Array<.*>$/.test(type) || type === 'Array') {
         return 'array';
     }
@@ -345,6 +491,8 @@ function mapTypeToPHP(type, className) {
                 return 'bool';
             case 'void':
                 return 'void';
+            case 'integer':
+                return 'int';
             default:
                 return 'mixed';
         }
@@ -355,8 +503,44 @@ function mapTypeToPHP(type, className) {
     return 'mixed';
 }
 
+function functionParameterOptional(p, className) {
+    console.log(className, p);
+    if (p.initializer) {
+        if (p.initializer.type === 'object') {
+            return ` = [${p.initializer.members.map(i => {
+                let value = i.type;
+                if (i.type === 'string') value = `'${i.value}'`;
+                else if (i.type === 'numeric') value = parseInt(i.value);
+                
+                return `'${i.key}' => ${value}`;
+            }).join(', ')}]`;
+        } else if (p.initializer.type === 'array') {
+            // TODO support array members
+            // return ` = [${p.initializer.members.map(i => {
+            //     let value = i.type;
+            //     if (i.type === 'string') value = `'${i.value}'`;
+            //     else if (i.type === 'numeric') value = parseInt(i.value);
+            //
+            //     return `'${i.key}' => ${value}`;
+            // }).join(', ')}]`;
+            return ` = []`;
+        } else if (p.initializer.type === 'null') {
+            return ` = null`;
+        }  else if (p.initializer.type === 'false') {
+            return ` = false`;
+        }  else if (p.initializer.type === 'true') {
+            return ` = true`;
+        } else if (p.initializer.value != null) {
+            if (p.type === 'integer') return ` = ${p.initializer.value}`;
+            else if (p.type === 'string') return ` = '${p.initializer.value}'`;
+        }
+    }
+
+    return '';
+}
+
 function generatePHPMethod(className, method) {
-    const {name, isAsync, parameters, returns} = method;
+    const {name, isAsync, parameters, returns, comments} = method;
     const types = returns;
     const returnHintRaw = types.length > 1 ? types.join('|') : types[0];
 
@@ -371,19 +555,23 @@ function generatePHPMethod(className, method) {
         }
     }
 
-    const phpParams = parameters.map(p => `${mapTypeToPHP(p.type, className)} $${p.name}`).join(', ');
+    const phpParams = parameters.map(p => `${mapTypeToPHP(p.type, className)} $${p.name}${functionParameterOptional(p, className)}`).join(', ');
     const argArray = parameters.length ? `, [${parameters.map(p => `$${p.name}`).join(', ')}]` : '';
-    const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->callMethod('${name}'${argArray});`;
+    const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->callFunc('${name}'${argArray});`;
 
+    let nameTranslated = NAME_TRANSLATION?.php?.default?.[className]?.[name] ?? name;
+    nameTranslated = NAME_TRANSLATION?.php?.laravel?.[className]?.[name] ?? nameTranslated;
+
+    console.log(nameTranslated, parameters);
     return [
         '    /**',
-        `     * @debug-ts-return-types ${returnHintRaw}`,
+        comments.map(c => `     * ${c}`).join('\n'),
         '     */',
-        `    public function ${name}(${phpParams}): ${phpReturn}`,
+        `    public function ${nameTranslated}(${phpParams}): ${phpReturn}`,
         '    {',
         `        ${callLine}`,
         '    }',
-    ].join('\n');
+    ].filter(i => !!i).join('\n');
 }
 
 function emitPHPClass(cls) {
@@ -408,6 +596,7 @@ function emitPHPClass(cls) {
     }
 
     const methodsArray = cls.methods instanceof Map ? Array.from(cls.methods.values()) : cls.methods;
+    console.log(cls.name, methodsArray);
 
     const content = [
         '<?php',
@@ -417,6 +606,9 @@ function emitPHPClass(cls) {
         'use Puth\\RemoteObject;',
         ...Array.from(uses).map(u => `use ${u};`),
         '',
+        '/**',
+        cls.comments.map(c => `* ${c ?? ''}`).join('\n'),
+        '*/',
         `class ${cls.name} extends RemoteObject`,
         '{',
         methodsArray.map(m => generatePHPMethod(cls.name, m)).join('\n\n'),

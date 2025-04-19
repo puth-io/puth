@@ -3,14 +3,11 @@
 namespace Browser;
 
 use Puth\Laravel\Browser;
-use Puth\Laravel\Concerns\LegacyBrowserHandling;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithElementsTest extends PuthTestCase
 {
-    use LegacyBrowserHandling;
-    
     function test_click_link()
     {
         $this->browse(function (Browser $browser) {
@@ -76,7 +73,7 @@ class InteractsWithElementsTest extends PuthTestCase
         $this->expectExceptionMessageMatches('/Function click threw error: Node is either not clickable or not an Element/');
         
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<body><button style="display: none">test</button></body>');
+            $browser->setContent('<body><button style="display: none">test</button></body>');
             $browser->click('button');
         });
     }

@@ -45,6 +45,6 @@ trait PuthUtils
             $timeout = $this->puthAssertionTimeout();
         }
 
-        return $timeout ?? $this->puthAssertionTimeout ?? 15 * 1000;
+        return $timeout ??  15 * 1000;
     }
 }

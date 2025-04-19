@@ -15,18 +15,18 @@ class BackTrace
         if (static::$debug) {
             return $trace;
         }
-        
+
         return array_values(array_filter($trace, function ($frame) {
             if (array_key_exists('file', $frame)) {
                 if (str_contains($frame['file'], 'vendor/phpunit/phpunit')) {
                     return false;
                 }
-                
-                if (str_contains($frame['file'], 'puth-php/src')) {
+                // used when released
+                if (str_contains($frame['file'], 'puth/php/src')) {
                     return false;
                 }
-                
-                if (str_contains($frame['file'], 'puth/php/src')) {
+                // used in development
+                if (str_contains($frame['file'], 'puth/workspaces/clients/php/client/src')) {
                     return false;
                 }
             }

@@ -59,11 +59,9 @@ trait WaitsForElements
      */
     public function waitFor($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for selector', $selector);
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->visible();
-        }, $message);
+        $this->_waitFor($selector, ['state' => 'visible', 'timeout' => $seconds !== null ? ($seconds * 1000) : null]);
+
+        return $this;
     }
     
     /**
@@ -75,17 +73,9 @@ trait WaitsForElements
      */
     public function waitUntilMissing($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for removal of selector', $selector);
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector) {
-            try {
-                $missing = !$this->resolver->findOrFail($selector)->visible();
-            } catch (\Exception $e) {
-                $missing = true;
-            }
-            
-            return $missing;
-        }, $message);
+        $this->_waitFor($selector, ['state' => 'hidden', 'timeout' => $seconds !== null ? ($seconds * 1000) : null]);
+
+        return $this;
     }
     
     /**
@@ -95,15 +85,31 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitUntilMissingText($text, $seconds = null)
+    public function waitUntilMissingText($text, $seconds = null, $ignoreCase = false)
     {
-        $text = Arr::wrap($text);
-        
-        $message = $this->formatTimeOutMessage('Waited %s seconds for removal of text', implode("', '", $text));
-        
-        return $this->waitUsing($seconds, 100, function () use ($text) {
-            return !Str::contains($this->resolver->findOrFail('')->innerText, $text);
-        }, $message);
+        return $this->waitUntilMissingTextIn($this->resolver->findOrFail(''), $text, $seconds, $ignoreCase);
+    }
+
+    /**
+     * Wait for the given text to be removed.
+     *
+     * @param string $text
+     * @param int|null $seconds
+     * @return $this
+     */
+    public function waitUntilMissingTextIn($selector, $text, $seconds = null, $ignoreCase = false)
+    {
+        $this->_waitForTextIn(
+            $this->resolver->format(''),
+            $text,
+            [
+                'ignoreCase' => $ignoreCase,
+                'missing' => true,
+                'timeout' => $seconds !== null ? ($seconds * 1000) : null,
+            ],
+        );
+
+        return $this;
     }
     
     /**
@@ -115,13 +121,7 @@ trait WaitsForElements
      */
     public function waitForText($text, $seconds = null, $ignoreCase = false)
     {
-        $text = Arr::wrap($text);
-        
-        $message = $this->formatTimeOutMessage('Waited %s seconds for text', implode("', '", $text));
-        
-        return $this->waitUsing($seconds, 100, function () use ($text, $ignoreCase) {
-            return Str::contains($this->resolver->findOrFail('')->innerText, $text, $ignoreCase);
-        }, $message);
+        return $this->waitForTextIn('', $text, $seconds, $ignoreCase);
     }
     
     /**
@@ -134,11 +134,14 @@ trait WaitsForElements
      */
     public function waitForTextIn($selector, $text, $seconds = null, $ignoreCase = false)
     {
-        $message = 'Waited %s seconds for text "' . $text . '" in selector ' . $selector;
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector, $text, $ignoreCase) {
-            return $this->assertSeeIn($selector, $text, $ignoreCase);
-        }, $message);
+        $options = ['ignoreCase' => $ignoreCase];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds;
+        }
+
+        $this->_waitForTextIn($this->resolver->format(''), $text, $options);
+
+        return $this;
     }
     
     /**
@@ -150,11 +153,9 @@ trait WaitsForElements
      */
     public function waitForLink($link, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for link', $link);
-        
-        return $this->waitUsing($seconds, 100, function () use ($link) {
-            return $this->seeLink($link);
-        }, $message);
+        // TODO $message = $this->formatTimeOutMessage('Waited %s seconds for link', $link);
+
+        return $this->assertSeeLink($link, 'a', ['timeout' => $seconds !== null ? ($seconds * 1000) : null]);
     }
     
     /**
@@ -168,7 +169,7 @@ trait WaitsForElements
     {
         return $this->waitFor("input[name='{$field}'], textarea[name='{$field}'], select[name='{$field}']", $seconds);
     }
-    
+
     /**
      * Wait for the given location.
      *
@@ -178,11 +179,8 @@ trait WaitsForElements
      */
     public function waitForLocation($path, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for location', $path);
-        
-        return Str::startsWith($path, ['http://', 'https://'])
-            ? $this->waitUntil('`${location.protocol}//${location.host}${location.pathname}` == \'' . $path . '\'', $seconds, $message)
-            : $this->waitUntil("window.location.pathname == '{$path}'", $seconds, $message);
+        // TODO $message = $this->formatTimeOutMessage('Waited %s seconds for location', $path);
+        return $this->assertUrlIs($path, $this->_waitOptions(seconds: $seconds));
     }
     
     /**
@@ -207,11 +205,7 @@ trait WaitsForElements
      */
     public function waitUntilEnabled($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for element to be enabled', $selector);
-        
-        $this->waitUsing($seconds, 100, function () use ($selector) {
-            return !$this->resolver->findOrFail($selector)->disabled;
-        }, $message);
+        $this->_waitUntilEnabled($this->resolver->format($selector), $seconds ? ['timeout' => $seconds] : []);
         
         return $this;
     }
@@ -225,12 +219,8 @@ trait WaitsForElements
      */
     public function waitUntilDisabled($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for element to be disabled', $selector);
-        
-        $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->disabled;
-        }, $message);
-        
+        $this->_waitUntilDisabled($this->resolver->format($selector), $seconds ? ['timeout' => $seconds] : []);
+
         return $this;
     }
     
@@ -242,15 +232,11 @@ trait WaitsForElements
      * @param string|null $message
      * @return $this
      */
-    public function waitUntil($script, $seconds = null, $message = null)
+    public function waitUntil($script, $seconds = null, $message = 'Waited for script to be true')
     {
-        if (!Str::endsWith($script, ';')) {
-            $script = $script . ';';
-        }
-        
-        return $this->waitUsing($seconds, 100, function () use ($script) {
-            return $this->site->evaluate($script);
-        }, $message);
+        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds * 1000] : []);
+
+        return $this;
     }
     
     /**
@@ -288,20 +274,7 @@ trait WaitsForElements
         
         return $this;
     }
-    
-    /**
-     * Wait for a JavaScript dialog to open.
-     *
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForDialog($seconds = 15) // TODO let puth context handle timeout
-    {
-        $this->site->waitForDialog(['timeout' => $seconds * 1000]);
-        
-        return $this;
-    }
-    
+
     /**
      * Wait for the current page to reload.
      *
@@ -421,5 +394,15 @@ trait WaitsForElements
     protected function escapePercentCharacters($message)
     {
         return str_replace('%', '%%', $message);
+    }
+
+    private function _waitOptions(int $seconds = null)
+    {
+        $options = [];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds * 1000;
+        }
+
+        return $options;
     }
 }

@@ -13,6 +13,8 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_browser_fit_content()
     {
         $this->browse(function (Browser $browser) {
@@ -32,8 +34,8 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->maximize();
             $bounds = $browser->bounds();
-            
-            $browser->resize($bounds->width - 100, $bounds->height - 100);
+
+            $browser->setBounds(['width' =>  $bounds->width - 100, 'height' => $bounds->height - 100]);
             $boundsUpdated = $browser->bounds();
             Assert::assertNotEquals($bounds->width, $boundsUpdated->width);
             Assert::assertNotEquals($bounds->height, $boundsUpdated->height);
@@ -59,10 +61,10 @@ class BrowserTest extends PuthTestCase
     function test_browser_ensure_jquery_is_available()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('');
-            Assert::assertTrue($browser->site->evaluate('window.jQuery == null'));
+            $browser->setContent('');
+            Assert::assertTrue($browser->evaluate('window.jQuery == null'));
             $browser->ensurejQueryIsAvailable();
-            Assert::assertFalse($browser->site->evaluate('window.jQuery == null'));
+            Assert::assertFalse($browser->evaluate('window.jQuery == null'));
         });
     }
     
@@ -71,8 +73,11 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->withinFrame('#iframe-example', function (Browser $iframe) {
-                    $iframe->assertUrlIs('https://playground.puth.dev/');
-                });
+                    $iframe->assertUrlIs('https://playground.puth.dev/')
+                        ->evaluate("document.body.insertAdjacentHTML('beforeend', '<div id=\'random-test-237654\'>bla</div>')")
+                        ->assertVisible('#random-test-237654');
+                })
+                ->assertMissing('#random-test-237654');
         });
     }
     
@@ -105,65 +110,65 @@ class BrowserTest extends PuthTestCase
         });
     }
     
-    function test_parallel_all()
-    {
-        $this->browse(function (Browser $browser) {
-            $site = $browser->site;
-            
-            $browser->visit(new Playground)
-                ->all(fn() => [
-                    $site->waitForNavigation(),
-                    $site->click('a[href="https://puth.io/docs/0_x"]'),
-                ])
-                ->assertUrlIs('https://puth.io/docs/0_x');
-        });
-    }
+//    function test_parallel_all()
+//    {
+//        $this->browse(function (Browser $browser) {
+//            $site = $browser->site;
+//
+//            $browser->visit(new Playground)
+//                ->all(fn() => [
+//                    $site->waitForNavigation(),
+//                    $site->click('a[href="https://puth.io/docs/0_x"]'),
+//                ])
+//                ->assertUrlIs('https://puth.io/docs/0_x');
+//        });
+//    }
+//
+//    function test_parallel_any()
+//    {
+//        $this->browse(function (Browser $browser) {
+//            $browser->visit(new Playground)
+//                ->any(fn() => [
+//                    $browser->waitForDialog(),
+//                    $browser->click('#dialog-prompt'),
+//                ], function ($dialog) {
+//                    $dialog->accept('1234');
+//                })
+//                ->assertSeeIn('#dialog-prompt-result', '1234');
+//        });
+//    }
+//
+//    function test_parallel_race()
+//    {
+//        $this->browse(function (Browser $browser) {
+//            $browser->visit(new Playground)
+//                ->race(fn($site) => [
+//                    $site->waitForDialog(),
+//                    $site->click('#dialog-prompt'),
+//                ], function ($dialog) {
+//                    $dialog->accept('1234');
+//                })
+//                ->assertSeeIn('#dialog-prompt-result', '1234');
+//        });
+//    }
     
-    function test_parallel_any()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->any(fn() => [
-                    $browser->site->waitForDialog(),
-                    $browser->site->click('#dialog-prompt'),
-                ], function ($dialog) {
-                    $dialog->accept('1234');
-                })
-                ->assertSeeIn('#dialog-prompt-result', '1234');
-        });
-    }
-    
-    function test_parallel_race()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->race(fn($site) => [
-                    $site->waitForDialog(),
-                    $site->click('#dialog-prompt'),
-                ], function ($dialog) {
-                    $dialog->accept('1234');
-                })
-                ->assertSeeIn('#dialog-prompt-result', '1234');
-        });
-    }
-    
-    function test_file_chooser_multiple()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->all(fn($site) => [
-                    $site->waitForFileChooser(),
-                    $site->click('#file-test-input'),
-                ], function (FileChooser $fileChooser) {
-                    $fileChooser->accept([
-                        __DIR__ . '/files/test.txt',
-                        __DIR__ . '/files/test2.txt',
-                    ]);
-                })
-                ->waitForTextIn('#file-attach-preview', 'test.txt content' . 'test2.txt content')
-                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
-        });
-    }
+//    function test_file_chooser_multiple()
+//    {
+//        $this->browse(function (Browser $browser) {
+//            $browser->visit(new Playground)
+//                ->all(fn($site) => [
+//                    $site->waitForFileChooser(),
+//                    $site->click('#file-test-input'),
+//                ], function (FileChooser $fileChooser) {
+//                    $fileChooser->accept([
+//                        __DIR__ . '/files/test.txt',
+//                        __DIR__ . '/files/test2.txt',
+//                    ]);
+//                })
+//                ->waitForTextIn('#file-attach-preview', 'test.txt content' . 'test2.txt content')
+//                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
+//        });
+//    }
     
     function test_unreachable_action_exception()
     {

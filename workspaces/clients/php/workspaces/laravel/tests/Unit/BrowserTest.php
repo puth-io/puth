@@ -15,9 +15,9 @@ class BrowserTest extends PuthTestCase
     function test_multiple_browsers()
     {
         $this->browse(function (Browser $browser1, Browser $browser2) {
-            Assert::assertIsObject($browser1);
-            Assert::assertIsObject($browser2);
-            Assert::assertNotEquals($browser1, $browser2);
+            $browser1->visit('https://puth.io/');
+            $browser2->visit('https://playground.puth.dev/');
+            Assert::assertNotEquals($browser1->url(), $browser2->url());
         });
     }
     
@@ -74,6 +74,10 @@ class BrowserTest extends PuthTestCase
                                 ->assertDontSee('Puth')
                                 ->assertDontSee('Text containing apple');
                         })
+                        ->elsewhere('', function (Browser $browser) {
+                            $browser->assertSee('Puth')
+                                ->assertSee('with this innerhtml');
+                        })
                         ->elsewhereWhenAvailable('#properties-innerhtml', function (Browser $browser) {
                             $browser->assertSee('with this innerhtml')
                                 ->assertDontSee('Puth')
@@ -102,7 +106,7 @@ class BrowserTest extends PuthTestCase
                 ->assertUrlIs((new Playground)->url())
                 ->blank();
             
-            Assert::assertEquals('about:blank', $browser->site->url());
+            Assert::assertEquals('about:blank', $browser->url());
         });
     }
     
@@ -128,4 +132,14 @@ class BrowserTest extends PuthTestCase
 //
 //        dd(Puth::getFormattedLog());
 //    }
+
+    function test_browser_blank()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('https://puth.io/')
+                ->assertUrlIs('https://puth.io/')
+                ->blank()
+                ->assertUrlIs('about:blank');
+        });
+    }
 }

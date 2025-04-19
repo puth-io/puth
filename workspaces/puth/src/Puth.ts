@@ -1,8 +1,9 @@
-import path from 'path';
+import path from 'node:path';
 import Fastify, {FastifyRequest} from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
-import Context from '@/context';
+import fastifyMultipart from '@fastify/multipart';
+import Context from './Context';
 import WebsocketConnections from './WebsocketConnections';
 import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';
@@ -104,7 +105,7 @@ export default class Puth {
   serve(port = 7345, address = '127.0.0.1', log = true) {
     let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
 
-    this.server = Fastify({ logger: this.logger, disableRequestLogging: true });
+    this.server = Fastify({ loggerInstance: this.logger, disableRequestLogging: true });
     this.setupFastify(allowedOrigins);
     this.server.listen({ port, host: address });
   }
@@ -117,8 +118,8 @@ export default class Puth {
     return context.serialize();
   }
 
-  public contextCall(packet) {
-    return this.contexts[packet.context.id].call(packet);
+  public contextCall(packet, res) {
+    return this.contexts[packet.context.id].call(packet, res);
   }
 
   public contextCallAll(packet) {
@@ -168,6 +169,7 @@ export default class Puth {
       });
     }
     this.server.register(fastifyWebsocket);
+    this.server.register(fastifyMultipart);
 
     this.server.register(require('@fastify/static'), {
       root: this.options?.staticDir ?? path.dirname(require.resolve('@puth/gui/dist/index.html')),
@@ -179,14 +181,12 @@ export default class Puth {
       });
 
       // Create new context
-      fastify.post('/context', async (request) => {
+      fastify.post('/context', async (request, response) => {
         return await this.contextCreate(request.body as {});
       });
 
-      // Perform method call on context
-      fastify.patch('/context/call', async (request, reply) => {
-        return reply.send(await this.contextCall(request.body));
-      });
+      fastify.patch('/context/call', (req, res) => this.contextCall(req.body, res));
+      fastify.patch('/context/portal/response', (req, res) => this.contexts[req.body.context.id].handlePortalResponse(req.body, res));
 
       // Perform all method call on context
       fastify.patch('/context/call/all', async (request, reply) => {
@@ -205,7 +205,7 @@ export default class Puth {
 
       // Perform action on context
       fastify.patch('/context/get', async (request, reply) => {
-        return reply.send(await this.contextGet(request.body));
+          return reply.send(await this.contextGet(request.body));
       });
 
       // Perform action on context
@@ -247,6 +247,21 @@ export default class Puth {
         socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
         WebsocketConnections.push(socket);
       });
+
+
+        fastify.post('/debug', async function (req, reply) {
+            let files: any = [];
+
+            const parts = req.files()
+            for await (const part of parts) {
+                files.push({
+                    filename: part.filename,
+                    content: btoa(await part.toBuffer()),
+                });
+            }
+
+            reply.send(JSON.stringify(files));
+        })
     });
   }
 

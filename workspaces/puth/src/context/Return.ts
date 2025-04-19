@@ -1,8 +1,9 @@
-export default class Return {
-    private readonly type;
-    private readonly value;
+export class Return<T = undefined> {
+    public readonly type: string;
+    public readonly value: T|undefined;
+    public meta: any = null;
 
-    constructor(type, value?) {
+    constructor(type: string, value?: T) {
         this.type = type;
         this.value = value;
     }
@@ -15,11 +16,11 @@ export default class Return {
         return Return.make('GenericNull');
     }
 
-    static Self() {
-        return Return.make('GenericSelf');
+    static Self<T>() {
+        return Return.make<T>('GenericSelf');
     }
 
-    static Value(value) {
+    static Value<T>(value: T) {
         return Return.make('GenericValue', value);
     }
 
@@ -35,14 +36,45 @@ export default class Return {
         return Return.make('GenericObjects', value);
     }
 
-    static make(type, value?) {
+    static Error(value) {
+        return Return.make('GenericError', value);
+    }
+
+    static ExpectationFailed(message: string, expected?: any, actual?: any) {
+        return Return.make('ExpectationFailed', { message, expected, actual });
+    }
+
+    static Dialog(dialog) {
+        return Return.make('Dialog', dialog);
+    }
+
+    static ServerRequest(request) {
+        return Return.make('ServerRequest', {request});
+    }
+
+    withMeta(meta) {
+        if (this.meta == null) {
+            this.meta = meta;
+            return this;
+        }
+
+        this.meta = Object.assign(this.meta, meta);
+        return this;
+    }
+
+    static make<T = undefined>(type: string, value?: T) {
         return new Return(type, value);
     }
 
     serialize() {
-        return {
+        let s = {
             type: this.type,
             value: this.value,
         };
+        if (this.meta !== null) {
+            s.meta = this.meta;
+        }
+
+        return s;
     }
 }

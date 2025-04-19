@@ -2,14 +2,16 @@
 
 namespace Puth\Laravel;
 
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
 use PHPUnit\Runner\Version;
 use Puth\Context;
-use Puth\Laravel\Browser;
 use Puth\Laravel\Concerns\ProvidesBrowser;
 use Puth\Laravel\Facades\Puth;
+use Puth\RemoteObject;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
+use Symfony\Component\HttpFoundation\Request;
 
 abstract class TestCase extends FoundationTestCase
 {
@@ -33,8 +35,15 @@ abstract class TestCase extends FoundationTestCase
             ],
             'snapshot' => true,
             'debug' => static::$debug,
+            'supports' => [
+                'portal' => [
+                    'urlPrefixes' => $this->requestInterceptionUrlPrefixes(),
+                ],
+            ],
         ], $this->getContextOptions()));
-        
+
+        $this->context->setTestCase($this);
+
         Browser::$baseUrl = $this->baseUrl();
         Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
         Browser::$storeConsoleLogAt = base_path('tests/Browser/console');
@@ -118,6 +127,11 @@ abstract class TestCase extends FoundationTestCase
         
         return $this->status()->isFailure() || $this->status()->isError();
     }
+
+    public function requestInterceptionUrlPrefixes(): array
+    {
+        return [$this->baseUrl()];
+    }
     
     /**
      * Determine the application's base URL.
@@ -137,5 +151,143 @@ abstract class TestCase extends FoundationTestCase
     protected function user()
     {
         throw new \Exception('User resolver has not been set.');
+    }
+
+    // portal request handling
+    public function handlePortalRequest(object $portalRequest)
+    {
+        //dd($portalRequest);
+        /*$portalRequest = (object) [
+            'url' => '/',
+            'method' => 'post',
+            'headers' => [
+                'content-type' => 'application/x-www-form-urlencoded',
+            ],
+            'data' => 'username=test&path=1234',
+        ];*/
+
+        $kernel = $this->app->make(HttpKernel::class);
+        $request = $this->parsePortalRequest($portalRequest);
+        $response = $kernel->handle(
+            $request = $this->createTestRequest($request)
+        );
+        $kernel->terminate($request, $response);
+
+        return $this->createTestResponse($response, $request);
+    }
+
+    public function parsePortalRequest(object $portalRequest): Request
+    {
+        $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
+        $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
+        $server['REQUEST_URI'] = $portalRequest->url;
+
+        $cookies = $this->prepareCookiesForRequest();
+
+        $url = parse_url($portalRequest->url);
+        $queryParams = [];
+        if (isset($url['query'])) {
+            parse_str($url['query'], $queryParams);
+        }
+        $server['HTTP_HOST'] = "{$url['host']}:{$url['port']}";
+
+        $cookies = [];
+        if (isset($headers['cookie'])) {
+            parse_str(str_replace('; ', '&', $headers['cookie']), $cookies);
+        }
+
+        $request = new Request(
+            $queryParams, // GET
+            [], // POST
+            [], // attributes
+            $cookies, // COOKIE
+            [], // FILES
+            $server,
+            $portalRequest->data,
+        );
+
+        static::populateParametersFromBody($request);
+
+        return $request;
+    }
+
+    protected static function populateParametersFromBody(Request $request): void
+    {
+        $contentType = $request->headers->get('Content-Type', '');
+
+        if (str_starts_with($contentType, 'application/json')) {
+            $parsed = json_decode($request->getContent(), true);
+            if (is_array($parsed)) {
+                $request->request->replace($parsed);
+            }
+        } else if (str_starts_with($contentType, 'application/x-www-form-urlencoded')) {
+            parse_str($request->getContent(), $parsed);
+            $request->request->replace($parsed);
+        } else if (str_starts_with($contentType, 'multipart/form-data')) {
+            $boundary = self::extractBoundary($contentType);
+            if ($boundary) {
+                $parsed = self::parseMultipart($request->getContent(), $boundary);
+                $request->request->replace($parsed['fields'] ?? []);
+                $request->files->replace($parsed['files'] ?? []);
+            }
+        } else if (str_starts_with($contentType, 'text/plain')) {
+            parse_str($request->getContent(), $parsed);
+            $request->request->replace($parsed);
+        } else if (str_starts_with($contentType, 'application/xml') || str_starts_with($contentType, 'text/xml')) {
+            $xml = simplexml_load_string($request->getContent(), "SimpleXMLElement", LIBXML_NOCDATA);
+            if ($xml !== false) {
+                $json = json_decode(json_encode($xml), true);
+                $request->request->replace(is_array($json) ? $json : []);
+            }
+        } else {
+            $request->request->set('raw_body', $request->getContent());
+        }
+    }
+
+    protected static function extractBoundary(string $contentType): ?string
+    {
+        if (preg_match('/boundary=(.*)$/', $contentType, $matches)) {
+            return trim($matches[1], '"');
+        }
+
+        return null;
+    }
+
+    protected static function parseMultipart(string $body, string $boundary): array
+    {
+        $result = ['fields' => [], 'files' => []];
+        $parts = preg_split('/--' . preg_quote($boundary, '/') . '(--)?\s*/', $body, -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($parts as $part) {
+            if (!str_contains($part, "\r\n\r\n")) continue;
+
+            [$rawHeaders, $content] = explode("\r\n\r\n", $part, 2);
+            $rawHeaders = explode("\r\n", trim($rawHeaders));
+            $headers = [];
+
+            foreach ($rawHeaders as $line) {
+                [$name, $value] = explode(':', $line, 2);
+                $headers[strtolower(trim($name))] = trim($value);
+            }
+
+            if (!isset($headers['content-disposition'])) continue;
+            if (!preg_match('/form-data; *name="([^"]+)"(?:; *filename="([^"]+)")?/', $headers['content-disposition'], $matches)) continue;
+
+            $name = $matches[1];
+            $filename = $matches[2] ?? null;
+            $content = rtrim($content, "\r\n");
+
+            if ($filename) {
+                $tmpPath = tempnam(sys_get_temp_dir(), 'upload_');
+                file_put_contents($tmpPath, $content);
+                $mime = $headers['content-type'] ?? 'application/octet-stream';
+                $file = new UploadedFile($tmpPath, $filename, $mime, null, true);
+                $result['files'][$name] = $file;
+            } else {
+                $result['fields'][$name] = $content;
+            }
+        }
+
+        return $result;
     }
 }

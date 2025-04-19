@@ -23,7 +23,7 @@ class Keyboard
     /**
      * Create a keyboard instance.
      *
-     * @param  \Puth\Laravel\Browser  $browser
+     * @param  \Puth\Laravel\Browser $browser
      * @return void
      */
     public function __construct(Browser $browser)

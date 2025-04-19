@@ -1,6 +1,6 @@
 import {Browser, CDPSession} from 'puppeteer-core';
 import {Protocol} from 'devtools-protocol/types/protocol';
-import Return from '../../context/Return';
+import { Return } from '../../context/Return';
 
 export async function maximize(browser: Browser) {
     await setWindowBounds(browser, {windowState: 'maximized'});
@@ -24,7 +24,7 @@ export async function setWindowBounds(browser: Browser, bounds: Protocol.Browser
         .then(async () => autoClose ? await cdp.detach() : cdp);
 }
 
-function getWindowBounds(browser: Browser) {
+export function getWindowBounds(browser: Browser) {
     return browser.target().createCDPSession()
         .then(cdp => getWindowForTarget(browser, cdp)
             .then(({windowId}) => cdp.send('Browser.getWindowBounds', {windowId}))

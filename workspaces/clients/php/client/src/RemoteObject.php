@@ -2,9 +2,12 @@
 
 namespace Puth;
 
+use Closure;
 use Exception;
 use Puth\Utils\BackTrace;
 use Puth\Utils\DontProxy;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\Request;
 
 class RemoteObject
 {
@@ -22,10 +25,22 @@ class RemoteObject
         public readonly string $represents,
         public readonly ?RemoteObject $parent,
         public readonly Context $context,
-    ) {
+    )
+    {
     }
 
-    protected function call($function, $parameters = []): mixed
+    static function from(RemoteObject $remoteObject): static
+    {
+        return new static(
+            $remoteObject->id,
+            $remoteObject->type,
+            $remoteObject->represents,
+            $remoteObject->parent,
+            $remoteObject->context,
+        );
+    }
+
+    protected function callFunc($function, $parameters = []): mixed
     {
         // Serialize parameters if needed
         $parameters = array_map(function ($item) {
@@ -58,7 +73,7 @@ class RemoteObject
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
             throw new Exception(BackTrace::message(
                 BackTrace::filter(debug_backtrace()),
-                $body->message,
+                '[Server] ' . $body->message,
             ));
         });
     }
@@ -104,7 +119,7 @@ class RemoteObject
         return $return;
     }
 
-    protected function get($property)
+    protected function getProperty($property)
     {
         $response = $this->context->client->patch('context/get', ['json' => [
             'context' => $this->context->serialize(),
@@ -153,10 +168,28 @@ class RemoteObject
         return $this->parseGeneric($body, $arguments, $onError);
     }
 
-    protected function parseGeneric($generic, $arguments, $onError)
+    protected function parseGeneric($generic, $arguments, Closure $onError)
     {
         if (!property_exists($generic, 'type')) {
             throw new \Exception('Puth server response: $body->type not defined!');
+        }
+
+        if (property_exists($generic, 'meta')) {
+            if (property_exists($generic->meta, 'assertions')) {
+                if ($this->context->hasTestCase()) {
+                    $this->context->testCase->addToAssertionCount($generic->meta->assertions);
+                }
+            }
+        }
+
+        if ($generic->type === 'ServerRequest') {
+            return $this->handlePortalRequestResponse($generic, $arguments, $onError);
+        }
+
+        if ($generic->type === 'ExpectationFailed') {
+            $this->handleExpectationFailed($generic, $arguments);
+        } else if ($generic->type === 'error') {
+            $onError($generic, $arguments);
         }
 
         return match ($generic->type) {
@@ -173,9 +206,78 @@ class RemoteObject
             'GenericNull' => null,
             'GenericSelf', 'GenericUndefined' => $this,
             'PuthAssertion' => $generic,
-            'error' => $onError($generic, $arguments),
-            default => $this,
+            default => throw new RuntimeException('Unexpected generic type ' . $generic->type),
         };
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function handleExpectationFailed($generic, $arguments): never
+    {
+        $message = BackTrace::message(
+            BackTrace::filter(debug_backtrace()),
+            $generic?->value?->message ?? 'Unknown error',
+        );
+
+        // TODO performance: we should only evaluate if ExpectationFailedException exists once
+        if (class_exists('\\PHPUnit\\Framework\\ExpectationFailedException')) {
+            throw new \PHPUnit\Framework\ExpectationFailedException($message);
+        }
+
+        throw new Exception($message);
+    }
+
+    private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
+    {
+//        dump('handlePortalRequest', $generic);
+
+        $this->log('server-request');
+        $response = ['type' => 'PortalResponse'];
+
+        if ($this->context->testCase !== null
+            && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
+            && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
+
+            $im = $this->context->testCase->handlePortalRequest($generic->value->request);
+            // dd('handlePortalRequest', $test);
+
+            /*$url = $generic->value->request->url;
+            $headers = (array)$generic->value->request->headers;
+            $data = (array)$generic->value->request->data;
+
+            $im = match ($generic->value->request->method) {
+                'GET' => $this->context->testCase->get($url, $headers),
+                'HEAD' => $this->context->testCase->head($url, $headers),
+                'OPTIONS' => $this->context->testCase->options($url, $data, $headers),
+                'POST' => $this->context->testCase->post($url, $data, $headers),
+                'PATCH' => $this->context->testCase->patch($url, $data, $headers),
+                'PUT' => $this->context->testCase->put($url, $data, $headers),
+                'DELETE' => $this->context->testCase->delete($url, $data, $headers),
+            };*/
+
+            $response = [
+                'body' => $im->content(),
+                'contentType' => $im->headers->get('Content-Type'),
+                'headers' => $im->headers->all(),
+                'status' => $im->status(),
+            ];
+        }
+        //dump('handlePortalRequest $response', $response);
+
+        $this->log('server-request response');
+        // $this->log(var_export($response));
+
+        $portalResponse = $this->context->client->patch('context/portal/response', ['json' => [
+            'context' => $this->context->serialize(),
+            'response' => $response,
+        ]]);
+
+        return $this->handleResponse(
+            $portalResponse,
+            $arguments,
+            $onError,
+        );
     }
 
     private function resolveGenericObject($generic): mixed
@@ -196,14 +298,14 @@ class RemoteObject
     {
         $this->log('__call > ' . $name);
 
-        return $this->call($this->translateAction($name), $arguments);
+        return $this->callFunc($this->translateAction($name), $arguments);
     }
 
     public function __get($property)
     {
         $this->log('__get > ' . $property);
 
-        return $this->get($property);
+        return $this->getProperty($property);
     }
 
     protected function hasActionTranslation($action)
