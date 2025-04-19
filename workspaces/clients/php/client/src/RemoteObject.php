@@ -25,6 +25,17 @@ class RemoteObject
     ) {
     }
 
+    static function from(RemoteObject $remoteObject): static
+    {
+        return new static(
+            $remoteObject->id,
+            $remoteObject->type,
+            $remoteObject->represents,
+            $remoteObject->parent,
+            $remoteObject->context,
+        );
+    }
+
     protected function call($function, $parameters = []): mixed
     {
         // Serialize parameters if needed

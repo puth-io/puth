@@ -148,10 +148,16 @@ class Context extends Generic {
     }
 
     // @codegen
-    public async createBrowserShim(page: Page, baseUrl: string): Promise<Browser> {
-        return new Browser(this, page, baseUrl);
+    public async createBrowserShim(options = {}): Promise<Browser> {
+        let browser = await this.createBrowser(options);
+        return new Browser(this, (await browser.pages())[0]);
     }
-    
+
+    // @codegen
+    public async createBrowserShimForPage(page: Page): Promise<Browser> {
+        return new Browser(this, page);
+    }
+
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
     public async destroy(options: any = {}) {
@@ -231,6 +237,7 @@ class Context extends Generic {
      *      but check if we need to make sure if call the object called on needs to be existing
      */
     private trackPage(page) {
+        page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
         page.on('close', () => this.removeEventListenersFrom(page));
         page.on('dialog', (dialog) => this.caches.dialog.set(page, dialog));
         
@@ -435,11 +442,11 @@ class Context extends Generic {
         }
         
         // Call original function on object
-        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters);
+        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters, undefined);
     }
     
     // TODO Cleanup parameters and maybe unify handling in special object
-    private async handleCallApply(packet, page, command, on, func, parameters, expects?) {
+    private async handleCallApply(packet, page, command, on, func, parameters, expects) {
         await this.emitAsync('call:apply:before', {command, page});
         
         try {
@@ -456,7 +463,7 @@ class Context extends Generic {
             command.time.finished = Date.now();
             command.time.took = command.time.finished - command.time.started;
             
-            return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
+            return this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
         } catch (error: any) {
             // call event before any pushToCache call
             await this.emitAsync('call:apply:error', {error, command, page});
@@ -487,7 +494,7 @@ class Context extends Generic {
         }
     }
     
-    private async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
+    private async handleCallApplyAfter(packet, page, command, returnValue, expectation, on) {
         let beforeReturn = async () => {
             await this.emitAsync('call:apply:after', {command, page});
             
@@ -536,11 +543,14 @@ class Context extends Generic {
         
         await beforeReturn();
         
-        return this.resolveReturnValue(packet, returnValue);
+        return this.resolveReturnValue(packet, returnValue, on);
     }
     
     // TODO add return value resolver structure
-    resolveReturnValue(action, returnValue) {
+    resolveReturnValue(action, returnValue, on) {
+        if (returnValue === on) {
+            return Return.Self().serialize();
+        }
         if (returnValue === null) {
             return Return.Null().serialize();
         }
@@ -563,7 +573,7 @@ class Context extends Generic {
                 return Return.Value(returnValue).serialize();
             }
             
-            return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv))).serialize();
+            return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv, on))).serialize();
         }
         if (this.isValueSerializable(returnValue)) {
             return Return.Value(returnValue).serialize();

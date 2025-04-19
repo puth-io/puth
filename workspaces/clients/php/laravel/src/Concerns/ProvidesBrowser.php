@@ -126,17 +126,20 @@ trait ProvidesBrowser
             ],
             'headless' => $this->headless,
         ], $this->getLaunchOptions()));
-        
+
+        $page = $browser->pages()[0];
+        $remote = $this->context->createBrowserShimForPage($page);
+
         return new Browser(
-            $this->context,
+            $remote,
             $browser,
-            $browser->pages()[0],
+            $page,
             options: [
                 'legacyBrowserHandling' => $this->legacyBrowserHandling ?? false,
             ],
         );
     }
-    
+
     /**
      * Get the number of browsers needed for a given callback.
      *
