@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser} from 'puppeteer-core';
+import puppeteer, { Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest } from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -7,14 +7,15 @@ import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
-import path from 'path';
+import path from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
-import Return from './context/Return';
+import { Return } from './context/Return';
 import Constructors, {ConstructorValues} from './context/Constructors';
-import {tmpdir} from 'os';
+import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
-import {Browser} from './shims/Browser';
+import { Browser, ExpectationFailed } from './shims/Browser';
+import { sleep } from './Utils';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -66,12 +67,12 @@ class Context extends Generic {
     private readonly _emitter: Emitter<ContextEvents>;
     private readonly _createdAt: number;
     private _lastActivity: number;
-    
+
     private options: ContextOptions;
     private plugins: PuthContextPlugin[] = [];
     private eventFunctions: [any, string, () => {}][] = [];
     private cleanupCallbacks: any = [];
-    
+
     public browsers: PPTRBrowser[] = [];
     public caches: ContextCaches = {
         snapshot: {
@@ -79,9 +80,9 @@ class Context extends Generic {
         },
         dialog: new Map<Page, Dialog>(),
     };
-    
+
     public shouldSnapshot: boolean = false;
-    
+
     public test: {
         name: string;
         status: ContextStatus.FAILED|ContextStatus.SUCCESSFUL|ContextStatus.PENDING;
@@ -89,22 +90,27 @@ class Context extends Generic {
         name: '',
         status: ContextStatus.PENDING,
     };
-    
+
     public destroying: boolean = false;
-    
+
+    private lastCallerPromise?: {
+        resolve: (value: any) => void;
+        reject: (reason?: any) => void;
+    };
+
     constructor(puth: Puth, options: any = {}) {
         super();
-        
+
         this._puth = puth;
         this._emitter = mitt<ContextEvents>();
         this._createdAt = Date.now();
         this._lastActivity = this._createdAt;
-        
+
         this.options = options;
         this.shouldSnapshot = this.options?.snapshot === true;
-        
+
         this.test.name = options?.test?.name ?? '';
-        
+
         if (this.shouldSnapshot) { // Track context creation
             Snapshots.pushToCache(this, {
                 ...this.serialize(), // TODO remove -> GUI needs to use packet.context
@@ -116,7 +122,7 @@ class Context extends Generic {
             });
         }
     }
-    
+
     async setup() {
         for (let pluginClass of this.getPuth().getContextPlugins()) {
             let plugin = new pluginClass();
@@ -133,22 +139,28 @@ class Context extends Generic {
         if (! options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
             options.executablePath = this.puth.getInstalledBrowser().executablePath;
         }
-        
+
         return await this.puth.browserHandler.launch(options)
             .then(browser => this.handleNewBrowser(browser));
     }
-    
+
     private async handleNewBrowser(browser: PPTRBrowser) {
         this.browsers.push(browser);
-        
+
         return await this.trackBrowser(browser)
             .then(() => this.emitter.emit('browser:connected', {browser}))
             .then(() => browser);
     }
 
     // @codegen
-    public async createBrowserShim(page: Page, baseUrl: string): Promise<Browser> {
-        return new Browser(this, page, baseUrl);
+    public async createBrowserShim(options = {}): Promise<Browser> {
+        let browser = await this.createBrowser(options);
+        return new Browser(this, (await browser.pages())[0]);
+    }
+
+    // @codegen
+    public async createBrowserShimForPage(page: Page): Promise<Browser> {
+        return new Browser(this, page);
     }
 
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
@@ -161,10 +173,10 @@ class Context extends Generic {
             }
             options.immediately = true;
             setTimeout(() => this.destroy(options), 400);
-            
+
             return false;
         }
-        
+
         if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
         }
@@ -175,35 +187,35 @@ class Context extends Generic {
         this.eventFunctions.forEach(([page, event, func]) => {
             page.off(event, func);
         });
-        
+
         return await Promise.all(this.browsers.map(browser => this.destroyBrowserByBrowser(browser)))
             .then(() => Promise.all(this.cleanupCallbacks))
             .then(() => true);
     }
-    
+
     public async destroyBrowserByBrowser(browser) {
         return await this.puth.browserHandler.destroy(browser)
             .then(() => this.removeBrowser(browser));
     }
-    
+
     private removeBrowser(browser: PPTRBrowser) {
         this.browsers.splice(
             this.browsers.findIndex(b => b === browser),
             1,
         );
     }
-    
+
     isPageBlockedByDialog(page) {
         return this.caches.dialog.has(page);
     }
-    
+
     private async trackBrowser(browser: PPTRBrowser) {
         browser.once('disconnected', () => {
             this.removeEventListenersFrom(browser);
             this.emitter.emit('browser:disconnected', {browser});
             this.browsers = this.browsers.filter(b => b !== browser);
         });
-        
+
         this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
             // TODO do we need to track more here? like 'browser' or 'background_page'...?
             if (target.type() === 'page') {
@@ -215,27 +227,39 @@ class Context extends Generic {
                 page.on('close', _ => this.emitter.emit('page:closed', {browser, page}));
             }
         });
-        
+
         // Track default browser page (there is no 'targetcreated' event for page[0])
         return await browser.pages()
-            .then(pages => {
+            .then(async pages => {
                 let page0 = pages[0];
-                this.trackPage(page0);
+                await this.trackPage(page0);
                 this.emitter.emit('page:created', {browser, page: page0});
             });
     }
-    
+
     /**
      * TODO maybe track "outgoing" navigation requests, and stall incoming request until finished loading
      *      but check if we need to make sure if call the object called on needs to be existing
      */
-    private trackPage(page) {
+    private async trackPage(page) {
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         page.on('close', () => this.removeEventListenersFrom(page));
-        page.on('dialog', (dialog) => this.caches.dialog.set(page, dialog));
-        
+        page.on('dialog', (dialog: Dialog) => {
+            this.caches.dialog.set(page, dialog);
+
+            if (this.lastCallerPromise) {
+                this.puth.logger.debug('Resolved active request because dialog opened on page.');
+                this.lastCallerPromise.resolve(Return.Dialog({
+                    message: dialog.message(),
+                    defaultValue: dialog.defaultValue(),
+                    type: dialog.type(),
+                }).serialize());
+            }
+        });
+
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
             let args: any = [];
-            
+
             args = await Promise.all(
                 consoleMessage.args()
                     .map(
@@ -244,7 +268,7 @@ class Context extends Generic {
                                 if (err.name === 'TargetCloseError') {
                                     // TODO handle TargetCloseError
                                 }
-                                
+
                                 this.puth.logger.warn({
                                     exception: err,
                                     jsHandle: m,
@@ -252,7 +276,7 @@ class Context extends Generic {
                             }),
                     ),
             );
-            
+
             Snapshots.pushToCache(this, {
                 id: v4(),
                 type: 'log',
@@ -265,30 +289,40 @@ class Context extends Generic {
                 stackTrace: consoleMessage.stackTrace(),
             });
         });
+
+        if (this.options?.supports?.portal != null) {
+            await page.setRequestInterception(true);
+            this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+                // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
+                return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
+            });
+        }
     }
-    
-    public getSnapshotsByType(type) { // used by clients
+
+    // @codegen
+    // @gen-returns any[]
+    public getSnapshotsByType(type): Return { // used by clients
         return Return.Values(Snapshots.getAllCachedItemsFrom(this).filter(item => item?.type === type));
     }
-    
+
     registerEventListenerOn(object, event, func) {
         this.eventFunctions.push([object, event, func]);
         object.on(event, func);
     }
-    
+
     removeEventListenersFrom(object) {
         let listeners = this.eventFunctions.filter((listener) => listener[0] === object);
         listeners.forEach(([page, event, func]) => {
             page.off(event, func);
         });
-        
+
         this.eventFunctions = this.eventFunctions.filter((listener) => listener[0] !== object);
     }
 
     // @codegen
     public testFailed() { // used by clients
         this.test.status = ContextStatus.FAILED;
-        
+
         if (this.shouldSnapshot) {
             Snapshots.pushToCache(this, {
                 type: 'test',
@@ -299,10 +333,11 @@ class Context extends Generic {
             });
         }
     }
-    
+
+    // @codegen
     public testSuccess() {
         this.test.status = ContextStatus.SUCCESSFUL;
-        
+
         if (this.shouldSnapshot) {
             Snapshots.pushToCache(this, {
                 type: 'test',
@@ -313,40 +348,41 @@ class Context extends Generic {
             });
         }
     }
-    
+
+    // @codegen
     public testSucceeded() {
         return this.testSuccess();
     }
-    
+
     async saveContextSnapshot(options) {
         let {to} = options;
-        
+
         if (to === 'file') {
             let {location} = options;
             let storagePath;
-            
+
             if (! location) {
                 location = path.join('storage', 'snapshots');
             }
             if (! Array.isArray(location)) {
                 location = [location];
             }
-            
+
             storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.id}.puth`);
-            
+
             return await writeFile(
                 storagePath,
                 encode(Snapshots.getAllCachedItemsFrom(this), {extensionCodec: PUTH_EXTENSION_CODEC}),
             );
         }
     }
-    
+
     private async createCommandInstance(packet, on): Promise<ICommand|undefined> {
         if (! this.shouldSnapshot) {
             return;
         }
         const now = Date.now();
-        
+
         return {
             id: v4(),
             type: 'command',
@@ -370,61 +406,76 @@ class Context extends Generic {
             timestamp: now,
         };
     }
-    
+
     public async callAll(calls) {
         return Promise.all(calls.map(call => this.call(call)));
     }
-    
+
     public async callAny(calls) {
         return [await Promise.any(calls.map(call => this.call(call)))];
     }
-    
+
     public async callRace(calls) {
         return [await Promise.race(calls.map(call => this.call(call)))];
     }
-    
-    public async call(packet) {
+
+    public async call(packet, res, skipQueue = false) {
         this._lastActivity = Date.now();
-        
-        let on = this.resolveOn(packet);
-        // resolve page object
-        let page: Page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
-        
-        // Create command
-        const command = await this.createCommandInstance(packet, on);
-        // Create snapshot before command
-        if (! this.isPageBlockedByDialog(page)) {
-            // await Snapshots.createBefore(this, page, command);
+
+        if (!skipQueue && this.portal.queue.backlog.length !== 0) {
+            this.puth.logger.debug(packet, 'offsetting');
+            this.portal.initial.call = packet;
+            this.portal.queue.active = this.portal.queue.backlog;
+            this.portal.queue.backlog = [];
+
+            return res.send(this.createServerRequest(this.portal.queue.active[0]));
         }
-        
+
+        this.portal.open.response = res;
+
+        let on = this.resolveOn(packet);
+        // it's hideous, but it's better than 3 deep ifs imho
+        let page =
+            (on instanceof Page)
+                ? on
+                : (on instanceof Browser)
+                    ? on.site
+                    : (Utils.resolveConstructorName(on) === Constructors.Page
+                        ? on
+                        : on?.frame?.page());
+
+        if (this.caches.dialog.size > 0) {
+            if (page && this.isPageBlockedByDialog(page) && (on instanceof Browser && !['assertDialogOpened', 'typeInDialog', 'acceptDialog', 'dismissDialog', 'waitForDialog'].includes(packet.function))) {
+                return Return.ExpectationFailed('The page has an open dialog that blocks all function calls except those that interact with it.').serialize();
+            }
+        }
+
         // Turn object representations into the actual object
         packet.parameters = packet.parameters ? packet.parameters.map((item) => this.resolveIfCached(item)) : [];
-        
+
         let type = Utils.resolveConstructorName(on);
         if (type) {
             // check for extension
             let extension = this.getPlugins().find((ext) => ext.hasAddition(type, packet.function));
             if (extension) {
                 let addition = extension.getAddition(type, packet.function);
-                
+
                 if (typeof addition === 'function') {
                     addition = {func: addition};
                 }
-                
+
                 // Call extension function and pass object as first parameter
-                return this.handleCallApply(
+                return res.send(await this.handleCallApply(
                     packet,
                     page,
-                    command,
                     extension,
                     addition.func,
                     [on, ...packet.parameters],
                     addition.expects,
-                );
+                ));
             }
         }
-        
-        // Check if object has function
+
         if (! on[packet.function]) {
             return {
                 type: 'error',
@@ -432,77 +483,213 @@ class Context extends Generic {
                 message: `Function "${packet.function}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
             };
         }
-        
-        // Call original function on object
-        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters);
+
+        return res.send(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
     }
-    
-    // TODO Cleanup parameters and maybe unify handling in special object
-    private async handleCallApply(packet, page, command, on, func, parameters, expects?) {
-        await this.emitAsync('call:apply:before', {command, page});
+
+    portal: any = {
+        initial: {
+            call: null,
+        },
+        open: {
+            response: null,
+        },
+        waiting: {
+            response: null,
+            call: false,
+        },
+        queue: {
+            backlog: [
+                //{request: 'test', promise: {resolve: null, reject: null}}
+            ],
+            active: [],
+        },
+    }
+
+    public async handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
+        let url = request.url();
+        if (['script', 'stylesheet'].includes(request.resourceType())
+            || !['document', 'other'].includes(request.resourceType())
+            || url.endsWith('.ico')) {
+            this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
+            return request.continue();
+        }
         
-        try {
-            let returnValue = func.call(on, ...parameters);
-            
-            // Check if func.call returns a Promise. If so, await return value
-            if (returnValue?.constructor?.name === 'Promise') {
-                returnValue = await returnValue.catch((error) => {
-                    // TODO test if try also catches promise errors without this throw
-                    throw error;
-                });
+        let handle = false;
+        for (let prefix of prefixes) {
+            if (url.startsWith(prefix)) {
+                handle = true;
+                url.replace(prefix, '');
+                break;
             }
-            
-            command.time.finished = Date.now();
-            command.time.took = command.time.finished - command.time.started;
-            
-            return this.handleCallApplyAfter(packet, page, command, returnValue, expects);
-        } catch (error: any) {
-            // call event before any pushToCache call
-            await this.emitAsync('call:apply:error', {error, command, page});
-            
-            if (this.shouldSnapshot) {
-                command.time.finished = Date.now();
-                command.time.took = command.time.finished - command.time.started;
-                
-                Snapshots.error(this, page, command, {
-                    type: 'error',
-                    specific: 'apply',
-                    error: {
-                        message: error.message,
-                        name: error.name,
-                        stack: error.stack,
-                    },
-                    time: Date.now(),
-                });
-                Snapshots.pushToCache(this, command);
-            }
-            
-            return {
-                type: 'error',
-                code: 'MethodException',
-                message: `Function ${packet.function} threw error: ${error.message}`,
-                error,
-            };
+        }
+
+        if (!handle) {
+            this.puth.logger.debug(`[portal] no handle ${request.resourceType()} ${url.substring(0, 80)}`);
+            return request.continue();
+        }
+        
+        let data = request.postData();
+        // this.puth.logger.debug('before');
+        // this.puth.logger.debug(await request.fetchPostData(), 'postData');
+        // this.puth.logger.debug('after');
+        if (data === undefined && request.hasPostData()) {
+            this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
+            data = await request.fetchPostData();
+        }
+
+        let portalRequest = {
+            serialized: {
+                url: request.url(),
+                headers: request.headers(),
+                data: data ?? null,
+                method: request.method(),
+                resourceType: request.resourceType(),
+            },
+            request,
+        };
+
+        this.puth.logger.debug(portalRequest.serialized, '[handlePortalRequest]');
+
+        if (this.lastCallerPromise == null) {
+            this.puth.logger.debug(portalRequest.serialized, 'add portal request to backlog queue');
+            this.portal.queue.backlog.push(portalRequest);
+            return;
+        }
+
+        this.portal.queue.active.push(portalRequest);
+        this.puth.logger.debug(portalRequest.serialized, 'add portal request to active queue');
+        if (this.portal.queue.active.length === 1) {
+            this.puth.logger.debug('sending portal request while client request active');
+            return this.lastCallerPromise.resolve(
+                this.createServerRequest(this.portal.queue.active[0])
+            );
         }
     }
-    
-    private async handleCallApplyAfter(packet, page, command, returnValue, expectation?) {
+
+    public async handlePortalResponse(data, res) {
+        let clone = structuredClone(data);
+        clone.response.body = clone.response.body.length;
+        this.puth.logger.debug(clone, 'handlePortalResponse');
+        let current = this.portal.queue.active.shift();
+        await current.request.respond(data.response);
+
+        if (this.portal.queue.active.length !== 0) {
+            return res.send(this.createServerRequest(this.portal.queue.active[0]));
+        }
+        if (this.portal.waiting.response) {
+            let waiting = this.portal.waiting.response;
+            this.portal.waiting.response = null;
+            return res.send(waiting);
+        }
+        if (this.portal.waiting.call) {
+            this.puth.logger.debug('resetting waiting call')
+            return res.send(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
+        }
+
+        return this.call(this.portal.initial.call, res, true);
+    }
+
+    public createServerRequest(portalRequest) {
+        return Return.ServerRequest(portalRequest.serialized).serialize();
+    }
+
+    // TODO Cleanup parameters and maybe unify handling in special object
+    private async handleCallApply(packet, page, on, func, parameters, expects = null) {
+        const command = await this.createCommandInstance(packet, on);
+        if (this.caches.dialog.size === 0) {
+            // await Snapshots.createBefore(this, page, command);
+        }
+
+        this.portal.initial.call = null;
+        this.portal.waiting.call = true;
+
+        let p = new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined);
+
+        this.emitAsync('call:apply:before', {command, page})
+            .then(async () => {
+                try {
+                    // @ts-ignore
+                    let returnValue = await Promise.try(func.bind(on, ...parameters))
+                        .catch((error) => {
+                            // this.puth.logger.debug('handleCallApply throwing');
+                            // TODO test if try also catches promise errors without this throw
+                            throw error;
+                        });
+
+                    if (command) {
+                        command.time.finished = Date.now();
+                        command.time.took = command.time.finished - command.time.started;
+                    }
+
+                    let response = await this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
+                    if (this.portal.queue.active.length !== 0) {
+                        this.puth.logger.debug('set waiting response');
+                        this.portal.waiting.response = response;
+
+                        return;
+                    }
+
+                    // this.puth.logger.debug({ packet, response }, 'lastCallerPromise response');
+                    this.lastCallerPromise.resolve(response);
+                } catch (error: any) {
+                    this.puth.logger.debug(error, '[Call apply error]')
+                    // call event before any pushToCache call
+                    await this.emitAsync('call:apply:error', {error, command, page});
+
+                    if (this.shouldSnapshot && command) {
+                        command.time.finished = Date.now();
+                        command.time.took = command.time.finished - command.time.started;
+
+                        Snapshots.error(this, page, command, {
+                            type: 'error',
+                            specific: 'apply',
+                            error: {
+                                message: error.message,
+                                name: error.name,
+                                stack: error.stack,
+                            },
+                            time: Date.now(),
+                        });
+                        Snapshots.pushToCache(this, command);
+                    }
+
+                    let response =
+                        error instanceof ExpectationFailed
+                            ? error.getReturnInstance().serialize()
+                            : {
+                                  type: 'error',
+                                  code: 'MethodException',
+                                  message: `Function ${packet.function} threw error: ${error.message}`,
+                                  error,
+                              };
+                    if (this.portal.queue.active.length != 0) {
+                        this.portal.waiting.response = response;
+
+                        return;
+                    }
+
+                    this.lastCallerPromise.resolve(response);
+                }
+            })
+            .finally(() => this.portal.waiting.call = false);
+
+        return p;
+    }
+
+    private async handleCallApplyAfter(packet, page, command, returnValue, expectation, on) {
         let beforeReturn = async () => {
             await this.emitAsync('call:apply:after', {command, page});
-            
-            if (! this.isPageBlockedByDialog(page)) {
-                // await Snapshots.createAfter(this, page, command);
-            }
-            
+
             // TODO Implement this in events. Event: 'function:call:return'
             Snapshots.pushToCache(this, command);
         };
-        
-        if (expectation) {
+
+        if (expectation != null) {
             if (expectation.test && ! expectation.test(returnValue)) {
                 // call event before any pushToCache call
                 await this.emit('call:expectation:error', {expectation, command, page});
-                
+
                 if (this.shouldSnapshot) {
                     Snapshots.error(this, page, command, {
                         type: 'expectation',
@@ -511,50 +698,52 @@ class Context extends Generic {
                     });
                     Snapshots.pushToCache(this, command);
                 }
-                
+
                 return {
                     type: 'error',
                     code: 'expectationFailed',
                     message: expectation.message,
                 };
             }
-            
+
             if ('return' in expectation) {
                 await beforeReturn();
-                
+
                 return expectation.return(returnValue);
             }
-            
+
             if (expectation.returns) {
                 await beforeReturn();
-                
+
                 let {type, represents} = expectation.returns;
                 return this.returnCached(returnValue, type, represents);
             }
         }
-        
+
         await beforeReturn();
-        
-        return this.resolveReturnValue(packet, returnValue);
+
+        return this.resolveReturnValue(packet, returnValue, on);
     }
-    
+
     // TODO add return value resolver structure
-    resolveReturnValue(action, returnValue) {
-        if (returnValue == null) {
+    resolveReturnValue(action, returnValue, on) {
+        if (returnValue === on) {
+            return Return.Self().serialize();
+        }
+        if (returnValue === null) {
             return Return.Null().serialize();
         }
         if (returnValue instanceof Return) {
             return returnValue.serialize();
         }
         if (ArrayBuffer.isView(returnValue) && Object.prototype.toString.call(returnValue) !== "[object DataView]") {
-            console.log(action.property, 'array buffer');
             return returnValue;
         }
         if (Array.isArray(returnValue)) {
             if (returnValue.length === 0) {
                 return Return.Values(returnValue).serialize();
             }
-            
+
             // This is also true if the return value content is an associative array
             // TODO implement deep lookup which caches only needed cacheable objects
             //      problem is, if you return mixed content, values and reference objects together,
@@ -562,8 +751,8 @@ class Context extends Generic {
             if (Utils.resolveConstructorName(returnValue[0]) === 'Object') {
                 return Return.Value(returnValue).serialize();
             }
-            
-            return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv))).serialize();
+
+            return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv, on))).serialize();
         }
         if (this.isValueSerializable(returnValue)) {
             return Return.Value(returnValue).serialize();
@@ -571,7 +760,7 @@ class Context extends Generic {
         if (returnValue?.type === 'PuthAssertion') {
             return returnValue;
         }
-        
+
         let constructor = Utils.resolveConstructorName(returnValue);
         if (constructor) {
             if (constructor === 'Object') {
@@ -579,33 +768,33 @@ class Context extends Generic {
                     return Return.Value(returnValue).serialize();
                 }
             }
-            
+
             return this.returnCached(returnValue);
         }
-        
+
         return Return.Undefined().serialize();
     }
-    
+
     isObjectSerializable(object) {
         for (let key of Object.keys(object)) {
             if (! this.isValueSerializable(object[key])) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     isValueSerializable(value) {
         return typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number';
     }
-    
+
     public async get(action) {
         this._lastActivity = Date.now();
-        
+
         let on = this.resolveOn(action);
         let resolvedTo = on[action.property];
-        
+
         if (resolvedTo === undefined) {
             if ([Constructors.ElementHandle, Constructors.JSHandle].includes(Utils.resolveConstructorName(on))) {
                 resolvedTo = await (
@@ -621,20 +810,20 @@ class Context extends Generic {
                 message: `Property "${action.property}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
             };
         }
-        
+
         if (ConstructorValues.includes(Utils.resolveConstructorName(resolvedTo))) {
             return this.returnCached(resolvedTo);
         }
-        
-        return Return.Value(resolvedTo);
+
+        return Return.Value(resolvedTo).serialize();
     }
-    
+
     public async set(action) {
         this._lastActivity = Date.now();
-        
+
         let on = this.resolveOn(action);
         let {property, value} = action;
-        
+
         try {
             on[property] = value;
         } catch (error) {
@@ -645,12 +834,12 @@ class Context extends Generic {
             };
         }
     }
-    
+
     public async delete(action) {
         this._lastActivity = Date.now();
-        
+
         let on = this.resolveOn(action);
-        
+
         try {
             delete on[action.property];
         } catch (error) {
@@ -661,42 +850,42 @@ class Context extends Generic {
             };
         }
     }
-    
+
     // Used by clients to upload temporary files to the server so that the browser can access them
     // @codegen
-    public async saveTemporaryFile(name, content) {
+    public async saveTemporaryFile(name, content): Promise<string> {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);
-        
+
         await writeFile(tmpFilePath, content);
-        
+
         this.cleanupCallbacks.push(async () => fsPromise.rm(tmpPath, {force: true, recursive: true}));
-        
-        return Return.Value(tmpFilePath);
+
+        return tmpFilePath;
     }
-    
+
     resolveOn(representation): Context|any {
         let on = this;
-        
+
         if (representation.type && representation.type !== this.type) {
             on = this.getCache(representation.type)[representation.id];
         }
-        
+
         if (this.options?.debug) {
             this.puth.logger.debug({representation}, `[resolveOn] ${Utils.resolveConstructorName(on)} ${representation.function ?? representation.property} ${JSON.stringify(representation.parameters) ?? ''}`);
         }
-        
+
         return on;
     }
-    
+
     resolveIfCached(representation) {
         if (representation?.id && representation?.type) {
             return this.getCache(representation.type)[representation.id];
         }
-        
+
         return representation;
     }
-    
+
     public serialize() {
         return {
             id: this.id,
@@ -706,69 +895,69 @@ class Context extends Generic {
             group: this.getGroup(),
         };
     }
-    
+
     get id() {
         return this._id;
     }
-    
+
     get type() {
         return this._type;
     }
-    
+
     get emitter() {
         return this._emitter;
     }
-    
+
     get puth() {
         return this._puth;
     }
-    
+
     get createdAt() {
         return this._createdAt;
     }
-    
+
     get lastActivity() {
         return this._lastActivity;
     }
-    
+
     getGroup() {
         return this.options?.group ?? '';
     }
-    
+
     getPuth(): Puth {
         return this.puth;
     }
-    
+
     getPlugins(): PuthContextPlugin[] {
         return this.plugins;
     }
-    
+
     getTimeout(options?) {
         if (options?.timeout != null) {
             return options.timeout;
         }
-        
+
         return this.options?.timeouts?.command ?? 30 * 1000;
     }
-    
+
     on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
     on(type: '*', handler: WildcardHandler<ContextEvents>): void;
     on(type, handler) {
         return this.emitter.on(type, handler);
     }
-    
+
     off<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;
     off(type: '*', handler: WildcardHandler<ContextEvents>): void;
     off(type, handler) {
         return this.emitter.off(type, handler);
     }
-    
+
     emit<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): void;
     emit<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): void;
     emit(type, event?) {
         return this.emitter.emit(type, event);
     }
-    
+
     async emitAsync<Key extends keyof ContextEvents>(type: Key, event: ContextEvents[Key]): Promise<void>;
     async emitAsync<Key extends keyof ContextEvents>(type: undefined extends ContextEvents[Key] ? Key : never): Promise<void>;
     async emitAsync(type, event?) {

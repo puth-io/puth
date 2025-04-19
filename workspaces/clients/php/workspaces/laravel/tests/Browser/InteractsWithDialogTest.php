@@ -3,14 +3,11 @@
 namespace Tests\Browser;
 
 use Puth\Laravel\Browser;
-use Puth\Laravel\Concerns\LegacyBrowserHandling;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithDialogTest extends PuthTestCase
 {
-    use LegacyBrowserHandling;
-    
     function test_dialogs()
     {
         $this->browse(function (Browser $browser) {
@@ -21,22 +18,28 @@ class InteractsWithDialogTest extends PuthTestCase
                 ->acceptDialog()
                 // prompt
                 ->click('#dialog-prompt')
-                ->acceptDialog('prompt answer')
-                ->assertSee('prompt answer')
+                ->typeInDialog('prompt answer')
+                ->acceptDialog()
+                ->assertSee('Prompt text: prompt answer')
+                // run twice to test type cache
+                ->click('#dialog-prompt')
+                ->typeInDialog('prompt answer2')
+                ->acceptDialog()
+                ->assertSee('Prompt text: prompt answer2')
+                // accept with value
+                ->click('#dialog-prompt')
+                ->acceptDialog('prompt answer3')
+                ->assertSee('Prompt text: prompt answer3')
                 // confirm
                 ->click('#dialog-confirm')
-                ->acceptDialog()
-                ->assertSee('true');
-        });
-    }
-    
-    function test_assertions()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->click('#dialog-confirm')
                 ->assertDialogOpened('confirm this')
-                ->dismissDialog();
+                ->acceptDialog()
+                ->assertSee('confirm value: true')
+                // confirm
+                ->click('#dialog-confirm')
+                ->dismissDialog()
+                ->assertSee('confirm value: false')
+            ;
         });
     }
 }

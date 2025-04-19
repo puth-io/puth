@@ -67,50 +67,9 @@ trait InteractsWithElements
     {
         $selector = $this->resolver->format($element) . "[href='{$link}']";
         
-        $this->resolver->findOrFail($selector)->click();
+        $this->_click($selector);
         
         return $this;
-    }
-    
-    /**
-     * Directly get or set the value attribute of an input field.
-     *
-     * @param string $selector
-     * @param string|null $value
-     * @return $this
-     */
-    public function value($selector, $value = null)
-    {
-        if (is_null($value)) {
-            return $this->resolver->findOrFail($selector)->value();
-        }
-    
-        $this->resolver->findOrFail($selector)->value($value);
-    
-        return $this;
-    }
-    
-    /**
-     * Get the text of the element matching the given selector.
-     *
-     * @param string $selector
-     * @return string
-     */
-    public function text($selector)
-    {
-        return $this->resolver->findOrFail($selector)->innerText();
-    }
-    
-    /**
-     * Get the given attribute from the element matching the given selector.
-     *
-     * @param string $selector
-     * @param string $attribute
-     * @return string
-     */
-    public function attribute($selector, $attribute)
-    {
-        return $this->resolver->findOrFail($selector)->getProperty($attribute)->jsonValue();
     }
     
     /**
@@ -126,7 +85,7 @@ trait InteractsWithElements
         
         return $this;
     }
-    
+
     /**
      * Type the given value in the given field.
      *
@@ -136,11 +95,12 @@ trait InteractsWithElements
      */
     public function type($field, $value)
     {
+        // TODO replace with $this->_type($this->resolver->resolveForTyping($field), $value);
         $this->resolver->resolveForTyping($field)->clear()->type($value);
-        
+
         return $this;
     }
-    
+
     /**
      * Type the given value in the given field slowly.
      *
@@ -152,10 +112,10 @@ trait InteractsWithElements
     public function typeSlowly($field, $value, $pause = 100)
     {
         $this->clear($field)->appendSlowly($field, $value, $pause);
-        
+
         return $this;
     }
-    
+
     /**
      * Type the given value in the given field without clearing it.
      *
@@ -310,37 +270,6 @@ trait InteractsWithElements
         return $this;
     }
     
-    /**
-     * Press the button with the given text or name.
-     *
-     * @param string $button
-     * @return $this
-     */
-    public function press($button)
-    {
-        $this->resolver->resolveForButtonPress($button)->click();
-        
-        return $this;
-    }
-    
-    /**
-     * Press the button with the given text or name.
-     *
-     * @param string $button
-     * @param int $seconds
-     * @return $this
-     */
-    public function pressAndWaitFor($button, $seconds = 5)
-    {
-        $element = $this->resolver->resolveForButtonPress($button);
-        
-        $element->click();
-        
-        return $this->waitUsing($seconds, 100, function () use ($element) {
-            return ! $element->disabled;
-        });
-    }
-    
     private function ensureDragInterceptionIsOn() {
         if (!$this->dragInterceptionEnabled) {
             $this->site->setDragInterception(true);
@@ -431,41 +360,6 @@ trait InteractsWithElements
             'y' => $y,
         ]);
         
-        return $this;
-    }
-    
-    /**
-     * Accept a JavaScript dialog.
-     *
-     * @return $this
-     */
-    public function acceptDialog($value = '')
-    {
-        $this->site->acceptDialog($value);
-        
-        return $this;
-    }
-    
-    /**
-     * Type the given value in an open JavaScript prompt dialog.
-     *
-     * @param  string  $value
-     * @return $this
-     */
-    public function typeInDialog($value)
-    {
-        throw new \Exception('The `typeInDialog` function is not supported. Please use `acceptDialog($value)`.');
-    }
-    
-    /**
-     * Dismiss a JavaScript dialog.
-     *
-     * @return $this
-     */
-    public function dismissDialog()
-    {
-        $this->site->dismissDialog();
-    
         return $this;
     }
 }

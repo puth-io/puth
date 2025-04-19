@@ -34,7 +34,8 @@ class WaitUntilTest extends PuthTestCase
                 ->waitUntilEnabled('#actions-click-wait')
                 ->click('#actions-click-wait')
                 ->waitUntilEnabled('#actions-click-disabled')
-                ->waitUntilDisabled('#actions-click-disabled');
+                ->waitUntilDisabled('#actions-click-disabled')
+            ;
         });
     }
 }

@@ -75,10 +75,6 @@ trait InteractsWithMouse
      */
     public function click($selector, $options = [])
     {
-        if (isset($this->legacyBrowserHandling) && $this->legacyBrowserHandling) {
-            $options['unblockOnDialogOpen'] = true;
-        }
-        
         foreach ($this->resolver->all($selector) as $element) {
             try {
                 $element->click($options);

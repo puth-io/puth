@@ -119,24 +119,27 @@ trait ProvidesBrowser
      */
     protected function newBrowser()
     {
-        $browser = $this->context->createBrowser(array_merge([
+//        $browser = $this->context->createBrowser(array_merge([
+//            'defaultViewport' => [
+//                'width' => 1280,
+//                'height' => 720,
+//            ],
+//            'headless' => $this->headless,
+//        ], $this->getLaunchOptions()));
+//        $page = $browser->pages()[0];
+//        $remote = $this->context->createBrowserShimForPage($page);
+
+        $remote = $this->context->createBrowserShim(array_merge([
             'defaultViewport' => [
                 'width' => 1280,
                 'height' => 720,
             ],
             'headless' => $this->headless,
         ], $this->getLaunchOptions()));
-        
-        return new Browser(
-            $this->context,
-            $browser,
-            $browser->pages()[0],
-            options: [
-                'legacyBrowserHandling' => $this->legacyBrowserHandling ?? false,
-            ],
-        );
+
+        return new Browser($remote);
     }
-    
+
     /**
      * Get the number of browsers needed for a given callback.
      *
@@ -193,10 +196,11 @@ trait ProvidesBrowser
     protected function storeSourceLogsFor($browsers)
     {
         $browsers->each(function ($browser, $key) {
-            if (property_exists($browser, 'madeSourceAssertion') &&
-                $browser->madeSourceAssertion) {
+            // TODO reimplement? seems unnecessary
+//            if (property_exists($browser, 'madeSourceAssertion') &&
+//                $browser->madeSourceAssertion) {
                 $browser->storeSource($this->getCallerName() . '-' . $key);
-            }
+//            }
         });
     }
     

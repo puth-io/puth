@@ -20,9 +20,8 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "baseUrl": ["."],
-      "@/context": [
-        "./src/Context"
+      "@puth/*": [
+        "../*"
       ]
     }
   },

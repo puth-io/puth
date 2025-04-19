@@ -79,17 +79,11 @@ trait PuthTestCaseTrait
         // Get the default page of the browser
         $this->page = $this->browser->pages()[0];
 
-        // Set prefers-reduced-motion to reduce because click has problems to wait for scroll
-        // animation if 'scroll-behavior: smooth' is set.
-        // TODO set by default inside Puth server
-        $this->page->emulateMediaFeatures([[
-            'name' => 'prefers-reduced-motion',
-            'value' => 'reduce',
-        ]]);
-
-        // Set default cookies if defined
         if (isset($this->cookies)) {
             $this->page->setCookie(...$this->cookies);
+        }
+        if (method_exists($this, 'cookies')) {
+            $this->page->setCookie($this->cookies());
         }
 
         if ($baseUrl = $this->getBaseUrl()) {

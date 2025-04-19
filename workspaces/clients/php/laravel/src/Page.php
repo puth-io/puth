@@ -2,6 +2,8 @@
 
 namespace Puth\Laravel;
 
+use Puth\RemoteObject;
+
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
  * code which is covered by the MIT license below. However, modified parts are
@@ -32,6 +34,23 @@ namespace Puth\Laravel;
  */
 abstract class Page
 {
+//    public RemoteObject $remoteObject;
+//
+//    public function hash()
+//    {
+//        return hash_file('sha256', __FILE__);
+//    }
+//
+//    public function serialize()
+//    {
+//        return [
+//            'hash' => $this->hash(),
+//            'url' => $this->url(),
+//            'elements' => $this->elements(),
+//            'siteElements' => $this->siteElements(),
+//        ];
+//    }
+
     /**
      * Get the URL for the page.
      *

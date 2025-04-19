@@ -10,20 +10,22 @@ use PHPUnit\Framework\Assert;
 class MakesAssertionsTest extends PuthTestCase
 {
     public static bool $testAfterClassDone;
+
+    public static bool $debug = false;
     
-    function test_move_mouse_exception()
+    function test_assert_missing_exception()
     {
         $this->expectException(ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<body></body>');
-            $browser->assertMissing('body', 0);
+            $browser->setContent('<body><div></div></body>');
+            $browser->assertMissing('div');
         });
     }
     
     function test_stores_source_logs()
     {
         $fileName = Browser::$storeSourceAt . '/' . $this->getCallerName() . '-0.txt';
-        $html = '<html><head></head><body></body></html>';
+        $html = '<html><head></head><body><div></div></body></html>';
         
         if (file_exists($fileName)) {
             unlink($fileName); // remove old test file outputs
@@ -31,9 +33,9 @@ class MakesAssertionsTest extends PuthTestCase
         
         try {
             $this->browse(function (Browser $browser) use ($html) {
-                $browser->site->setContent($html);
-                $browser->assertSourceHas('body');
-                $browser->assertMissing('body', 0);
+                $browser->setContent($html);
+                $browser->assertSourceHas('div');
+                $browser->assertMissing('div');
             });
         } catch (\Exception) {
         }
@@ -57,9 +59,9 @@ class MakesAssertionsTest extends PuthTestCase
     function test_assert_inputs()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<body><input name="test"></body>');
-            $browser->assertInputMissing('wrongname', 0);
-            $browser->assertInputPresent('test', 0);
+            $browser->setContent('<body><input name="test"></body>');
+            $browser->assertInputMissing('wrongname', 1);
+            $browser->assertInputPresent('test', 1);
         });
     }
     
@@ -67,7 +69,7 @@ class MakesAssertionsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $this->expectException(ExpectationFailedException::class);
-            $browser->assertInputPresent('test', 0);
+            $browser->assertInputPresent('test', 1);
         });
     }
     
@@ -75,15 +77,15 @@ class MakesAssertionsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $this->expectException(ExpectationFailedException::class);
-            $browser->site->setContent('<body><input name="test"></body>');
-            $browser->assertInputMissing('test', 0);
+            $browser->setContent('<body><input name="test"></body>');
+            $browser->assertInputMissing('test', 1);
         });
     }
     
     function test_assert_input_intermediate()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<input type="checkbox"><script>document.querySelector("input").indeterminate = true</script>');
+            $browser->setContent('<input type="checkbox"><script>document.querySelector("input").indeterminate = true</script>');
             $browser->assertIndeterminate('input');
         });
     }
@@ -91,7 +93,7 @@ class MakesAssertionsTest extends PuthTestCase
     function test_assert_see()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<div id="a">test</div><div id="b"></div>');
+            $browser->setContent('<div id="a">test</div><div id="b"></div>');
             $browser->assertSeeAnythingIn('#a')
                 ->assertSeeNothingIn('#b');
         });

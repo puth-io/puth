@@ -3,8 +3,8 @@ import {homedir} from 'os';
 import {select} from '@inquirer/prompts';
 import fs from 'fs';
 import {canDownload, detectBrowserPlatform, install, InstallOptions, Browser} from '@puppeteer/browsers';
-import {PUPPETEER_REVISIONS} from 'puppeteer-core';
 import {makeLogger} from 'puth';
+import { PUPPETEER_REVISIONS } from 'puppeteer-core/lib/esm/puppeteer/revisions';
 
 const logger = makeLogger(true, 'info');
 const cwd = process.cwd();
@@ -31,7 +31,7 @@ const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
         return;
     }
 
-    const installOptions: any = {
+    const installOptions = {
         browser: channel,
         platform, buildId,
         cacheDir: cache,
@@ -51,7 +51,7 @@ const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
 
 function throttle(func, wait) {
     let timer;
-    let lastArgs: any = [];
+    let lastArgs = [];
     let mediator = _ => {
         timer = null;
         func(...lastArgs);
