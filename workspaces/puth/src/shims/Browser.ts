@@ -6,8 +6,10 @@ export class Browser {
 
     }
 
-    private priv_test() {
+    private priv_test(): this {
 
+
+        return this;
     }
 
     public pub_test() {
