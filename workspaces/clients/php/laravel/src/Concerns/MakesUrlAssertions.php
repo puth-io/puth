@@ -49,15 +49,19 @@ trait MakesUrlAssertions
         $pattern = str_replace('\*', '.*', preg_quote($url, '/'));
         
         $segments = parse_url($this->site->url());
-        
-        $currentUrl = sprintf(
-            '%s://%s%s%s',
-            $segments['scheme'],
-            $segments['host'],
-            array_key_exists('port', $segments) ? ':' . $segments['port'] : '',
-            array_key_exists('path', $segments) ? $segments['path'] : '',
-        );
-        
+
+        if ($segments['scheme'] === 'about') {
+            $currentUrl = "{$segments['scheme']}:{$segments['path']}";
+        } else {
+            $currentUrl = sprintf(
+                '%s://%s%s%s',
+                $segments['scheme'],
+                $segments['host'],
+                array_key_exists('port', $segments) ? ':' . $segments['port'] : '',
+                array_key_exists('path', $segments) ? $segments['path'] : '',
+            );
+        }
+
         Assert::assertThat(
             $currentUrl, new RegularExpression('/^' . $pattern . '$/u'),
             "Actual URL [{$this->site->url()}] does not equal expected URL [{$url}]."

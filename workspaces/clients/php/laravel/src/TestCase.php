@@ -5,7 +5,6 @@ namespace Puth\Laravel;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
 use PHPUnit\Runner\Version;
 use Puth\Context;
-use Puth\Laravel\Browser;
 use Puth\Laravel\Concerns\ProvidesBrowser;
 use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;

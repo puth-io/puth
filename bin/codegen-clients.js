@@ -137,10 +137,44 @@ function extractTypes(node) {
 }
 
 function extractParameters(params) {
-    return (params || []).map(p => ({
-        name: p.name.getText(p.getSourceFile()),
-        type: p.type ? p.type.getFullText(p.getSourceFile()).trim() : 'any',
-    }));
+    return (params || []).map(p => {
+        // if (p.name.getText(p.getSourceFile()) === 'options') {
+        //     p?.initializer?.symbol?.members.forEach((member, key) => {
+        //         console.log(key, member.valueDeclaration); // StringLiteral (text), NumericLiteral, FalseKeyword, NullKeyword, TrueKeyword
+        //     });
+        // }
+
+        let param = {
+            name: p.name.getText(p.getSourceFile()),
+            type: p.type ? p.type.getFullText(p.getSourceFile()).trim() : 'any',
+            isOptional: p?.questionToken != null,
+        };
+
+        if (p?.initializer?.kind === ts.SyntaxKind.ObjectLiteralExpression) {
+            let members = [];
+
+            p?.initializer?.symbol?.members.forEach((member, key) => {
+                let initializer = member?.valueDeclaration.initializer;
+                members.push({
+                    key,
+                    type: initializer.kind === ts.SyntaxKind.NumericLiteral ? 'numeric'
+                        : (initializer.kind === ts.SyntaxKind.StringLiteral ? 'string'
+                            : (initializer.kind === ts.SyntaxKind.FalseKeyword ? 'false'
+                            : (initializer.kind === ts.SyntaxKind.TrueKeyword ? 'true'
+                            : (initializer.kind === ts.SyntaxKind.NullKeyword ? 'null'
+                                : 'unsupported')))),
+                    value: initializer?.text,
+                });
+            });
+
+            param.initializer = {
+                type: 'object',
+                members,
+            };
+        }
+
+        return param;
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -355,6 +389,22 @@ function mapTypeToPHP(type, className) {
     return 'mixed';
 }
 
+function functionParameterOptional(p, className) {
+    if (p.initializer) {
+        if (p.initializer.type === 'object') {
+            return ` = [${p.initializer.members.map(i => {
+                let value = i.type;
+                if (i.type === 'string') value = `'${i.value}'`;
+                else if (i.type === 'numeric') value = parseInt(i.value);
+                
+                return `'${i.key}' => ${value}`;
+            }).join(', ')}]`;
+        }
+    }
+
+    return '';
+}
+
 function generatePHPMethod(className, method) {
     const {name, isAsync, parameters, returns} = method;
     const types = returns;
@@ -371,9 +421,9 @@ function generatePHPMethod(className, method) {
         }
     }
 
-    const phpParams = parameters.map(p => `${mapTypeToPHP(p.type, className)} $${p.name}`).join(', ');
+    const phpParams = parameters.map(p => `${mapTypeToPHP(p.type, className)} $${p.name}${functionParameterOptional(p, className)}`).join(', ');
     const argArray = parameters.length ? `, [${parameters.map(p => `$${p.name}`).join(', ')}]` : '';
-    const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->callMethod('${name}'${argArray});`;
+    const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->call('${name}'${argArray});`;
 
     return [
         '    /**',
