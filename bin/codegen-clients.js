@@ -181,11 +181,28 @@ function extractParameters(params) {
 //  SHIM GENERATION HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ensureClassEntry(name, isExternal) {
+function nodeComments(node) {
+    const src = node.getSourceFile().text;
+    return (ts.getLeadingCommentRanges(src, node.pos) || []).map(r => {
+        return src.slice(r.pos, r.end).split('\n').map(l => l.trim()).map(line => {
+            if (line.includes('@codegen')) return '';
+            if (line.startsWith('/**')) return line.slice(3);
+            if (line.startsWith('/*')) return line.slice(2);
+            if (line.startsWith('//')) return line.slice(2);
+            if (line.startsWith('*/')) return line.slice(2);
+            if (line.startsWith('*')) return line.slice(1);
+
+            return line;
+        }).map(l => l.trim()).filter(i => i !== '');
+    }).flat();
+}
+
+function ensureClassEntry(name, isExternal, comments) {
     if (visitedNames.has(name)) {
         return classes.find(c => c.name === name);
     }
-    const entry = {name, isExternal, methods: new Map()};
+
+    const entry = {name, isExternal, methods: new Map(), comments,};
     classes.push(entry);
     visitedNames.add(name);
     return entry;
@@ -248,6 +265,7 @@ function addMemberToClass(entry, member, includeAll) {
         name: rawName,
         isAsync: member.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) || false,
         parameters: extractParameters(member.parameters),
+        comments: nodeComments(member),
         returns,
         multiDef: [],
     };
@@ -266,7 +284,7 @@ function visitClassOrInterface(decl, includeAll) {
     }
     const name = decl.name.text;
     const isExt = sourceIsExternal(decl.getSourceFile());
-    const entry = ensureClassEntry(name, isExt);
+    const entry = ensureClassEntry(name, isExt, nodeComments(decl));
     (decl.members || []).forEach(m => addMemberToClass(entry, m, includeAll));
 }
 
@@ -406,7 +424,7 @@ function functionParameterOptional(p, className) {
 }
 
 function generatePHPMethod(className, method) {
-    const {name, isAsync, parameters, returns} = method;
+    const {name, isAsync, parameters, returns, comments} = method;
     const types = returns;
     const returnHintRaw = types.length > 1 ? types.join('|') : types[0];
 
@@ -427,13 +445,15 @@ function generatePHPMethod(className, method) {
 
     return [
         '    /**',
+        comments.map(c => `     * ${c}`).join('\n'),
+        comments.length === 0 ? null : '     *',
         `     * @debug-ts-return-types ${returnHintRaw}`,
         '     */',
         `    public function ${name}(${phpParams}): ${phpReturn}`,
         '    {',
         `        ${callLine}`,
         '    }',
-    ].join('\n');
+    ].filter(i => !!i).join('\n');
 }
 
 function emitPHPClass(cls) {
@@ -467,6 +487,9 @@ function emitPHPClass(cls) {
         'use Puth\\RemoteObject;',
         ...Array.from(uses).map(u => `use ${u};`),
         '',
+        '/**',
+        cls.comments.map(c => `* ${c ?? ''}`).join('\n'),
+        '*/',
         `class ${cls.name} extends RemoteObject`,
         '{',
         methodsArray.map(m => generatePHPMethod(cls.name, m)).join('\n\n'),

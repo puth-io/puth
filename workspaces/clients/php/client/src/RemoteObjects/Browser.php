@@ -4,6 +4,9 @@ namespace Puth\RemoteObjects;
 
 use Puth\RemoteObject;
 
+/**
+
+*/
 class Browser extends RemoteObject
 {
     /**
@@ -25,7 +28,7 @@ class Browser extends RemoteObject
     /**
      * @debug-ts-return-types this
      */
-    public function refresh(mixed $options = ['timeout' => 15]): Browser
+    public function refresh(mixed $options = []): Browser
     {
         return $this->call('refresh', [$options]);
     }
