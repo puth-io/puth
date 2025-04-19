@@ -315,91 +315,6 @@ class Browser extends \Puth\RemoteObjects\Browser
     }
 
     /**
-     * Navigate to the previous page.
-     *
-     * @return $this
-     */
-    public function back($options = [])
-    {
-        $this->site->goBack($options);
-
-        return $this;
-    }
-
-    /**
-     * Navigate to the next page.
-     *
-     * @return $this
-     */
-    public function forward($options = [])
-    {
-        $this->site->goForward($options);
-
-        return $this;
-    }
-
-    /**
-     * Maximize the browser window.
-     *
-     * @return $this
-     */
-    public function maximize()
-    {
-        $this->browser->maximize();
-
-        return $this;
-    }
-
-    /**
-     * Maximize the browser window.
-     */
-    public function bounds(): object
-    {
-        return $this->browser->bounds();
-    }
-
-    /**
-     * Resize the browser window.
-     *
-     * @param int $width
-     * @param int $height
-     * @return $this
-     */
-    public function resize($width, $height)
-    {
-        $this->site->setViewport([
-            'width' => $width,
-            'height' => $height,
-        ]);
-
-        return $this;
-    }
-
-    /**
-     * Make the browser window as large as the content.
-     *
-     * @return $this
-     */
-    public function fitContent()
-    {
-        $html = $this->site->get('html');
-
-        $boundingBox = (array) $html->boundingBox();
-
-        $scrollSizes = [
-            'width' => $html->scrollWidth,
-            'height' => $html->scrollHeight,
-        ];
-
-        $this->resize(
-            $boundingBox['width'] > $scrollSizes['width'] ? $boundingBox['width'] : $scrollSizes['width'],
-            $boundingBox['height'] > $scrollSizes['height'] ? $boundingBox['height'] : $scrollSizes['height'],
-        );
-
-        return $this;
-    }
-
-    /**
      * Disable fit on failures.
      *
      * @return $this
@@ -742,9 +657,6 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function quit()
     {
-//        if ($this->site->getRepresents() === 'CDPPage') {
-//            $this->site->close();
-//        }
         $this->context->destroyBrowserByBrowser($this->browser);
     }
 

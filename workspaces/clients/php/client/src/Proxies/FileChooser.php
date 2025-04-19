@@ -13,16 +13,16 @@ class FileChooser extends RemoteObject
             $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
         }
         
-        return $this->call('accept', [$tmpFilePaths]);
+        return $this->callFunc('accept', [$tmpFilePaths]);
     }
     
     public function cancel()
     {
-        return $this->call('cancel');
+        return $this->callFunc('cancel');
     }
     
     public function isMultiple()
     {
-        return $this->call('isMultiple');
+        return $this->callFunc('isMultiple');
     }
 }
