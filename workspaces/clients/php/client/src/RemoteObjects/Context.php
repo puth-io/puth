@@ -4,6 +4,9 @@ namespace Puth\RemoteObjects;
 
 use Puth\RemoteObject;
 
+/**
+* Test comment
+*/
 class Context extends RemoteObject
 {
     /**
@@ -31,6 +34,8 @@ class Context extends RemoteObject
     }
 
     /**
+     * Used by clients to upload temporary files to the server so that the browser can access them
+     *
      * @debug-ts-return-types void
      */
     public function saveTemporaryFile(mixed $name, mixed $content): void

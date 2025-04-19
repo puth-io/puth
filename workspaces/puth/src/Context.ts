@@ -58,6 +58,8 @@ type ContextCaches = {
 }
 
 /**
+ * Test comment
+ *
  * @codegen
  */
 class Context extends Generic {

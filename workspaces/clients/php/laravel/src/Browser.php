@@ -315,18 +315,6 @@ class Browser extends \Puth\RemoteObjects\Browser
     }
 
     /**
-     * Refresh the page.
-     *
-     * @return $this
-     */
-    public function refresh($options = [])
-    {
-        $this->site->reload($options);
-
-        return $this;
-    }
-
-    /**
      * Navigate to the previous page.
      *
      * @return $this

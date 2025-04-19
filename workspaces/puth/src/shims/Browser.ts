@@ -20,7 +20,7 @@ export class Browser {
         return this;
     }
 
-    public async refresh(options = {timeout: 15}): Promise<this> {
+    public async refresh(options = {}): Promise<this> {
         await this.page.reload(options);
         return this;
     }
