@@ -10,7 +10,7 @@ class GenericsTest extends PuthTestCase
     
     function test_generic()
     {
-        var_dump($this->page->get('#actions-type input')->screenshot([]));
+        var_export($this->page->get('#actions-type input')->screenshot([]));
 //        var_dump($this->page->get('#actions-type input'));
     }
 }

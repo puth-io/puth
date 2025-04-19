@@ -1,10 +1,10 @@
 <?php
 
-namespace Puth\Generics\Puth;
+namespace Puth\RemoteObjects;
 
-use Puth\GenericObject;
+use Puth\RemoteObject;
 
-class Context extends GenericObject
+class Context extends RemoteObject
 {
     /**
      * @debug-ts-return-types Browser
@@ -12,14 +12,6 @@ class Context extends GenericObject
     public function createBrowserShim(mixed $page, string $baseUrl): Browser
     {
         return $this->callMethod('createBrowserShim', [$page, $baseUrl]);
-    }
-
-    /**
-     * @debug-ts-return-types void
-     */
-    public function destroy(mixed $options): void
-    {
-        $this->callMethod('destroy', [$options]);
     }
 
     /**
