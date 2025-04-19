@@ -540,14 +540,15 @@ class Context extends Generic {
     
     // TODO add return value resolver structure
     resolveReturnValue(action, returnValue) {
+        if (returnValue == null) {
+            return Return.Null().serialize();
+        }
         if (returnValue instanceof Return) {
             return returnValue.serialize();
         }
-        if (Buffer.isBuffer(returnValue)) {
+        if (ArrayBuffer.isView(returnValue) && Object.prototype.toString.call(returnValue) !== "[object DataView]") {
+            console.log(action.property, 'array buffer');
             return returnValue;
-        }
-        if (returnValue === null) {
-            return Return.Null().serialize();
         }
         if (Array.isArray(returnValue)) {
             if (returnValue.length === 0) {
