@@ -12,9 +12,9 @@
     "require": {
         "php": "^8.0.2",
         "ext-json": "*",
-        "illuminate/console": "^9.0|^10.0|^11.0",
-        "illuminate/log": "^9.0|^10.0|^11.0",
-        "illuminate/support": "^9.0|^10.0|^11.0",
+        "illuminate/console": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/log": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
         "phpunit/phpunit": "^9.0|^10.0|^11.0",
         "puth/php": "*"
     },
