@@ -78,6 +78,22 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-ts-return-types this
+     */
+    public function move(float $x, float $y): Browser
+    {
+        return $this->callFunc('move', [$x, $y]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
+    public function scrollIntoView(string $selector): Browser
+    {
+        return $this->callFunc('scrollIntoView', [$selector]);
+    }
+
+    /**
      * Make the browser window as large as the content
      *
      * @debug-ts-return-types this
@@ -90,8 +106,16 @@ class Browser extends RemoteObject
     /**
      * @debug-ts-return-types this
      */
-    public function press(mixed $button): Browser
+    public function disableFitOnFailure(): Browser
     {
-        return $this->callFunc('press', [$button]);
+        return $this->callFunc('disableFitOnFailure');
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
+    public function enableFitOnFailure(): Browser
+    {
+        return $this->callFunc('enableFitOnFailure');
     }
 }

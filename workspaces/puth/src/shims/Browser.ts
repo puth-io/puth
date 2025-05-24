@@ -1,10 +1,12 @@
 import {Page} from 'puppeteer-core';
 import Context from '../Context';
-import {getWindowBounds} from '../plugins/Std/PuthBrowserExtensions';
+import {getWindowBounds, move} from '../plugins/Std/PuthBrowserExtensions';
 
 export class Browser {
     private context: Context;
     private page: Page;
+
+    public fitOnFailure: boolean = true;
 
     constructor(context: Context, page: Page) {
         this.context = context;
@@ -55,6 +57,55 @@ export class Browser {
         return this;
     }
 
+    public async move(x: number, y: number): Promise<this> {
+        await move(this.page.browser(), x, y);
+        return this;
+    }
+
+    public async scrollIntoView(selector: string): Promise<this> {
+        return this.page.$(selector).then(e => {
+            if (e === null) {
+                throw new Error('ElementNotFound');
+            }
+
+            e.scrollIntoView();
+        }).then(_ => this);
+    }
+
+    // Scroll screen to element at the given selector.
+    public async scrollTo(selector: string): Promise<this> {
+        return this.scrollIntoView(selector);
+    }
+
+    public async evaluate(script: string): Promise<this> {
+        // return this.page.ev TODO wip
+    }
+
+    public async maximize(): Promise<this> {
+        await this.maximize();
+        return this;
+    }
+
+    public async maximize(): Promise<this> {
+        await this.maximize();
+        return this;
+    }
+
+    public async maximize(): Promise<this> {
+        await this.maximize();
+        return this;
+    }
+
+    public async maximize(): Promise<this> {
+        await this.maximize();
+        return this;
+    }
+
+    public async maximize(): Promise<this> {
+        await this.maximize();
+        return this;
+    }
+
     // Make the browser window as large as the content
     public async fitContent(): Promise<this> {
         let html = await this.page.$('html');
@@ -74,5 +125,15 @@ export class Browser {
             bounds.width > scrollWidth ? bounds?.width : scrollWidth,
             bounds.height > scrollHeight ? bounds?.height : scrollHeight,
         );
+    }
+
+    public disableFitOnFailure(): this {
+        this.fitOnFailure = false;
+        return this;
+    }
+
+    public enableFitOnFailure(): this {
+        this.fitOnFailure = true;
+        return this;
     }
 }
