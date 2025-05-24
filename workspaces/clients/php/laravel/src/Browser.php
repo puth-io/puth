@@ -315,68 +315,6 @@ class Browser extends \Puth\RemoteObjects\Browser
     }
 
     /**
-     * Disable fit on failures.
-     *
-     * @return $this
-     */
-    public function disableFitOnFailure()
-    {
-        $this->fitOnFailure = false;
-
-        return $this;
-    }
-
-    /**
-     * Enable fit on failures.
-     *
-     * @return $this
-     */
-    public function enableFitOnFailure()
-    {
-        $this->fitOnFailure = true;
-
-        return $this;
-    }
-
-    /**
-     * Move the browser window.
-     *
-     * @param  int  $x
-     * @param  int  $y
-     * @return $this
-     */
-    public function move($x, $y)
-    {
-        $this->browser->move($x, $y);
-
-        return $this;
-    }
-
-    /**
-     * Scroll element into view at the given selector.
-     *
-     * @param string $selector
-     * @return $this
-     */
-    public function scrollIntoView($selector)
-    {
-        $this->resolver->findOrFail($selector)->scrollIntoView();
-
-        return $this;
-    }
-
-    /**
-     * Scroll screen to element at the given selector.
-     *
-     * @param string $selector
-     * @return $this
-     */
-    public function scrollTo($selector)
-    {
-        return $this->scrollIntoView($selector);
-    }
-
-    /**
      * Take a screenshot and store it with the given name.
      *
      * @param string $name
@@ -384,6 +322,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function screenshot($name, $options = [])
     {
+        throw new \RuntimeException('Unimplemented');
         $filePath = sprintf('%s/%s.png', rtrim(static::$storeScreenshotsAt, '/'), $name);
 
         $directoryPath = dirname($filePath);

@@ -8,8 +8,8 @@ import path from 'node:path';
 //  CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROJECT_SRC = path.join(__dirname, '../workspaces/puth/src');
-const PHP_OUT_BASE = path.join(__dirname, '../workspaces/clients/php/client/src/RemoteObjects');
+const PROJECT_SRC = path.join(import.meta.dirname, '../workspaces/puth/src');
+const PHP_OUT_BASE = path.join(import.meta.dirname, '../workspaces/clients/php/client/src/RemoteObjects');
 
 const NS_INTERNAL = 'Puth\\RemoteObjects';
 const NS_EXTERNAL = 'Puth\\RemoteObjects\\External';
