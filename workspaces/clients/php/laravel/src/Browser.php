@@ -331,10 +331,14 @@ class Browser extends \Puth\RemoteObjects\Browser
             mkdir($directoryPath, 0777, true);
         }
 
-        file_put_contents(
-            $filePath,
-            $this->site->screenshot($options),
-        );
+        try {
+            file_put_contents(
+                $filePath,
+                // TODO parent::screenshot($options),
+                $this->site->screenshot($options),
+            );
+        } catch (\Exception) {
+        }
 
         return $this;
     }

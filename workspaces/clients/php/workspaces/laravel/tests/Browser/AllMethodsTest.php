@@ -10,6 +10,8 @@ use Tests\PuthTestCase;
 
 class AllMethodsTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_querying_elements()
     {
         $this->browse(function (Browser $browser) {
@@ -225,7 +227,7 @@ class AllMethodsTest extends PuthTestCase
             static::assertEquals('test-1234', $browser->value('#actions-type input'));
             static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
             static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));
-            
+
             $browser->type('#actions-focus', '12')
                 ->assertValue('#actions-focus', '12')
                 ->type('#actions-focus', '34')

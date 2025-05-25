@@ -110,7 +110,7 @@ trait InteractsWithElements
      */
     public function attribute($selector, $attribute)
     {
-        return $this->resolver->findOrFail($selector)->getProperty($attribute)->jsonValue();
+        return $this->resolver->findOrFail($selector)->its($attribute);
     }
     
     /**
