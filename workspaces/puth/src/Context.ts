@@ -7,12 +7,12 @@ import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
-import path from 'path';
+import path from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import Return from './context/Return';
 import Constructors, {ConstructorValues} from './context/Constructors';
-import {tmpdir} from 'os';
+import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import {Browser} from './shims/Browser';
 

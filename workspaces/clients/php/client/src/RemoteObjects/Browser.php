@@ -94,6 +94,42 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Scroll screen to element at the given selector.
+     *
+     * @debug-ts-return-types this
+     */
+    public function scrollTo(string $selector): Browser
+    {
+        return $this->callFunc('scrollTo', [$selector]);
+    }
+
+    /**
+     * TODO fix args default value not correctly generated
+     *
+     * @debug-ts-return-types any
+     */
+    public function evaluate(string $pageFunction, array $args): mixed
+    {
+        return $this->callFunc('evaluate', [$pageFunction, $args]);
+    }
+
+    /**
+     * @debug-ts-return-types void
+     */
+    public function quit(): void
+    {
+        $this->callFunc('quit');
+    }
+
+    /**
+     * @debug-ts-return-types string
+     */
+    public function content(): string
+    {
+        return $this->callFunc('content');
+    }
+
+    /**
      * Make the browser window as large as the content
      *
      * @debug-ts-return-types this

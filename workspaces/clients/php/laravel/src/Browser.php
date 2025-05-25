@@ -539,8 +539,8 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function ensurejQueryIsAvailable()
     {
-        if ($this->site->evaluate('window.jQuery == null')) {
-            $this->site->evaluate(file_get_contents(__DIR__.'/../misc/jquery.js'));
+        if ($this->evaluate('window.jQuery == null', [])) {
+            $this->evaluate(file_get_contents(__DIR__.'/../misc/jquery.js'), []);
         }
     }
 
@@ -590,16 +590,6 @@ class Browser extends \Puth\RemoteObjects\Browser
     }
 
     /**
-     * Close the browser.
-     *
-     * @return void
-     */
-    public function quit()
-    {
-        $this->context->destroyBrowserByBrowser($this->browser);
-    }
-
-    /**
      * Tap the browser into a callback.
      *
      * @param \Closure $callback
@@ -619,7 +609,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function dump()
     {
-        dd($this->site->content());
+        dd($this->content());
     }
 
     /**

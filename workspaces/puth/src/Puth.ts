@@ -1,8 +1,8 @@
-import path from 'path';
+import path from 'node:path';
 import Fastify, {FastifyRequest} from 'fastify';
 import fastifyWebsocket from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
-import Context from '@/context';
+import Context from './Context';
 import WebsocketConnections from './WebsocketConnections';
 import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';

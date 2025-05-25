@@ -77,33 +77,17 @@ export class Browser {
         return this.scrollIntoView(selector);
     }
 
-    public async evaluate(script: string): Promise<this> {
-        // return this.page.ev TODO wip
+    // TODO fix args default value not correctly generated
+    public async evaluate(pageFunction: string, args: any[] = []): Promise<any> {
+        return this.page.evaluate(pageFunction, ...args);
     }
 
-    public async maximize(): Promise<this> {
-        await this.maximize();
-        return this;
+    public quit(): Promise<void> {
+        return this.context.destroyBrowserByBrowser(this.page.browser());
     }
 
-    public async maximize(): Promise<this> {
-        await this.maximize();
-        return this;
-    }
-
-    public async maximize(): Promise<this> {
-        await this.maximize();
-        return this;
-    }
-
-    public async maximize(): Promise<this> {
-        await this.maximize();
-        return this;
-    }
-
-    public async maximize(): Promise<this> {
-        await this.maximize();
-        return this;
+    public content(): Promise<string> {
+        return this.page.content();
     }
 
     // Make the browser window as large as the content
