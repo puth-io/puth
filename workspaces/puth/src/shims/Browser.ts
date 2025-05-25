@@ -90,6 +90,10 @@ export class Browser {
         return this.page.content();
     }
 
+    public screenshot(options = {}): Promise<Uint8Array> {
+        return this.page.screenshot(options);
+    }
+
     // Make the browser window as large as the content
     public async fitContent(): Promise<this> {
         let html = await this.page.$('html');

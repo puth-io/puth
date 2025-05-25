@@ -139,6 +139,7 @@ class Browser extends \Puth\RemoteObjects\Browser
 
     public function __construct(\Puth\RemoteObjects\Browser $remote, $browser, $site, $resolver = null, $options = [])
     {
+        $this->remote = $remote;
         $this->browser = $browser;
         $this->site = $site;
 
@@ -322,7 +323,6 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function screenshot($name, $options = [])
     {
-        throw new \RuntimeException('Unimplemented');
         $filePath = sprintf('%s/%s.png', rtrim(static::$storeScreenshotsAt, '/'), $name);
 
         $directoryPath = dirname($filePath);
@@ -386,7 +386,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function storeSource($name)
     {
-        $source = $this->site->content();
+        $source = $this->content();
 
         if (!empty($source)) {
             file_put_contents(
