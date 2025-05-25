@@ -24,7 +24,7 @@ class Browser extends RemoteObject
     /**
      * @debug-ts-return-types this
      */
-    public function click(string $selector, mixed $options = []): Browser
+    public function _click(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('click', [$selector, $options]);
     }

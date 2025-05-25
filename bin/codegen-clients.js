@@ -92,6 +92,7 @@ const NAME_TRANSLATION = {
         laravel: {
             Browser: {
                 screenshot: '_screenshot',
+                click: '_click',
             },
         },
     },

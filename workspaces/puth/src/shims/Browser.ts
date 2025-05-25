@@ -7,91 +7,87 @@ export class Browser {
     private context: Context;
     private page: Page;
 
+    private self: () => this;
+
     public fitOnFailure: boolean = true;
+
 
     constructor(context: Context, page: Page) {
         this.context = context;
         this.page = page;
+
+        this.self = () => this;
     }
 
 //    public $(selector: string): Promise<ElementHandle<NodeFor<string>> | null> {
 //        return this.page.$(selector);
 //    }
 
-    public async visit(url: string): Promise<this> {
-        await this.page.goto(url);
-        return this;
+    public visit(url: string): Promise<this> {
+        return this.page.goto(url).then(this.self);
     }
-    public async click(selector: string, options: any = {}): Promise<this> {
-        await this.page.click(selector, options);
-        return this;
+    public click(selector: string, options: any = {}): Promise<this> {
+        return this.page.click(selector, options).then(this.self);
     }
 
-    public async blank(): Promise<this> {
-        await this.visit('about:blank');
-        return this;
+    public blank(): Promise<this> {
+        return this.visit('about:blank').then(this.self);
     }
 
-    public async refresh(options = {}): Promise<this> {
-        await this.page.reload(options);
-        return this;
+    public refresh(options = {}): Promise<this> {
+        return this.page.reload(options).then(this.self);
     }
 
     // Navigate to the previous page.
-    public async back(options = {}): Promise<this> {
-        await this.page.goBack(options);
-        return this;
+    public back(options = {}): Promise<this> {
+        return this.page.goBack(options).then(this.self);
     }
 
     // Navigate to the next page.
-    public async forward(options = {}): Promise<this> {
-        await this.page.goForward(options);
-        return this;
+    public forward(options = {}): Promise<this> {
+        return this.page.goForward(options).then(this.self);
     }
 
-    public async maximize(): Promise<this> {
-        await maximize(this.page.browser());
-        return this;
+    public maximize(): Promise<this> {
+        return maximize(this.page.browser()).then(this.self);
     }
 
-    public async bounds(): Promise<object> {
-        return await getWindowBounds(this.page.browser());
+    public bounds(): Promise<object> {
+        return getWindowBounds(this.page.browser());
     }
 
-    public async setBounds(bounds: any): Promise<this> {
-        return setWindowBounds(this.page.browser(), bounds).then(_ => this);
+    public setBounds(bounds: any): Promise<this> {
+        return setWindowBounds(this.page.browser(), bounds).then(this.self);
     }
 
-    public async resize(width, height): Promise<this> {
-        await this.page.setViewport({
+    public resize(width, height): Promise<this> {
+        return this.page.setViewport({
             width,
             height,
-        });
-        return this;
+        }).then(this.self);
     }
 
-    public async move(x: number, y: number): Promise<this> {
-        await move(this.page.browser(), x, y);
-        return this;
+    public move(x: number, y: number): Promise<this> {
+        return move(this.page.browser(), x, y).then(this.self);
     }
 
-    public async scrollIntoView(selector: string): Promise<this> {
+    public scrollIntoView(selector: string): Promise<this> {
         return this.page.$(selector).then(e => {
             if (e === null) {
                 throw new Error('ElementNotFound');
             }
 
             e.scrollIntoView();
-        }).then(_ => this);
+        }).then(this.self);
     }
 
     // Scroll screen to element at the given selector.
-    public async scrollTo(selector: string): Promise<this> {
+    public scrollTo(selector: string): Promise<this> {
         return this.scrollIntoView(selector);
     }
 
     // TODO fix args default value not correctly generated
-    public async evaluate(pageFunction: string, args: any[] = []): Promise<any> {
+    public evaluate(pageFunction: string, args: any[] = []): Promise<any> {
         return this.page.evaluate(pageFunction, ...args);
     }
 
@@ -115,18 +111,16 @@ export class Browser {
         return PuthStandardPlugin.getCookieByName(this.page, name) as any;
     }
 
-    public async setCookie(cookies: any[]): Promise<this> {
-        await this.page.setCookie(...cookies);
-        return this;
+    public setCookie(cookies: any[]): Promise<this> {
+        return this.page.setCookie(...cookies).then(this.self);
     }
 
-    public async deleteCookie(cookies: any[]|string): Promise<this> {
+    public deleteCookie(cookies: any[]|string): Promise<this> {
         if (!Array.isArray(cookies)) {
             cookies = [{name: cookies}];
         }
 
-        await this.page.deleteCookie(...cookies);
-        return this;
+        return this.page.deleteCookie(...cookies).then(this.self);
     }
 
     public screenshot(options = {}): Promise<Uint8Array> {

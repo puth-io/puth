@@ -67,7 +67,7 @@ trait InteractsWithElements
     {
         $selector = $this->resolver->format($element) . "[href='{$link}']";
         
-        $this->click($selector);
+        $this->_click($selector);
         
         return $this;
     }

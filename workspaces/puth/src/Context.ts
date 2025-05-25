@@ -451,6 +451,7 @@ class Context extends Generic {
         await this.emitAsync('call:apply:before', {command, page});
         
         try {
+            // TODO maybe us Promise.try
             let returnValue = func.call(on, ...parameters);
             
             // Check if func.call returns a Promise. If so, await return value
@@ -466,6 +467,7 @@ class Context extends Generic {
             
             return this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
         } catch (error: any) {
+            this.puth.logger.debug(error, '[Call apply error]')
             // call event before any pushToCache call
             await this.emitAsync('call:apply:error', {error, command, page});
             
