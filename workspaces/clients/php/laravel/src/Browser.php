@@ -321,7 +321,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      * @param string $name
      * @return $this
      */
-    public function screenshot($name, $options = [])
+    public function screenshot($name, $options = []): mixed
     {
         $filePath = sprintf('%s/%s.png', rtrim(static::$storeScreenshotsAt, '/'), $name);
 
@@ -334,8 +334,7 @@ class Browser extends \Puth\RemoteObjects\Browser
         try {
             file_put_contents(
                 $filePath,
-                // TODO parent::screenshot($options),
-                $this->site->screenshot($options),
+                $this->_screenshot($options),
             );
         } catch (\Exception) {
         }

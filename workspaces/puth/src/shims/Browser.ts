@@ -1,6 +1,6 @@
-import {Page} from 'puppeteer-core';
+import { ElementHandle, NodeFor, Page, Viewport } from 'puppeteer-core';
 import Context from '../Context';
-import {getWindowBounds, move} from '../plugins/Std/PuthBrowserExtensions';
+import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 
 export class Browser {
     private context: Context;
@@ -12,6 +12,10 @@ export class Browser {
         this.context = context;
         this.page = page;
     }
+
+//    public $(selector: string): Promise<ElementHandle<NodeFor<string>> | null> {
+//        return this.page.$(selector);
+//    }
 
     public async visit(url: string): Promise<this> {
         await this.page.goto(url);
@@ -41,12 +45,16 @@ export class Browser {
     }
 
     public async maximize(): Promise<this> {
-        await this.maximize();
+        await maximize(this.page.browser());
         return this;
     }
 
     public async bounds(): Promise<object> {
         return await getWindowBounds(this.page.browser());
+    }
+
+    public async setBounds(bounds: any): Promise<this> {
+        return setWindowBounds(this.page.browser(), bounds).then(_ => this);
     }
 
     public async resize(width, height): Promise<this> {
@@ -88,6 +96,10 @@ export class Browser {
 
     public content(): Promise<string> {
         return this.page.content();
+    }
+
+    public viewport(): Viewport|null {
+        return this.page.viewport();
     }
 
     public screenshot(options = {}): Promise<Uint8Array> {

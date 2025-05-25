@@ -36,10 +36,10 @@ class Context extends RemoteObject
     /**
      * Used by clients to upload temporary files to the server so that the browser can access them
      *
-     * @debug-ts-return-types void
+     * @debug-ts-return-types string
      */
-    public function saveTemporaryFile(mixed $name, mixed $content): void
+    public function saveTemporaryFile(mixed $name, mixed $content): string
     {
-        $this->callFunc('saveTemporaryFile', [$name, $content]);
+        return $this->callFunc('saveTemporaryFile', [$name, $content]);
     }
 }

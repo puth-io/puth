@@ -675,7 +675,7 @@ class Context extends Generic {
     
     // Used by clients to upload temporary files to the server so that the browser can access them
     // @codegen
-    public async saveTemporaryFile(name, content) {
+    public async saveTemporaryFile(name, content): Promise<string> {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);
         
@@ -683,7 +683,7 @@ class Context extends Generic {
         
         this.cleanupCallbacks.push(async () => fsPromise.rm(tmpPath, {force: true, recursive: true}));
         
-        return Return.Value(tmpFilePath);
+        return tmpFilePath;
     }
     
     resolveOn(representation): Context|any {

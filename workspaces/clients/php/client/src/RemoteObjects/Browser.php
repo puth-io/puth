@@ -10,6 +10,10 @@ use Puth\RemoteObject;
 class Browser extends RemoteObject
 {
     /**
+     * public $(selector: string): Promise<ElementHandle<NodeFor<string>> | null> {
+     * return this.page.$(selector);
+     * }
+     *
      * @debug-ts-return-types this
      */
     public function visit(string $url): Browser
@@ -72,6 +76,14 @@ class Browser extends RemoteObject
     /**
      * @debug-ts-return-types this
      */
+    public function setBounds(mixed $bounds): Browser
+    {
+        return $this->callFunc('setBounds', [$bounds]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
     public function resize(mixed $width, mixed $height): Browser
     {
         return $this->callFunc('resize', [$width, $height]);
@@ -127,6 +139,22 @@ class Browser extends RemoteObject
     public function content(): string
     {
         return $this->callFunc('content');
+    }
+
+    /**
+     * @debug-ts-return-types Viewport|null
+     */
+    public function viewport(): mixed
+    {
+        return $this->callFunc('viewport');
+    }
+
+    /**
+     * @debug-ts-return-types Uint8Array
+     */
+    public function _screenshot(mixed $options = []): mixed
+    {
+        return $this->callFunc('screenshot', [$options]);
     }
 
     /**

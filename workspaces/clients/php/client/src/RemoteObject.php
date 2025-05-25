@@ -69,7 +69,7 @@ class RemoteObject
         return $this->handleResponse($response, [$function, $parameters], function ($body, $arguments) {
             throw new Exception(BackTrace::message(
                 BackTrace::filter(debug_backtrace()),
-                $body->message,
+                '[Server] ' . $body->message,
             ));
         });
     }

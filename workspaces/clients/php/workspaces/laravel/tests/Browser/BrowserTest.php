@@ -13,6 +13,8 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_browser_fit_content()
     {
         $this->browse(function (Browser $browser) {
@@ -32,8 +34,8 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->maximize();
             $bounds = $browser->bounds();
-            
-            $browser->resize($bounds->width - 100, $bounds->height - 100);
+
+            $browser->setBounds(['width' =>  $bounds->width - 100, 'height' => $bounds->height - 100]);
             $boundsUpdated = $browser->bounds();
             Assert::assertNotEquals($bounds->width, $boundsUpdated->width);
             Assert::assertNotEquals($bounds->height, $boundsUpdated->height);

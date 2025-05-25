@@ -47,7 +47,7 @@ const visitedSymbols = new Set();        // symbol‑level guard (alias safe)
 
 const PRIMITIVES = new Set([
     'string', 'number', 'boolean', 'any', 'void', 'null', 'undefined',
-    'bigint', 'symbol', 'never', 'mixed', 'unknown',
+    'bigint', 'symbol', 'never', 'mixed', 'unknown', 'Uint8Array',
 ]);
 
 function isPrimitive(txt) {return PRIMITIVES.has(txt);} // simple check — arrays handled later
@@ -77,6 +77,25 @@ const aliasMap = new Map();
 function recordAlias(id, origSym) {if (id && origSym && id.text !== origSym.getName()) {aliasMap.set(id.text, origSym.getName());}}
 
 function resolveAliasName(n) {return aliasMap.get(n) || n;}
+
+const NAME_TRANSLATION = {
+    php: {
+        default: {
+            Browser: {
+                $: 'get',
+                $$: 'getAll',
+                $$eval: 'getAllEval',
+                $eval: 'getEval',
+                $x: 'getX',
+            },
+        },
+        laravel: {
+            Browser: {
+                screenshot: '_screenshot',
+            },
+        },
+    },
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  TYPE EXTRACTION
@@ -250,7 +269,7 @@ function addMemberToClass(entry, member, includeAll) {
     if (!member.name) {
         return;
     }
-    if (!member.modifiers.find(m => m.kind === ts.SyntaxKind.PublicKeyword)) {
+    if (!member.modifiers?.find(m => m.kind === ts.SyntaxKind.PublicKeyword)) {
         return;
     }
 
@@ -443,13 +462,16 @@ function generatePHPMethod(className, method) {
     const argArray = parameters.length ? `, [${parameters.map(p => `$${p.name}`).join(', ')}]` : '';
     const callLine = `${phpReturn === 'void' ? '' : 'return '}$this->callFunc('${name}'${argArray});`;
 
+    let nameTranslated = NAME_TRANSLATION?.php?.default?.[className]?.[name] ?? name;
+    nameTranslated = NAME_TRANSLATION?.php?.laravel?.[className]?.[name] ?? nameTranslated;
+
     return [
         '    /**',
         comments.map(c => `     * ${c}`).join('\n'),
         comments.length === 0 ? null : '     *',
         `     * @debug-ts-return-types ${returnHintRaw}`,
         '     */',
-        `    public function ${name}(${phpParams}): ${phpReturn}`,
+        `    public function ${nameTranslated}(${phpParams}): ${phpReturn}`,
         '    {',
         `        ${callLine}`,
         '    }',
@@ -478,6 +500,7 @@ function emitPHPClass(cls) {
     }
 
     const methodsArray = cls.methods instanceof Map ? Array.from(cls.methods.values()) : cls.methods;
+    console.log(cls.name, methodsArray);
 
     const content = [
         '<?php',
