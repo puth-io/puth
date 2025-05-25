@@ -3,8 +3,8 @@ import {homedir} from 'os';
 import {select} from '@inquirer/prompts';
 import fs from 'fs';
 import {canDownload, detectBrowserPlatform, install, InstallOptions, Browser} from '@puppeteer/browsers';
-import {PUPPETEER_REVISIONS} from 'puppeteer-core';
 import {makeLogger} from 'puth';
+import { PUPPETEER_REVISIONS } from 'puppeteer-core/lib/esm/puppeteer/revisions';
 
 const logger = makeLogger(true, 'info');
 const cwd = process.cwd();

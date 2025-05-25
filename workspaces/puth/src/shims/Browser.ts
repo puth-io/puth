@@ -1,6 +1,7 @@
-import { ElementHandle, NodeFor, Page, Viewport } from 'puppeteer-core';
+import { Page, Viewport } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
+import { PuthStandardPlugin } from '../index';
 
 export class Browser {
     private context: Context;
@@ -19,6 +20,10 @@ export class Browser {
 
     public async visit(url: string): Promise<this> {
         await this.page.goto(url);
+        return this;
+    }
+    public async click(selector: string, options: any = {}): Promise<this> {
+        await this.page.click(selector, options);
         return this;
     }
 
@@ -94,12 +99,34 @@ export class Browser {
         return this.context.destroyBrowserByBrowser(this.page.browser());
     }
 
+    public url(): string {
+        return this.page.url();
+    }
+
     public content(): Promise<string> {
         return this.page.content();
     }
 
     public viewport(): Viewport|null {
         return this.page.viewport();
+    }
+
+    public getCookieByName(name: string): Promise<any> {
+        return PuthStandardPlugin.getCookieByName(this.page, name) as any;
+    }
+
+    public async setCookie(cookies: any[]): Promise<this> {
+        await this.page.setCookie(...cookies);
+        return this;
+    }
+
+    public async deleteCookie(cookies: any[]|string): Promise<this> {
+        if (!Array.isArray(cookies)) {
+            cookies = [{name: cookies}];
+        }
+
+        await this.page.deleteCookie(...cookies);
+        return this;
     }
 
     public screenshot(options = {}): Promise<Uint8Array> {

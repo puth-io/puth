@@ -10,7 +10,7 @@ import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
 import path from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
-import Return from './context/Return';
+import { Return } from './context/Return';
 import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';

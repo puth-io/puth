@@ -1,4 +1,4 @@
-export default class Return {
+export class Return {
     private readonly type;
     private readonly value;
 

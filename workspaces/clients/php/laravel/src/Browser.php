@@ -10,8 +10,8 @@ use Illuminate\Support\Traits\Macroable;
 
 class Browser extends \Puth\RemoteObjects\Browser
 {
-    use Concerns\InteractsWithAuthentication;
-    use Concerns\InteractsWithCookies;
+    use Concerns\InteractsWithAuthentication; // done
+    use Concerns\InteractsWithCookies; // done
     use Concerns\InteractsWithElements;
     use Concerns\InteractsWithJavascript;
     use Concerns\InteractsWithKeyboard;

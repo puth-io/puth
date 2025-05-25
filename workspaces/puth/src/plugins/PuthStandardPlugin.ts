@@ -2,8 +2,8 @@ import PuthContextPlugin from '../PuthContextPlugin';
 import Expects from '../Expects';
 import { Assertion, PuthAssert } from '../PuthAssert';
 import { retryFor } from '../Utils';
-import { ElementHandle } from 'puppeteer-core';
-import Return from '../context/Return';
+import { ElementHandle, Page } from 'puppeteer-core';
+import { Return } from '../context/Return';
 import Constructors from '../context/Constructors';
 import {SpecialKeysMap, type} from './utils/cy';
 import {bounds, maximize, move} from './Std/PuthBrowserExtensions';
@@ -74,7 +74,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         },
         // _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
         url: this.url,
-        getCookieByName: this.getCookieByName,
+        getCookieByName: PuthStandardPlugin.getCookieByName,
         waitForDialog: this.waitForDialog,
         clickNoBlockDialog: this.clickNoBlockDialog,
         acceptDialog: this.acceptDialog,
@@ -385,7 +385,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return retryFor(this.getContext().getTimeout(options), async () => await element.url(), Expects.NotNull.test);
   }
 
-  async getCookieByName(page, name, options?) {
+  static async getCookieByName(page: Page, name, options?) {
     let cookies = await page.cookies();
 
     for (let idx in cookies) {

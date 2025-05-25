@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
-// Imports
 const fs = require('fs');
 const path = require('path');
 const {homedir} = require("os");
 const meow = require('meow');
 const prompts = require('@inquirer/prompts');
 const {detectBrowserPlatform, canDownload, install} = require('@puppeteer/browsers');
-const {PUPPETEER_REVISIONS} = require("puppeteer-core");
+const {PUPPETEER_REVISIONS} = require('puppeteer-core');
 const pkg = require('../package.json');
 
 const Puth = require('../lib').default;

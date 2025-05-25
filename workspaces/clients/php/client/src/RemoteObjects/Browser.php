@@ -24,6 +24,14 @@ class Browser extends RemoteObject
     /**
      * @debug-ts-return-types this
      */
+    public function click(string $selector, mixed $options = []): Browser
+    {
+        return $this->callFunc('click', [$selector, $options]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
     public function blank(): Browser
     {
         return $this->callFunc('blank');
@@ -136,6 +144,14 @@ class Browser extends RemoteObject
     /**
      * @debug-ts-return-types string
      */
+    public function url(): string
+    {
+        return $this->callFunc('url');
+    }
+
+    /**
+     * @debug-ts-return-types string
+     */
     public function content(): string
     {
         return $this->callFunc('content');
@@ -147,6 +163,30 @@ class Browser extends RemoteObject
     public function viewport(): mixed
     {
         return $this->callFunc('viewport');
+    }
+
+    /**
+     * @debug-ts-return-types any
+     */
+    public function getCookieByName(string $name): mixed
+    {
+        return $this->callFunc('getCookieByName', [$name]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
+    public function setCookie(array $cookies): Browser
+    {
+        return $this->callFunc('setCookie', [$cookies]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
+    public function deleteCookie(mixed $cookies): Browser
+    {
+        return $this->callFunc('deleteCookie', [$cookies]);
     }
 
     /**
