@@ -157,4 +157,15 @@ export class Browser {
         this.fitOnFailure = true;
         return this;
     }
+
+    // Directly get or set the value attribute of an input field
+    public async value(selector: string, value: any = null): Promise<this> {
+        let element = await this.page.$(selector);
+        if (element === null) {
+            throw new Error('Element not found.');
+        }
+
+        return PuthStandardPlugin.value(element, value).then(this.self);
+    }
+
 }

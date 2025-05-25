@@ -103,7 +103,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         blur: this.blur,
         clear: this.clear,
         submit: this.submit,
-        value: this.value,
+        value: PuthStandardPlugin.value,
         click: this.click,
         type: type,
         doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
@@ -165,12 +165,12 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return (await element.getProperty('innerHTML')).jsonValue();
   }
 
-  async value(element, val = null) {
-    if (val == null) {
+  static async value(element, value = null) {
+    if (value == null) {
       return (await element.getProperty('value')).jsonValue();
     }
 
-    await element.evaluateHandle((handle, innerVal) => (handle.value = innerVal), val);
+    await element.evaluateHandle((handle, _value) => (handle.value = _value), value);
   }
 
   async its(element, property) {
@@ -183,7 +183,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     }
 
     if (property.toLowerCase() === 'value') {
-      return await this.value(element);
+      return await PuthStandardPlugin.value(element);
     }
 
     return (await element.evaluateHandle((el, p) => el.getAttribute(p), property)).jsonValue();

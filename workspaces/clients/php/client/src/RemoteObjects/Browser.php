@@ -222,4 +222,14 @@ class Browser extends RemoteObject
     {
         return $this->callFunc('enableFitOnFailure');
     }
+
+    /**
+     * Directly get or set the value attribute of an input field
+     *
+     * @debug-ts-return-types this
+     */
+    public function value(string $selector, mixed $value): Browser
+    {
+        return $this->callFunc('value', [$selector, $value]);
+    }
 }

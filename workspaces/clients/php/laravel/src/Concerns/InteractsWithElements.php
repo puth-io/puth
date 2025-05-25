@@ -73,24 +73,6 @@ trait InteractsWithElements
     }
     
     /**
-     * Directly get or set the value attribute of an input field.
-     *
-     * @param string $selector
-     * @param string|null $value
-     * @return $this
-     */
-    public function value($selector, $value = null)
-    {
-        if (is_null($value)) {
-            return $this->resolver->findOrFail($selector)->value();
-        }
-    
-        $this->resolver->findOrFail($selector)->value($value);
-    
-        return $this;
-    }
-    
-    /**
      * Get the text of the element matching the given selector.
      *
      * @param string $selector
