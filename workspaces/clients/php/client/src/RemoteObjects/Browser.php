@@ -10,10 +10,6 @@ use Puth\RemoteObject;
 class Browser extends RemoteObject
 {
     /**
-     * public $(selector: string): Promise<ElementHandle<NodeFor<string>> | null> {
-     * return this.page.$(selector);
-     * }
-     *
      * @debug-ts-return-types this
      */
     public function visit(string $url): Browser
@@ -224,12 +220,42 @@ class Browser extends RemoteObject
     }
 
     /**
-     * Directly get or set the value attribute of an input field
-     *
      * @debug-ts-return-types this
      */
     public function value(string $selector, mixed $value): Browser
     {
         return $this->callFunc('value', [$selector, $value]);
+    }
+
+    /**
+     * @debug-ts-return-types string
+     */
+    public function text(string $selector): string
+    {
+        return $this->callFunc('text', [$selector]);
+    }
+
+    /**
+     * @debug-ts-return-types string
+     */
+    public function attribute(string $selector, string $attribute): string
+    {
+        return $this->callFunc('attribute', [$selector, $attribute]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
+    public function _type(mixed $selector, string $value, mixed $options = []): Browser
+    {
+        return $this->callFunc('type', [$selector, $value, $options]);
+    }
+
+    /**
+     * @debug-ts-return-types this
+     */
+    public function _typeSlowly(string $selector, string $value, int $pause = 100): Browser
+    {
+        return $this->callFunc('typeSlowly', [$selector, $value, $pause]);
     }
 }

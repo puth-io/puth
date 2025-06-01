@@ -91,7 +91,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           func: this.contains,
           expects: Expects.Array,
         },
-        its: this.its,
+        its: PuthStandardPlugin.its,
         clickAndWait: this.clickAndWait,
         clickAndFile: this.clickAndFile,
         visible: this.visible,
@@ -101,7 +101,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         prev: this.prev,
         next: this.next,
         blur: this.blur,
-        clear: this.clear,
+        clear: PuthStandardPlugin.clear,
         submit: this.submit,
         value: PuthStandardPlugin.value,
         click: this.click,
@@ -157,11 +157,11 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     });
   }
 
-  async innerText(element) {
+  static async innerText(element) {
     return (await element.getProperty('innerText')).jsonValue();
   }
 
-  async innerHTML(element) {
+  static async innerHTML(element) {
     return (await element.getProperty('innerHTML')).jsonValue();
   }
 
@@ -173,13 +173,13 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     await element.evaluateHandle((handle, _value) => (handle.value = _value), value);
   }
 
-  async its(element, property) {
+  static async its(element, property) {
     if (property.toLowerCase() === 'innertext') {
-      return await this.innerText(element);
+      return await PuthStandardPlugin.innerText(element);
     }
 
     if (property.toLowerCase() === 'innerhtml') {
-      return await this.innerHTML(element);
+      return await PuthStandardPlugin.innerHTML(element);
     }
 
     if (property.toLowerCase() === 'value') {
@@ -273,8 +273,8 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return await element.evaluate((e) => e.blur());
   }
 
-  async clear(element: ElementHandle) {
-    await element.click({ clickCount: 3 });
+  static async clear(element: ElementHandle) {
+    await element.click({ count: 3 });
     await element.frame.page().keyboard.press('Backspace');
   }
 
@@ -314,27 +314,27 @@ export class PuthStandardPlugin extends PuthContextPlugin {
   Assertions = {
     have: {
       text: {
-        resolve: (element) => this.its(element, 'innerText'),
+        resolve: (element) => PuthStandardPlugin.its(element, 'innerText'),
         msg: (actual, expected) => `Expected '${actual}' to be '${expected}'`,
         test: (actual, expected) => actual === expected,
       },
       id: {
-        resolve: (element) => this.its(element, 'id'),
+        resolve: (element) => PuthStandardPlugin.its(element, 'id'),
         msg: (actual, expected) => `Expected '${actual}' to have id '${expected}'`,
         test: (actual, expected) => actual === expected,
       },
       class: {
-        resolve: (element) => this.its(element, 'class'),
+        resolve: (element) => PuthStandardPlugin.its(element, 'class'),
         msg: (actual, expected) => `Expected element to have class '${expected}' but found '${actual}'`,
         test: (actual, expected) => actual.split(' ').includes(expected),
       },
       attr: {
-        resolve: (element, attribute) => this.its(element, attribute),
+        resolve: (element, attribute) => PuthStandardPlugin.its(element, attribute),
         msg: (actual, expected) => `Expected element to have attribute '${expected}' but found '${actual}'`,
         test: (actual, expected) => actual === expected,
       },
       value: {
-        resolve: (element) => this.its(element, 'value'),
+        resolve: (element) => PuthStandardPlugin.its(element, 'value'),
         msg: (actual, expected) => `Expected '${actual}' to be '${expected}'`,
         test: (actual, expected) => actual === expected,
       },

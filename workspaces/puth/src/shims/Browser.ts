@@ -2,6 +2,9 @@ import { Page, Viewport } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
+import { type } from '../plugins/utils/cy';
+
+export type integer = number;
 
 export class Browser {
     private context: Context;
@@ -19,15 +22,12 @@ export class Browser {
         this.self = () => this;
     }
 
-//    public $(selector: string): Promise<ElementHandle<NodeFor<string>> | null> {
-//        return this.page.$(selector);
-//    }
-
     public visit(url: string): Promise<this> {
         return this.page.goto(url).then(this.self);
     }
+
     public click(selector: string, options: any = {}): Promise<this> {
-        return this.page.click(selector, options).then(this.self);
+        return this.__findOrFail(selector).then(element => element.click(options)).then(this.self);
     }
 
     public blank(): Promise<this> {
@@ -72,13 +72,7 @@ export class Browser {
     }
 
     public scrollIntoView(selector: string): Promise<this> {
-        return this.page.$(selector).then(e => {
-            if (e === null) {
-                throw new Error('ElementNotFound');
-            }
-
-            e.scrollIntoView();
-        }).then(this.self);
+        return this.__findOrFail(selector).then(element => element.scrollIntoView()).then(this.self);
     }
 
     // Scroll screen to element at the given selector.
@@ -116,8 +110,8 @@ export class Browser {
     }
 
     public deleteCookie(cookies: any[]|string): Promise<this> {
-        if (!Array.isArray(cookies)) {
-            cookies = [{name: cookies}];
+        if (! Array.isArray(cookies)) {
+            cookies = [{ name: cookies }];
         }
 
         return this.page.deleteCookie(...cookies).then(this.self);
@@ -158,14 +152,43 @@ export class Browser {
         return this;
     }
 
-    // Directly get or set the value attribute of an input field
     public async value(selector: string, value: any = null): Promise<this> {
-        let element = await this.page.$(selector);
-        if (element === null) {
-            throw new Error('Element not found.');
-        }
-
-        return PuthStandardPlugin.value(element, value).then(this.self);
+        return this.__findOrFail(selector).then(element => PuthStandardPlugin.value(element, value)).then(this.self);
     }
 
+    public text(selector: string): Promise<string> {
+        return this.attribute(selector, 'innertext');
+    }
+
+    public attribute(selector: string, attribute: string): Promise<string> {
+        return this.__findOrFail(selector).then(element => PuthStandardPlugin.its(element, attribute));
+    }
+
+    public type(selector: string[]|string, value: string, options = {}): Promise<this> {
+        return this.__findOrFail(selector).then(e => PuthStandardPlugin.clear(e).then(() => type(e, value, options))).then(this.self);
+    }
+
+    public typeSlowly(selector: string, value: string, pause: integer = 100): Promise<this> {
+        return this.type(selector, value, { delay: pause });
+    }
+
+    // public keys(selector: string, keys: [string]|string) {
+    //
+    // }
+
+    // TODO last worked on
+    private __findOrFail(selector: string[]|string) {
+        return (Array.isArray(selector) ? (
+            Promise.all(selector.flatMap(s => this.page.$(s))).then(f => f.length === 0 ? null : f[0])
+        ) : (
+            this.page.$(selector)
+        ))
+            .then(element => {
+                if (element === null) {
+                    throw new Error('Element not found.');
+                }
+
+                return element;
+            });
+    }
 }

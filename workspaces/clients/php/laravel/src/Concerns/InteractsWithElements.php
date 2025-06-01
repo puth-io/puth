@@ -73,29 +73,6 @@ trait InteractsWithElements
     }
     
     /**
-     * Get the text of the element matching the given selector.
-     *
-     * @param string $selector
-     * @return string
-     */
-    public function text($selector)
-    {
-        return $this->resolver->findOrFail($selector)->innerText();
-    }
-    
-    /**
-     * Get the given attribute from the element matching the given selector.
-     *
-     * @param string $selector
-     * @param string $attribute
-     * @return string
-     */
-    public function attribute($selector, $attribute)
-    {
-        return $this->resolver->findOrFail($selector)->its($attribute);
-    }
-    
-    /**
      * Send the given keys to the element matching the given selector.
      *
      * @param string $selector
@@ -108,7 +85,7 @@ trait InteractsWithElements
         
         return $this;
     }
-    
+
     /**
      * Type the given value in the given field.
      *
@@ -118,11 +95,12 @@ trait InteractsWithElements
      */
     public function type($field, $value)
     {
-        $this->resolver->resolveForTyping($field)->clear()->type($value);
-        
+        $this->_type($this->resolver->resolveForTyping($field), $value);
+//        $this->resolver->resolveForTyping($field)->clear()->type($value);
+
         return $this;
     }
-    
+
     /**
      * Type the given value in the given field slowly.
      *
@@ -134,10 +112,10 @@ trait InteractsWithElements
     public function typeSlowly($field, $value, $pause = 100)
     {
         $this->clear($field)->appendSlowly($field, $value, $pause);
-        
+
         return $this;
     }
-    
+
     /**
      * Type the given value in the given field without clearing it.
      *

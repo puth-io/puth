@@ -108,13 +108,15 @@ class ElementResolver
      */
     public function resolveForTyping($field)
     {
-        if (!is_null($element = $this->findById($field))) {
-            return $element;
-        }
+//        if (!is_null($element = $this->findById($field))) {
+//            return $element;
+//        }
         
-        return $this->firstOrFail([
-            "input[name='{$field}']", "textarea[name='{$field}']", $field,
-        ]);
+//        return $this->firstOrFail([
+//            "input[name='{$field}']", "textarea[name='{$field}']", $field,
+//        ]);
+
+        return ["#{$field}", "input[name='{$field}']", "textarea[name='{$field}']", $field];
     }
     
     /**

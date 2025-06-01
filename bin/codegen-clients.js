@@ -48,6 +48,7 @@ const visitedSymbols = new Set();        // symbol‑level guard (alias safe)
 const PRIMITIVES = new Set([
     'string', 'number', 'boolean', 'any', 'void', 'null', 'undefined',
     'bigint', 'symbol', 'never', 'mixed', 'unknown', 'Uint8Array',
+    'integer',
 ]);
 
 function isPrimitive(txt) {return PRIMITIVES.has(txt);} // simple check — arrays handled later
@@ -93,6 +94,8 @@ const NAME_TRANSLATION = {
             Browser: {
                 screenshot: '_screenshot',
                 click: '_click',
+                type: '_type',
+                typeSlowly: '_typeSlowly',
             },
         },
     },
@@ -190,6 +193,16 @@ function extractParameters(params) {
             param.initializer = {
                 type: 'object',
                 members,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.NumericLiteral) {
+            param.initializer = {
+                type: 'numeric',
+                value: p?.initializer?.text,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.StringLiteral) {
+            param.initializer = {
+                type: 'string',
+                value: p?.initializer?.text,
             };
         }
 
@@ -417,6 +430,8 @@ function mapTypeToPHP(type, className) {
                 return 'bool';
             case 'void':
                 return 'void';
+            case 'integer':
+                return 'int';
             default:
                 return 'mixed';
         }
@@ -428,6 +443,7 @@ function mapTypeToPHP(type, className) {
 }
 
 function functionParameterOptional(p, className) {
+    console.log(className, p);
     if (p.initializer) {
         if (p.initializer.type === 'object') {
             return ` = [${p.initializer.members.map(i => {
@@ -437,6 +453,9 @@ function functionParameterOptional(p, className) {
                 
                 return `'${i.key}' => ${value}`;
             }).join(', ')}]`;
+        } else if (p.initializer.value != null) {
+            if (p.type === 'integer') return ` = ${p.initializer.value}`;
+            else if (p.type === 'string') return ` = '${p.initializer.value}'`;
         }
     }
 
@@ -466,6 +485,7 @@ function generatePHPMethod(className, method) {
     let nameTranslated = NAME_TRANSLATION?.php?.default?.[className]?.[name] ?? name;
     nameTranslated = NAME_TRANSLATION?.php?.laravel?.[className]?.[name] ?? nameTranslated;
 
+    console.log(nameTranslated, parameters);
     return [
         '    /**',
         comments.map(c => `     * ${c}`).join('\n'),
