@@ -273,8 +273,10 @@ class Context extends Generic {
             });
         });
     }
-    
-    public getSnapshotsByType(type) { // used by clients
+
+    // @codegen
+    // @gen-returns any[]
+    public getSnapshotsByType(type): Return { // used by clients
         return Return.Values(Snapshots.getAllCachedItemsFrom(this).filter(item => item?.type === type));
     }
     
@@ -306,7 +308,8 @@ class Context extends Generic {
             });
         }
     }
-    
+
+    // @codegen
     public testSuccess() {
         this.test.status = ContextStatus.SUCCESSFUL;
         
@@ -320,7 +323,8 @@ class Context extends Generic {
             });
         }
     }
-    
+
+    // @codegen
     public testSucceeded() {
         return this.testSuccess();
     }

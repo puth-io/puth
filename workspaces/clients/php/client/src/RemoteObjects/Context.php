@@ -5,12 +5,12 @@ namespace Puth\RemoteObjects;
 use Puth\RemoteObject;
 
 /**
-* codegen-entry
+* @codegen
 */
 class Context extends RemoteObject
 {
     /**
-     * codegen-entry
+     * @codegen
      * 
      * @debug-gen-original-name "createBrowserShim"
      * @debug-gen-original-is-async true
@@ -23,7 +23,7 @@ class Context extends RemoteObject
     }
 
     /**
-     * codegen-entry
+     * @codegen
      * 
      * @debug-gen-original-name "createBrowserShimForPage"
      * @debug-gen-original-is-async true
@@ -36,7 +36,21 @@ class Context extends RemoteObject
     }
 
     /**
-     * codegen-entry
+     * @codegen
+     * @gen-returns any[]
+     * 
+     * @debug-gen-original-name "getSnapshotsByType"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Return"]
+     * @debug-gen-original-parameter type {"type":"any","isOptional":false}
+     */
+    public function getSnapshotsByType(mixed $type): array
+    {
+        return $this->callFunc('getSnapshotsByType', [$type]);
+    }
+
+    /**
+     * @codegen
      * 
      * @debug-gen-original-name "testFailed"
      * @debug-gen-original-is-async false
@@ -48,8 +62,32 @@ class Context extends RemoteObject
     }
 
     /**
+     * @codegen
+     * 
+     * @debug-gen-original-name "testSuccess"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     */
+    public function testSuccess(): void
+    {
+        $this->callFunc('testSuccess');
+    }
+
+    /**
+     * @codegen
+     * 
+     * @debug-gen-original-name "testSucceeded"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     */
+    public function testSucceeded(): void
+    {
+        $this->callFunc('testSucceeded');
+    }
+
+    /**
      * Used by clients to upload temporary files to the server so that the browser can access them
-     * codegen-entry
+     * @codegen
      * 
      * @debug-gen-original-name "saveTemporaryFile"
      * @debug-gen-original-is-async true

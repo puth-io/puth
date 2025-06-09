@@ -218,7 +218,6 @@ function nodeComments(node) {
     const src = node.getSourceFile().text;
     return (ts.getLeadingCommentRanges(src, node.pos) || []).map(r => {
         return src.slice(r.pos, r.end).split('\n').map(l => l.trim()).map(line => {
-            if (line.includes('@codegen')) return 'codegen-entry';
             if (line.startsWith('/**')) return line.slice(3);
             if (line.startsWith('/*')) return line.slice(2);
             if (line.startsWith('//')) return line.slice(2);
