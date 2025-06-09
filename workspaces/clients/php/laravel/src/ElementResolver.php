@@ -5,6 +5,7 @@ namespace Puth\Laravel;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
+use Puth\RemoteObject;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
@@ -38,12 +39,7 @@ class ElementResolver
 {
     use Macroable;
     
-    /**
-     * The remote web driver instance.
-     *
-     * @var mixed
-     */
-    public $site;
+    public Browser $browser;
     
     /**
      * The selector prefix for the resolver.
@@ -74,14 +70,10 @@ class ElementResolver
     
     /**
      * Create a new element resolver instance.
-     *
-     * @param mixed $site
-     * @param string $prefix
-     * @return void
      */
-    public function __construct($site, $prefix = '')
+    public function __construct(Browser $browser, string $prefix = '')
     {
-        $this->site = $site;
+        $this->browser = $browser;
         $this->prefix = trim($prefix);
     }
     
@@ -100,42 +92,18 @@ class ElementResolver
     
     /**
      * Resolve the element for a given input "field".
-     *
-     * @param string $field
-     * @return mixed
-     *
-     * @throws \Exception
      */
-    public function resolveForTyping($field)
+    public function resolveForTyping(string $field): RemoteObject
     {
-//        if (!is_null($element = $this->findById($field))) {
-//            return $element;
-//        }
-        
-//        return $this->firstOrFail([
-//            "input[name='{$field}']", "textarea[name='{$field}']", $field,
-//        ]);
-
-        return ["#{$field}", "input[name='{$field}']", "textarea[name='{$field}']", $field];
+        return $this->browser->__findOrFail($this->getTypingSelectors($field));
     }
     
     /**
      * Resolve the element for a given select "field".
-     *
-     * @param string $field
-     * @return mixed
-     *
-     * @throws \Exception
      */
-    public function resolveForSelection($field)
+    public function resolveForSelection(string $field)
     {
-        if (!is_null($element = $this->findById($field))) {
-            return $element;
-        }
-        
-        return $this->firstOrFail([
-            "select[name='{$field}']", $field,
-        ]);
+        return $this->browser->__findOrFail($this->getSelectionSelectors($field));
     }
     
     /**
@@ -277,7 +245,27 @@ class ElementResolver
             "Unable to locate button [{$button}]."
         );
     }
-    
+
+    /**
+     * @param string $field
+     *
+     * @return string[]
+     */
+    public function getTypingSelectors(string $field): array
+    {
+        return [$field, "input[name='{$field}']", "textarea[name='{$field}']"];
+    }
+
+    /**
+     * @param string $field
+     *
+     * @return string[]
+     */
+    public function getSelectionSelectors(string $field): array
+    {
+        return [$field, "select[name='{$field}']"];
+    }
+
     /**
      * Resolve the element for a given button by selector.
      *
@@ -345,10 +333,7 @@ class ElementResolver
     protected function findById($selector)
     {
         if (preg_match('/^#[\w\-:]+$/', $selector)) {
-            return $this->site->get(
-                '#' . substr($selector, 1),
-                ['timeout' => 0],
-            );
+            return $this->site->get($selector, ['timeout' => 0]);
         }
     }
     

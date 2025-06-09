@@ -5,12 +5,17 @@ namespace Puth\RemoteObjects;
 use Puth\RemoteObject;
 
 /**
-* Test comment
+* codegen-entry
 */
 class Context extends RemoteObject
 {
     /**
-     * @debug-ts-return-types Browser
+     * codegen-entry
+     * 
+     * @debug-gen-original-name "createBrowserShim"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function createBrowserShim(mixed $options = []): Browser
     {
@@ -18,7 +23,12 @@ class Context extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types Browser
+     * codegen-entry
+     * 
+     * @debug-gen-original-name "createBrowserShimForPage"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter page {"type":"Page","isOptional":false}
      */
     public function createBrowserShimForPage(mixed $page): Browser
     {
@@ -26,7 +36,11 @@ class Context extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types void
+     * codegen-entry
+     * 
+     * @debug-gen-original-name "testFailed"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
      */
     public function testFailed(): void
     {
@@ -35,8 +49,13 @@ class Context extends RemoteObject
 
     /**
      * Used by clients to upload temporary files to the server so that the browser can access them
-     *
-     * @debug-ts-return-types string
+     * codegen-entry
+     * 
+     * @debug-gen-original-name "saveTemporaryFile"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["string"]
+     * @debug-gen-original-parameter name {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter content {"type":"any","isOptional":false}
      */
     public function saveTemporaryFile(mixed $name, mixed $content): string
     {

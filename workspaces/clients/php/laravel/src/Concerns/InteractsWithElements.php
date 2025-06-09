@@ -95,8 +95,8 @@ trait InteractsWithElements
      */
     public function type($field, $value)
     {
-        $this->_type($this->resolver->resolveForTyping($field), $value);
-//        $this->resolver->resolveForTyping($field)->clear()->type($value);
+//        $this->_type($this->resolver->resolveForTyping($field), $value);
+        $this->resolver->resolveForTyping($field)->clear()->type($value);
 
         return $this;
     }

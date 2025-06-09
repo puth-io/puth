@@ -10,7 +10,10 @@ use Puth\RemoteObject;
 class Browser extends RemoteObject
 {
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "visit"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter url {"type":"string","isOptional":false}
      */
     public function visit(string $url): Browser
     {
@@ -18,7 +21,11 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "click"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _click(string $selector, mixed $options = []): Browser
     {
@@ -26,7 +33,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "blank"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
      */
     public function blank(): Browser
     {
@@ -34,7 +43,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "refresh"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function refresh(mixed $options = []): Browser
     {
@@ -43,8 +55,11 @@ class Browser extends RemoteObject
 
     /**
      * Navigate to the previous page.
-     *
-     * @debug-ts-return-types this
+     * 
+     * @debug-gen-original-name "back"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function back(mixed $options = []): Browser
     {
@@ -53,8 +68,11 @@ class Browser extends RemoteObject
 
     /**
      * Navigate to the next page.
-     *
-     * @debug-ts-return-types this
+     * 
+     * @debug-gen-original-name "forward"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function forward(mixed $options = []): Browser
     {
@@ -62,7 +80,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "maximize"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
      */
     public function maximize(): Browser
     {
@@ -70,7 +90,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types object
+     * @debug-gen-original-name "bounds"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["object"]
      */
     public function bounds(): mixed
     {
@@ -78,7 +100,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "setBounds"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter bounds {"type":"any","isOptional":false}
      */
     public function setBounds(mixed $bounds): Browser
     {
@@ -86,7 +111,11 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "resize"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter width {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter height {"type":"any","isOptional":false}
      */
     public function resize(mixed $width, mixed $height): Browser
     {
@@ -94,7 +123,11 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "move"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter x {"type":"number","isOptional":false}
+     * @debug-gen-original-parameter y {"type":"number","isOptional":false}
      */
     public function move(float $x, float $y): Browser
     {
@@ -102,7 +135,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "scrollIntoView"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
     public function scrollIntoView(string $selector): Browser
     {
@@ -111,8 +147,11 @@ class Browser extends RemoteObject
 
     /**
      * Scroll screen to element at the given selector.
-     *
-     * @debug-ts-return-types this
+     * 
+     * @debug-gen-original-name "scrollTo"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
     public function scrollTo(string $selector): Browser
     {
@@ -121,8 +160,12 @@ class Browser extends RemoteObject
 
     /**
      * TODO fix args default value not correctly generated
-     *
-     * @debug-ts-return-types any
+     * 
+     * @debug-gen-original-name "evaluate"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["any"]
+     * @debug-gen-original-parameter pageFunction {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter args {"type":"any[]","isOptional":false}
      */
     public function evaluate(string $pageFunction, array $args): mixed
     {
@@ -130,7 +173,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types void
+     * @debug-gen-original-name "quit"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
      */
     public function quit(): void
     {
@@ -138,7 +183,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types string
+     * @debug-gen-original-name "url"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
      */
     public function url(): string
     {
@@ -146,7 +193,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types string
+     * @debug-gen-original-name "content"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
      */
     public function content(): string
     {
@@ -154,7 +203,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types Viewport|null
+     * @debug-gen-original-name "viewport"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Viewport","null"]
      */
     public function viewport(): mixed
     {
@@ -162,7 +213,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types any
+     * @debug-gen-original-name "getCookieByName"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["any"]
+     * @debug-gen-original-parameter name {"type":"string","isOptional":false}
      */
     public function getCookieByName(string $name): mixed
     {
@@ -170,7 +224,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "setCookie"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter cookies {"type":"any[]","isOptional":false}
      */
     public function setCookie(array $cookies): Browser
     {
@@ -178,7 +235,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "deleteCookie"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter cookies {"type":"any[]|string","isOptional":false}
      */
     public function deleteCookie(mixed $cookies): Browser
     {
@@ -186,7 +246,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types Uint8Array
+     * @debug-gen-original-name "screenshot"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Uint8Array"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _screenshot(mixed $options = []): mixed
     {
@@ -195,8 +258,10 @@ class Browser extends RemoteObject
 
     /**
      * Make the browser window as large as the content
-     *
-     * @debug-ts-return-types this
+     * 
+     * @debug-gen-original-name "fitContent"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
      */
     public function fitContent(): Browser
     {
@@ -204,7 +269,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "disableFitOnFailure"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
      */
     public function disableFitOnFailure(): Browser
     {
@@ -212,7 +279,9 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "enableFitOnFailure"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
      */
     public function enableFitOnFailure(): Browser
     {
@@ -220,7 +289,11 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "value"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"any","isOptional":false}
      */
     public function value(string $selector, mixed $value): Browser
     {
@@ -228,7 +301,10 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types string
+     * @debug-gen-original-name "text"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
     public function text(string $selector): string
     {
@@ -236,7 +312,11 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types string
+     * @debug-gen-original-name "attribute"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      */
     public function attribute(string $selector, string $attribute): string
     {
@@ -244,7 +324,12 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "type"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _type(mixed $selector, string $value, mixed $options = []): Browser
     {
@@ -252,10 +337,28 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-ts-return-types this
+     * @debug-gen-original-name "typeSlowly"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter pause {"type":"integer","isOptional":false,"initializer":{"type":"numeric","value":"100"}}
      */
     public function _typeSlowly(string $selector, string $value, int $pause = 100): Browser
     {
         return $this->callFunc('typeSlowly', [$selector, $value, $pause]);
+    }
+
+    /**
+     * @gen-returns RemoteObject
+     * 
+     * @debug-gen-original-name "__findOrFail"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["ElementHandle"]
+     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     */
+    public function __findOrFail(mixed $selector): RemoteObject
+    {
+        return $this->callFunc('__findOrFail', [$selector]);
     }
 }

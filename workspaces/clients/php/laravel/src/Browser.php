@@ -24,13 +24,6 @@ class Browser extends \Puth\RemoteObjects\Browser
         Macroable::__call as macroCall;
     }
 
-    public $browser;
-
-    /**
-     * @var CDPPage|Frame
-     */
-    public $site;
-
     /**
      * The base URL for all URLs.
      *
@@ -137,13 +130,11 @@ class Browser extends \Puth\RemoteObjects\Browser
 
     public $legacyBrowserHandling = true;
 
-    public function __construct(\Puth\RemoteObjects\Browser $remote, $browser, $site, $resolver = null, $options = [])
+    public function __construct(\Puth\RemoteObjects\Browser $remote, $resolver = null, $options = [])
     {
         $this->remote = $remote;
-        $this->browser = $browser;
-        $this->site = $site;
-
-        $this->resolver = $resolver ?: new ElementResolver($this->site);
+        // TODO WIP removed $site
+        $this->resolver = $resolver ?: new ElementResolver($this);
 
         $this->legacyBrowserHandling = $options['legacyBrowserHandling'] ?? false;
 
@@ -301,7 +292,7 @@ class Browser extends \Puth\RemoteObjects\Browser
     {
         $this->context->startAccumulatingCalls();
 
-        $closure($this->site);
+        $closure($this->site); // TODO fix?
 
         $this->context->stopAccumulatingCalls();
 
@@ -413,7 +404,6 @@ class Browser extends \Puth\RemoteObjects\Browser
 
         $browser = new static(
             $this->remote,
-            $this->browser,
             $iframe,
         );
 
@@ -443,10 +433,8 @@ class Browser extends \Puth\RemoteObjects\Browser
     {
         $browser = new static(
             $this->remote,
-            $this->browser,
-            $this->site,
             new ElementResolver(
-                $this->site,
+                $this,
                 $this->resolver->format($selector),
             ),
         );
@@ -474,10 +462,8 @@ class Browser extends \Puth\RemoteObjects\Browser
     {
         $browser = new static(
             $this->remote,
-            $this->browser,
-            $this->site,
             new ElementResolver(
-                $this->site,
+                $this,
                 $selector,
             ),
         );
@@ -627,8 +613,6 @@ class Browser extends \Puth\RemoteObjects\Browser
             'resolver' => $this->resolver,
             'page' => $this->page,
             'context' => $this->context,
-            'puthBrowser' => $this->browser,
-            'site' => $this->site,
         ], $this);
 
         return $this;

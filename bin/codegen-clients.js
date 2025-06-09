@@ -218,7 +218,7 @@ function nodeComments(node) {
     const src = node.getSourceFile().text;
     return (ts.getLeadingCommentRanges(src, node.pos) || []).map(r => {
         return src.slice(r.pos, r.end).split('\n').map(l => l.trim()).map(line => {
-            if (line.includes('@codegen')) return '';
+            if (line.includes('@codegen')) return 'codegen-entry';
             if (line.startsWith('/**')) return line.slice(3);
             if (line.startsWith('/*')) return line.slice(2);
             if (line.startsWith('//')) return line.slice(2);
@@ -290,15 +290,31 @@ function addMemberToClass(entry, member, includeAll) {
     const rawName = member.name.getText(member.getSourceFile());
     // Skip computed / symbol names that are not valid in PHP
     if (!isValidPhpIdentifier(rawName)) {
-        return;
+        throw new Error('Found unsupported character in function name ' + rawName);
     }
 
-    const returns = extractTypes(member.type);
+    const isAsync = member.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) || false;
+    const parameters = extractParameters(member.parameters);
+    const comments = nodeComments(member);
+    const foundReturnOverwrite = comments.find(i => i.startsWith('@gen-returns'));
+    const originalReturns = extractTypes(member.type);
+    const returns = foundReturnOverwrite ? [foundReturnOverwrite.replace('@gen-returns', '').trim()] : originalReturns;
+
+    if (comments.length !== 0) comments.push('');
+    comments.push('@debug-gen-original-name ' + JSON.stringify(rawName));
+    comments.push('@debug-gen-original-is-async ' + (isAsync ? 'true' : 'false'));
+    comments.push('@debug-gen-original-returns ' + JSON.stringify(originalReturns));
+    parameters.forEach(parameter => {
+        let clone = structuredClone(parameter);
+        delete clone['name'];
+        comments.push('@debug-gen-original-parameter' + ` ${parameter.name} ` + JSON.stringify(clone));
+    });
+
     const method = {
         name: rawName,
-        isAsync: member.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword) || false,
-        parameters: extractParameters(member.parameters),
-        comments: nodeComments(member),
+        isAsync,
+        parameters,
+        comments,
         returns,
         multiDef: [],
     };
@@ -416,6 +432,9 @@ function mapTypeToPHP(type, className) {
     if (type === 'this') {
         return className;
     }
+    if (type === 'RemoteObject') {
+        return 'RemoteObject';
+    }
     if (type.endsWith('[]') || /^Array<.*>$/.test(type) || type === 'Array') {
         return 'array';
     }
@@ -489,8 +508,6 @@ function generatePHPMethod(className, method) {
     return [
         '    /**',
         comments.map(c => `     * ${c}`).join('\n'),
-        comments.length === 0 ? null : '     *',
-        `     * @debug-ts-return-types ${returnHintRaw}`,
         '     */',
         `    public function ${nameTranslated}(${phpParams}): ${phpReturn}`,
         '    {',

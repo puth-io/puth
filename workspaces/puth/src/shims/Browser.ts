@@ -1,4 +1,4 @@
-import { Page, Viewport } from 'puppeteer-core';
+import { ElementHandle, Page, Viewport } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -172,12 +172,10 @@ export class Browser {
         return this.type(selector, value, { delay: pause });
     }
 
-    // public keys(selector: string, keys: [string]|string) {
-    //
-    // }
-
-    // TODO last worked on
-    private __findOrFail(selector: string[]|string) {
+    /**
+     * @gen-returns RemoteObject
+     */
+    public __findOrFail(selector: string[]|string): Promise<ElementHandle> {
         return (Array.isArray(selector) ? (
             Promise.all(selector.flatMap(s => this.page.$(s))).then(f => f.length === 0 ? null : f[0])
         ) : (
@@ -191,4 +189,8 @@ export class Browser {
                 return element;
             });
     }
+
+    // public keys(selector: string, keys: [string]|string) {
+    //
+    // }
 }
