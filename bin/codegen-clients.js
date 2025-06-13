@@ -196,6 +196,21 @@ function extractParameters(params) {
                 type: 'object',
                 members,
             };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.ArrayLiteralExpression) {
+            let members = [];
+
+            if (p?.initializer?.elements?.length > 0) {
+                throw new Error('Unsupported initializer: currently only empty array default values are allowed.');
+            }
+
+            param.initializer = {
+                type: 'array',
+                members,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.NullKeyword) {
+            param.initializer = {
+                type: 'null',
+            };
         } else if (p?.initializer?.kind === ts.SyntaxKind.NumericLiteral) {
             param.initializer = {
                 type: 'numeric',
@@ -473,6 +488,18 @@ function functionParameterOptional(p, className) {
                 
                 return `'${i.key}' => ${value}`;
             }).join(', ')}]`;
+        } else if (p.initializer.type === 'array') {
+            // TODO support array members
+            // return ` = [${p.initializer.members.map(i => {
+            //     let value = i.type;
+            //     if (i.type === 'string') value = `'${i.value}'`;
+            //     else if (i.type === 'numeric') value = parseInt(i.value);
+            //
+            //     return `'${i.key}' => ${value}`;
+            // }).join(', ')}]`;
+            return ` = []`;
+        } else if (p.initializer.type === 'null') {
+            return ` = null`;
         } else if (p.initializer.value != null) {
             if (p.type === 'integer') return ` = ${p.initializer.value}`;
             else if (p.type === 'string') return ` = '${p.initializer.value}'`;

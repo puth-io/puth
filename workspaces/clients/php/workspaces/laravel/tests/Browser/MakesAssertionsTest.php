@@ -15,7 +15,7 @@ class MakesAssertionsTest extends PuthTestCase
     {
         $this->expectException(ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<body></body>');
+            $browser->setContent('<body></body>');
             $browser->assertMissing('body', 0);
         });
     }
@@ -31,7 +31,7 @@ class MakesAssertionsTest extends PuthTestCase
         
         try {
             $this->browse(function (Browser $browser) use ($html) {
-                $browser->site->setContent($html);
+                $browser->setContent($html);
                 $browser->assertSourceHas('body');
                 $browser->assertMissing('body', 0);
             });
@@ -57,7 +57,7 @@ class MakesAssertionsTest extends PuthTestCase
     function test_assert_inputs()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<body><input name="test"></body>');
+            $browser->setContent('<body><input name="test"></body>');
             $browser->assertInputMissing('wrongname', 0);
             $browser->assertInputPresent('test', 0);
         });
@@ -75,7 +75,7 @@ class MakesAssertionsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $this->expectException(ExpectationFailedException::class);
-            $browser->site->setContent('<body><input name="test"></body>');
+            $browser->setContent('<body><input name="test"></body>');
             $browser->assertInputMissing('test', 0);
         });
     }
@@ -83,7 +83,7 @@ class MakesAssertionsTest extends PuthTestCase
     function test_assert_input_intermediate()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<input type="checkbox"><script>document.querySelector("input").indeterminate = true</script>');
+            $browser->setContent('<input type="checkbox"><script>document.querySelector("input").indeterminate = true</script>');
             $browser->assertIndeterminate('input');
         });
     }
@@ -91,7 +91,7 @@ class MakesAssertionsTest extends PuthTestCase
     function test_assert_see()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('<div id="a">test</div><div id="b"></div>');
+            $browser->setContent('<div id="a">test</div><div id="b"></div>');
             $browser->assertSeeAnythingIn('#a')
                 ->assertSeeNothingIn('#b');
         });

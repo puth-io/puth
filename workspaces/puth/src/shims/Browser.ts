@@ -1,4 +1,4 @@
-import { ElementHandle, Page, Viewport } from 'puppeteer-core';
+import { ElementHandle, Page, Viewport, WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -34,6 +34,10 @@ export class Browser {
 
     public click(selector: string, options: any = {}): Promise<this> {
         return this.firstOrFail(selector).then(element => element.click(options)).then(this.self);
+    }
+
+    public setContent(html: string, options: WaitForOptions = {}): Promise<this> {
+        return this.page.setContent(html, options).then(this.self);
     }
 
     public blank(): Promise<this> {

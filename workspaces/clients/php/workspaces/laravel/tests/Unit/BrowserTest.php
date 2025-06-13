@@ -12,8 +12,6 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
-    public static bool $debug = true;
-
     function test_multiple_browsers()
     {
         $this->browse(function (Browser $browser1, Browser $browser2) {
@@ -104,7 +102,7 @@ class BrowserTest extends PuthTestCase
                 ->assertUrlIs((new Playground)->url())
                 ->blank();
             
-            Assert::assertEquals('about:blank', $browser->site->url());
+            Assert::assertEquals('about:blank', $browser->url());
         });
     }
     

@@ -61,10 +61,10 @@ class BrowserTest extends PuthTestCase
     function test_browser_ensure_jquery_is_available()
     {
         $this->browse(function (Browser $browser) {
-            $browser->site->setContent('');
-            Assert::assertTrue($browser->site->evaluate('window.jQuery == null'));
+            $browser->setContent('');
+            Assert::assertTrue($browser->evaluate('window.jQuery == null'));
             $browser->ensurejQueryIsAvailable();
-            Assert::assertFalse($browser->site->evaluate('window.jQuery == null'));
+            Assert::assertFalse($browser->evaluate('window.jQuery == null'));
         });
     }
     
@@ -126,8 +126,8 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->any(fn() => [
-                    $browser->site->waitForDialog(),
-                    $browser->site->click('#dialog-prompt'),
+                    $browser->waitForDialog(),
+                    $browser->click('#dialog-prompt'),
                 ], function ($dialog) {
                     $dialog->accept('1234');
                 })

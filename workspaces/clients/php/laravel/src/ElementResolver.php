@@ -95,7 +95,7 @@ class ElementResolver
      */
     public function resolveForTyping(string $field): RemoteObject
     {
-        return $this->browser->__findOrFail($this->getTypingSelectors($field));
+        return $this->browser->_firstOrFail($this->getTypingSelectors($field));
     }
     
     /**
@@ -103,7 +103,7 @@ class ElementResolver
      */
     public function resolveForSelection(string $field)
     {
-        return $this->browser->__findOrFail($this->getSelectionSelectors($field));
+        return $this->browser->_firstOrFail($this->getSelectionSelectors($field));
     }
     
     /**
@@ -342,7 +342,7 @@ class ElementResolver
     protected function findById($selector)
     {
         if ($this->isIdSelector($selector)) {
-            return $this->site->get($selector, ['timeout' => 0]);
+            return $this->browser->_firstOrFail($selector, ['timeout' => 0]);
         }
     }
     

@@ -33,6 +33,18 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "setContent"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter html {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"WaitForOptions","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function setContent(string $html, mixed $options = []): Browser
+    {
+        return $this->callFunc('setContent', [$html, $options]);
+    }
+
+    /**
      * @debug-gen-original-name "blank"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -165,9 +177,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["any"]
      * @debug-gen-original-parameter pageFunction {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter args {"type":"any[]","isOptional":false}
+     * @debug-gen-original-parameter args {"type":"any[]","isOptional":false,"initializer":{"type":"array","members":[]}}
      */
-    public function evaluate(string $pageFunction, array $args): mixed
+    public function evaluate(string $pageFunction, array $args = []): mixed
     {
         return $this->callFunc('evaluate', [$pageFunction, $args]);
     }
@@ -293,9 +305,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"any","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function value(string $selector, mixed $value): Browser
+    public function value(string $selector, mixed $value = null): Browser
     {
         return $this->callFunc('value', [$selector, $value]);
     }
