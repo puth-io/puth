@@ -344,11 +344,11 @@ export class Browser {
             .then(this.returnOrSelf);
     }
 
-    public assertScript(expression: string, expected: any = true): Promise<Return | this> {
-        const actual = () => this.page.evaluate(expression);
+    public async assertScript(expression: string, expected: any = true): Promise<Return | this> {
+        console.error(await this.page.evaluate(expression))
         return this.expects(
             expected,
-            actual,
+            this.page.evaluate(expression),
             () => `JavaScript expression [${expression}] mismatched.`,
         ).then(this.returnOrSelf);
     }

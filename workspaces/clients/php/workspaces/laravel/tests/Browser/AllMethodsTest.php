@@ -126,7 +126,8 @@ class AllMethodsTest extends PuthTestCase
                 ->assertSeeIn('.querying-get', 'Div')
                 ->assertSeeIn('.example', 'Div')
                 ->assertDontSee('This text does not exists')
-                ->assertDontSeeIn('.querying-get', 'This text does not exists');
+                ->assertDontSeeIn('.querying-get', 'This text does not exists')
+                ->assertScript('1+1', 2)
 
 //                ->assertSourceHas('<title>Playground | Puth</title>')
 //                ->assertSourceMissing('<div>__not in dom__</div>')
@@ -171,16 +172,20 @@ class AllMethodsTest extends PuthTestCase
 ////                ->assertVueContains
 ////                ->assertVueDoesNotContain
 ////                ->vueAttribute
-//                ->assertScript('1+1', 2)
             ;
 
 
             // TODO negative tests
 
-            $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
-            $inverse = function(string $message, \Closure $callback) {
-                $this->expectExceptionMessage($message);
-                $callback();
+            $inverse = function(string $message, \Closure $closure) {
+                try {
+                    $closure();
+                    $this->fail('Closure didn\'t throw any exception');
+                } catch (\PHPUnit\Framework\ExpectationFailedException $e) {
+                    if (!str_contains($e->getMessage(), $message)) {
+                        throw new \PHPUnit\Framework\ExpectationFailedException("Failed asserting that '{$e->getMessage()}' contains '{$message}'");
+                    }
+                }
             };
 
             $inverse(
@@ -190,6 +195,10 @@ class AllMethodsTest extends PuthTestCase
             $inverse(
                 'Saw unexpected text [Div] within element [.querying-get]',
                 fn() => $browser->assertDontSeeIn('.querying-get', 'Div'),
+            );
+            $inverse(
+                'JavaScript expression [1+1] mismatched',
+                fn() => $browser->assertScript('1+1', 3),
             );
         });
     }
