@@ -13,6 +13,18 @@ import { Return } from '@puth/puth/src/context/Return';
 
 export type integer = number;
 
+export class ExpectationFailed extends Error {
+    readonly expected: any;
+    readonly actual: any;
+
+    constructor(message: string, expected?: any, actual?: any) {
+        super(message);
+
+        this.expected = expected;
+        this.actual = actual;
+    }
+}
+
 export class Browser {
     private readonly context: Context;
     private readonly page: Page;
@@ -209,7 +221,7 @@ export class Browser {
         return this.findAll(selector, options)
             .then(elements => {
                 if (elements.length === 0) {
-                    throw new Error('No element with the given selector found.');
+                    throw new ExpectationFailed(`Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`);
                 }
 
                 return elements;
@@ -354,33 +366,26 @@ export class Browser {
     }
 
     public assertSourceHas(code: string): Promise<Return | this> {
-        this.madeSourceAssertion = true;
-        const actual = () => this.page.content();
         return this.expects(
             code,
-            actual,
+            this.page.content(),
             ({ expected }) => `Did not find expected source code [${expected}]`,
             (e, a) => a.includes(e),
         ).then(this.returnOrSelf);
     }
 
     public assertSourceMissing(code: string): Promise<Return | this> {
-        this.madeSourceAssertion = true;
-        const actual = () => this.page.content();
         return this.expects(
             code,
-            actual,
+            this.page.content(),
             ({ expected }) => `Found unexpected source code [${expected}]`,
             (e, a) => !a.includes(e),
         ).then(this.returnOrSelf);
     }
 
-    public assertSeeLink(link: string): Promise<Return | this> {
-        return this.expects(
-            true,
-            () => this.seeLink(link),
-            () => `Did not see expected link [${link}].`,
-        ).then(this.returnOrSelf);
+    public assertSeeLink(link: string, selector: string = 'a'): Promise<Return | this> {
+        link = link.replace("'", "\\'");
+        return this.assertVisible(`${selector}[href='${link}']`);
     }
 
     public assertDontSeeLink(link: string): Promise<Return | this> {
@@ -391,8 +396,8 @@ export class Browser {
         ).then(this.returnOrSelf);
     }
 
-    public seeLink(link: string): boolean {
-        return this.page.visible(`a[href='${link}']`);
+    public seeLink(selector: string, link: string): Promise<boolean> {
+        return this.firstOrFail(selector).then(e => PuthStandardPlugin.visible(e));
     }
 
     public assertInputValue(field: any, value: string): Promise<Return | this> {
@@ -668,12 +673,11 @@ export class Browser {
     }
 
     public assertVisible(selector: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        return this.expects(
+        return this.firstOrFail(selector).then(e => this.expects(
             true,
-            () => this.page.visible(fullSelector),
-            () => `Element [${fullSelector}] is not visible.`,
-        ).then(this.returnOrSelf);
+            PuthStandardPlugin.visible(e),
+            `Element [${selector}] is not visible.`,
+        )).then(this.returnOrSelf);
     }
 
     public async assertPresent(

@@ -128,10 +128,9 @@ class AllMethodsTest extends PuthTestCase
                 ->assertDontSee('This text does not exists')
                 ->assertDontSeeIn('.querying-get', 'This text does not exists')
                 ->assertScript('1+1', 2)
-
-//                ->assertSourceHas('<title>Playground | Puth</title>')
-//                ->assertSourceMissing('<div>__not in dom__</div>')
-//                ->assertSeeLink('https://puth.io/')
+                ->assertSourceHas('<title>Playground | Puth</title>')
+                ->assertSourceMissing('<div>__not in dom__</div>')
+                ->assertSeeLink('https://puth.io/')
 //                ->assertDontSeeLink('https://notalink.io')
 //                ->assertVisible('body')
 //                ->assertInputValue('#properties-value input', 'input with value')
@@ -175,7 +174,7 @@ class AllMethodsTest extends PuthTestCase
             ;
 
 
-            // TODO negative tests
+            // TODO implement missing inverse tests
 
             $inverse = function(string $message, \Closure $closure) {
                 try {
@@ -188,18 +187,12 @@ class AllMethodsTest extends PuthTestCase
                 }
             };
 
-            $inverse(
-                'Did not see expected text [This text does not exists] within element [.querying-get]',
-                fn() => $browser->assertSeeIn('.querying-get', 'This text does not exists'),
-            );
-            $inverse(
-                'Saw unexpected text [Div] within element [.querying-get]',
-                fn() => $browser->assertDontSeeIn('.querying-get', 'Div'),
-            );
-            $inverse(
-                'JavaScript expression [1+1] mismatched',
-                fn() => $browser->assertScript('1+1', 3),
-            );
+            $inverse('Did not see expected text [This text does not exists] within element [.querying-get]', fn() => $browser->assertSeeIn('.querying-get', 'This text does not exists'));
+            $inverse('Saw unexpected text [Div] within element [.querying-get]', fn() => $browser->assertDontSeeIn('.querying-get', 'Div'));
+            $inverse('JavaScript expression [1+1] mismatched', fn() => $browser->assertScript('1+1', 3));
+            $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
+            $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
+            $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSeeLink('https://notalink.io/'));
         });
     }
     

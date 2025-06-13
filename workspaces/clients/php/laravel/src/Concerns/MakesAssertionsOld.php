@@ -50,59 +50,6 @@ trait MakesAssertionsOld
     public $madeSourceAssertion = false;
     
     /**
-     * Assert that the given JavaScript expression evaluates to the given value.
-     *
-     * @param string $expression
-     * @param mixed $expected
-     * @return $this
-     */
-    public function assertScript($expression, $expected = true)
-    {
-        Assert::assertEquals(
-            $expected, $this->site->evaluate($expression),
-            "JavaScript expression [{$expression}] mismatched."
-        );
-        
-        return $this;
-    }
-    
-    /**
-     * Assert that the given source code is present on the page.
-     *
-     * @param string $code
-     * @return $this
-     */
-    public function assertSourceHas($code)
-    {
-        $this->madeSourceAssertion = true;
-        
-        Assert::assertTrue(
-            strpos($this->site->content(), $code) !== false,
-            "Did not find expected source code [{$code}]"
-        );
-        
-        return $this;
-    }
-    
-    /**
-     * Assert that the given source code is not present on the page.
-     *
-     * @param string $code
-     * @return $this
-     */
-    public function assertSourceMissing($code)
-    {
-        $this->madeSourceAssertion = true;
-        
-        Assert::assertFalse(
-            strpos($this->site->content(), $code) !== false,
-            "Found unexpected source code [{$code}]"
-        );
-        
-        return $this;
-    }
-    
-    /**
      * Assert that the given link is visible.
      *
      * @param string $link

@@ -56,7 +56,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
           expects: Expects.Array,
         },
         visit: (page, url) => page.goto(url),
-        visible: this.visible,
+        visible: PuthStandardPlugin.visible,
         blur: this.blur,
         // @ts-ignore
         scrollTo: (el, ...options) => el.evaluate((o) => window.scrollTo(...o), options),
@@ -94,7 +94,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         its: PuthStandardPlugin.its,
         clickAndWait: this.clickAndWait,
         clickAndFile: this.clickAndFile,
-        visible: this.visible,
+        visible: PuthStandardPlugin.visible,
         children: this.children,
         siblings: this.siblings,
         parents: this.parents,
@@ -294,15 +294,12 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     return await Promise.all([element?.frame.page().waitForFileChooser(waitOptions), element.click(options)]);
   }
 
-  async visible(element, selector?) {
+  static async visible(element, selector?) {
     if (typeof selector === 'string') {
       element = await element.$(selector);
     } else if (selector) {
       element = selector;
     }
-
-    // This has to be after the above if else cases
-    // in case selected element is null
     if (!element) {
       return false;
     }

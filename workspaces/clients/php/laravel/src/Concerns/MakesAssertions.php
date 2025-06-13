@@ -176,4 +176,37 @@ trait MakesAssertions
         return $this->_assertSeeNothingIn($this->resolver->format($selector));
     }
 
+    /**
+     * Assert that the given link is present on the page.
+     *
+     * @param  string  $link
+     * @return $this
+     */
+    public function assertSeeLink($link)
+    {
+        return $this->_assertSeeLink($link, trim($this->resolver->format('a')));
+    }
+
+//    /**
+//     * Assert that the given link is not present on the page.
+//     *
+//     * @param  string  $link
+//     * @return $this
+//     */
+//    public function assertDontSeeLink($link)
+//    {
+//        if ($this->resolver->prefix) {
+//            $message = "Saw unexpected link [{$link}] within [{$this->resolver->prefix}].";
+//        } else {
+//            $message = "Saw unexpected link [{$link}].";
+//        }
+//
+//        PHPUnit::assertFalse(
+//            $this->seeLink($link),
+//            $message
+//        );
+//
+//        return $this;
+//    }
+
 }

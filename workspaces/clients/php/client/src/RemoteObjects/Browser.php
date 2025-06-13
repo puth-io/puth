@@ -551,7 +551,7 @@ class Browser extends RemoteObject
 
     /**
      * @debug-gen-original-name "assertScript"
-     * @debug-gen-original-is-async false
+     * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter expression {"type":"string","isOptional":false}
      * @debug-gen-original-parameter expected {"type":"any","isOptional":false,"initializer":{"type":"true"}}
@@ -588,10 +588,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
      */
-    public function assertSeeLink(string $link): mixed
+    public function _assertSeeLink(string $link, string $selector = 'a'): mixed
     {
-        return $this->callFunc('assertSeeLink', [$link]);
+        return $this->callFunc('assertSeeLink', [$link, $selector]);
     }
 
     /**
@@ -609,11 +610,12 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "seeLink"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["boolean"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
      */
-    public function seeLink(string $link): bool
+    public function seeLink(string $selector, string $link): bool
     {
-        return $this->callFunc('seeLink', [$link]);
+        return $this->callFunc('seeLink', [$selector, $link]);
     }
 
     /**

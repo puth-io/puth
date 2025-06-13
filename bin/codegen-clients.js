@@ -105,6 +105,7 @@ const NAME_TRANSLATION = {
                 assertDontSeeIn: '_assertDontSeeIn',
                 assertSeeAnythingIn: '_assertSeeAnythingIn',
                 assertSeeNothingIn: '_assertSeeNothingIn',
+                assertSeeLink: '_assertSeeLink',
             },
         },
     },
