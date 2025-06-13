@@ -3,6 +3,7 @@ import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
 import { type } from '../plugins/utils/cy';
+import { Return } from '@puth/puth/src/context/Return';
 
 // TODO
 // @gen-class ElementHandle
@@ -13,10 +14,11 @@ import { type } from '../plugins/utils/cy';
 export type integer = number;
 
 export class Browser {
-    private context: Context;
-    private page: Page;
+    private readonly context: Context;
+    private readonly page: Page;
 
-    private self: () => this;
+    private readonly self: () => this;
+    private readonly returnOrSelf: (value: any) => this|Return;
 
     public fitOnFailure: boolean = true;
 
@@ -25,7 +27,8 @@ export class Browser {
         this.context = context;
         this.page = page;
 
-        this.self = () => this;
+        this.self = (): this => this;
+        this.returnOrSelf = (value: any): this|Return => (value instanceof Return) ? value : this;
     }
 
     public visit(url: string): Promise<this> {
@@ -219,7 +222,42 @@ export class Browser {
         return this.findOrFail(selector, options).then(found => found[0]);
     }
 
-    // public keys(selector: string, keys: [string]|string) {
-    //
-    // }
+    //// public keys(selector: string, keys: [string]|string) {
+    ////
+    //// }
+
+    //// ASSERTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Assert that the page title is the given value.
+    public assertTitle(title: string): Promise<Return|this> {
+        return this.expects(
+            title,
+            this.page.title(),
+            ({ actual }) => `Expected title [${title}] does not equal actual title [${actual}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    private async expects(expected, actual, message, compareFn: ((expected, actual) => boolean)|null = null) {
+        if (compareFn == null) {
+            compareFn = ((e, a) => e === a);
+        }
+        expected = await this.resolveValue(expected);
+        actual = await this.resolveValue(actual);
+        message = await this.resolveValue(message, {expected, actual});
+
+        return Promise.resolve(!compareFn(expected, actual) ? Return.ExpectationFailed(message, expected, actual) : undefined);
+    }
+
+    private async resolveValue(valueOfFunctionOrPromise, args = {}) {
+        if (typeof valueOfFunctionOrPromise === 'function') {
+            return valueOfFunctionOrPromise(args);
+        }
+        if (valueOfFunctionOrPromise.constructor.name === 'AsyncFunction') {
+            return valueOfFunctionOrPromise(args);
+        }
+        if (valueOfFunctionOrPromise instanceof Promise) {
+            return valueOfFunctionOrPromise
+        }
+        return valueOfFunctionOrPromise;
+    }
 }

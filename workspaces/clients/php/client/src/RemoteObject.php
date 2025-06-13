@@ -164,13 +164,13 @@ class RemoteObject
         return $this->parseGeneric($body, $arguments, $onError);
     }
 
-    protected function parseGeneric($generic, $arguments, $onError)
+    protected function parseGeneric($generic, $arguments, \Closure $onError)
     {
         if (!property_exists($generic, 'type')) {
             throw new \Exception('Puth server response: $body->type not defined!');
         }
 
-        return match ($generic->type) {
+        $rv = match ($generic->type) {
             'GenericValue', 'GenericValues' => $generic->value,
             'GenericObject' => $this->resolveGenericObject($generic),
             'GenericObjects' => array_map(
@@ -184,10 +184,35 @@ class RemoteObject
             'GenericNull' => null,
             'GenericSelf', 'GenericUndefined' => $this,
             'PuthAssertion' => $generic,
-            'error' => $onError($generic, $arguments),
             default => $this,
         };
+
+        if ($generic->type === 'ExpectationFailed') {
+            $this->handleExpectationFailed($generic, $arguments);
+        } else if ($generic->type === 'error') {
+            $onError($generic, $arguments);
+        }
+
+        return $rv;
     }
+
+    /**
+     * @throws Exception
+     */
+    private function handleExpectationFailed($generic, $arguments): never
+   {
+       $message = BackTrace::message(
+           BackTrace::filter(debug_backtrace()),
+           $generic?->value?->message ?? 'Unknown error',
+       );
+
+       // TODO performance: we should only evaluate if ExpectationFailedException exists once
+       if (class_exists('\\PHPUnit\\Framework\\ExpectationFailedException')) {
+           throw new \PHPUnit\Framework\ExpectationFailedException($message);
+       }
+
+       throw new Exception($message);
+   }
 
     private function resolveGenericObject($generic): mixed
     {

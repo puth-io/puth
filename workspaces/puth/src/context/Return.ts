@@ -1,8 +1,8 @@
 export class Return {
-    private readonly type;
-    private readonly value;
+    private readonly type: any;
+    private readonly value: any;
 
-    constructor(type, value?) {
+    constructor(type: any, value?: any) {
         this.type = type;
         this.value = value;
     }
@@ -39,7 +39,11 @@ export class Return {
         return Return.make('GenericError', value);
     }
 
-    static make(type, value?) {
+    static ExpectationFailed(message: string, expected?: any, actual?: any) {
+        return Return.make('ExpectationFailed', { message, expected, actual });
+    }
+
+    static make(type: any, value?: any) {
         return new Return(type, value);
     }
 

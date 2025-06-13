@@ -50,22 +50,6 @@ trait MakesAssertions
     public $madeSourceAssertion = false;
     
     /**
-     * Assert that the page title is the given value.
-     *
-     * @param string $title
-     * @return $this
-     */
-    public function assertTitle($title)
-    {
-        Assert::assertEquals(
-            $title, $this->site->title(),
-            "Expected title [{$title}] does not equal actual title [{$this->site->title()}]."
-        );
-        
-        return $this;
-    }
-    
-    /**
      * Assert that the page title contains the given value.
      *
      * @param string $title

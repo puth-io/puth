@@ -406,4 +406,17 @@ class Browser extends RemoteObject
     {
         return $this->callFunc('firstOrFail', [$selector, $options]);
     }
+
+    /**
+     * Assert that the page title is the given value.
+     * 
+     * @debug-gen-original-name "assertTitle"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["true","unknown","this"]
+     * @debug-gen-original-parameter title {"type":"string","isOptional":false}
+     */
+    public function assertTitle(string $title): mixed
+    {
+        return $this->callFunc('assertTitle', [$title]);
+    }
 }
