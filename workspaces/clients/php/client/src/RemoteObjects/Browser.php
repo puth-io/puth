@@ -482,10 +482,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertSee(string $text): mixed
+    public function assertSee(string $text, bool $ignoreCase = false): mixed
     {
-        return $this->callFunc('assertSee', [$text]);
+        return $this->callFunc('assertSee', [$text, $ignoreCase]);
     }
 
     /**
@@ -493,10 +494,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertDontSee(string $text): mixed
+    public function assertDontSee(string $text, bool $ignoreCase = false): mixed
     {
-        return $this->callFunc('assertDontSee', [$text]);
+        return $this->callFunc('assertDontSee', [$text, $ignoreCase]);
     }
 
     /**
@@ -505,9 +507,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertSeeIn(string $selector, string $text, mixed $ignoreCase): mixed
+    public function _assertSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
     {
         return $this->callFunc('assertSeeIn', [$selector, $text, $ignoreCase]);
     }
@@ -518,10 +520,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertDontSeeIn(string $selector, string $text): mixed
+    public function _assertDontSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
     {
-        return $this->callFunc('assertDontSeeIn', [$selector, $text]);
+        return $this->callFunc('assertDontSeeIn', [$selector, $text, $ignoreCase]);
     }
 
     /**
@@ -530,7 +533,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
-    public function assertSeeAnythingIn(string $selector): mixed
+    public function _assertSeeAnythingIn(string $selector): mixed
     {
         return $this->callFunc('assertSeeAnythingIn', [$selector]);
     }
@@ -541,7 +544,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
-    public function assertSeeNothingIn(string $selector): mixed
+    public function _assertSeeNothingIn(string $selector): mixed
     {
         return $this->callFunc('assertSeeNothingIn', [$selector]);
     }
@@ -551,9 +554,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter expression {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter expected {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter expected {"type":"any","isOptional":false,"initializer":{"type":"true"}}
      */
-    public function assertScript(string $expression, mixed $expected): mixed
+    public function assertScript(string $expression, mixed $expected = true): mixed
     {
         return $this->callFunc('assertScript', [$expression, $expected]);
     }

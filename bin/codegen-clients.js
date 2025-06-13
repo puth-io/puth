@@ -101,6 +101,10 @@ const NAME_TRANSLATION = {
                 assertHasCookie: '_assertHasCookie',
                 assertCookieMissing: '_assertCookieMissing',
                 assertCookieValue: '_assertCookieValue',
+                assertSeeIn: '_assertSeeIn',
+                assertDontSeeIn: '_assertDontSeeIn',
+                assertSeeAnythingIn: '_assertSeeAnythingIn',
+                assertSeeNothingIn: '_assertSeeNothingIn',
             },
         },
     },
@@ -223,6 +227,14 @@ function extractParameters(params) {
             param.initializer = {
                 type: 'string',
                 value: p?.initializer?.text,
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.FalseKeyword) {
+            param.initializer = {
+                type: 'false',
+            };
+        } else if (p?.initializer?.kind === ts.SyntaxKind.TrueKeyword) {
+            param.initializer = {
+                type: 'true',
             };
         }
 
@@ -504,6 +516,10 @@ function functionParameterOptional(p, className) {
             return ` = []`;
         } else if (p.initializer.type === 'null') {
             return ` = null`;
+        }  else if (p.initializer.type === 'false') {
+            return ` = false`;
+        }  else if (p.initializer.type === 'true') {
+            return ` = true`;
         } else if (p.initializer.value != null) {
             if (p.type === 'integer') return ` = ${p.initializer.value}`;
             else if (p.type === 'string') return ` = '${p.initializer.value}'`;

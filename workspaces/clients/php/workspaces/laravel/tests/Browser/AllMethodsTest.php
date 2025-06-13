@@ -122,11 +122,12 @@ class AllMethodsTest extends PuthTestCase
                 ->assertCookieValue('test', '5678')
                 ->deleteCookie('test')
                 ->assertCookieMissing('test')
-//                ->assertSee('playground')
-//                ->assertSeeIn('.querying-get', 'Div')
-//                ->assertSeeIn('.example', 'Div')
-//                ->assertDontSee('This text does not exists')
-//                ->assertDontSeeIn('.querying-get', 'This text does not exists')
+                ->assertSee('playground')
+                ->assertSeeIn('.querying-get', 'Div')
+                ->assertSeeIn('.example', 'Div')
+                ->assertDontSee('This text does not exists')
+                ->assertDontSeeIn('.querying-get', 'This text does not exists');
+
 //                ->assertSourceHas('<title>Playground | Puth</title>')
 //                ->assertSourceMissing('<div>__not in dom__</div>')
 //                ->assertSeeLink('https://puth.io/')
@@ -172,6 +173,24 @@ class AllMethodsTest extends PuthTestCase
 ////                ->vueAttribute
 //                ->assertScript('1+1', 2)
             ;
+
+
+            // TODO negative tests
+
+            $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
+            $inverse = function(string $message, \Closure $callback) {
+                $this->expectExceptionMessage($message);
+                $callback();
+            };
+
+            $inverse(
+                'Did not see expected text [This text does not exists] within element [.querying-get]',
+                fn() => $browser->assertSeeIn('.querying-get', 'This text does not exists'),
+            );
+            $inverse(
+                'Saw unexpected text [Div] within element [.querying-get]',
+                fn() => $browser->assertDontSeeIn('.querying-get', 'Div'),
+            );
         });
     }
     

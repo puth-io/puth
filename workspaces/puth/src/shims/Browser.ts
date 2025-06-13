@@ -281,11 +281,12 @@ export class Browser {
         ).then(this.returnOrSelf);
     }
 
-    public assertSee(text: string): Promise<Return | this> {
-        return this.assertSeeIn('', text);
+    public assertSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
+        return this.assertSeeIn('body', text, ignoreCase);
     }
-    public assertDontSee(text: string): Promise<Return | this> {
-        return this.assertDontSeeIn('', text);
+
+    public assertDontSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
+        return this.assertDontSeeIn('body', text, ignoreCase);
     }
 
     public assertSeeIn(
@@ -293,51 +294,54 @@ export class Browser {
         text: string,
         ignoreCase = false,
     ): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).innerText;
-        const cmp = (e: string, a: string) =>
-            ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e);
-
-        return this.expects(
-            text,
-            actual,
-            ({ expected, actual }) =>
-                `Did not see expected text [${expected}] within element [${fullSelector}].`,
-            cmp,
-        ).then(this.returnOrSelf);
+        return this.firstOrFail(selector)
+            .then(element => PuthStandardPlugin.its(element, 'innerText'))
+            .then(actual => this.expects(
+                text,
+                actual,
+                ({ expected, actual }) => `Did not see expected text [${expected}] within element [${selector}].`,
+                (e: string, a: string) => ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e),
+            ))
+            .then(this.returnOrSelf);
     }
 
-    public assertDontSeeIn(selector: string, text: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).innerText;
-
-        return this.expects(
-            text,
-            actual,
-            ({ expected }) => `Saw unexpected text [${expected}] within element [${fullSelector}].`,
-            (e, a) => !a.includes(e),
-        ).then(this.returnOrSelf);
+    public assertDontSeeIn(
+        selector: string,
+        text: string,
+        ignoreCase = false,
+    ): Promise<Return | this> {
+        return this.firstOrFail(selector)
+            .then(element => PuthStandardPlugin.its(element, 'innerText'))
+            .then(actual => this.expects(
+                text,
+                actual,
+                ({ expected }) => `Saw unexpected text [${expected}] within element [${selector}].`,
+                (e, a) => !(ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
+            ))
+            .then(this.returnOrSelf);
     }
 
     public assertSeeAnythingIn(selector: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).innerText;
-        return this.expects(
-            '',
-            actual,
-            () => `Saw unexpected text [''] within element [${fullSelector}].`,
-            (_e, a) => a !== '',
-        ).then(this.returnOrSelf);
+        return this.firstOrFail(selector)
+            .then(element => PuthStandardPlugin.its(element, 'innerText'))
+            .then(actual => this.expects(
+                '',
+                actual,
+                () => `Saw unexpected text [''] within element [${selector}].`,
+                (_e, a) => a !== '',
+            ))
+            .then(this.returnOrSelf);
     }
 
     public assertSeeNothingIn(selector: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).innerText;
-        return this.expects(
-            '',
-            actual,
-            () => `Did not see expected text [''] within element [${fullSelector}].`,
-        ).then(this.returnOrSelf); // default equality suffices ('' === actual)
+        return this.firstOrFail(selector)
+            .then(element => PuthStandardPlugin.its(element, 'innerText'))
+            .then(actual => this.expects(
+                '',
+                actual,
+                () => `Did not see expected text [''] within element [${selector}].`,
+            ))
+            .then(this.returnOrSelf);
     }
 
     public assertScript(expression: string, expected: any = true): Promise<Return | this> {

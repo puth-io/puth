@@ -49,15 +49,15 @@ trait MakesAssertions
     public function assertHasCookie($name, $decrypt = true)
     {
         $cookie = $decrypt ? $this->cookie($name) : $this->plainCookie($name);
-        
+
         Assert::assertTrue(
             !is_null($cookie),
             "Did not find expected cookie [{$name}]."
         );
-        
+
         return $this;
     }
-    
+
      /**
       * Assert that the given unencrypted cookie is present.
       *
@@ -68,7 +68,7 @@ trait MakesAssertions
      {
          return $this->_assertHasCookie($name);
      }
-    
+
     /**
      * Assert that the given encrypted cookie is not present.
      *
@@ -79,15 +79,15 @@ trait MakesAssertions
     public function assertCookieMissing($name, $decrypt = true)
     {
         $cookie = $decrypt ? $this->cookie($name) : $this->plainCookie($name);
-        
+
         Assert::assertTrue(
             is_null($cookie),
             "Found unexpected cookie [{$name}]."
         );
-        
+
         return $this;
     }
-    
+
      /**
       * Assert that the given unencrypted cookie is not present.
       *
@@ -98,7 +98,7 @@ trait MakesAssertions
      {
          return $this->_assertCookieMissing($name);
      }
-    
+
     /**
      * Assert that an encrypted cookie has a given value.
      *
@@ -109,15 +109,15 @@ trait MakesAssertions
     public function assertCookieValue($name, $value, $decrypt = true)
     {
         $actual = $decrypt ? $this->cookie($name) : $this->plainCookie($name);
-        
+
         Assert::assertEquals(
             $value, $actual,
             "Cookie [{$name}] had value [{$actual}], but expected [{$value}]."
         );
-        
+
         return $this;
     }
-    
+
      /**
       * Assert that an unencrypted cookie has a given value.
       *
@@ -129,4 +129,51 @@ trait MakesAssertions
      {
          return $this->_assertCookieValue($name, $value);
      }
+
+     /**
+     * Assert that the given text appears within the given selector.
+     *
+     * @param string $selector
+     * @param string $text
+     * @return $this
+     */
+    public function assertSeeIn($selector, $text, $ignoreCase = false)
+    {
+        return $this->_assertSeeIn($this->resolver->format($selector), $text, $ignoreCase);
+    }
+
+    /**
+     * Assert that the given text does not appear within the given selector.
+     *
+     * @param string $selector
+     * @param string $text
+     * @return $this
+     */
+    public function assertDontSeeIn($selector, $text, $ignoreCase = false)
+    {
+        return $this->_assertDontSeeIn($this->resolver->format($selector), $text, $ignoreCase);
+    }
+
+    /**
+     * Assert that any text is present within the selector.
+     *
+     * @param  string  $selector
+     * @return $this
+     */
+    public function assertSeeAnythingIn($selector)
+    {
+        return $this->_assertSeeAnythingIn($this->resolver->format($selector));
+    }
+
+    /**
+     * Assert that no text is present within the selector.
+     *
+     * @param string $selector
+     * @return $this
+     */
+    public function assertSeeNothingIn($selector)
+    {
+        return $this->_assertSeeNothingIn($this->resolver->format($selector));
+    }
+
 }
