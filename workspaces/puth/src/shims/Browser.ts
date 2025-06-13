@@ -34,7 +34,6 @@ export class Browser {
     private readonly page: Page;
 
     private readonly self: () => this;
-    private readonly returnOrSelf: (value: any) => this|Return;
 
     public fitOnFailure: boolean = true;
 
@@ -43,7 +42,6 @@ export class Browser {
         this.page = page;
 
         this.self = (): this => this;
-        this.returnOrSelf = (value: any): this|Return => (value instanceof Return) ? value : this;
     }
 
     public visit(url: string): Promise<this> {
@@ -253,7 +251,7 @@ export class Browser {
             title,
             this.page.title(),
             ({ actual }) => `Expected title [${title}] does not equal actual title [${actual}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     // Assert that the page title contains the given value.
@@ -263,7 +261,7 @@ export class Browser {
             this.page.title(),
             ({ expected, actual }) => `Did not see expected value [${expected}] within title [${actual}].`,
             (expected, actual) => actual.includes(expected),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertHasCookie(name: string): Promise<Return | this> {
@@ -272,7 +270,7 @@ export class Browser {
             this.getCookieByName(name),
             ({ expected }) => `Did not find expected cookie [${expected}].`,
             (_e, a) => a?.value != null,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertCookieMissing(name: string): Promise<Return | this> {
@@ -281,7 +279,7 @@ export class Browser {
             this.getCookieByName(name),
             ({ expected }) => `Found unexpected cookie [${expected}].`,
             (_e, a) => a?.value == null,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public async assertCookieValue(
@@ -294,7 +292,7 @@ export class Browser {
             value,
             (await this.getCookieByName(name))?.value?.value ?? '',
             ({ expected, actual }) => `Cookie [${name}] had value [${actual?.value ?? ''}], but expected [${expected}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
@@ -318,7 +316,7 @@ export class Browser {
                 ({ expected, actual }) => `Did not see expected text [${expected}] within element [${selector}].`,
                 (e: string, a: string) => ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e),
             ))
-            .then(this.returnOrSelf);
+            .then(this.self);
     }
 
     public assertDontSeeIn(
@@ -334,7 +332,7 @@ export class Browser {
                 ({ expected }) => `Saw unexpected text [${expected}] within element [${selector}].`,
                 (e, a) => !(ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
             ))
-            .then(this.returnOrSelf);
+            .then(this.self);
     }
 
     public assertSeeAnythingIn(selector: string): Promise<Return | this> {
@@ -346,7 +344,7 @@ export class Browser {
                 () => `Saw unexpected text [''] within element [${selector}].`,
                 (_e, a) => a !== '',
             ))
-            .then(this.returnOrSelf);
+            .then(this.self);
     }
 
     public assertSeeNothingIn(selector: string): Promise<Return | this> {
@@ -357,7 +355,7 @@ export class Browser {
                 actual,
                 () => `Did not see expected text [''] within element [${selector}].`,
             ))
-            .then(this.returnOrSelf);
+            .then(this.self);
     }
 
     public async assertScript(expression: string, expected: any = true): Promise<Return | this> {
@@ -366,7 +364,7 @@ export class Browser {
             expected,
             this.page.evaluate(expression),
             () => `JavaScript expression [${expression}] mismatched.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSourceHas(code: string): Promise<Return | this> {
@@ -375,7 +373,7 @@ export class Browser {
             this.page.content(),
             ({ expected }) => `Did not find expected source code [${expected}]`,
             (e, a) => a.includes(e),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSourceMissing(code: string): Promise<Return | this> {
@@ -384,7 +382,7 @@ export class Browser {
             this.page.content(),
             ({ expected }) => `Found unexpected source code [${expected}]`,
             (e, a) => !a.includes(e),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSeeLink(link: string, selector: string = 'a'): Promise<Return | this> {
@@ -397,7 +395,7 @@ export class Browser {
             false,
             () => this.seeLink(link),
             () => `Saw unexpected link [${link}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public seeLink(selector: string, link: string): Promise<boolean> {
@@ -411,7 +409,7 @@ export class Browser {
             actual,
             ({ expected, actual }) =>
                 `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertInputValueIsNot(field: any, value: string): Promise<Return | this> {
@@ -421,7 +419,7 @@ export class Browser {
             actual,
             () => `Value [${value}] for the [${field}] input should not equal the actual value.`,
             (e, a) => e !== a,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public inputValue(field: any): string {
@@ -456,7 +454,7 @@ export class Browser {
             true,
             () => element.checked,
             () => `Expected checkbox [${element}] to be checked, but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertNotChecked(
@@ -468,7 +466,7 @@ export class Browser {
             false,
             () => element.checked,
             () => `Checkbox [${element}] was unexpectedly checked.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public async assertIndeterminate(
@@ -480,7 +478,7 @@ export class Browser {
             true,
             () => this.resolver.findOrFail(field).indeterminate,
             () => `Checkbox [${field}] was not in indeterminate state.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertRadioSelected(field: string, value: string): Promise<Return | this> {
@@ -489,7 +487,7 @@ export class Browser {
             true,
             () => element.checked,
             () => `Expected radio [${element}] to be selected, but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertRadioNotSelected(
@@ -501,7 +499,7 @@ export class Browser {
             false,
             () => element.checked,
             () => `Radio [${element}] was unexpectedly selected.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     private selected(field: string, value: string | string[]): boolean {
@@ -519,7 +517,7 @@ export class Browser {
                 `Expected value [${values.join(
                     ',',
                 )}] to be selected for [${field}], but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertNotSelected(
@@ -532,7 +530,7 @@ export class Browser {
             () => this.selected(field, values),
             () =>
                 `Unexpected value [${values.join(',')}] selected for [${field}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSelectHasOptions(field: string, values: string[]): Promise<Return | this> {
@@ -545,7 +543,7 @@ export class Browser {
             unique.length,
             () =>
                 `Expected options [${values.join(',')}] for selection field [${field}] to be available.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSelectMissingOptions(field: string, values: string[]): Promise<Return | this> {
@@ -555,7 +553,7 @@ export class Browser {
             count,
             () =>
                 `Unexpected options [${values.join(',')}] for selection field [${field}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertSelectHasOption(field: string, value: string): Promise<Return | this> {
@@ -573,7 +571,7 @@ export class Browser {
             actual,
             ({ expected, actual }) =>
                 `Did not see expected value [${expected}] within element [${fullSelector}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertValueIsNot(selector: string, value: string): Promise<Return | this> {
@@ -584,7 +582,7 @@ export class Browser {
             actual,
             () => `Saw unexpected value [${value}] within element [${fullSelector}].`,
             (e, a) => e !== a,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     private ensureElementSupportsValueAttribute(element: any, fullSelector: string): void {
@@ -616,7 +614,7 @@ export class Browser {
             actual,
             () =>
                 `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertAttributeMissing(selector: string, attribute: string): Promise<Return | this> {
@@ -626,7 +624,7 @@ export class Browser {
             null,
             actual,
             () => `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertAttributeContains(
@@ -642,7 +640,7 @@ export class Browser {
             () =>
                 `Attribute '${attribute}' does not contain [${value}]. Full attribute value was [${actual}].`,
             (e, a) => a.includes(e),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertAttributeDoesntContain(
@@ -658,7 +656,7 @@ export class Browser {
             () =>
                 `Attribute '${attribute}' contains [${value}]. Full attribute value was [${actual}].`,
             (e, a) => !a.includes(e),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertAriaAttribute(
@@ -681,7 +679,7 @@ export class Browser {
             true,
             PuthStandardPlugin.visible(e),
             `Element [${selector}] is not visible.`,
-        )).then(this.returnOrSelf);
+        )).then(this.self);
     }
 
     public async assertPresent(
@@ -698,7 +696,7 @@ export class Browser {
             true,
             () => this.resolver.find(selector) != null,
             () => `Element [${fullSelector}] is not present.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertNotPresent(selector: string): Promise<Return | this> {
@@ -707,7 +705,7 @@ export class Browser {
             true,
             () => this.resolver.find(selector) == null,
             () => `Element [${fullSelector}] is present.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public async assertMissing(
@@ -725,7 +723,7 @@ export class Browser {
             true,
             missing,
             () => `Saw unexpected element [${fullSelector}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public async assertDialogOpened(message: string): Promise<Return | this> {
@@ -735,7 +733,7 @@ export class Browser {
             actual,
             ({ expected, actual }) =>
                 `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertEnabled(field: any): Promise<Return | this> {
@@ -744,7 +742,7 @@ export class Browser {
             false,
             () => element.disabled,
             () => `Expected element [${element}] to be enabled, but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertDisabled(field: any): Promise<Return | this> {
@@ -753,7 +751,7 @@ export class Browser {
             true,
             () => element.disabled,
             () => `Expected element [${element}] to be disabled, but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertButtonEnabled(button: any): Promise<Return | this> {
@@ -762,7 +760,7 @@ export class Browser {
             false,
             () => element.disabled,
             () => `Expected button [${button}] to be enabled, but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertButtonDisabled(button: string): Promise<Return | this> {
@@ -771,7 +769,7 @@ export class Browser {
             true,
             () => element.disabled,
             () => `Expected button [${button}] to be disabled, but it wasn't.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertFocused(field: string): Promise<Return | this> {
@@ -782,7 +780,7 @@ export class Browser {
             actual,
             () => `Expected element [${field}] to be focused, but it wasn't.`,
             (e, a) => e === a,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertNotFocused(field: string): Promise<Return | this> {
@@ -793,7 +791,7 @@ export class Browser {
             actual,
             () => `Element [${field}] was unexpectedly focused.`,
             (e, a) => e !== a,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertVue(
@@ -806,7 +804,7 @@ export class Browser {
             value,
             actual,
             () => `Vue attribute for key [${key}] mismatched.`,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertVueIsNot(
@@ -820,7 +818,7 @@ export class Browser {
             actual,
             () => `Vue attribute for key [${key}] should not equal [${value}].`,
             (e, a) => e !== a,
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertVueContains(
@@ -834,7 +832,7 @@ export class Browser {
             actual,
             () => `The attribute for key [${key}] is not an array that contains [${value}].`,
             (e, a) => Array.isArray(a) && a.includes(e),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public assertVueDoesntContain(
@@ -856,7 +854,7 @@ export class Browser {
             actual,
             () => `Vue attribute for key [${key}] should not contain [${value}].`,
             (e, a) => Array.isArray(a) && !a.includes(e),
-        ).then(this.returnOrSelf);
+        ).then(this.self);
     }
 
     public vueAttribute(componentSelector: string | null, key: string): any {
@@ -874,15 +872,20 @@ export class Browser {
         return this.page.evaluate(script);
     }
 
-    private async expects(expected, actual, message, compareFn?: ((expected, actual) => boolean)) {
+    private async expects(expected, actual, message, compareFn?: ((expected, actual) => boolean)): Promise<void> {
         if (compareFn == null) {
             compareFn = ((e, a) => e == a);
         }
         expected = await this.resolveValue(expected);
         actual = await this.resolveValue(actual);
-        message = await this.resolveValue(message, {expected, actual});
 
-        return Promise.resolve(!compareFn(expected, actual) ? Return.ExpectationFailed(message, expected, actual) : undefined);
+        if (!compareFn(expected, actual)) {
+            throw new ExpectationFailed(
+                await this.resolveValue(message, {expected, actual}),
+                expected,
+                actual,
+            );
+        }
     }
 
     private async resolveValue(valueOfFunctionOrPromise, args = {}) {
