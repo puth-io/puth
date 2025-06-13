@@ -1,6 +1,6 @@
 export class Return {
-    private readonly type: any;
-    private readonly value: any;
+    public readonly type: any;
+    public readonly value: any;
 
     constructor(type: any, value?: any) {
         this.type = type;

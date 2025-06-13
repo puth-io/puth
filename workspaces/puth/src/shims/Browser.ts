@@ -22,7 +22,6 @@ export class Browser {
 
     public fitOnFailure: boolean = true;
 
-
     constructor(context: Context, page: Page) {
         this.context = context;
         this.page = page;
@@ -104,6 +103,10 @@ export class Browser {
 
     public url(): string {
         return this.page.url();
+    }
+
+    public async title(): Promise<string> {
+        return this.page.title();
     }
 
     public content(): Promise<string> {
@@ -237,9 +240,631 @@ export class Browser {
         ).then(this.returnOrSelf);
     }
 
-    private async expects(expected, actual, message, compareFn: ((expected, actual) => boolean)|null = null) {
+    // Assert that the page title contains the given value.
+    public assertTitleContains(title: string): Promise<Return | this> {
+        return this.expects(
+            title,
+            this.page.title(),
+            ({ expected, actual }) => `Did not see expected value [${expected}] within title [${actual}].`,
+            (expected, actual) => actual.includes(expected),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertHasCookie(name: string): Promise<Return | this> {
+        return this.expects(
+            name,
+            this.getCookieByName(name),
+            ({ expected }) => `Did not find expected cookie [${expected}].`,
+            (_e, a) => a?.value != null,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertCookieMissing(name: string): Promise<Return | this> {
+        return this.expects(
+            name,
+            this.getCookieByName(name),
+            ({ expected }) => `Found unexpected cookie [${expected}].`,
+            (_e, a) => a?.value == null,
+        ).then(this.returnOrSelf);
+    }
+
+    public async assertCookieValue(
+        name: string,
+        value: string,
+    ): Promise<Return | this> {
+        console.error(value);
+        console.error((await this.getCookieByName(name))?.value ?? '');
+        return this.expects(
+            value,
+            (await this.getCookieByName(name))?.value?.value ?? '',
+            ({ expected, actual }) => `Cookie [${name}] had value [${actual?.value ?? ''}], but expected [${expected}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSee(text: string): Promise<Return | this> {
+        return this.assertSeeIn('', text);
+    }
+    public assertDontSee(text: string): Promise<Return | this> {
+        return this.assertDontSeeIn('', text);
+    }
+
+    public assertSeeIn(
+        selector: string,
+        text: string,
+        ignoreCase = false,
+    ): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).innerText;
+        const cmp = (e: string, a: string) =>
+            ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e);
+
+        return this.expects(
+            text,
+            actual,
+            ({ expected, actual }) =>
+                `Did not see expected text [${expected}] within element [${fullSelector}].`,
+            cmp,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertDontSeeIn(selector: string, text: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).innerText;
+
+        return this.expects(
+            text,
+            actual,
+            ({ expected }) => `Saw unexpected text [${expected}] within element [${fullSelector}].`,
+            (e, a) => !a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSeeAnythingIn(selector: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).innerText;
+        return this.expects(
+            '',
+            actual,
+            () => `Saw unexpected text [''] within element [${fullSelector}].`,
+            (_e, a) => a !== '',
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSeeNothingIn(selector: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).innerText;
+        return this.expects(
+            '',
+            actual,
+            () => `Did not see expected text [''] within element [${fullSelector}].`,
+        ).then(this.returnOrSelf); // default equality suffices ('' === actual)
+    }
+
+    public assertScript(expression: string, expected: any = true): Promise<Return | this> {
+        const actual = () => this.page.evaluate(expression);
+        return this.expects(
+            expected,
+            actual,
+            () => `JavaScript expression [${expression}] mismatched.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSourceHas(code: string): Promise<Return | this> {
+        this.madeSourceAssertion = true;
+        const actual = () => this.page.content();
+        return this.expects(
+            code,
+            actual,
+            ({ expected }) => `Did not find expected source code [${expected}]`,
+            (e, a) => a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSourceMissing(code: string): Promise<Return | this> {
+        this.madeSourceAssertion = true;
+        const actual = () => this.page.content();
+        return this.expects(
+            code,
+            actual,
+            ({ expected }) => `Found unexpected source code [${expected}]`,
+            (e, a) => !a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSeeLink(link: string): Promise<Return | this> {
+        return this.expects(
+            true,
+            () => this.seeLink(link),
+            () => `Did not see expected link [${link}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertDontSeeLink(link: string): Promise<Return | this> {
+        return this.expects(
+            false,
+            () => this.seeLink(link),
+            () => `Saw unexpected link [${link}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public seeLink(link: string): boolean {
+        return this.page.visible(`a[href='${link}']`);
+    }
+
+    public assertInputValue(field: any, value: string): Promise<Return | this> {
+        const actual = () => this.inputValue(field);
+        return this.expects(
+            value,
+            actual,
+            ({ expected, actual }) =>
+                `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertInputValueIsNot(field: any, value: string): Promise<Return | this> {
+        const actual = () => this.inputValue(field);
+        return this.expects(
+            value,
+            actual,
+            () => `Value [${value}] for the [${field}] input should not equal the actual value.`,
+            (e, a) => e !== a,
+        ).then(this.returnOrSelf);
+    }
+
+    public inputValue(field: any): string {
+        return this.resolver.resolveForTyping(field).value();
+    }
+
+    public async assertInputPresent(
+        field: string,
+        timeout = 5,
+    ): Promise<Return | this> {
+        await this.assertPresent(
+            `input[name='${field}'], textarea[name='${field}'], select[name='${field}']`,
+            timeout,
+        );
+        return this;
+    }
+
+    public async assertInputMissing(
+        field: string,
+        timeout = 5,
+    ): Promise<Return | this> {
+        await this.assertMissing(
+            `input[name='${field}'], textarea[name='${field}'], select[name='${field}']`,
+            timeout,
+        );
+        return this;
+    }
+
+    public assertChecked(field: string, value: string | null = null): Promise<Return | this> {
+        const element = this.resolver.resolveForChecking(field, value);
+        return this.expects(
+            true,
+            () => element.checked,
+            () => `Expected checkbox [${element}] to be checked, but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertNotChecked(
+        field: string,
+        value: string | null = null,
+    ): Promise<Return | this> {
+        const element = this.resolver.resolveForChecking(field, value);
+        return this.expects(
+            false,
+            () => element.checked,
+            () => `Checkbox [${element}] was unexpectedly checked.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public async assertIndeterminate(
+        field: string,
+        value: string | null = null,
+    ): Promise<Return | this> {
+        await this.assertNotChecked(field, value);
+        return this.expects(
+            true,
+            () => this.resolver.findOrFail(field).indeterminate,
+            () => `Checkbox [${field}] was not in indeterminate state.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertRadioSelected(field: string, value: string): Promise<Return | this> {
+        const element = this.resolver.resolveForRadioSelection(field, value);
+        return this.expects(
+            true,
+            () => element.checked,
+            () => `Expected radio [${element}] to be selected, but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertRadioNotSelected(
+        field: string,
+        value: string | null = null,
+    ): Promise<Return | this> {
+        const element = this.resolver.resolveForRadioSelection(field, value);
+        return this.expects(
+            false,
+            () => element.checked,
+            () => `Radio [${element}] was unexpectedly selected.`,
+        ).then(this.returnOrSelf);
+    }
+
+    private selected(field: string, value: string | string[]): boolean {
+        const selectedVals = this.resolver.resolveForSelection(field)?.selected() ?? [];
+        const wanted = wrapArray(value);
+        return wanted.every((v) => selectedVals.includes(v));
+    }
+
+    public assertSelected(field: string, value: string | string[]): Promise<Return | this> {
+        const values = wrapArray(value);
+        return this.expects(
+            true,
+            () => this.selected(field, values),
+            () =>
+                `Expected value [${values.join(
+                    ',',
+                )}] to be selected for [${field}], but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertNotSelected(
+        field: string,
+        value: string | string[],
+    ): Promise<Return | this> {
+        const values = wrapArray(value);
+        return this.expects(
+            false,
+            () => this.selected(field, values),
+            () =>
+                `Unexpected value [${values.join(',')}] selected for [${field}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSelectHasOptions(field: string, values: string[]): Promise<Return | this> {
+        const opts = this.resolver
+            .resolveSelectOptions(field, values)
+            .map((o: any) => o.value);
+        const unique = [...new Set(opts)];
+        return this.expects(
+            values.length,
+            unique.length,
+            () =>
+                `Expected options [${values.join(',')}] for selection field [${field}] to be available.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSelectMissingOptions(field: string, values: string[]): Promise<Return | this> {
+        const count = this.resolver.resolveSelectOptions(field, values).length;
+        return this.expects(
+            0,
+            count,
+            () =>
+                `Unexpected options [${values.join(',')}] for selection field [${field}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertSelectHasOption(field: string, value: string): Promise<Return | this> {
+        return this.assertSelectHasOptions(field, [value]);
+    }
+    public assertSelectMissingOption(field: string, value: string): Promise<Return | this> {
+        return this.assertSelectMissingOptions(field, [value]);
+    }
+
+    public assertValue(selector: string, value: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).value;
+        return this.expects(
+            value,
+            actual,
+            ({ expected, actual }) =>
+                `Did not see expected value [${expected}] within element [${fullSelector}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertValueIsNot(selector: string, value: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).value;
+        return this.expects(
+            value,
+            actual,
+            () => `Saw unexpected value [${value}] within element [${fullSelector}].`,
+            (e, a) => e !== a,
+        ).then(this.returnOrSelf);
+    }
+
+    private ensureElementSupportsValueAttribute(element: any, fullSelector: string): void {
+        const allowed = [
+            'textarea',
+            'select',
+            'button',
+            'input',
+            'li',
+            'meter',
+            'option',
+            'param',
+            'progress',
+        ];
+        if (!allowed.includes(element.tagName.toLowerCase())) {
+            throw new Error(`This assertion cannot be used with the element [${fullSelector}].`);
+        }
+    }
+
+    public assertAttribute(
+        selector: string,
+        attribute: string,
+        value: string,
+    ): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).its(attribute);
+        return this.expects(
+            value,
+            actual,
+            () =>
+                `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertAttributeMissing(selector: string, attribute: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).its(attribute);
+        return this.expects(
+            null,
+            actual,
+            () => `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertAttributeContains(
+        selector: string,
+        attribute: string,
+        value: string,
+    ): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).its(attribute);
+        return this.expects(
+            value,
+            actual,
+            () =>
+                `Attribute '${attribute}' does not contain [${value}]. Full attribute value was [${actual}].`,
+            (e, a) => a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertAttributeDoesntContain(
+        selector: string,
+        attribute: string,
+        value: string,
+    ): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        const actual = () => this.resolver.findOrFail(selector).its(attribute);
+        return this.expects(
+            value,
+            actual,
+            () =>
+                `Attribute '${attribute}' contains [${value}]. Full attribute value was [${actual}].`,
+            (e, a) => !a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertAriaAttribute(
+        selector: string,
+        attribute: string,
+        value: string,
+    ): Promise<Return | this> {
+        return this.assertAttribute(selector, `aria-${attribute}`, value);
+    }
+    public assertDataAttribute(
+        selector: string,
+        attribute: string,
+        value: string,
+    ): Promise<Return | this> {
+        return this.assertAttribute(selector, `data-${attribute}`, value);
+    }
+
+    public assertVisible(selector: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        return this.expects(
+            true,
+            () => this.page.visible(fullSelector),
+            () => `Element [${fullSelector}] is not visible.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public async assertPresent(
+        selector: string,
+        timeout = 5,
+    ): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        if (timeout !== 0) {
+            try {
+                await this.page.waitForSelector(fullSelector, { timeout: timeout * 1000 });
+            } catch (_) {}
+        }
+        return this.expects(
+            true,
+            () => this.resolver.find(selector) != null,
+            () => `Element [${fullSelector}] is not present.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertNotPresent(selector: string): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        return this.expects(
+            true,
+            () => this.resolver.find(selector) == null,
+            () => `Element [${fullSelector}] is present.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public async assertMissing(
+        selector: string,
+        timeout = 5,
+    ): Promise<Return | this> {
+        const fullSelector = this.resolver.format(selector);
+        if (timeout !== 0) {
+            try {
+                await this.page.waitForSelector(fullSelector, { state: 'hidden', timeout: timeout * 1000 });
+            } catch (_) {}
+        }
+        const missing = () => this.resolver.find(selector) == null;
+        return this.expects(
+            true,
+            missing,
+            () => `Saw unexpected element [${fullSelector}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public async assertDialogOpened(message: string): Promise<Return | this> {
+        const actual = await this.page.waitForEvent('dialog').then((d) => d.message());
+        return this.expects(
+            message,
+            actual,
+            ({ expected, actual }) =>
+                `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertEnabled(field: any): Promise<Return | this> {
+        const element = this.resolver.resolveForField(field);
+        return this.expects(
+            false,
+            () => element.disabled,
+            () => `Expected element [${element}] to be enabled, but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertDisabled(field: any): Promise<Return | this> {
+        const element = this.resolver.resolveForField(field);
+        return this.expects(
+            true,
+            () => element.disabled,
+            () => `Expected element [${element}] to be disabled, but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertButtonEnabled(button: any): Promise<Return | this> {
+        const element = this.resolver.resolveForButtonPress(button);
+        return this.expects(
+            false,
+            () => element.disabled,
+            () => `Expected button [${button}] to be enabled, but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertButtonDisabled(button: string): Promise<Return | this> {
+        const element = this.resolver.resolveForButtonPress(button);
+        return this.expects(
+            true,
+            () => element.disabled,
+            () => `Expected button [${button}] to be disabled, but it wasn't.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertFocused(field: string): Promise<Return | this> {
+        const expected = this.resolver.resolveForField(field);
+        const actual = () => this.page.focused();
+        return this.expects(
+            expected,
+            actual,
+            () => `Expected element [${field}] to be focused, but it wasn't.`,
+            (e, a) => e === a,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertNotFocused(field: string): Promise<Return | this> {
+        const expected = this.resolver.resolveForField(field);
+        const actual = () => this.page.focused();
+        return this.expects(
+            expected,
+            actual,
+            () => `Element [${field}] was unexpectedly focused.`,
+            (e, a) => e !== a,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertVue(
+        key: string,
+        value: any,
+        componentSelector: string | null = null,
+    ): Promise<Return | this> {
+        const actual = () => this.vueAttribute(componentSelector, key);
+        return this.expects(
+            value,
+            actual,
+            () => `Vue attribute for key [${key}] mismatched.`,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertVueIsNot(
+        key: string,
+        value: any,
+        componentSelector: string | null = null,
+    ): Promise<Return | this> {
+        const actual = () => this.vueAttribute(componentSelector, key);
+        return this.expects(
+            value,
+            actual,
+            () => `Vue attribute for key [${key}] should not equal [${value}].`,
+            (e, a) => e !== a,
+        ).then(this.returnOrSelf);
+    }
+
+    public assertVueContains(
+        key: string,
+        value: any,
+        componentSelector: string | null = null,
+    ): Promise<Return | this> {
+        const actual = () => this.vueAttribute(componentSelector, key);
+        return this.expects(
+            value,
+            actual,
+            () => `The attribute for key [${key}] is not an array that contains [${value}].`,
+            (e, a) => Array.isArray(a) && a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public assertVueDoesntContain(
+        key: string,
+        value: any,
+        componentSelector: string | null = null,
+    ): Promise<Return | this> {
+        return this.assertVueDoesNotContain(key, value, componentSelector);
+    }
+
+    public assertVueDoesNotContain(
+        key: string,
+        value: any,
+        componentSelector: string | null = null,
+    ): Promise<Return | this> {
+        const actual = () => this.vueAttribute(componentSelector, key);
+        return this.expects(
+            value,
+            actual,
+            () => `Vue attribute for key [${key}] should not contain [${value}].`,
+            (e, a) => Array.isArray(a) && !a.includes(e),
+        ).then(this.returnOrSelf);
+    }
+
+    public vueAttribute(componentSelector: string | null, key: string): any {
+        const fullSelector = this.resolver.format(componentSelector);
+        const script = `
+        const el = document.querySelector('${fullSelector}');
+        if (!el) return undefined;
+        if (typeof el.__vue__ !== 'undefined') return el.__vue__.${key};
+        try {
+          const attr = el.__vueParentComponent.ctx.${key};
+          if (typeof attr !== 'undefined') return attr;
+        } catch (_) {}
+        return el.__vueParentComponent.setupState.${key};
+      `;
+        return this.page.evaluate(script);
+    }
+
+    private async expects(expected, actual, message, compareFn?: ((expected, actual) => boolean)) {
         if (compareFn == null) {
-            compareFn = ((e, a) => e === a);
+            compareFn = ((e, a) => e == a);
         }
         expected = await this.resolveValue(expected);
         actual = await this.resolveValue(actual);
@@ -252,7 +877,7 @@ export class Browser {
         if (typeof valueOfFunctionOrPromise === 'function') {
             return valueOfFunctionOrPromise(args);
         }
-        if (valueOfFunctionOrPromise.constructor.name === 'AsyncFunction') {
+        if (valueOfFunctionOrPromise?.constructor?.name === 'AsyncFunction') {
             return valueOfFunctionOrPromise(args);
         }
         if (valueOfFunctionOrPromise instanceof Promise) {
@@ -261,3 +886,5 @@ export class Browser {
         return valueOfFunctionOrPromise;
     }
 }
+
+

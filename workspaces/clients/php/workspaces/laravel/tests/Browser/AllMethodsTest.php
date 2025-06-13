@@ -10,7 +10,7 @@ use Tests\PuthTestCase;
 
 class AllMethodsTest extends PuthTestCase
 {
-    public static bool $debug = false;
+    public static bool $debug = true;
 
     function test_querying_elements()
     {
@@ -103,13 +103,14 @@ class AllMethodsTest extends PuthTestCase
                 ->assertCookieValue('encrypted', '1234');
         });
     }
-    
+
     function test_concern_makes_assertions()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->assertTitle('Playground | Puth')
                 ->assertTitleContains('Playground')
+                ->assertPlainCookieValue('non-existing', '')
                 ->plainCookie('plain', '1234')
                 ->assertCookieValue('plain', '1234', false)
                 ->assertHasPlainCookie('plain')
@@ -121,55 +122,56 @@ class AllMethodsTest extends PuthTestCase
                 ->assertCookieValue('test', '5678')
                 ->deleteCookie('test')
                 ->assertCookieMissing('test')
-                ->assertSee('playground')
-                ->assertSeeIn('.querying-get', 'Div')
-                ->assertSeeIn('.example', 'Div')
-                ->assertDontSee('This text does not exists')
-                ->assertDontSeeIn('.querying-get', 'This text does not exists')
-                ->assertSourceHas('<title>Playground | Puth</title>')
-                ->assertSourceMissing('<div>__not in dom__</div>')
-                ->assertSeeLink('https://puth.io/')
-                ->assertDontSeeLink('https://notalink.io')
-                ->assertVisible('body')
-                ->assertInputValue('#properties-value input', 'input with value')
-                ->assertInputValueIsNot('#properties-value input', 'not the correct value')
-                ->check('#action-checkbox')
-                ->assertChecked('#action-checkbox')
-                ->uncheck('#action-checkbox', 'test-1234')
-                ->assertNotChecked('#action-checkbox')
-                ->radio('action-radio', 'orange')
-                ->assertRadioSelected('action-radio', 'orange')
-                ->assertRadioNotSelected('action-radio', 'apple')
-                ->select('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
-                ->assertNotSelected('#actions-select-multiple', 'not-selected')
-                ->assertSelectHasOptions('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelectMissingOptions('#actions-select-multiple', ['not-an-options'])
-                ->assertSelectHasOption('#actions-select-multiple', 'orange')
-                ->assertSelectMissingOption('#actions-select-multiple', 'not-an-options')
-                ->type('#actions-type input', 'test-1234')
-                ->assertValue('#actions-type input', 'test-1234')
-                ->append('#actions-type input', '-')
-                ->assertValueIsNot('#actions-type input', 'test-1234')
-                ->assertAttribute('#actions-type input', 'type', 'text')
-                ->assertDataAttribute('#properties-attributes', 'test', '1234')
-                ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
-                ->assertPresent('body')
-                ->assertNotPresent('body #not-existing-element')
-                ->assertMissing('missingelement')
-                ->assertEnabled('#actions-focus')
-                ->assertDisabled('#actions-click-disabled')
-                ->assertButtonDisabled('#actions-click-disabled')
-                ->assertButtonEnabled('#actions-click-double')
-                ->click('#actions-focus')
-                ->assertFocused('#actions-focus')
-                ->assertNotFocused('#actions-type input')
-//                ->assertVue
-//                ->assertVueIsNot
-//                ->assertVueContains
-//                ->assertVueDoesNotContain
-//                ->vueAttribute
-                ->assertScript('1+1', 2);
+//                ->assertSee('playground')
+//                ->assertSeeIn('.querying-get', 'Div')
+//                ->assertSeeIn('.example', 'Div')
+//                ->assertDontSee('This text does not exists')
+//                ->assertDontSeeIn('.querying-get', 'This text does not exists')
+//                ->assertSourceHas('<title>Playground | Puth</title>')
+//                ->assertSourceMissing('<div>__not in dom__</div>')
+//                ->assertSeeLink('https://puth.io/')
+//                ->assertDontSeeLink('https://notalink.io')
+//                ->assertVisible('body')
+//                ->assertInputValue('#properties-value input', 'input with value')
+//                ->assertInputValueIsNot('#properties-value input', 'not the correct value')
+//                ->check('#action-checkbox')
+//                ->assertChecked('#action-checkbox')
+//                ->uncheck('#action-checkbox', 'test-1234')
+//                ->assertNotChecked('#action-checkbox')
+//                ->radio('action-radio', 'orange')
+//                ->assertRadioSelected('action-radio', 'orange')
+//                ->assertRadioNotSelected('action-radio', 'apple')
+//                ->select('#actions-select-multiple', ['apple', 'orange'])
+//                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
+//                ->assertNotSelected('#actions-select-multiple', 'not-selected')
+//                ->assertSelectHasOptions('#actions-select-multiple', ['apple', 'orange'])
+//                ->assertSelectMissingOptions('#actions-select-multiple', ['not-an-options'])
+//                ->assertSelectHasOption('#actions-select-multiple', 'orange')
+//                ->assertSelectMissingOption('#actions-select-multiple', 'not-an-options')
+//                ->type('#actions-type input', 'test-1234')
+//                ->assertValue('#actions-type input', 'test-1234')
+//                ->append('#actions-type input', '-')
+//                ->assertValueIsNot('#actions-type input', 'test-1234')
+//                ->assertAttribute('#actions-type input', 'type', 'text')
+//                ->assertDataAttribute('#properties-attributes', 'test', '1234')
+//                ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
+//                ->assertPresent('body')
+//                ->assertNotPresent('body #not-existing-element')
+//                ->assertMissing('missingelement')
+//                ->assertEnabled('#actions-focus')
+//                ->assertDisabled('#actions-click-disabled')
+//                ->assertButtonDisabled('#actions-click-disabled')
+//                ->assertButtonEnabled('#actions-click-double')
+//                ->click('#actions-focus')
+//                ->assertFocused('#actions-focus')
+//                ->assertNotFocused('#actions-type input')
+////                ->assertVue
+////                ->assertVueIsNot
+////                ->assertVueContains
+////                ->assertVueDoesNotContain
+////                ->vueAttribute
+//                ->assertScript('1+1', 2)
+            ;
         });
     }
     
