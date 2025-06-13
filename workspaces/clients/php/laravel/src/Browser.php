@@ -491,7 +491,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function elsewhereWhenAvailable($selector, Closure $callback, $seconds = null)
     {
-        return $this->elsewhere('', function ($browser) use ($selector, $callback, $seconds) {
+        return $this->elsewhere('', function (Browser $browser) use ($selector, $callback, $seconds) {
             $browser->whenAvailable($selector, $callback, $seconds);
         });
     }

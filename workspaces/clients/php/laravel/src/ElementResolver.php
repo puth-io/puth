@@ -117,8 +117,7 @@ class ElementResolver
      */
     public function resolveSelectOptions($field, array $values)
     {
-        $options = $this->resolveForSelection($field)
-            ->children('option');
+        $options = $this->resolveForSelection($field)->children('option');
         
         if (empty($options)) {
             return [];
@@ -267,6 +266,16 @@ class ElementResolver
     }
 
     /**
+     * @param string $selector
+     *
+     * @return false|int
+     */
+    public function isIdSelector(string $selector): int|false
+    {
+        return preg_match('/^#[\w\-:]+$/', $selector);
+    }
+
+    /**
      * Resolve the element for a given button by selector.
      *
      * @param string $button
@@ -332,7 +341,7 @@ class ElementResolver
      */
     protected function findById($selector)
     {
-        if (preg_match('/^#[\w\-:]+$/', $selector)) {
+        if ($this->isIdSelector($selector)) {
             return $this->site->get($selector, ['timeout' => 0]);
         }
     }
@@ -350,6 +359,8 @@ class ElementResolver
         } catch (\Exception $e) {
             //
         }
+
+        return null;
     }
     
     /**
@@ -357,38 +368,29 @@ class ElementResolver
      *
      * @param array $selectors
      * @return mixed
-     *
      * @throws \Exception
      */
     public function firstOrFail($selectors)
     {
-        foreach ((array)$selectors as $selector) {
-            try {
-                return $this->findOrFail($selector);
-            } catch (\Exception $e) {
-                //
-            }
-        }
-        
-        throw $e;
+        return $this->browser->_firstOrFail((array) $selectors);
     }
-    
+
     /**
      * Find an element by the given selector or throw an exception.
      *
      * @param string $selector
      * @return mixed
+     * @throws \Exception
      */
     public function findOrFail($selector)
     {
-        if (!is_null($element = $this->findById($selector))) {
-            return $element;
+        $selectors = [];
+        if ($this->isIdSelector($selector)) {
+            $selectors[] = $selector;
         }
-        
-        return $this->site->get(
-            $this->format($selector),
-            ['timeout' => 0],
-        );
+        $selectors[] = $this->format($selector);
+
+        return $this->firstOrFail($selectors);
     }
     
     /**
@@ -399,16 +401,14 @@ class ElementResolver
      */
     public function all($selector)
     {
-        try {
-            return $this->site->getAll(
-                $this->format($selector),
-                ['timeout' => 0],
-            );
-        } catch (\Exception $e) {
-            //
-        }
-        
-        return [];
+        return $this->browser->findAll($selector);
+
+            // TODO reimplement timeout 0 (was needed for some assertions that expect "nothing" instead of "something")
+            //      replace such assertions
+//            return $this->site->getAll(
+//                $this->format($selector),
+//                ['timeout' => 0],
+//            );
     }
     
     /**

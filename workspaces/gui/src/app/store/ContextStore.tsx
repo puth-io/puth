@@ -106,7 +106,7 @@ export default class ContextStore {
         if (packet.type === 'command') {
             this.commands.push(packet);
             
-            if ([Constructors.Page, Constructors.ElementHandle].includes(packet.on.type)) {
+            if ([Constructors.Page, Constructors.ElementHandle, 'Browser'].includes(packet.on.type)) {
                 this.pushRenderedPacket(packet);
             }
         } else if (packet.type === 'log') {

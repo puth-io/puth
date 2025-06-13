@@ -96,6 +96,8 @@ const NAME_TRANSLATION = {
                 click: '_click',
                 type: '_type',
                 typeSlowly: '_typeSlowly',
+                findOrFail: '_findOrFail',
+                firstOrFail: '_firstOrFail',
             },
         },
     },

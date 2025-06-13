@@ -350,15 +350,48 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @gen-returns RemoteObject
+     * @gen-returns RemoteObject[]
+     * TODO gen-returns should be ElementHandle
+     * TODO implement timeout
      * 
-     * @debug-gen-original-name "__findOrFail"
+     * @debug-gen-original-name "findAll"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["ElementHandle[]"]
+     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
+     */
+    public function findAll(mixed $selector, mixed $options = ['timeout' => 15]): array
+    {
+        return $this->callFunc('findAll', [$selector, $options]);
+    }
+
+    /**
+     * @gen-returns RemoteObject[]
+     * TODO gen-returns should be ElementHandle
+     * 
+     * @debug-gen-original-name "findOrFail"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["ElementHandle[]"]
+     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
+     */
+    public function _findOrFail(mixed $selector, mixed $options = ['timeout' => 15]): array
+    {
+        return $this->callFunc('findOrFail', [$selector, $options]);
+    }
+
+    /**
+     * @gen-returns RemoteObject
+     * TODO gen-returns should be ElementHandle
+     * 
+     * @debug-gen-original-name "firstOrFail"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle"]
      * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
      */
-    public function __findOrFail(mixed $selector): RemoteObject
+    public function _firstOrFail(mixed $selector, mixed $options = ['timeout' => 15]): RemoteObject
     {
-        return $this->callFunc('__findOrFail', [$selector]);
+        return $this->callFunc('firstOrFail', [$selector, $options]);
     }
 }
