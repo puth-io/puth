@@ -14,7 +14,7 @@ import { Return } from './context/Return';
 import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
-import {Browser} from './shims/Browser';
+import { Browser, ExpectationFailed } from './shims/Browser';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -488,6 +488,10 @@ class Context extends Generic {
                     time: Date.now(),
                 });
                 Snapshots.pushToCache(this, command);
+            }
+
+            if (error instanceof ExpectationFailed) {
+                return error.getReturnInstance().serialize();
             }
             
             return {

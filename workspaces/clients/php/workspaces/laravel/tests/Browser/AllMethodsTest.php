@@ -192,7 +192,7 @@ class AllMethodsTest extends PuthTestCase
             $inverse('JavaScript expression [1+1] mismatched', fn() => $browser->assertScript('1+1', 3));
             $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
             $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
-            $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSeeLink('https://notalink.io/'));
+            $inverse("Element [a[href='https://notalink.io/']] not found", fn() => $browser->assertSeeLink('https://notalink.io/'));
         });
     }
     

@@ -23,6 +23,10 @@ export class ExpectationFailed extends Error {
         this.expected = expected;
         this.actual = actual;
     }
+
+    getReturnInstance(): Return {
+        return Return.ExpectationFailed(this.message, this.expected, this.actual);
+    }
 }
 
 export class Browser {
