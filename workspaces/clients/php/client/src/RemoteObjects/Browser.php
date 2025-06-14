@@ -736,11 +736,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertInputValue"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"any","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertInputValue(mixed $field, string $value): mixed
+    public function assertInputValue(mixed $field, string $value): Browser
     {
         return $this->callFunc('assertInputValue', [$field, $value]);
     }
@@ -755,6 +755,29 @@ class Browser extends RemoteObject
     public function assertInputValueIsNot(mixed $field, string $value): mixed
     {
         return $this->callFunc('assertInputValueIsNot', [$field, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolveForTyping"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     */
+    public function resolveForTyping(string $selector): void
+    {
+        $this->callFunc('resolveForTyping', [$selector]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolveForChecking"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter field {"type":"string|null","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function resolveForChecking(mixed $field, mixed $value = null): void
+    {
+        $this->callFunc('resolveForChecking', [$field, $value]);
     }
 
     /**
@@ -797,7 +820,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function assertChecked(string $field, mixed $value = null): mixed
     {
@@ -809,7 +832,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function assertNotChecked(string $field, mixed $value = null): mixed
     {

@@ -643,6 +643,24 @@ export class Browser {
         return this.firstOrFail([selector, `input[name='${selector}']`, `textarea[name='${selector}']`]);
     }
 
+    public resolveForChecking(field: string|null, value: string|null = null) {
+        let selectors = [];
+        if (field?.startsWith('#')) {
+            selectors.push(field);
+        }
+
+        let selector = 'input[type=checkbox]';
+        if (field != null) {
+            selector += `[name='${field}']`;
+        }
+        if (value != null) {
+            selector += `[value='${value}']`;
+        }
+        selectors.push(selector);
+
+        return this.firstOrFail(selectors);
+    }
+
     public inputValue(field: any): string {
         return this.resolveForTyping(field).value();
     }
@@ -657,16 +675,17 @@ export class Browser {
         return this;
     }
 
-    public assertChecked(field: string, value: string | null = null): Promise<Return | this> {
-        const element = this.resolver.resolveForChecking(field, value);
-        return expects(
+    public assertChecked(field: string, value: string|null = null): Promise<Return | this> {
+        // TODO WIP
+        return this.resolveForChecking(field, value).then(element => expects(
             true,
-            () => element.checked,
+            () => PuthStandardPlugin.its(element, 'checked'),
             () => `Expected checkbox [${element}] to be checked, but it wasn't.`,
-        ).then(this.self);
+            isEqual,
+        )).then(this.self);
     }
 
-    public assertNotChecked(field: string, value: string | null = null): Promise<Return | this> {
+    public assertNotChecked(field: string, value: string|null = null): Promise<Return | this> {
         const element = this.resolver.resolveForChecking(field, value);
         return expects(
             false,
