@@ -20,19 +20,20 @@ const isNotNull = (expected: any, actual: any) => actual != null;
 const isEmpty = (expected: any, actual: any) => actual == null || actual == '';
 const isNotEmpty = (expected: any, actual: any) => actual != null && actual != '';
 
-export async function expects(expected: any, actual: any, message: any, compareFn: ((expected: any, actual: any) => boolean)): Promise<void> {
+export async function expects(
+    expected: any,
+    actual: any,
+    message: any,
+    compareFn: (expected: any, actual: any) => boolean,
+): Promise<void> {
     if (compareFn == null) {
-        compareFn = ((e, a) => e == a);
+        compareFn = (e, a) => e == a;
     }
     expected = await resolveValue(expected);
     actual = await resolveValue(actual);
 
     if (!compareFn(expected, actual)) {
-        throw new ExpectationFailed(
-            await resolveValue(message, {expected, actual}),
-            expected,
-            actual,
-        );
+        throw new ExpectationFailed(await resolveValue(message, { expected, actual }), expected, actual);
     }
 }
 
@@ -44,7 +45,7 @@ export async function resolveValue(valueOfFunctionOrPromise: any, args = {}) {
         return valueOfFunctionOrPromise(args);
     }
     if (valueOfFunctionOrPromise instanceof Promise) {
-        return valueOfFunctionOrPromise
+        return valueOfFunctionOrPromise;
     }
     return valueOfFunctionOrPromise;
 }
@@ -251,11 +252,18 @@ export class Browser {
         return this.type(selector, value, { delay: pause });
     }
 
-    public waitFor(
-        selector: string[] | string,
-        options?: { timeout?: integer; visible?: boolean; hidden?: boolean },
-    ) {
-        options = {timeout: this.timeout, hidden: false, visible: false, ...options};
+    public waitFor(selector: string[] | string, options?: { timeout?: integer; state: 'visible'|'hidden'|'present'|'missing' }) {
+        options = { state: 'visible', timeout: this.timeout, ...options } as any;
+
+        if (options?.state === 'missing') {
+            return this.waitForNotPresent(selector as string, {timeout: options?.timeout ?? this.timeout}).catch(error => {
+                console.error('selector is still present...');
+            });
+        } else if (options?.state === 'visible') {
+            options.visible = true;
+        } else if (options?.state === 'hidden') {
+            options.hidden = true;
+        }
 
         return (
             Array.isArray(selector)
@@ -263,10 +271,35 @@ export class Browser {
                 : this.page.waitForSelector(selector, options)
         ).catch((error) => {
             if (error instanceof TimeoutError) {
-                throw new ExpectationFailed(this.createElementNotFoundMessage(selector));
+                throw new ExpectationFailed(`Waited %s seconds for selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`);
             }
             throw error;
         });
+    }
+
+    public waitForNotPresent(selector: string, options: {} = {}) {
+        return this.page.waitForFunction(
+            s => document.querySelector(s) === null,
+            {timeout: this.timeout, ...options, polling: 'mutation'},
+            selector,
+        ).then(this.self);
+    }
+
+    public waitForTextIn(selector: string, text: string[]|string, options: {timeout?: integer, ignoreCase?: boolean} = {}) {
+        return this.page.waitForFunction(
+            (t, s, ic) => {
+                let innerText = document.querySelector(s)?.innerText;
+                if (ic) innerText = innerText?.toLower();
+                if (Array.isArray(t)) {t.forEach(t => {if (!innerText.includes(t)) return false;}); return true;}
+                return innerText.includes(t);
+            },
+            {timeout: this.timeout, ...options, polling: 'mutation'},
+            text,
+            selector,
+            options?.ignoreCase ?? false,
+        )
+            .catch(error => console.error(`'Waited %s seconds for text "' . $text . '" in selector ' . $selector`))
+            .then(this.self);
     }
 
     /**
@@ -274,10 +307,7 @@ export class Browser {
      * TODO gen-returns should be ElementHandle
      * TODO implement timeout
      */
-    public findAll(
-        selector: string[] | string,
-        options?: {} = {},
-    ): Promise<ElementHandle[]> {
+    public findAll(selector: string[] | string, options?: {} = {}): Promise<ElementHandle[]> {
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
                 return Promise.all(selector.flatMap((s) => this.page.$$(s))).then((found) => found.flat());
@@ -291,10 +321,7 @@ export class Browser {
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      */
-    public findOrFail(
-        selector: string[] | string,
-        options?: {} = {},
-    ): Promise<ElementHandle[]> {
+    public findOrFail(selector: string[] | string, options?: {} = {}): Promise<ElementHandle[]> {
         return this.findAll(selector, options).then((elements) => {
             if (elements.length === 0) {
                 throw new ExpectationFailed(this.createElementNotFoundMessage(selector));
@@ -308,10 +335,7 @@ export class Browser {
      * @gen-returns RemoteObject
      * TODO gen-returns should be ElementHandle
      */
-    public firstOrFail(
-        selector: string[] | string,
-        options?: {} = {},
-    ): Promise<ElementHandle> {
+    public firstOrFail(selector: string[] | string, options?: {} = {}): Promise<ElementHandle> {
         return this.findOrFail(selector, options).then((found) => found[0]);
     }
 
@@ -583,6 +607,7 @@ export class Browser {
     public assertSelectHasOption(field: string, value: string): Promise<Return | this> {
         return this.assertSelectHasOptions(field, [value]);
     }
+
     public assertSelectMissingOption(field: string, value: string): Promise<Return | this> {
         return this.assertSelectMissingOptions(field, [value]);
     }
@@ -665,45 +690,24 @@ export class Browser {
         return this.assertAttribute(selector, `data-${attribute}`, value);
     }
 
-    public async assertVisible(
-        selector: string,
-        options: { timeout: integer } = { timeout: 5000 },
-    ): Promise<Return | this> {
+    public async assertVisible(selector: string, options: {} = {}): Promise<Return | this> {
         return this.waitFor(selector, { ...options, visible: true })
             .then((element) => expects(null, element, `Element [${selector}] is not visible.`, isNotNull))
             .then(this.self);
     }
 
-    public async assertMissing(
-        selector: string,
-        options: { timeout: integer } = { timeout: 5000 },
-    ): Promise<Return | this> {
+    public async assertMissing(selector: string, options: {} = {}): Promise<Return | this> {
         return this.waitFor(selector, { ...options, hidden: true })
             .then((element) => expects(null, element, `Saw unexpected element [${selector}].`, isNull))
             .then(this.self);
     }
 
-    public async assertPresent(selector: string, timeout = 5): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        if (timeout !== 0) {
-            try {
-                await this.page.waitForSelector(fullSelector, { timeout: timeout * 1000 });
-            } catch (_) {}
-        }
-        return expects(
-            true,
-            () => this.resolver.find(selector) != null,
-            () => `Element [${fullSelector}] is not present.`,
-        ).then(this.self);
+    public async assertPresent(selector: string, options: {} = {}): Promise<Return | this> {
+        return this.waitFor(selector, options).then(this.self);
     }
 
-    public assertNotPresent(selector: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        return expects(
-            true,
-            () => this.resolver.find(selector) == null,
-            () => `Element [${fullSelector}] is present.`,
-        ).then(this.self);
+    public assertNotPresent(selector: string, options: {} = {}): Promise<Return | this> {
+        return this.waitForNotPresent(selector);
     }
 
     public async assertDialogOpened(message: string): Promise<Return | this> {
@@ -840,5 +844,3 @@ export class Browser {
         return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
     }
 }
-
-

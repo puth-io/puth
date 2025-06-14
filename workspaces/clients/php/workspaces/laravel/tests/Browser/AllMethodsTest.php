@@ -134,7 +134,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertDontSeeLink('https://notalink.io')
                 ->assertVisible('body')
                 ->assertPresent('body')
-//                ->assertNotPresent('body #not-existing-element')
+                ->assertNotPresent('body #not-existing-element')
 //                ->assertMissing('missingelement')
 //                ->assertInputValue('#properties-value input', 'input with value')
 //                ->assertInputValueIsNot('#properties-value input', 'not the correct value')

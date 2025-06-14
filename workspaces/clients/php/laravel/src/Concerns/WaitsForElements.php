@@ -59,11 +59,13 @@ trait WaitsForElements
      */
     public function waitFor($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for selector', $selector);
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->visible();
-        }, $message);
+        $options = ['state' => 'visible'];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds;
+        }
+        $this->_waitFor($selector, $options);
+
+        return $this;
     }
     
     /**
@@ -75,17 +77,13 @@ trait WaitsForElements
      */
     public function waitUntilMissing($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for removal of selector', $selector);
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector) {
-            try {
-                $missing = !$this->resolver->findOrFail($selector)->visible();
-            } catch (\Exception $e) {
-                $missing = true;
-            }
-            
-            return $missing;
-        }, $message);
+        $options = ['state' => 'hidden'];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds;
+        }
+        $this->_waitFor($selector, $options);
+
+        return $this;
     }
     
     /**
@@ -115,13 +113,7 @@ trait WaitsForElements
      */
     public function waitForText($text, $seconds = null, $ignoreCase = false)
     {
-        $text = Arr::wrap($text);
-        
-        $message = $this->formatTimeOutMessage('Waited %s seconds for text', implode("', '", $text));
-        
-        return $this->waitUsing($seconds, 100, function () use ($text, $ignoreCase) {
-            return Str::contains($this->resolver->findOrFail('')->innerText, $text, $ignoreCase);
-        }, $message);
+        return $this->waitForTextIn('', $text, $seconds, $ignoreCase);
     }
     
     /**
@@ -134,11 +126,15 @@ trait WaitsForElements
      */
     public function waitForTextIn($selector, $text, $seconds = null, $ignoreCase = false)
     {
-        $message = 'Waited %s seconds for text "' . $text . '" in selector ' . $selector;
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector, $text, $ignoreCase) {
-            return $this->assertSeeIn($selector, $text, $ignoreCase);
-        }, $message);
+        $text = is_array($text) ? $text : [$text];
+        $options = ['ignoreCase' => $ignoreCase];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds;
+        }
+
+        $this->_waitForTextIn($selector, $text, $options);
+
+        return $this;
     }
     
     /**
