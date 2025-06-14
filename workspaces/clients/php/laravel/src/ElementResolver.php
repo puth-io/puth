@@ -71,7 +71,7 @@ class ElementResolver
     /**
      * Create a new element resolver instance.
      */
-    public function __construct(Browser $browser, string $prefix = '')
+    public function __construct(Browser $browser, string $prefix = 'body')
     {
         $this->browser = $browser;
         $this->prefix = trim($prefix);
@@ -407,13 +407,6 @@ class ElementResolver
     public function all($selector)
     {
         return $this->browser->findAll($selector);
-
-            // TODO reimplement timeout 0 (was needed for some assertions that expect "nothing" instead of "something")
-            //      replace such assertions
-//            return $this->site->getAll(
-//                $this->format($selector),
-//                ['timeout' => 0],
-//            );
     }
     
     /**
@@ -427,19 +420,12 @@ class ElementResolver
         $selector = str_replace(
             array_keys($this->elements), array_values($this->elements), $originalSelector = $selector
         );
-        
+
         if (str_starts_with($selector, '@') && $selector === $originalSelector) {
             // TODO put Dusk::selectorHtmlAttribute in PuthManager
-            $selector = '[' . 'dusk' . '="' . explode('@', $selector)[1] . '"]';
+            $selector = preg_replace('/@(\S+)/', '[dusk="$1"]', $selector);
         }
-        
-        $trimmed = trim($this->prefix . ' ' . $selector);
-        
-        if ($trimmed === '') {
-            // TODO maybe return null and change all usages to return puthPage
-            $trimmed = 'body';
-        }
-        
-        return $trimmed;
+
+        return trim($this->prefix.' '.$selector);
     }
 }

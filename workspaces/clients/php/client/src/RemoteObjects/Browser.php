@@ -31,6 +31,17 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "setResolverPageElements"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter pageElements {"type":"{}","isOptional":false}
+     */
+    public function setResolverPageElements(mixed $pageElements): Browser
+    {
+        return $this->callFunc('setResolverPageElements', [$pageElements]);
+    }
+
+    /**
      * @debug-gen-original-name "visit"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -397,7 +408,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; state?: 'visible'|'hidden'|'present'|'missing' }","isOptional":true}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
      */
     public function _waitFor(mixed $selector, mixed $options): void
     {
@@ -421,8 +432,8 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter text {"type":"string[]|string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout?: integer, ignoreCase?: boolean, missing?: boolean}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter text {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; ignoreCase?: boolean; missing?: boolean }","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _waitForTextIn(string $selector, mixed $text, mixed $options = []): void
     {
@@ -620,7 +631,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
      * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function _assertSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
+    public function assertSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
     {
         return $this->callFunc('assertSeeIn', [$selector, $text, $ignoreCase]);
     }
@@ -633,7 +644,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
      * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function _assertDontSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
+    public function assertDontSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
     {
         return $this->callFunc('assertDontSeeIn', [$selector, $text, $ignoreCase]);
     }
@@ -644,7 +655,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
-    public function _assertSeeAnythingIn(string $selector): mixed
+    public function assertSeeAnythingIn(string $selector): mixed
     {
         return $this->callFunc('assertSeeAnythingIn', [$selector]);
     }
@@ -655,7 +666,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
-    public function _assertSeeNothingIn(string $selector): mixed
+    public function assertSeeNothingIn(string $selector): mixed
     {
         return $this->callFunc('assertSeeNothingIn', [$selector]);
     }
@@ -695,18 +706,22 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Assert that the given link is present on the page
+     * 
      * @debug-gen-original-name "assertSeeLink"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
      */
-    public function _assertSeeLink(string $link, string $selector = 'a'): mixed
+    public function assertSeeLink(string $link, string $selector = 'a'): mixed
     {
         return $this->callFunc('assertSeeLink', [$link, $selector]);
     }
 
     /**
+     * Assert that the given link is not present on the page
+     * 
      * @debug-gen-original-name "assertDontSeeLink"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
@@ -1029,7 +1044,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _assertMissing(string $selector, mixed $options = []): mixed
+    public function assertMissing(string $selector, mixed $options = []): mixed
     {
         return $this->callFunc('assertMissing', [$selector, $options]);
     }
@@ -1210,6 +1225,17 @@ class Browser extends RemoteObject
     public function vueAttribute(mixed $componentSelector, string $key): mixed
     {
         return $this->callFunc('vueAttribute', [$componentSelector, $key]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolver"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     */
+    public function resolver(string $selector): void
+    {
+        $this->callFunc('resolver', [$selector]);
     }
 
     /**

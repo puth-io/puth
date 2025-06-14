@@ -80,6 +80,7 @@ export class Browser {
     // timeout in milliseconds for wait functions
     public timeout: integer = 3000;
 
+    public resolverDuskSelectorHtmlAttribute: string = 'dusk';
     public resolverPrefix: string = 'body';
     public resolverPageElements: {} = {};
 
@@ -526,15 +527,15 @@ export class Browser {
     }
 
     public assertSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
-        return this.assertSeeIn(this.resolverPrefix, text, ignoreCase);
+        return this.assertSeeIn('', text, ignoreCase);
     }
 
     public assertDontSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
-        return this.assertDontSeeIn(this.resolverPrefix, text, ignoreCase);
+        return this.assertDontSeeIn('', text, ignoreCase);
     }
 
     public assertSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {
-        return this.firstOrFail(selector)
+        return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) =>
                 expects(
@@ -548,7 +549,7 @@ export class Browser {
     }
 
     public assertDontSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {
-        return this.firstOrFail(selector)
+        return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) =>
                 expects(
@@ -562,7 +563,7 @@ export class Browser {
     }
 
     public assertSeeAnythingIn(selector: string): Promise<Return | this> {
-        return this.firstOrFail(selector)
+        return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) =>
                 expects('', actual, () => `Saw unexpected text [''] within element [${selector}].`, isNotEmpty),
@@ -571,7 +572,7 @@ export class Browser {
     }
 
     public assertSeeNothingIn(selector: string): Promise<Return | this> {
-        return this.firstOrFail(selector)
+        return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) =>
                 expects('', actual, () => `Did not see expected text [''] within element [${selector}].`, isEmpty),
@@ -606,11 +607,13 @@ export class Browser {
         ).then(this.self);
     }
 
+    // Assert that the given link is present on the page
     public assertSeeLink(link: string, selector: string = 'a'): Promise<Return | this> {
         link = link.replace("'", "\\'");
         return this.assertVisible(`${selector}[href='${link}']`);
     }
 
+    // Assert that the given link is not present on the page
     public assertDontSeeLink(link: string, selector: string = 'a'): Promise<Return | this> {
         link = link.replace("'", "\\'");
         return this.assertMissing(`${selector}[href='${link}']`);
@@ -823,23 +826,23 @@ export class Browser {
     }
 
     public async assertVisible(selector: string, options: {} = {}): Promise<Return | this> {
-        return this.waitFor(selector, { ...options, state: 'visible' })
+        return this.waitFor(this.resolver(selector), { ...options, state: 'visible' })
             .then((element) => expects(null, element, `Element [${selector}] is not visible.`, isNotNull))
             .then(this.self);
     }
 
     public async assertMissing(selector: string, options: {} = {}): Promise<Return | this> {
-        return this.waitFor(selector, { ...options, state: 'hidden' })
+        return this.waitFor(this.resolver(selector), { ...options, state: 'hidden' })
             .then((element) => expects(null, element, `Saw unexpected element [${selector}].`, isNull))
             .then(this.self);
     }
 
     public async assertPresent(selector: string, options: {} = {}): Promise<Return | this> {
-        return this.waitFor(selector, options).then(this.self);
+        return this.waitFor(this.resolver(selector), options).then(this.self);
     }
 
     public assertNotPresent(selector: string, options: {} = {}): Promise<Return | this> {
-        return this.waitForNotPresent(selector);
+        return this.waitForNotPresent(this.resolver(selector));
     }
 
     public async assertDialogOpened(message: string): Promise<Return | this> {
@@ -976,10 +979,17 @@ export class Browser {
         return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
     }
 
-    public format(selector: string) {
+    public resolver(selector: string) {
+        const original = selector;
+
         for (const [key, value] of Object.entries(this.resolverPageElements)) {
             selector = selector.replaceAll(key, value);
         }
+        if (selector.startsWith('@') && selector === original) {
+            selector = selector.replace(/@(\S+)/g, `[${this.resolverDuskSelectorHtmlAttribute}="$1"]`);
+        }
+
+        return (this.resolverPrefix + ' ' + selector).trim();
     }
 
     public isPage() {
