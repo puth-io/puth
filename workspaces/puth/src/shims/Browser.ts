@@ -619,28 +619,32 @@ export class Browser {
         return this.assertMissing(`${selector}[href='${link}']`);
     }
 
-    public assertInputValue(field: any, value: string): Promise<Return | this> {
-        const actual = () => this.inputValue(field);
-        return expects(
+    public assertInputValue(field: any, value: string): Promise<this> {
+        return this.resolveForTyping(field).then(element => expects(
             value,
-            actual,
+            PuthStandardPlugin.its(element, 'value'),
             ({ expected, actual }) =>
                 `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
-        ).then(this.self);
+            isEqual,
+        )).then(this.self);
     }
 
     public assertInputValueIsNot(field: any, value: string): Promise<Return | this> {
-        const actual = () => this.inputValue(field);
-        return expects(
+        return this.resolveForTyping(field).then(element => expects(
             value,
-            actual,
-            () => `Value [${value}] for the [${field}] input should not equal the actual value.`,
-            (e, a) => e !== a,
-        ).then(this.self);
+            PuthStandardPlugin.its(element, 'value'),
+            ({ expected, actual }) =>
+                `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
+            isNotEqual,
+        )).then(this.self);
+    }
+
+    public resolveForTyping(selector: string) {
+        return this.firstOrFail([selector, `input[name='${selector}']`, `textarea[name='${selector}']`]);
     }
 
     public inputValue(field: any): string {
-        return this.resolver.resolveForTyping(field).value();
+        return this.resolveForTyping(field).value();
     }
 
     public async assertInputPresent(field: string, timeout = 5): Promise<Return | this> {
