@@ -75,7 +75,7 @@ export class Browser {
     public fitOnFailure: boolean = true;
 
     // timeout in milliseconds for wait functions
-    public timeout: integer = 5000;
+    public timeout: integer = 3000;
 
     constructor(context: Context, page: Page) {
         this.context = context;
@@ -271,7 +271,7 @@ export class Browser {
                 : this.page.waitForSelector(selector, options)
         ).catch((error) => {
             if (error instanceof TimeoutError) {
-                throw new ExpectationFailed(`Waited %s seconds for selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`);
+                throw new ExpectationFailed(`Waited ${options?.timeout ?? this.timeout}ms for selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`);
             }
             throw error;
         });
@@ -285,20 +285,48 @@ export class Browser {
         ).then(this.self);
     }
 
-    public waitForTextIn(selector: string, text: string[]|string, options: {timeout?: integer, ignoreCase?: boolean} = {}) {
-        return this.page.waitForFunction(
-            (t, s, ic) => {
+    public waitForTextIn(selector: string, text: string[]|string, options: {timeout?: integer, ignoreCase?: boolean, missing?: boolean} = {}) {
+        if (!Array.isArray(text)) {
+            text = [text];
+        }
+
+        return this.waitUntil(
+            (t, s, ic, m) => {
                 let innerText = document.querySelector(s)?.innerText;
-                if (ic) innerText = innerText?.toLower();
-                if (Array.isArray(t)) {t.forEach(t => {if (!innerText.includes(t)) return false;}); return true;}
-                return innerText.includes(t);
+                if (ic) {
+                    innerText = innerText?.toLowerCase();
+                    t = t.map(_t => _t?.toLowerCase());
+                }
+                for (let _t of t) {
+                    if (!innerText.includes(_t)) {
+                        return m;
+                    }
+                }
+                return !m;
             },
-            {timeout: this.timeout, ...options, polling: 'mutation'},
-            text,
-            selector,
-            options?.ignoreCase ?? false,
+            [
+                text,
+                selector,
+                options?.ignoreCase ?? false,
+                options?.missing ?? false,
+            ],
+            `Waited ${options?.timeout ?? this.timeout}ms for text "${text}" in selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`,
+            options,
+        );
+    }
+
+    public waitUntil(pageFunction, args: any[], message: string, options: {} = {}) {
+        return this.page.waitForFunction(
+            pageFunction,
+            {timeout: this.timeout, ...options},
+            ...args,
         )
-            .catch(error => console.error(`'Waited %s seconds for text "' . $text . '" in selector ' . $selector`))
+            .catch(error => {
+                if (error instanceof TimeoutError) {
+                    throw new ExpectationFailed(message);
+                }
+                throw error;
+            })
             .then(this.self);
     }
 

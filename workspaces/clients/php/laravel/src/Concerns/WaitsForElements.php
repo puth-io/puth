@@ -93,15 +93,28 @@ trait WaitsForElements
      * @param int|null $seconds
      * @return $this
      */
-    public function waitUntilMissingText($text, $seconds = null)
+    public function waitUntilMissingText($text, $seconds = null, $ignoreCase = false)
     {
-        $text = Arr::wrap($text);
-        
-        $message = $this->formatTimeOutMessage('Waited %s seconds for removal of text', implode("', '", $text));
-        
-        return $this->waitUsing($seconds, 100, function () use ($text) {
-            return !Str::contains($this->resolver->findOrFail('')->innerText, $text);
-        }, $message);
+        return $this->waitUntilMissingTextIn($this->resolver->findOrFail(''), $text, $seconds, $ignoreCase);
+    }
+
+    /**
+     * Wait for the given text to be removed.
+     *
+     * @param string $text
+     * @param int|null $seconds
+     * @return $this
+     */
+    public function waitUntilMissingTextIn($selector, $text, $seconds = null, $ignoreCase = false)
+    {
+        $options = ['ignoreCase' => $ignoreCase, 'missing' => true];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds;
+        }
+
+        $this->_waitForTextIn($this->resolver->format(''), $text, $options);
+
+        return $this;
     }
     
     /**
@@ -126,13 +139,12 @@ trait WaitsForElements
      */
     public function waitForTextIn($selector, $text, $seconds = null, $ignoreCase = false)
     {
-        $text = is_array($text) ? $text : [$text];
         $options = ['ignoreCase' => $ignoreCase];
         if ($seconds !== null) {
             $options['timeout'] = $seconds;
         }
 
-        $this->_waitForTextIn($selector, $text, $options);
+        $this->_waitForTextIn($this->resolver->format(''), $text, $options);
 
         return $this;
     }
