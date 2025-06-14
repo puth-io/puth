@@ -75,7 +75,7 @@ export class Browser {
     public fitOnFailure: boolean = true;
 
     // timeout in milliseconds for wait functions
-    public timeout: integer = 3000;
+    public timeout: integer = 10000;
 
     constructor(context: Context, page: Page) {
         this.context = context;

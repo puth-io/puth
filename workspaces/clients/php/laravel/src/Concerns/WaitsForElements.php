@@ -215,7 +215,7 @@ trait WaitsForElements
      */
     public function waitUntilEnabled($selector, $seconds = null)
     {
-        $this->_waitUntilEnabled($this->resolver->format($selector));
+        $this->_waitUntilEnabled($this->resolver->format($selector), $seconds ? ['timeout' => $seconds] : []);
         
         return $this;
     }
@@ -229,7 +229,7 @@ trait WaitsForElements
      */
     public function waitUntilDisabled($selector, $seconds = null)
     {
-        $this->_waitUntilDisabled($this->resolver->format($selector));
+        $this->_waitUntilDisabled($this->resolver->format($selector), $seconds ? ['timeout' => $seconds] : []);
 
         return $this;
     }
@@ -244,17 +244,9 @@ trait WaitsForElements
      */
     public function waitUntil($script, $seconds = null, $message = null)
     {
-        $this->_waitUntil($script, [], $message);
+        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds] : []);
 
         return $this;
-
-//        if (!Str::endsWith($script, ';')) {
-//            $script = $script . ';';
-//        }
-//
-//        return $this->waitUsing($seconds, 100, function () use ($script) {
-//            return $this->site->evaluate($script);
-//        }, $message);
     }
     
     /**
