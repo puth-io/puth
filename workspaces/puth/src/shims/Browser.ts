@@ -509,11 +509,11 @@ export class Browser {
     }
 
     public assertSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
-        return this.assertSeeIn('body', text, ignoreCase);
+        return this.assertSeeIn(this.resolverPrefix, text, ignoreCase);
     }
 
     public assertDontSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
-        return this.assertDontSeeIn('body', text, ignoreCase);
+        return this.assertDontSeeIn(this.resolverPrefix, text, ignoreCase);
     }
 
     public assertSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {

@@ -134,7 +134,7 @@ class Browser extends \Puth\RemoteObjects\Browser
 
         $this->legacyBrowserHandling = $options['legacyBrowserHandling'] ?? false;
 
-        $this->setResolver($this->resolver);
+        $this->setResolver($resolver ?? new ElementResolver($this));
     }
 
     public function getResolver(): ElementResolver
@@ -442,20 +442,15 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function with($selector, Closure $callback)
     {
-        $remote = $this->clone();
-
-        $browser = new static(
-            $remote,
-            new ElementResolver(
-                $this,
-                $this->resolver->format($selector),
-            ),
-        );
+        $browser = new static($this->clone());
+        $browser->setResolver(new ElementResolver(
+            $browser,
+            $this->resolver->format($selector),
+        ));
 
         if ($this->page) {
             $browser->onWithoutAssert($this->page);
         }
-
         if ($selector instanceof Component) {
             $browser->onComponent($selector, $this->resolver);
         }
@@ -473,18 +468,15 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function elsewhere($selector, Closure $callback)
     {
-        $browser = new static(
-            $this->remote,
-            new ElementResolver(
-                $this,
-                $selector,
-            ),
-        );
+        $browser = new static($this->clone());
+        $browser->setResolver(new ElementResolver(
+            $browser,
+            'body ' . $selector,
+        ));
 
         if ($this->page) {
             $browser->onWithoutAssert($this->page);
         }
-
         if ($selector instanceof Component) {
             $browser->onComponent($selector, $this->resolver);
         }

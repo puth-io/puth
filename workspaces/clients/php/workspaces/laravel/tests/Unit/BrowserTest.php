@@ -12,6 +12,8 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
+    public static bool $debug = true;
+
     function test_multiple_browsers()
     {
         $this->browse(function (Browser $browser1, Browser $browser2) {
@@ -73,6 +75,10 @@ class BrowserTest extends PuthTestCase
                             $browser->assertSee('with this innerhtml')
                                 ->assertDontSee('Puth')
                                 ->assertDontSee('Text containing apple');
+                        })
+                        ->elsewhere('', function (Browser $browser) {
+                            $browser->assertSee('Puth')
+                                ->assertSee('with this innerhtml');
                         })
                         ->elsewhereWhenAvailable('#properties-innerhtml', function (Browser $browser) {
                             $browser->assertSee('with this innerhtml')
