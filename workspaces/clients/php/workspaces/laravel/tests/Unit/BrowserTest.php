@@ -12,8 +12,6 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
-    public static bool $debug = true;
-
     function test_multiple_browsers()
     {
         $this->browse(function (Browser $browser1, Browser $browser2) {

@@ -71,7 +71,7 @@ export class UnsupportedException extends Error {}
 export class Browser {
     private readonly context: Context;
     private readonly browser: PPTRBrowser;
-    private readonly site: Page|Frame;
+    private readonly site: Page | Frame;
 
     private readonly self: () => this;
 
@@ -81,8 +81,9 @@ export class Browser {
     public timeout: integer = 3000;
 
     public resolverPrefix: string = 'body';
+    public resolverPageElements: {} = {};
 
-    constructor(context: Context, page: Page|Frame) {
+    constructor(context: Context, page: Page | Frame) {
         this.context = context;
         this.browser = page instanceof Page ? page.browser() : page.page().browser();
         this.site = page;
@@ -96,6 +97,11 @@ export class Browser {
 
     public setResolverPrefix(prefix: string): this {
         this.resolverPrefix = prefix;
+        return this;
+    }
+
+    public setResolverPageElements(pageElements: {}): this {
+        this.resolverPageElements = pageElements;
         return this;
     }
 
@@ -306,13 +312,18 @@ export class Browser {
         return this.type(selector, value, { delay: pause });
     }
 
-    public waitFor(selector: string[] | string, options?: { timeout?: integer; state?: 'visible'|'hidden'|'present'|'missing' }) {
+    public waitFor(
+        selector: string[] | string,
+        options?: { timeout?: integer; state?: 'visible' | 'hidden' | 'present' | 'missing' },
+    ) {
         options = { state: 'present', timeout: this.timeout, ...options } as any;
 
         if (options?.state === 'missing') {
-            return this.waitForNotPresent(selector as string, {timeout: options?.timeout ?? this.timeout}).catch(error => {
-                console.error('selector is still present...');
-            });
+            return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout }).catch(
+                (error) => {
+                    console.error('selector is still present...');
+                },
+            );
         } else if (options?.state === 'visible') {
             options.visible = true;
         } else if (options?.state === 'hidden') {
@@ -325,21 +336,31 @@ export class Browser {
                 : this.site.waitForSelector(selector, options)
         ).catch((error) => {
             if (error instanceof TimeoutError) {
-                throw new ExpectationFailed(`Waited ${options?.timeout ?? this.timeout}ms for selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`);
+                throw new ExpectationFailed(
+                    `Waited ${options?.timeout ?? this.timeout}ms for selector [${
+                        Array.isArray(selector) ? selector.join(' | ') : selector
+                    }]`,
+                );
             }
             throw error;
         });
     }
 
     public waitForNotPresent(selector: string, options: {} = {}) {
-        return this.site.waitForFunction(
-            s => document.querySelector(s) === null,
-            {timeout: this.timeout, ...options, polling: 'mutation'},
-            selector,
-        ).then(this.self);
+        return this.site
+            .waitForFunction(
+                (s) => document.querySelector(s) === null,
+                { timeout: this.timeout, ...options, polling: 'mutation' },
+                selector,
+            )
+            .then(this.self);
     }
 
-    public waitForTextIn(selector: string, text: string[]|string, options: {timeout?: integer, ignoreCase?: boolean, missing?: boolean} = {}) {
+    public waitForTextIn(
+        selector: string,
+        text: string[] | string,
+        options: { timeout?: integer; ignoreCase?: boolean; missing?: boolean } = {},
+    ) {
         if (!Array.isArray(text)) {
             text = [text];
         }
@@ -349,7 +370,7 @@ export class Browser {
                 let innerText = document.querySelector(s)?.innerText;
                 if (ic) {
                     innerText = innerText?.toLowerCase();
-                    t = t.map(_t => _t?.toLowerCase());
+                    t = t.map((_t) => _t?.toLowerCase());
                 }
                 for (let _t of t) {
                     if (!innerText.includes(_t)) {
@@ -358,24 +379,18 @@ export class Browser {
                 }
                 return !m;
             },
-            [
-                text,
-                selector,
-                options?.ignoreCase ?? false,
-                options?.missing ?? false,
-            ],
-            `Waited ${options?.timeout ?? this.timeout}ms for text "${text}" in selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`,
+            [text, selector, options?.ignoreCase ?? false, options?.missing ?? false],
+            `Waited ${options?.timeout ?? this.timeout}ms for text "${text}" in selector [${
+                Array.isArray(selector) ? selector.join(' | ') : selector
+            }]`,
             options,
         );
     }
 
     public waitUntil(pageFunction, args: any[], message: string, options: {} = {}) {
-        return this.site.waitForFunction(
-            pageFunction,
-            {timeout: this.timeout, ...options},
-            ...args,
-        )
-            .catch(error => {
+        return this.site
+            .waitForFunction(pageFunction, { timeout: this.timeout, ...options }, ...args)
+            .catch((error) => {
                 if (error instanceof TimeoutError) {
                     throw new ExpectationFailed(message);
                 }
@@ -389,12 +404,14 @@ export class Browser {
             value = [value];
         }
 
-        return this.waitFor(selector, options).then(_ => this.waitUntil(
-            (s, a, v) => v.includes(document.querySelector(s)?.[a]),
-            [selector, attribute, value],
-            message,
-            options,
-        ));
+        return this.waitFor(selector, options).then((_) =>
+            this.waitUntil(
+                (s, a, v) => v.includes(document.querySelector(s)?.[a]),
+                [selector, attribute, value],
+                message,
+                options,
+            ),
+        );
     }
 
     public waitUntilEnabled(selector: string, options: {} = {}) {
@@ -957,6 +974,12 @@ export class Browser {
 
     private createElementNotFoundMessage(selector: string[] | string) {
         return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
+    }
+
+    public format(selector: string) {
+        for (const [key, value] of Object.entries(this.resolverPageElements)) {
+            selector = selector.replaceAll(key, value);
+        }
     }
 
     public isPage() {

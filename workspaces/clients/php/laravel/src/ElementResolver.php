@@ -85,7 +85,12 @@ class ElementResolver
      */
     public function pageElements(array $elements)
     {
+        uksort($elements, function ($a, $b) {
+            return strlen($b) <=> strlen($a);
+        });
+
         $this->elements = $elements;
+        $this->browser->setResolverPageElements($elements);
         
         return $this;
     }
@@ -419,15 +424,11 @@ class ElementResolver
      */
     public function format($selector)
     {
-        $sortedElements = collect($this->elements)->sortByDesc(function ($element, $key) {
-            return strlen($key);
-        })->toArray();
-        
         $selector = str_replace(
-            array_keys($sortedElements), array_values($sortedElements), $originalSelector = $selector
+            array_keys($this->elements), array_values($this->elements), $originalSelector = $selector
         );
         
-        if (Str::startsWith($selector, '@') && $selector === $originalSelector) {
+        if (str_starts_with($selector, '@') && $selector === $originalSelector) {
             // TODO put Dusk::selectorHtmlAttribute in PuthManager
             $selector = '[' . 'dusk' . '="' . explode('@', $selector)[1] . '"]';
         }
