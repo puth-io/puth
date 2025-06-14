@@ -8,7 +8,7 @@ use Tests\PuthTestCase;
 
 class WaitUntilTest extends PuthTestCase
 {
-    function test_wait_until2()
+    function test_wait_until()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)

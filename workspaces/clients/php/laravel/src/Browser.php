@@ -103,7 +103,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      *
      * @var ElementResolver
      */
-    public $resolver;
+    private $resolver;
 
     /**
      * The page object currently being viewed.
@@ -111,8 +111,6 @@ class Browser extends \Puth\RemoteObjects\Browser
      * @var mixed
      */
     public $page;
-
-    public \Puth\RemoteObjects\Browser $remote;
 
     /**
      * The component object currently being viewed.
@@ -132,13 +130,25 @@ class Browser extends \Puth\RemoteObjects\Browser
 
     public function __construct(\Puth\RemoteObjects\Browser $remote, $resolver = null, $options = [])
     {
-        $this->remote = $remote;
-        // TODO WIP removed $site
-        $this->resolver = $resolver ?: new ElementResolver($this);
+        parent::__construct($remote->id, $remote->type, $remote->represents, $remote->parent, $remote->context);
 
         $this->legacyBrowserHandling = $options['legacyBrowserHandling'] ?? false;
 
-        parent::__construct($remote->id, $remote->type, $remote->represents, $remote->parent, $remote->context);
+        $this->setResolver($this->resolver);
+    }
+
+    public function getResolver(): ElementResolver
+    {
+        return $this->resolver;
+    }
+
+    public function setResolver(ElementResolver $resolver): void
+    {
+        $this->resolver = $resolver;
+
+        if (($prefix = $this->resolver->format('')) !== 'body') {
+            $this->setResolverPrefix($prefix);
+        }
     }
 
     /**
@@ -402,8 +412,9 @@ class Browser extends \Puth\RemoteObjects\Browser
     {
         $iframe = $this->resolver->findOrFail($selector)->contentFrame();
 
+        // TODO fix - need to create a new browser shim with same page but different "site" (rename page to site?)
         $browser = new static(
-            $this->remote,
+            $this,
             $iframe,
         );
 
@@ -431,8 +442,10 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function with($selector, Closure $callback)
     {
+        $remote = $this->clone();
+
         $browser = new static(
-            $this->remote,
+            $remote,
             new ElementResolver(
                 $this,
                 $this->resolver->format($selector),

@@ -1,4 +1,4 @@
-import { ElementHandle, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
+import { Browser as PPTRBrowser, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -66,26 +66,41 @@ export class ExpectationFailed extends Error {
     }
 }
 
+export class UnsupportedException extends Error {}
+
 export class Browser {
     private readonly context: Context;
-    private readonly page: Page;
+    private readonly browser: PPTRBrowser;
+    private readonly site: Page|Frame;
 
     private readonly self: () => this;
 
     public fitOnFailure: boolean = true;
 
     // timeout in milliseconds for wait functions
-    public timeout: integer = 10000;
+    public timeout: integer = 3000;
 
-    constructor(context: Context, page: Page) {
+    public resolverPrefix: string = 'body';
+
+    constructor(context: Context, page: Page|Frame) {
         this.context = context;
-        this.page = page;
+        this.browser = page instanceof Page ? page.browser() : page.page().browser();
+        this.site = page;
 
         this.self = (): this => this;
     }
 
+    public clone(): Browser {
+        return new Browser(this.context, this.site);
+    }
+
+    public setResolverPrefix(prefix: string): this {
+        this.resolverPrefix = prefix;
+        return this;
+    }
+
     public visit(url: string): Promise<this> {
-        return this.page.goto(url).then(this.self);
+        return this.site.goto(url).then(this.self);
     }
 
     public click(selector: string, options: any = {}): Promise<this> {
@@ -95,7 +110,7 @@ export class Browser {
     }
 
     public setContent(html: string, options: WaitForOptions = {}): Promise<this> {
-        return this.page.setContent(html, options).then(this.self);
+        return this.site.setContent(html, options).then(this.self);
     }
 
     public blank(): Promise<this> {
@@ -103,33 +118,49 @@ export class Browser {
     }
 
     public refresh(options = {}): Promise<this> {
-        return this.page.reload(options).then(this.self);
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [refresh] on a frame is not supported.');
+        }
+
+        return this.site.reload(options).then(this.self);
     }
 
     // Navigate to the previous page.
     public back(options = {}): Promise<this> {
-        return this.page.goBack(options).then(this.self);
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [back] on a frame is not supported.');
+        }
+
+        return this.site.goBack(options).then(this.self);
     }
 
     // Navigate to the next page.
     public forward(options = {}): Promise<this> {
-        return this.page.goForward(options).then(this.self);
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [forward] on a frame is not supported.');
+        }
+
+        return this.site.goForward(options).then(this.self);
     }
 
     public maximize(): Promise<this> {
-        return maximize(this.page.browser()).then(this.self);
+        return maximize(this.browser).then(this.self);
     }
 
     public bounds(): Promise<object> {
-        return getWindowBounds(this.page.browser());
+        return getWindowBounds(this.browser);
     }
 
     public setBounds(bounds: any): Promise<this> {
-        return setWindowBounds(this.page.browser(), bounds).then(this.self);
+        return setWindowBounds(this.browser, bounds).then(this.self);
     }
 
     public resize(width, height): Promise<this> {
-        return this.page
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [resize] on a frame is not supported.');
+        }
+
+        return this.site
             .setViewport({
                 width,
                 height,
@@ -138,7 +169,7 @@ export class Browser {
     }
 
     public move(x: number, y: number): Promise<this> {
-        return move(this.page.browser(), x, y).then(this.self);
+        return move(this.browser, x, y).then(this.self);
     }
 
     public scrollIntoView(selector: string): Promise<this> {
@@ -154,52 +185,75 @@ export class Browser {
 
     // TODO fix args default value not correctly generated
     public evaluate(pageFunction: string, args: any[] = []): Promise<any> {
-        return this.page.evaluate(pageFunction, ...args);
+        return this.site.evaluate(pageFunction, ...args);
     }
 
     public quit(): Promise<void> {
-        return this.context.destroyBrowserByBrowser(this.page.browser());
+        return this.context.destroyBrowserByBrowser(this.browser);
     }
 
     public url(): string {
-        return this.page.url();
+        return this.site.url();
     }
 
     public async title(): Promise<string> {
-        return this.page.title();
+        return this.site.title();
     }
 
     public content(): Promise<string> {
-        return this.page.content();
+        return this.site.content();
     }
 
     public viewport(): Viewport | null {
-        return this.page.viewport();
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [viewport] on a frame is not supported.');
+        }
+
+        return this.site.viewport();
     }
 
     public getCookieByName(name: string): Promise<any> {
-        return PuthStandardPlugin.getCookieByName(this.page, name) as any;
+        // TODO implement for frame - use Browser cookies instead of deprecated page cookies
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [viewport] on a frame is currently not supported.');
+        }
+
+        return PuthStandardPlugin.getCookieByName(this.site, name) as any;
     }
 
     public setCookie(cookies: any[]): Promise<this> {
-        return this.page.setCookie(...cookies).then(this.self);
+        // TODO implement for frame - use Browser cookies instead of deprecated page cookies
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [setCookie] on a frame is currently not supported.');
+        }
+
+        return this.site.setCookie(...cookies).then(this.self);
     }
 
     public deleteCookie(cookies: any[] | string): Promise<this> {
+        // TODO implement for frame - use Browser cookies instead of deprecated page cookies
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [viewport] on a frame is currently not supported.');
+        }
+
         if (!Array.isArray(cookies)) {
             cookies = [{ name: cookies }];
         }
 
-        return this.page.deleteCookie(...cookies).then(this.self);
+        return this.site.deleteCookie(...cookies).then(this.self);
     }
 
     public screenshot(options = {}): Promise<Uint8Array> {
-        return this.page.screenshot(options);
+        if (!this.isPage()) {
+            throw new UnsupportedException('Calling [screenshot] on a frame is currently not supported.');
+        }
+
+        return this.site.screenshot(options);
     }
 
     // Make the browser window as large as the content
     public async fitContent(): Promise<this> {
-        let html = await this.page.$('html');
+        let html = await this.site.$('html');
         if (!html) {
             throw new Error('Element [html] not found on page.');
         }
@@ -267,8 +321,8 @@ export class Browser {
 
         return (
             Array.isArray(selector)
-                ? Promise.any(selector.map((s) => this.page.waitForSelector(s, options)))
-                : this.page.waitForSelector(selector, options)
+                ? Promise.any(selector.map((s) => this.site.waitForSelector(s, options)))
+                : this.site.waitForSelector(selector, options)
         ).catch((error) => {
             if (error instanceof TimeoutError) {
                 throw new ExpectationFailed(`Waited ${options?.timeout ?? this.timeout}ms for selector [${Array.isArray(selector) ? selector.join(' | ') : selector}]`);
@@ -278,7 +332,7 @@ export class Browser {
     }
 
     public waitForNotPresent(selector: string, options: {} = {}) {
-        return this.page.waitForFunction(
+        return this.site.waitForFunction(
             s => document.querySelector(s) === null,
             {timeout: this.timeout, ...options, polling: 'mutation'},
             selector,
@@ -316,7 +370,7 @@ export class Browser {
     }
 
     public waitUntil(pageFunction, args: any[], message: string, options: {} = {}) {
-        return this.page.waitForFunction(
+        return this.site.waitForFunction(
             pageFunction,
             {timeout: this.timeout, ...options},
             ...args,
@@ -371,10 +425,10 @@ export class Browser {
     public findAll(selector: string[] | string, options?: {} = {}): Promise<ElementHandle[]> {
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
-                return Promise.all(selector.flatMap((s) => this.page.$$(s))).then((found) => found.flat());
+                return Promise.all(selector.flatMap((s) => this.site.$$(s))).then((found) => found.flat());
             }
 
-            return this.page.$$(selector);
+            return this.site.$$(selector);
         });
     }
 
@@ -410,7 +464,7 @@ export class Browser {
     public assertTitle(title: string): Promise<Return | this> {
         return expects(
             title,
-            this.page.title(),
+            this.site.title(),
             ({ actual }) => `Expected title [${title}] does not equal actual title [${actual}].`,
             isEqual,
         ).then(this.self);
@@ -420,7 +474,7 @@ export class Browser {
     public assertTitleContains(title: string): Promise<Return | this> {
         return expects(
             title,
-            this.page.title(),
+            this.site.title(),
             ({ expected, actual }) => `Did not see expected value [${expected}] within title [${actual}].`,
             (expected, actual) => actual.includes(expected),
         ).then(this.self);
@@ -511,7 +565,7 @@ export class Browser {
     public async assertScript(expression: string, expected: any = true): Promise<Return | this> {
         return expects(
             expected,
-            this.page.evaluate(expression),
+            this.site.evaluate(expression),
             () => `JavaScript expression [${expression}] mismatched.`,
             isEqual,
         ).then(this.self);
@@ -520,7 +574,7 @@ export class Browser {
     public assertSourceHas(code: string): Promise<Return | this> {
         return expects(
             code,
-            this.page.content(),
+            this.site.content(),
             ({ expected }) => `Did not find expected source code [${expected}]`,
             (e, a) => a.includes(e),
         ).then(this.self);
@@ -529,7 +583,7 @@ export class Browser {
     public assertSourceMissing(code: string): Promise<Return | this> {
         return expects(
             code,
-            this.page.content(),
+            this.site.content(),
             ({ expected }) => `Found unexpected source code [${expected}]`,
             (e, a) => !a.includes(e),
         ).then(this.self);
@@ -752,13 +806,13 @@ export class Browser {
     }
 
     public async assertVisible(selector: string, options: {} = {}): Promise<Return | this> {
-        return this.waitFor(selector, { ...options, visible: true })
+        return this.waitFor(selector, { ...options, state: 'visible' })
             .then((element) => expects(null, element, `Element [${selector}] is not visible.`, isNotNull))
             .then(this.self);
     }
 
     public async assertMissing(selector: string, options: {} = {}): Promise<Return | this> {
-        return this.waitFor(selector, { ...options, hidden: true })
+        return this.waitFor(selector, { ...options, state: 'hidden' })
             .then((element) => expects(null, element, `Saw unexpected element [${selector}].`, isNull))
             .then(this.self);
     }
@@ -772,7 +826,7 @@ export class Browser {
     }
 
     public async assertDialogOpened(message: string): Promise<Return | this> {
-        const actual = await this.page.waitForEvent('dialog').then((d) => d.message());
+        const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
         return expects(
             message,
             actual,
@@ -819,7 +873,7 @@ export class Browser {
 
     public assertFocused(field: string): Promise<Return | this> {
         const expected = this.resolver.resolveForField(field);
-        const actual = () => this.page.focused();
+        const actual = () => this.site.focused();
         return expects(
             expected,
             actual,
@@ -830,7 +884,7 @@ export class Browser {
 
     public assertNotFocused(field: string): Promise<Return | this> {
         const expected = this.resolver.resolveForField(field);
-        const actual = () => this.page.focused();
+        const actual = () => this.site.focused();
         return expects(
             expected,
             actual,
@@ -898,10 +952,14 @@ export class Browser {
         } catch (_) {}
         return el.__vueParentComponent.setupState.${key};
       `;
-        return this.page.evaluate(script);
+        return this.site.evaluate(script);
     }
 
     private createElementNotFoundMessage(selector: string[] | string) {
         return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
+    }
+
+    public isPage() {
+        return this.site instanceof Page;
     }
 }

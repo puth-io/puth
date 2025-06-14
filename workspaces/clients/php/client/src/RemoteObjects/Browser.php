@@ -10,6 +10,27 @@ use Puth\RemoteObject;
 class Browser extends RemoteObject
 {
     /**
+     * @debug-gen-original-name "clone"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Browser"]
+     */
+    public function clone(): Browser
+    {
+        return $this->callFunc('clone');
+    }
+
+    /**
+     * @debug-gen-original-name "setResolverPrefix"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter prefix {"type":"string","isOptional":false}
+     */
+    public function setResolverPrefix(string $prefix): Browser
+    {
+        return $this->callFunc('setResolverPrefix', [$prefix]);
+    }
+
+    /**
      * @debug-gen-original-name "visit"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -1189,5 +1210,15 @@ class Browser extends RemoteObject
     public function vueAttribute(mixed $componentSelector, string $key): mixed
     {
         return $this->callFunc('vueAttribute', [$componentSelector, $key]);
+    }
+
+    /**
+     * @debug-gen-original-name "isPage"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     */
+    public function isPage(): void
+    {
+        $this->callFunc('isPage');
     }
 }
