@@ -600,10 +600,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
      */
-    public function assertDontSeeLink(string $link): mixed
+    public function assertDontSeeLink(string $link, string $selector = 'a'): mixed
     {
-        return $this->callFunc('assertDontSeeLink', [$link]);
+        return $this->callFunc('assertDontSeeLink', [$link, $selector]);
     }
 
     /**
@@ -915,10 +916,23 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"5000"}]}}
      */
-    public function assertVisible(string $selector): mixed
+    public function assertVisible(string $selector, mixed $options = ['timeout' => 5000]): mixed
     {
-        return $this->callFunc('assertVisible', [$selector]);
+        return $this->callFunc('assertVisible', [$selector, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertMissing"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"5000"}]}}
+     */
+    public function _assertMissing(string $selector, mixed $options = ['timeout' => 5000]): mixed
+    {
+        return $this->callFunc('assertMissing', [$selector, $options]);
     }
 
     /**
@@ -942,18 +956,6 @@ class Browser extends RemoteObject
     public function assertNotPresent(string $selector): mixed
     {
         return $this->callFunc('assertNotPresent', [$selector]);
-    }
-
-    /**
-     * @debug-gen-original-name "assertMissing"
-     * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
-     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter timeout {"type":"any","isOptional":false,"initializer":{"type":"numeric","value":"5"}}
-     */
-    public function assertMissing(string $selector, mixed $timeout): mixed
-    {
-        return $this->callFunc('assertMissing', [$selector, $timeout]);
     }
 
     /**

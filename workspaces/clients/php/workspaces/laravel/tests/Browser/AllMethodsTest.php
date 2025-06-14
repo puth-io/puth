@@ -131,8 +131,11 @@ class AllMethodsTest extends PuthTestCase
                 ->assertSourceHas('<title>Playground | Puth</title>')
                 ->assertSourceMissing('<div>__not in dom__</div>')
                 ->assertSeeLink('https://puth.io/')
-//                ->assertDontSeeLink('https://notalink.io')
-//                ->assertVisible('body')
+                ->assertDontSeeLink('https://notalink.io')
+                ->assertVisible('body')
+//                ->assertPresent('body')
+//                ->assertNotPresent('body #not-existing-element')
+//                ->assertMissing('missingelement')
 //                ->assertInputValue('#properties-value input', 'input with value')
 //                ->assertInputValueIsNot('#properties-value input', 'not the correct value')
 //                ->check('#action-checkbox')
@@ -156,9 +159,6 @@ class AllMethodsTest extends PuthTestCase
 //                ->assertAttribute('#actions-type input', 'type', 'text')
 //                ->assertDataAttribute('#properties-attributes', 'test', '1234')
 //                ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
-//                ->assertPresent('body')
-//                ->assertNotPresent('body #not-existing-element')
-//                ->assertMissing('missingelement')
 //                ->assertEnabled('#actions-focus')
 //                ->assertDisabled('#actions-click-disabled')
 //                ->assertButtonDisabled('#actions-click-disabled')
@@ -193,6 +193,7 @@ class AllMethodsTest extends PuthTestCase
             $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
             $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
             $inverse("Element [a[href='https://notalink.io/']] not found", fn() => $browser->assertSeeLink('https://notalink.io/'));
+            $inverse("Element [body #not-existing-element] not found", fn() => $browser->assertVisible('body #not-existing-element'));
         });
     }
     
