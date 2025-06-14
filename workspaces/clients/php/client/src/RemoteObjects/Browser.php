@@ -376,7 +376,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; state: 'visible'|'hidden'|'present'|'missing' }","isOptional":true}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; state?: 'visible'|'hidden'|'present'|'missing' }","isOptional":true}
      */
     public function _waitFor(mixed $selector, mixed $options): void
     {
@@ -401,11 +401,64 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string[]|string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout?: integer, ignoreCase?: boolean}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter options {"type":"{timeout?: integer, ignoreCase?: boolean, missing?: boolean}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _waitForTextIn(string $selector, mixed $text, mixed $options = []): void
     {
         $this->callFunc('waitForTextIn', [$selector, $text, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntil"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter pageFunction {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter args {"type":"any[]","isOptional":false}
+     * @debug-gen-original-parameter message {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function _waitUntil(mixed $pageFunction, array $args, string $message, mixed $options = []): void
+    {
+        $this->callFunc('waitUntil', [$pageFunction, $args, $message, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntilAttribute"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter message {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function waitUntilAttribute(string $selector, string $attribute, mixed $value, string $message, mixed $options = []): void
+    {
+        $this->callFunc('waitUntilAttribute', [$selector, $attribute, $value, $message, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntilEnabled"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function _waitUntilEnabled(string $selector, mixed $options = []): void
+    {
+        $this->callFunc('waitUntilEnabled', [$selector, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntilDisabled"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function _waitUntilDisabled(string $selector, mixed $options = []): void
+    {
+        $this->callFunc('waitUntilDisabled', [$selector, $options]);
     }
 
     /**

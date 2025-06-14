@@ -215,11 +215,7 @@ trait WaitsForElements
      */
     public function waitUntilEnabled($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for element to be enabled', $selector);
-        
-        $this->waitUsing($seconds, 100, function () use ($selector) {
-            return !$this->resolver->findOrFail($selector)->disabled;
-        }, $message);
+        $this->_waitUntilEnabled($this->resolver->format($selector));
         
         return $this;
     }
@@ -233,12 +229,8 @@ trait WaitsForElements
      */
     public function waitUntilDisabled($selector, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for element to be disabled', $selector);
-        
-        $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->disabled;
-        }, $message);
-        
+        $this->_waitUntilDisabled($this->resolver->format($selector));
+
         return $this;
     }
     
@@ -252,13 +244,17 @@ trait WaitsForElements
      */
     public function waitUntil($script, $seconds = null, $message = null)
     {
-        if (!Str::endsWith($script, ';')) {
-            $script = $script . ';';
-        }
-        
-        return $this->waitUsing($seconds, 100, function () use ($script) {
-            return $this->site->evaluate($script);
-        }, $message);
+        $this->_waitUntil($script, [], $message);
+
+        return $this;
+
+//        if (!Str::endsWith($script, ';')) {
+//            $script = $script . ';';
+//        }
+//
+//        return $this->waitUsing($seconds, 100, function () use ($script) {
+//            return $this->site->evaluate($script);
+//        }, $message);
     }
     
     /**

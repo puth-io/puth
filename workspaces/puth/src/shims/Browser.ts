@@ -252,8 +252,8 @@ export class Browser {
         return this.type(selector, value, { delay: pause });
     }
 
-    public waitFor(selector: string[] | string, options?: { timeout?: integer; state: 'visible'|'hidden'|'present'|'missing' }) {
-        options = { state: 'visible', timeout: this.timeout, ...options } as any;
+    public waitFor(selector: string[] | string, options?: { timeout?: integer; state?: 'visible'|'hidden'|'present'|'missing' }) {
+        options = { state: 'present', timeout: this.timeout, ...options } as any;
 
         if (options?.state === 'missing') {
             return this.waitForNotPresent(selector as string, {timeout: options?.timeout ?? this.timeout}).catch(error => {
@@ -328,6 +328,39 @@ export class Browser {
                 throw error;
             })
             .then(this.self);
+    }
+
+    public waitUntilAttribute(selector: string, attribute: string, value: any, message: string, options: {} = {}) {
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+
+        return this.waitFor(selector, options).then(_ => this.waitUntil(
+            (s, a, v) => v.includes(document.querySelector(s)?.[a]),
+            [selector, attribute, value],
+            message,
+            options,
+        ));
+    }
+
+    public waitUntilEnabled(selector: string, options: {} = {}) {
+        return this.waitUntilAttribute(
+            selector,
+            'disabled',
+            [undefined, null, false],
+            `Waited %s seconds for element to be enabled`,
+            options,
+        );
+    }
+
+    public waitUntilDisabled(selector: string, options: {} = {}) {
+        return this.waitUntilAttribute(
+            selector,
+            'disabled',
+            [true],
+            `Waited %s seconds for element to be disabled`,
+            options,
+        );
     }
 
     /**
