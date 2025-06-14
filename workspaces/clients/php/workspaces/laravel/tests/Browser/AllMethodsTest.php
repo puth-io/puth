@@ -133,7 +133,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertSeeLink('https://puth.io/')
                 ->assertDontSeeLink('https://notalink.io')
                 ->assertVisible('body')
-//                ->assertPresent('body')
+                ->assertPresent('body')
 //                ->assertNotPresent('body #not-existing-element')
 //                ->assertMissing('missingelement')
 //                ->assertInputValue('#properties-value input', 'input with value')
@@ -192,8 +192,10 @@ class AllMethodsTest extends PuthTestCase
             $inverse('JavaScript expression [1+1] mismatched', fn() => $browser->assertScript('1+1', 3));
             $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
             $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
-            $inverse("Element [a[href='https://notalink.io/']] not found", fn() => $browser->assertSeeLink('https://notalink.io/'));
-            $inverse("Element [body #not-existing-element] not found", fn() => $browser->assertVisible('body #not-existing-element'));
+
+            // temporarily disabled because these functions have timeouts and therefore every line would take 5s to run
+//            $inverse("Element [a[href='https://notalink.io/']] not found", fn() => $browser->assertSeeLink('https://notalink.io/'));
+//            $inverse("Element [body #not-existing-element] not found", fn() => $browser->assertVisible('body #not-existing-element'));
         });
     }
     

@@ -107,6 +107,7 @@ const NAME_TRANSLATION = {
                 assertSeeNothingIn: '_assertSeeNothingIn',
                 assertSeeLink: '_assertSeeLink',
                 assertMissing: '_assertMissing',
+                waitFor: '_waitFor',
             },
         },
     },

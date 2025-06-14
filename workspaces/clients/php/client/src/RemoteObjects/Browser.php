@@ -260,7 +260,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "deleteCookie"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter cookies {"type":"any[]|string","isOptional":false}
+     * @debug-gen-original-parameter cookies {"type":"any[] | string","isOptional":false}
      */
     public function deleteCookie(mixed $cookies): Browser
     {
@@ -349,7 +349,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "type"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
@@ -372,6 +372,18 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "waitFor"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; visible?: boolean; hidden?: boolean }","isOptional":true}
+     */
+    public function _waitFor(mixed $selector, mixed $options): void
+    {
+        $this->callFunc('waitFor', [$selector, $options]);
+    }
+
+    /**
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      * TODO implement timeout
@@ -379,10 +391,10 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "findAll"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle[]"]
-     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
+     * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":true,"initializer":{"type":"object","members":[]}}
      */
-    public function findAll(mixed $selector, mixed $options = ['timeout' => 15]): array
+    public function findAll(mixed $selector, mixed $options = []): array
     {
         return $this->callFunc('findAll', [$selector, $options]);
     }
@@ -394,10 +406,10 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "findOrFail"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle[]"]
-     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
+     * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":true,"initializer":{"type":"object","members":[]}}
      */
-    public function _findOrFail(mixed $selector, mixed $options = ['timeout' => 15]): array
+    public function _findOrFail(mixed $selector, mixed $options = []): array
     {
         return $this->callFunc('findOrFail', [$selector, $options]);
     }
@@ -409,8 +421,8 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "firstOrFail"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle"]
-     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
+     * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{ timeout: integer }","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"15"}]}}
      */
     public function _firstOrFail(mixed $selector, mixed $options = ['timeout' => 15]): RemoteObject
     {
@@ -445,7 +457,7 @@ class Browser extends RemoteObject
 
     /**
      * @debug-gen-original-name "assertHasCookie"
-     * @debug-gen-original-is-async false
+     * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
      */
@@ -456,7 +468,7 @@ class Browser extends RemoteObject
 
     /**
      * @debug-gen-original-name "assertCookieMissing"
-     * @debug-gen-original-is-async false
+     * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
      */
@@ -605,18 +617,6 @@ class Browser extends RemoteObject
     public function assertDontSeeLink(string $link, string $selector = 'a'): mixed
     {
         return $this->callFunc('assertDontSeeLink', [$link, $selector]);
-    }
-
-    /**
-     * @debug-gen-original-name "seeLink"
-     * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["boolean"]
-     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter link {"type":"string","isOptional":false}
-     */
-    public function seeLink(string $selector, string $link): bool
-    {
-        return $this->callFunc('seeLink', [$selector, $link]);
     }
 
     /**
@@ -913,10 +913,10 @@ class Browser extends RemoteObject
 
     /**
      * @debug-gen-original-name "assertVisible"
-     * @debug-gen-original-is-async false
+     * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"5000"}]}}
+     * @debug-gen-original-parameter options {"type":"{ timeout: integer }","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"5000"}]}}
      */
     public function assertVisible(string $selector, mixed $options = ['timeout' => 5000]): mixed
     {
@@ -928,7 +928,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{timeout: integer}","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"5000"}]}}
+     * @debug-gen-original-parameter options {"type":"{ timeout: integer }","isOptional":false,"initializer":{"type":"object","members":[{"key":"timeout","type":"numeric","value":"5000"}]}}
      */
     public function _assertMissing(string $selector, mixed $options = ['timeout' => 5000]): mixed
     {

@@ -73,6 +73,9 @@ export class Browser {
 
     public fitOnFailure: boolean = true;
 
+    // timeout in milliseconds for wait functions
+    public timeout: integer = 5000;
+
     constructor(context: Context, page: Page) {
         this.context = context;
         this.page = page;
@@ -250,12 +253,10 @@ export class Browser {
 
     public waitFor(
         selector: string[] | string,
-        options: { timeout: integer; visible?: boolean; hidden?: boolean } = {
-            timeout: 5000,
-            hidden: false,
-            visible: false,
-        },
+        options?: { timeout?: integer; visible?: boolean; hidden?: boolean },
     ) {
+        options = {timeout: this.timeout, hidden: false, visible: false, ...options};
+
         return (
             Array.isArray(selector)
                 ? Promise.any(selector.map((s) => this.page.waitForSelector(s, options)))
@@ -275,7 +276,7 @@ export class Browser {
      */
     public findAll(
         selector: string[] | string,
-        options: { timeout: integer } = { timeout: 5 },
+        options?: {} = {},
     ): Promise<ElementHandle[]> {
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
@@ -292,7 +293,7 @@ export class Browser {
      */
     public findOrFail(
         selector: string[] | string,
-        options: { timeout: integer } = { timeout: 5 },
+        options?: {} = {},
     ): Promise<ElementHandle[]> {
         return this.findAll(selector, options).then((elements) => {
             if (elements.length === 0) {
@@ -303,17 +304,13 @@ export class Browser {
         });
     }
 
-    private createElementNotFoundMessage(selector: string[] | string) {
-        return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
-    }
-
     /**
      * @gen-returns RemoteObject
      * TODO gen-returns should be ElementHandle
      */
     public firstOrFail(
         selector: string[] | string,
-        options: { timeout: integer } = { timeout: 15 },
+        options?: {} = {},
     ): Promise<ElementHandle> {
         return this.findOrFail(selector, options).then((found) => found[0]);
     }
@@ -672,8 +669,7 @@ export class Browser {
         selector: string,
         options: { timeout: integer } = { timeout: 5000 },
     ): Promise<Return | this> {
-        return this.page
-            .waitForSelector(selector, { visible: true, timeout: options?.timeout ?? 5000 })
+        return this.waitFor(selector, { ...options, visible: true })
             .then((element) => expects(null, element, `Element [${selector}] is not visible.`, isNotNull))
             .then(this.self);
     }
@@ -682,8 +678,7 @@ export class Browser {
         selector: string,
         options: { timeout: integer } = { timeout: 5000 },
     ): Promise<Return | this> {
-        return this.page
-            .waitForSelector(selector, { hidden: true, timeout: options?.timeout ?? 5000 })
+        return this.waitFor(selector, { ...options, hidden: true })
             .then((element) => expects(null, element, `Saw unexpected element [${selector}].`, isNull))
             .then(this.self);
     }
@@ -839,6 +834,10 @@ export class Browser {
         return el.__vueParentComponent.setupState.${key};
       `;
         return this.page.evaluate(script);
+    }
+
+    private createElementNotFoundMessage(selector: string[] | string) {
+        return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
     }
 }
 
