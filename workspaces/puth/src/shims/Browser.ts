@@ -1327,7 +1327,7 @@ export class Browser {
     }
 
     // Assert that the current URL fragment does not match the given fragment.
-    public assertFragmentIsNot(fragment: string): Promise<Return<Return<this>>> {
+    public assertFragmentIsNot(fragment: string): Promise<Return<this>> {
         return this.eW(f => window.location.hash.substring(1, window.location.hash.length) != f, fragment)
             .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
             .then(this.selfWithAsserts());

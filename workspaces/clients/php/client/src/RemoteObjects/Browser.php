@@ -1612,10 +1612,10 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertFragmentIsNot"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter fragment {"type":"string","isOptional":false}
      */
-    public function assertFragmentIsNot(string $fragment): mixed
+    public function assertFragmentIsNot(string $fragment): Browser
     {
         return $this->callFunc('assertFragmentIsNot', [$fragment]);
     }
