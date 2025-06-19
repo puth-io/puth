@@ -853,8 +853,8 @@ export class Browser {
     public async assertIndeterminate(field: string, value: string | null = null): Promise<Return | this> {
         return this.assertNotChecked(field, value)
             .then(_ => this.firstOrFail(this.resolver(field)))
-            .then(element => expects(
-                PuthStandardPlugin.attr(element, 'indeterminate'),
+            .then(async element => expects(
+                (await PuthStandardPlugin.attr(element, 'indeterminate') || await PuthStandardPlugin.its(element, 'indeterminate')),
                 isEqualTo,
                 true,
                 `Checkbox [${field}] was not in indeterminate state.`,
