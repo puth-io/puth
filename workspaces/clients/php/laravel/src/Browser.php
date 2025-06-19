@@ -16,7 +16,6 @@ class Browser extends \Puth\RemoteObjects\Browser
     use Concerns\InteractsWithKeyboard;
     use Concerns\InteractsWithMouse;
     use Concerns\MakesAssertions;
-    use Concerns\MakesUrlAssertions;
     use Concerns\WaitsForElements;
 
     use Macroable {
@@ -527,6 +526,17 @@ class Browser extends \Puth\RemoteObjects\Browser
     }
 
     /**
+     * Assert that the current URL path matches the given route.
+     *
+     * @param string $route
+     * @param array $parameters
+     */
+    public function assertRouteIs($route, $parameters = []): static
+    {
+        return $this->assertPathIs(route($route, $parameters, false));
+    }
+
+    /**
      * Ensure that jQuery is available on the page.
      *
      * @return void
@@ -666,7 +676,6 @@ class Browser extends \Puth\RemoteObjects\Browser
 
         throw new BadMethodCallException("Call to undefined method [{$method}].");
     }
-
 
     /*
      * Legacy functions

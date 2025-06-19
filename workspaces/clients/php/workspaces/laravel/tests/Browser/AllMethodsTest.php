@@ -232,8 +232,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertFragmentIsNot('test-not')
                 ->assertQueryStringHas('param1')
                 ->assertQueryStringHas('param1', 'abc')
-                ->assertQueryStringMissing('test')
-                ->assertHasQueryStringParameter('param1');
+                ->assertQueryStringMissing('test');
             
             $browser->visit('/sub/path')
                 ->assertRouteIs('sub.path')

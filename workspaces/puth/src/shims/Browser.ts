@@ -1306,12 +1306,29 @@ export class Browser {
         return this._assertHasQueryStringParameter(name, false).then(this.self);
     }
 
-//     let port = this._url().port;
-//     if (port === '') {
-//     let scheme = this.scheme();
-//     if (scheme === 'http') port = '80';
-//     else if (scheme === 'https') port = '443';
-// }
+    // Assert that the current URL fragment matches the given pattern.
+    public assertFragmentIs(fragment: string): Promise<this> {
+        return this.eW(
+            f => (new RegExp('^' + f.replace(/\*/g, '.*') + '$')).test(window.location.hash.substring(1, window.location.hash.length)),
+            fragment,
+        )
+            .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not equal expected fragment [${fragment}].`)})
+            .then(this.self);
+    }
+
+    // Assert that the current URL fragment begins with given fragment.
+    public assertFragmentBeginsWith(fragment: string): Promise<this> {
+        return this.eW(f => window.location.hash.substring(1, window.location.hash.length).startsWith(f), fragment)
+            .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
+            .then(this.self);
+    }
+
+    // Assert that the current URL fragment does not match the given fragment.
+    public assertFragmentIsNot(fragment: string): Promise<this> {
+        return this.eW(f => window.location.hash.substring(1, window.location.hash.length) != f, fragment)
+            .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
+            .then(this.self);
+    }
 
     public resolver(selector: string[]|string) {
         if (Array.isArray(selector)) {

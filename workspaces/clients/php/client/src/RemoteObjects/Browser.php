@@ -1582,13 +1582,45 @@ class Browser extends RemoteObject
     }
 
     /**
-     * let port = this._url().port;
-     * if (port === '') {
-     * let scheme = this.scheme();
-     * if (scheme === 'http') port = '80';
-     * else if (scheme === 'https') port = '443';
-     * }
+     * Assert that the current URL fragment matches the given pattern.
      * 
+     * @debug-gen-original-name "assertFragmentIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter fragment {"type":"string","isOptional":false}
+     */
+    public function assertFragmentIs(string $fragment): Browser
+    {
+        return $this->callFunc('assertFragmentIs', [$fragment]);
+    }
+
+    /**
+     * Assert that the current URL fragment begins with given fragment.
+     * 
+     * @debug-gen-original-name "assertFragmentBeginsWith"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter fragment {"type":"string","isOptional":false}
+     */
+    public function assertFragmentBeginsWith(string $fragment): Browser
+    {
+        return $this->callFunc('assertFragmentBeginsWith', [$fragment]);
+    }
+
+    /**
+     * Assert that the current URL fragment does not match the given fragment.
+     * 
+     * @debug-gen-original-name "assertFragmentIsNot"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter fragment {"type":"string","isOptional":false}
+     */
+    public function assertFragmentIsNot(string $fragment): Browser
+    {
+        return $this->callFunc('assertFragmentIsNot', [$fragment]);
+    }
+
+    /**
      * @debug-gen-original-name "resolver"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
