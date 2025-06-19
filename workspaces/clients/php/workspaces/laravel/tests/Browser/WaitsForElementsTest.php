@@ -11,6 +11,8 @@ use Tests\PuthTestCase;
 
 class WaitsForElementsTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_wait_until_script()
     {
         $this->browse(function (Browser $browser) {
@@ -68,8 +70,8 @@ class WaitsForElementsTest extends PuthTestCase
     function test_wait_until_missing_exception()
     {
         $this->browse(function (Browser $browser) {
-            $this->expectException(Exception::class);
-            $browser->waitUntilMissing('body', 0);
+            $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
+            $browser->waitUntilMissing('body', 1);
         });
     }
     

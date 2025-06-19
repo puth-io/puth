@@ -645,7 +645,7 @@ class Context extends Generic {
             return this.returnCached(resolvedTo);
         }
         
-        return Return.Value(resolvedTo);
+        return Return.Value(resolvedTo).serialize();
     }
     
     public async set(action) {

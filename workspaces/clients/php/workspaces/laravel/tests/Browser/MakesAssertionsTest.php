@@ -11,7 +11,7 @@ class MakesAssertionsTest extends PuthTestCase
 {
     public static bool $testAfterClassDone;
 
-    public static bool $debug = true;
+    public static bool $debug = false;
     
     function test_assert_missing_exception()
     {
@@ -60,8 +60,8 @@ class MakesAssertionsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<body><input name="test"></body>');
-            $browser->assertInputMissing('wrongname', 0);
-            $browser->assertInputPresent('test', 0);
+            $browser->assertInputMissing('wrongname', 1);
+            $browser->assertInputPresent('test', 1);
         });
     }
     
@@ -69,7 +69,7 @@ class MakesAssertionsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $this->expectException(ExpectationFailedException::class);
-            $browser->assertInputPresent('test', 0);
+            $browser->assertInputPresent('test', 1);
         });
     }
     
@@ -78,7 +78,7 @@ class MakesAssertionsTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $this->expectException(ExpectationFailedException::class);
             $browser->setContent('<body><input name="test"></body>');
-            $browser->assertInputMissing('test', 0);
+            $browser->assertInputMissing('test', 1);
         });
     }
     
