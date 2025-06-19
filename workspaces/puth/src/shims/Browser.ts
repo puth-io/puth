@@ -4,6 +4,7 @@ import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std
 import { PuthStandardPlugin } from '../index';
 import { type } from '../plugins/utils/cy';
 import { Return } from '@puth/puth/src/context/Return';
+import {clearTimeout} from 'node:timers';
 
 // TODO
 // @gen-class ElementHandle
@@ -13,7 +14,7 @@ import { Return } from '@puth/puth/src/context/Return';
 
 export type integer = number;
 
-const isEqual = (expected: any, actual: any) => expected == actual;
+const isEqualTo = (expected: any, actual: any) => expected == actual;
 const isNotEqual = (expected: any, actual: any) => expected != actual;
 const isNull = (expected: any, actual: any) => actual == null;
 const isNotNull = (expected: any, actual: any) => actual != null;
@@ -446,7 +447,10 @@ export class Browser {
     public findAll(selector: string[] | string, options?: {} = {}): Promise<ElementHandle[]> {
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
-                return Promise.all(selector.flatMap((s) => this.site.$$(s))).then((found) => found.flat());
+                return Promise.allSettled(selector.flatMap((s) => this.site.$$(s)))
+                    .then(settled => settled.map(s => s?.value ?? null))
+                    .then(found => found.filter(f => !!f))
+                    .then(found => found.flat());
             }
 
             return this.site.$$(selector);
@@ -487,7 +491,7 @@ export class Browser {
             title,
             this.site.title(),
             ({ actual }) => `Expected title [${title}] does not equal actual title [${actual}].`,
-            isEqual,
+            isEqualTo,
         ).then(this.self);
     }
 
@@ -525,7 +529,7 @@ export class Browser {
             (await this.getCookieByName(name))?.value?.value ?? '',
             ({ expected, actual }) =>
                 `Cookie [${name}] had value [${actual?.value ?? ''}], but expected [${expected}].`,
-            isEqual,
+            isEqualTo,
         ).then(this.self);
     }
 
@@ -588,7 +592,7 @@ export class Browser {
             expected,
             this.site.evaluate(expression),
             () => `JavaScript expression [${expression}] mismatched.`,
-            isEqual,
+            isEqualTo,
         ).then(this.self);
     }
 
@@ -628,7 +632,7 @@ export class Browser {
             PuthStandardPlugin.its(element, 'value'),
             ({ expected, actual }) =>
                 `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
-            isEqual,
+            isEqualTo,
         )).then(this.self);
     }
 
@@ -643,7 +647,15 @@ export class Browser {
     }
 
     public resolveForTyping(selector: string) {
-        return this.firstOrFail([selector, `input[name='${selector}']`, `textarea[name='${selector}']`]);
+        let selectors: string[] = [];
+        if (selector?.startsWith('#')) {
+            selectors.push(selector);
+        }
+        selectors.push(`input[name='${selector}']`);
+        selectors.push(`textarea[name='${selector}']`);
+        selectors.push(selector);
+
+        return this.firstOrFail(selectors);
     }
 
     public resolveForChecking(field: string|null, value: string|null = null) {
@@ -660,6 +672,9 @@ export class Browser {
             selector += `[value='${value}']`;
         }
         selectors.push(selector);
+        if (field != null) {
+            selectors.push(field);
+        }
 
         return this.firstOrFail(selectors);
     }
@@ -678,27 +693,61 @@ export class Browser {
             selector += `[value='${value}']`;
         }
         selectors.push(selector);
+        if (field != null) {
+            selectors.push(field);
+        }
 
         return this.firstOrFail(selectors);
     }
 
-    public resolveForSelection(field: string|null) {
+    public resolveForSelection(field: string) {
         let selectors: string[] = [];
         if (field?.startsWith('#')) {
             selectors.push(field);
         }
         selectors.push(`select[name='${field}']`);
+        selectors.push(field);
 
         return this.firstOrFail(selectors);
     }
 
     public resolveSelectOptions(field: string) {
         return this.resolveForSelection(field)
-            // .then(el => PuthStandardPlugin.children(el, null))
             .then(el => el.evaluateHandle(handle => [...handle.options].map(o => o.value)))
             .then(handle => handle.jsonValue());
-            // .then(el => el.evaluateHandle(handle => handle.children))
-            // .then(children => Promise.all(children.map(child => PuthStandardPlugin.its(child, 'value'))));
+    }
+
+    public resolveForField(field: string) {
+        let selectors: string[] = [];
+        if (field?.startsWith('#')) {
+            selectors.push(field);
+        }
+        selectors.push(`input[name='${field}']`);
+        selectors.push(`textarea[name='${field}']`);
+        selectors.push(`select[name='${field}']`);
+        selectors.push(`button[name='${field}']`);
+        selectors.push(field);
+
+        return this.firstOrFail(this.resolver(selectors));
+    }
+
+    public resolveForButtonPress(field: string): Promise<ElementHandle> {
+        let selectors: string[] = [field];
+
+        selectors.push(`input[type=submit][name='${field}']`);
+        selectors.push(`input[type=button][value='${field}']`);
+        selectors.push(`button[name='${field}']`);
+
+        return new Promise(async (resolve, reject) => {
+            let timerId = setTimeout(_ => reject(new ExpectationFailed(this.createElementNotFoundMessage(field))));
+
+            await Promise.any(
+                this.firstOrFail(this.resolver(selectors)),
+            ).then(element => {
+                clearTimeout(timerId);
+                resolve(element);
+            });
+        });
     }
 
     public inputValue(field: any): string {
@@ -715,49 +764,35 @@ export class Browser {
         return this;
     }
 
+    private _assertProperty(element: Promise<ElementHandle>, property, compareFn, expected, message) {
+        return element.then(element => expects(expected, PuthStandardPlugin.its(element, property), message, compareFn)).then(this.self);
+    }
+
     public assertChecked(field: string, value: string|null = null): Promise<Return | this> {
-        return this.resolveForChecking(field, value).then(async element => expects(
-            true,
-            PuthStandardPlugin.its(element, 'checked'),
-            `Expected checkbox [${field}] to be checked, but it wasn't.`,
-            isEqual,
-        )).then(this.self);
+        return this._assertProperty(this.resolveForChecking(field, value), 'checked', isEqualTo, true, `Expected checkbox [${field}] to be checked, but it wasn't.`);
     }
 
     public assertNotChecked(field: string, value: string|null = null): Promise<Return | this> {
-        return this.resolveForChecking(field, value).then(async element => expects(
-            false,
-            PuthStandardPlugin.its(element, 'checked'),
-            `Checkbox [${field}] was unexpectedly checked.`,
-            isEqual,
-        )).then(this.self);
+        return this._assertProperty(this.resolveForChecking(field, value), 'checked', isEqualTo, false, `Checkbox [${field}] was unexpectedly checked.`);
     }
 
     public async assertIndeterminate(field: string, value: string | null = null): Promise<Return | this> {
-        await this.assertNotChecked(field, value);
-        return expects(
-            true,
-            () => this.resolver.findOrFail(field).indeterminate,
-            () => `Checkbox [${field}] was not in indeterminate state.`,
-        ).then(this.self);
+        return this.assertNotChecked(field, value)
+            .then(_ => this.firstOrFail(this.resolver(field)))
+            .then(element => expects(
+                true,
+                PuthStandardPlugin.attr(element, 'indeterminate'),
+                `Checkbox [${field}] was not in indeterminate state.`,
+                isEqualTo,
+        )).then(this.self);
     }
 
     public assertRadioSelected(field: string, value: string): Promise<Return | this> {
-        return this.resolveForRadioSelection(field, value).then(async element => expects(
-            true,
-            PuthStandardPlugin.its(element, 'checked'),
-            `Expected radio [${field}] to be selected, but it wasn't.`,
-            isEqual,
-        )).then(this.self);
+        return this._assertProperty(this.resolveForRadioSelection(field, value), 'checked', isEqualTo, true, `Expected radio [${field}] to be selected, but it wasn't.`);
     }
 
     public assertRadioNotSelected(field: string, value: string | null = null): Promise<Return | this> {
-        return this.resolveForRadioSelection(field, value).then(async element => expects(
-            false,
-            PuthStandardPlugin.its(element, 'checked'),
-           `Radio [${element}] was unexpectedly selected.`,
-            isEqual,
-        )).then(this.self);
+        return this._assertProperty(this.resolveForRadioSelection(field, value), 'checked', isEqualTo, false, `Radio [${field}] was unexpectedly selected.`);
     }
 
     private selected(field: string, value: string[]|string): Promise<boolean> {
@@ -779,7 +814,7 @@ export class Browser {
             true,
             this.selected(field, value),
             `Expected value [${value.join(',')}] to be selected for [${field}], but it wasn't.`,
-            isEqual,
+            isEqualTo,
         ).then(this.self);
     }
 
@@ -792,7 +827,7 @@ export class Browser {
             false,
             this.selected(field, value),
             `Unexpected value [${value.join(',')}] selected for [${field}].`,
-            isEqual,
+            isEqualTo,
         ).then(this.self);
     }
 
@@ -801,7 +836,7 @@ export class Browser {
             true,
             values.every(v => selectable.includes(v)),
             () => `Expected options [${values.join(',')}] for selection field [${field}] to be available.`,
-            isEqual,
+            isEqualTo,
         )).then(this.self);
     }
 
@@ -810,7 +845,7 @@ export class Browser {
             false,
             selectable.some(s => values.includes(s)),
             () => `Unexpected options [${values.join(',')}] for selection field [${field}].`,
-            isEqual,
+            isEqualTo,
         )).then(this.self);
     }
 
@@ -823,51 +858,48 @@ export class Browser {
     }
 
     public assertValue(selector: string, value: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).value;
-        return expects(
+        return this.firstOrFail(this.resolver(selector)).then(el => expects(
             value,
-            actual,
-            ({ expected, actual }) => `Did not see expected value [${expected}] within element [${fullSelector}].`,
-        ).then(this.self);
+            PuthStandardPlugin.its(el, 'value'),
+            `Did not see expected value [${value}] within element [${this.resolver(selector)}].`,
+            isEqualTo,
+        )).then(this.self);
     }
 
     public assertValueIsNot(selector: string, value: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).value;
-        return expects(
+        return this.firstOrFail(this.resolver(selector)).then(el => expects(
             value,
-            actual,
-            () => `Saw unexpected value [${value}] within element [${fullSelector}].`,
-            (e, a) => e !== a,
-        ).then(this.self);
+            PuthStandardPlugin.its(el, 'value'),
+            `Saw unexpected value [${value}] within element [${this.resolver(selector)}].`,
+            isNotEqual,
+        )).then(this.self);
     }
 
-    private ensureElementSupportsValueAttribute(element: any, fullSelector: string): void {
-        const allowed = ['textarea', 'select', 'button', 'input', 'li', 'meter', 'option', 'param', 'progress'];
-        if (!allowed.includes(element.tagName.toLowerCase())) {
-            throw new Error(`This assertion cannot be used with the element [${fullSelector}].`);
-        }
-    }
+    // private ensureElementSupportsValueAttribute(element: any, fullSelector: string): void {
+    //     const allowed = ['textarea', 'select', 'button', 'input', 'li', 'meter', 'option', 'param', 'progress'];
+    //     if (!allowed.includes(element.tagName.toLowerCase())) {
+    //         throw new Error(`This assertion cannot be used with the element [${fullSelector}].`);
+    //     }
+    // }
 
     public assertAttribute(selector: string, attribute: string, value: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).its(attribute);
-        return expects(
+        let fullSelector = this.resolver(selector);
+        return this.firstOrFail(fullSelector).then(el => expects(
             value,
-            actual,
-            () => `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
-        ).then(this.self);
+            PuthStandardPlugin.attr(el, attribute),
+            `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
+            isEqualTo,
+        )).then(this.self);
     }
 
     public assertAttributeMissing(selector: string, attribute: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).its(attribute);
-        return expects(
+        let fullSelector = this.resolver(selector);
+        return this.firstOrFail(fullSelector).then(el => expects(
             null,
-            actual,
-            () => `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
-        ).then(this.self);
+            PuthStandardPlugin.attr(el, attribute),
+            `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
+            isEqualTo,
+        )).then(this.self);
     }
 
     public assertAttributeContains(selector: string, attribute: string, value: string): Promise<Return | this> {
@@ -930,40 +962,48 @@ export class Browser {
         ).then(this.self);
     }
 
-    public assertEnabled(field: any): Promise<Return | this> {
-        const element = this.resolver.resolveForField(field);
-        return expects(
-            false,
-            () => element.disabled,
-            () => `Expected element [${element}] to be enabled, but it wasn't.`,
-        ).then(this.self);
+    public assertEnabled(field: string): Promise<Return | this> {
+        return this.resolveForField(field)
+            .then(element => expects(
+                false,
+                PuthStandardPlugin.its(element, 'disabled'),
+                `Expected element [${field}] to be enabled, but it wasn't.`,
+                isEqualTo,
+            ))
+            .then(this.self);
     }
 
     public assertDisabled(field: any): Promise<Return | this> {
-        const element = this.resolver.resolveForField(field);
-        return expects(
-            true,
-            () => element.disabled,
-            () => `Expected element [${element}] to be disabled, but it wasn't.`,
-        ).then(this.self);
+        return this.resolveForField(field)
+            .then(element => expects(
+                true,
+                PuthStandardPlugin.its(element, 'disabled'),
+                `Expected element [${field}] to be disabled, but it wasn't.`,
+                isEqualTo,
+            ))
+            .then(this.self);
     }
 
     public assertButtonEnabled(button: any): Promise<Return | this> {
-        const element = this.resolver.resolveForButtonPress(button);
-        return expects(
-            false,
-            () => element.disabled,
-            () => `Expected button [${button}] to be enabled, but it wasn't.`,
-        ).then(this.self);
+        return this.resolveForButtonPress(button)
+            .then(element => expects(
+                false,
+                PuthStandardPlugin.its(element, 'disabled'),
+                `Expected button [${button}] to be enabled, but it wasn't.`,
+                isEqualTo,
+            ))
+            .then(this.self);
     }
 
     public assertButtonDisabled(button: string): Promise<Return | this> {
-        const element = this.resolver.resolveForButtonPress(button);
-        return expects(
-            true,
-            () => element.disabled,
-            () => `Expected button [${button}] to be disabled, but it wasn't.`,
-        ).then(this.self);
+        return this.resolveForButtonPress(button)
+            .then(element => expects(
+                true,
+                PuthStandardPlugin.its(element, 'disabled'),
+                `Expected button [${button}] to be disabled, but it wasn't.`,
+                isEqualTo,
+            ))
+            .then(this.self);
     }
 
     public assertFocused(field: string): Promise<Return | this> {
@@ -1054,7 +1094,11 @@ export class Browser {
         return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
     }
 
-    public resolver(selector: string) {
+    public resolver(selector: string[]|string) {
+        if (Array.isArray(selector)) {
+            return selector.map(s => this.resolver(s));
+        }
+
         const original = selector;
 
         for (const [key, value] of Object.entries(this.resolverPageElements)) {

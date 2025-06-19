@@ -159,18 +159,18 @@ class AllMethodsTest extends PuthTestCase
                 ->assertAttribute('#actions-type input', 'type', 'text')
                 ->assertDataAttribute('#properties-attributes', 'test', '1234')
                 ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
-//                ->assertEnabled('#actions-focus')
-//                ->assertDisabled('#actions-click-disabled')
-//                ->assertButtonDisabled('#actions-click-disabled')
-//                ->assertButtonEnabled('#actions-click-double')
-//                ->click('#actions-focus')
-//                ->assertFocused('#actions-focus')
-//                ->assertNotFocused('#actions-type input')
-////                ->assertVue
-////                ->assertVueIsNot
-////                ->assertVueContains
-////                ->assertVueDoesNotContain
-////                ->vueAttribute
+                ->assertEnabled('#actions-focus')
+                ->assertDisabled('#actions-click-disabled')
+                ->assertButtonDisabled('#actions-click-disabled')
+                ->assertButtonEnabled('#actions-click-double')
+                ->click('#actions-focus')
+                ->assertFocused('#actions-focus')
+                ->assertNotFocused('#actions-type input')
+//                ->assertVue
+//                ->assertVueIsNot
+//                ->assertVueContains
+//                ->assertVueDoesNotContain
+//                ->vueAttribute
             ;
 
 
