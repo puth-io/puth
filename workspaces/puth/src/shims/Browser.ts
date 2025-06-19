@@ -336,6 +336,9 @@ export class Browser {
                 ? Promise.any(selector.map((s) => this.site.waitForSelector(s, options)))
                 : this.site.waitForSelector(selector, options)
         ).catch((error) => {
+            if (error instanceof AggregateError) {
+                error = error.errors[0];
+            }
             if (error instanceof TimeoutError) {
                 throw new ExpectationFailed(
                     `Waited ${options?.timeout ?? this.timeout}ms for selector [${
@@ -644,7 +647,7 @@ export class Browser {
     }
 
     public resolveForChecking(field: string|null, value: string|null = null) {
-        let selectors = [];
+        let selectors: string[] = [];
         if (field?.startsWith('#')) {
             selectors.push(field);
         }
@@ -659,6 +662,43 @@ export class Browser {
         selectors.push(selector);
 
         return this.firstOrFail(selectors);
+    }
+
+    public resolveForRadioSelection(field: string|null, value: string|null = null) {
+        let selectors: string[] = [];
+        if (field?.startsWith('#')) {
+            selectors.push(field);
+        }
+
+        let selector = 'input[type=radio]';
+        if (field != null) {
+            selector += `[name='${field}']`;
+        }
+        if (value != null) {
+            selector += `[value='${value}']`;
+        }
+        selectors.push(selector);
+
+        return this.firstOrFail(selectors);
+    }
+
+    public resolveForSelection(field: string|null) {
+        let selectors: string[] = [];
+        if (field?.startsWith('#')) {
+            selectors.push(field);
+        }
+        selectors.push(`select[name='${field}']`);
+
+        return this.firstOrFail(selectors);
+    }
+
+    public resolveSelectOptions(field: string) {
+        return this.resolveForSelection(field)
+            // .then(el => PuthStandardPlugin.children(el, null))
+            .then(el => el.evaluateHandle(handle => [...handle.options].map(o => o.value)))
+            .then(handle => handle.jsonValue());
+            // .then(el => el.evaluateHandle(handle => handle.children))
+            // .then(children => Promise.all(children.map(child => PuthStandardPlugin.its(child, 'value'))));
     }
 
     public inputValue(field: any): string {
@@ -676,22 +716,21 @@ export class Browser {
     }
 
     public assertChecked(field: string, value: string|null = null): Promise<Return | this> {
-        // TODO WIP
-        return this.resolveForChecking(field, value).then(element => expects(
+        return this.resolveForChecking(field, value).then(async element => expects(
             true,
-            () => PuthStandardPlugin.its(element, 'checked'),
-            () => `Expected checkbox [${element}] to be checked, but it wasn't.`,
+            PuthStandardPlugin.its(element, 'checked'),
+            `Expected checkbox [${field}] to be checked, but it wasn't.`,
             isEqual,
         )).then(this.self);
     }
 
     public assertNotChecked(field: string, value: string|null = null): Promise<Return | this> {
-        const element = this.resolver.resolveForChecking(field, value);
-        return expects(
+        return this.resolveForChecking(field, value).then(async element => expects(
             false,
-            () => element.checked,
-            () => `Checkbox [${element}] was unexpectedly checked.`,
-        ).then(this.self);
+            PuthStandardPlugin.its(element, 'checked'),
+            `Checkbox [${field}] was unexpectedly checked.`,
+            isEqual,
+        )).then(this.self);
     }
 
     public async assertIndeterminate(field: string, value: string | null = null): Promise<Return | this> {
@@ -704,62 +743,75 @@ export class Browser {
     }
 
     public assertRadioSelected(field: string, value: string): Promise<Return | this> {
-        const element = this.resolver.resolveForRadioSelection(field, value);
-        return expects(
+        return this.resolveForRadioSelection(field, value).then(async element => expects(
             true,
-            () => element.checked,
-            () => `Expected radio [${element}] to be selected, but it wasn't.`,
-        ).then(this.self);
+            PuthStandardPlugin.its(element, 'checked'),
+            `Expected radio [${field}] to be selected, but it wasn't.`,
+            isEqual,
+        )).then(this.self);
     }
 
     public assertRadioNotSelected(field: string, value: string | null = null): Promise<Return | this> {
-        const element = this.resolver.resolveForRadioSelection(field, value);
-        return expects(
+        return this.resolveForRadioSelection(field, value).then(async element => expects(
             false,
-            () => element.checked,
-            () => `Radio [${element}] was unexpectedly selected.`,
-        ).then(this.self);
+            PuthStandardPlugin.its(element, 'checked'),
+           `Radio [${element}] was unexpectedly selected.`,
+            isEqual,
+        )).then(this.self);
     }
 
-    private selected(field: string, value: string | string[]): boolean {
-        const selectedVals = this.resolver.resolveForSelection(field)?.selected() ?? [];
-        const wanted = wrapArray(value);
-        return wanted.every((v) => selectedVals.includes(v));
+    private selected(field: string, value: string[]|string): Promise<boolean> {
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+
+        return this.resolveForSelection(field)
+            .then(el => PuthStandardPlugin.selected(el))
+            .then(selected => value.every(v => selected.includes(v)));
     }
 
-    public assertSelected(field: string, value: string | string[]): Promise<Return | this> {
-        const values = wrapArray(value);
+    public assertSelected(field: string, value: string[]|string): Promise<Return | this> {
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+
         return expects(
             true,
-            () => this.selected(field, values),
-            () => `Expected value [${values.join(',')}] to be selected for [${field}], but it wasn't.`,
+            this.selected(field, value),
+            `Expected value [${value.join(',')}] to be selected for [${field}], but it wasn't.`,
+            isEqual,
         ).then(this.self);
     }
 
-    public assertNotSelected(field: string, value: string | string[]): Promise<Return | this> {
-        const values = wrapArray(value);
+    public assertNotSelected(field: string, value: string[]|string): Promise<Return | this> {
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+
         return expects(
             false,
-            () => this.selected(field, values),
-            () => `Unexpected value [${values.join(',')}] selected for [${field}].`,
+            this.selected(field, value),
+            `Unexpected value [${value.join(',')}] selected for [${field}].`,
+            isEqual,
         ).then(this.self);
     }
 
     public assertSelectHasOptions(field: string, values: string[]): Promise<Return | this> {
-        const opts = this.resolver.resolveSelectOptions(field, values).map((o: any) => o.value);
-        const unique = [...new Set(opts)];
-        return expects(
-            values.length,
-            unique.length,
+        return this.resolveSelectOptions(field).then(selectable => expects(
+            true,
+            values.every(v => selectable.includes(v)),
             () => `Expected options [${values.join(',')}] for selection field [${field}] to be available.`,
-        ).then(this.self);
+            isEqual,
+        )).then(this.self);
     }
 
     public assertSelectMissingOptions(field: string, values: string[]): Promise<Return | this> {
-        const count = this.resolver.resolveSelectOptions(field, values).length;
-        return expects(0, count, () => `Unexpected options [${values.join(',')}] for selection field [${field}].`).then(
-            this.self,
-        );
+        return this.resolveSelectOptions(field).then(selectable => expects(
+            false,
+            selectable.some(s => values.includes(s)),
+            () => `Unexpected options [${values.join(',')}] for selection field [${field}].`,
+            isEqual,
+        )).then(this.self);
     }
 
     public assertSelectHasOption(field: string, value: string): Promise<Return | this> {

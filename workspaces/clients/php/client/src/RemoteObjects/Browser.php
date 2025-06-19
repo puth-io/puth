@@ -781,6 +781,29 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "resolveForRadioSelection"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter field {"type":"string|null","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function resolveForRadioSelection(mixed $field, mixed $value = null): void
+    {
+        $this->callFunc('resolveForRadioSelection', [$field, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolveForSelection"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter field {"type":"string|null","isOptional":false}
+     */
+    public function resolveForSelection(mixed $field): void
+    {
+        $this->callFunc('resolveForSelection', [$field]);
+    }
+
+    /**
      * @debug-gen-original-name "inputValue"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["string"]
@@ -880,9 +903,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string | string[]","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string[]|string","isOptional":false}
      */
-    public function assertSelected(string $field, array $value): mixed
+    public function assertSelected(string $field, mixed $value): mixed
     {
         return $this->callFunc('assertSelected', [$field, $value]);
     }
@@ -892,9 +915,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string | string[]","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string[]|string","isOptional":false}
      */
-    public function assertNotSelected(string $field, array $value): mixed
+    public function assertNotSelected(string $field, mixed $value): mixed
     {
         return $this->callFunc('assertNotSelected', [$field, $value]);
     }
