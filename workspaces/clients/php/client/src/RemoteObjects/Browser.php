@@ -540,6 +540,32 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Press the button with the given text or name.
+     * 
+     * @debug-gen-original-name "press"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter button {"type":"string","isOptional":false}
+     */
+    public function press(string $button): Browser
+    {
+        return $this->callFunc('press', [$button]);
+    }
+
+    /**
+     * Press the button with the given text or name.
+     * 
+     * @debug-gen-original-name "pressAndWaitFor"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter button {"type":"string","isOptional":false}
+     */
+    public function pressAndWaitFor(string $button): Browser
+    {
+        return $this->callFunc('pressAndWaitFor', [$button]);
+    }
+
+    /**
      * Assert that the page title is the given value.
      * 
      * @debug-gen-original-name "assertTitle"
@@ -796,11 +822,44 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "resolveForSelection"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter field {"type":"string|null","isOptional":false}
+     * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      */
-    public function resolveForSelection(mixed $field): void
+    public function resolveForSelection(string $field): void
     {
         $this->callFunc('resolveForSelection', [$field]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolveSelectOptions"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter field {"type":"string","isOptional":false}
+     */
+    public function resolveSelectOptions(string $field): void
+    {
+        $this->callFunc('resolveSelectOptions', [$field]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolveForField"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter field {"type":"string","isOptional":false}
+     */
+    public function resolveForField(string $field): void
+    {
+        $this->callFunc('resolveForField', [$field]);
+    }
+
+    /**
+     * @debug-gen-original-name "resolveForButtonPress"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["ElementHandle"]
+     * @debug-gen-original-parameter field {"type":"string","isOptional":false}
+     */
+    public function resolveForButtonPress(string $field): mixed
+    {
+        return $this->callFunc('resolveForButtonPress', [$field]);
     }
 
     /**
@@ -995,6 +1054,13 @@ class Browser extends RemoteObject
     }
 
     /**
+     * private ensureElementSupportsValueAttribute(element: any, fullSelector: string): void {
+     * const allowed = ['textarea', 'select', 'button', 'input', 'li', 'meter', 'option', 'param', 'progress'];
+     * if (!allowed.includes(element.tagName.toLowerCase())) {
+     * throw new Error(`This assertion cannot be used with the element [${fullSelector}].`);
+     * }
+     * }
+     * 
      * @debug-gen-original-name "assertAttribute"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
@@ -1120,23 +1186,22 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-gen-original-name "assertDialogOpened"
-     * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
-     * @debug-gen-original-parameter message {"type":"string","isOptional":false}
-     */
-    public function assertDialogOpened(string $message): mixed
-    {
-        return $this->callFunc('assertDialogOpened', [$message]);
-    }
-
-    /**
+     * public async assertDialogOpened(message: string): Promise<Return | this> {
+     * const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
+     * return expects(
+     * message,
+     * actual,
+     * ({ expected, actual }) =>
+     * `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
+     * ).then(this.self);
+     * }
+     * 
      * @debug-gen-original-name "assertEnabled"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["unknown","this"]
-     * @debug-gen-original-parameter field {"type":"any","isOptional":false}
+     * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      */
-    public function assertEnabled(mixed $field): mixed
+    public function assertEnabled(string $field): mixed
     {
         return $this->callFunc('assertEnabled', [$field]);
     }
@@ -1277,9 +1342,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "resolver"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
      */
-    public function resolver(string $selector): void
+    public function resolver(mixed $selector): void
     {
         $this->callFunc('resolver', [$selector]);
     }

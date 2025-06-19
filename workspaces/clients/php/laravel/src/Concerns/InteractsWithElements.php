@@ -270,37 +270,6 @@ trait InteractsWithElements
         return $this;
     }
     
-    /**
-     * Press the button with the given text or name.
-     *
-     * @param string $button
-     * @return $this
-     */
-    public function press($button)
-    {
-        $this->resolver->resolveForButtonPress($button)->click();
-        
-        return $this;
-    }
-    
-    /**
-     * Press the button with the given text or name.
-     *
-     * @param string $button
-     * @param int $seconds
-     * @return $this
-     */
-    public function pressAndWaitFor($button, $seconds = 5)
-    {
-        $element = $this->resolver->resolveForButtonPress($button);
-        
-        $element->click();
-        
-        return $this->waitUsing($seconds, 100, function () use ($element) {
-            return ! $element->disabled;
-        });
-    }
-    
     private function ensureDragInterceptionIsOn() {
         if (!$this->dragInterceptionEnabled) {
             $this->site->setDragInterception(true);

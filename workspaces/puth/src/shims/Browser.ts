@@ -483,6 +483,23 @@ export class Browser {
     ////
     //// }
 
+    //// ELEMENT INTERACTION ///////////////////////////////////////////////////////////////////////////////////////////
+
+    // Press the button with the given text or name.
+    public press(button: string): Promise<this> {
+        return this.resolveForButtonPress(button).then(element => element.click()).then(this.self);
+    }
+
+    // Press the button with the given text or name.
+    public pressAndWaitFor(button: string): Promise<this> {
+        return this.resolveForButtonPress(button)
+            .then(async element => element.click().then(_ =>
+                this.expectsEH((handle, expected) => !!handle.disabled === expected, element, false, `Expected element [${button}] to be enabled, but it wasn't.`)
+            ))
+            .then(this.self);
+    }
+
+
     //// ASSERTIONS ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Assert that the page title is the given value.
@@ -572,18 +589,14 @@ export class Browser {
     public assertSeeAnythingIn(selector: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
-            .then((actual) =>
-                expects('', actual, () => `Saw unexpected text [''] within element [${selector}].`, isNotEmpty),
-            )
+            .then((actual) => expects('', actual, () => `Saw unexpected text [''] within element [${selector}].`, isNotEmpty))
             .then(this.self);
     }
 
     public assertSeeNothingIn(selector: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
-            .then((actual) =>
-                expects('', actual, () => `Did not see expected text [''] within element [${selector}].`, isEmpty),
-            )
+            .then((actual) => expects('', actual, () => `Did not see expected text [''] within element [${selector}].`, isEmpty))
             .then(this.self);
     }
 
@@ -979,24 +992,19 @@ export class Browser {
         return this.waitForNotPresent(this.resolver(selector));
     }
 
-    public async assertDialogOpened(message: string): Promise<Return | this> {
-        const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
-        return expects(
-            message,
-            actual,
-            ({ expected, actual }) =>
-                `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
-        ).then(this.self);
-    }
+    // public async assertDialogOpened(message: string): Promise<Return | this> {
+    //     const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
+    //     return expects(
+    //         message,
+    //         actual,
+    //         ({ expected, actual }) =>
+    //             `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
+    //     ).then(this.self);
+    // }
 
     public assertEnabled(field: string): Promise<Return | this> {
         return this.resolveForField(field)
-            .then(element => expects(
-                false,
-                PuthStandardPlugin.its(element, 'disabled'),
-                `Expected element [${field}] to be enabled, but it wasn't.`,
-                isEqualTo,
-            ))
+            .then(el => this.expectsEH((handle, expected) => !!handle.disabled === expected, el, false, `Expected element [${field}] to be enabled, but it wasn't.`))
             .then(this.self);
     }
 
@@ -1117,10 +1125,6 @@ export class Browser {
         return this.site.evaluate(script);
     }
 
-    private createElementNotFoundMessage(selector: string[] | string) {
-        return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
-    }
-
     public resolver(selector: string[]|string) {
         if (Array.isArray(selector)) {
             return selector.map(s => this.resolver(s));
@@ -1136,6 +1140,17 @@ export class Browser {
         }
 
         return (this.resolverPrefix + ' ' + selector).trim();
+    }
+
+    private expectsEH(evalFn, handle, expected , message) {
+        return this.site.waitForFunction(evalFn, {timeout: this.timeout, polling: 'mutation'}, handle, expected)
+            .catch(async error => {
+                throw new ExpectationFailed(await resolveValue(message, { expected, actual: undefined }), expected, undefined);
+            });
+    }
+
+    private createElementNotFoundMessage(selector: string[] | string) {
+        return `Element [${Array.isArray(selector) ? selector.join(' | ') : selector}] not found.`;
     }
 
     public isPage() {
