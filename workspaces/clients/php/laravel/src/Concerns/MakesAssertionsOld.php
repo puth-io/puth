@@ -907,4 +907,9 @@ trait MakesAssertionsOld
             'return el.__vueParentComponent.setupState.'.$key.';'
         ));
     }
+
+    public function wrapScriptForEvaluate(string $script)
+    {
+        return "JSON.parse(JSON.stringify((function() { $script })()));";
+    }
 }

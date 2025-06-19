@@ -90,7 +90,6 @@ class ElementResolver
         });
 
         $this->elements = $elements;
-        $this->browser->setResolverPageElements($elements);
         
         return $this;
     }

@@ -17,6 +17,8 @@ export type integer = number;
 const isEqualTo    = (actual: any, expected: any) => expected == actual;
 const isNotEqualTo = (actual: any, expected: any) => expected != actual;
 const isStartingWith   = (actual: any, expected: any) => actual.startsWith(expected);
+const isEndingWith   = (actual: any, expected: any) => actual.endsWith(expected);
+const isIncluding   = (actual: any, expected: any) => actual.includes(expected);
 
 // "actual" only assertions
 const isNull     = (actual: any, _: any) => actual == null;
@@ -194,8 +196,11 @@ export class Browser {
         return this.scrollIntoView(selector);
     }
 
-    // TODO fix args default value not correctly generated
-    public evaluate(pageFunction: string, args: any[] = []): Promise<any> {
+    public evaluate(pageFunction: string[]|string, args: any[] = []): Promise<any[]|any> {
+        if (Array.isArray(pageFunction)) {
+            return Promise.all(pageFunction.map((func, idx) => this.evaluate(func, args[idx] ?? [])));
+        }
+
         return this.site.evaluate(pageFunction, ...args);
     }
 
@@ -218,6 +223,10 @@ export class Browser {
 
     public host(): string {
         return this._url().hostname;
+    }
+
+    public path(): string {
+        return this._url().pathname;
     }
 
     public port(): string {
@@ -1166,12 +1175,18 @@ export class Browser {
         .then(this.self);
     }
 
-    private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<this> {
+    public _assertLocationProperty(property: string, expected: string, matches: boolean = true, trimEnd: integer = 0) {
         return this.eW(
-            (u, m) => (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location.protocol.substring(0, window.location.protocol.length - 1)) === m,
-            scheme,
+            (u, m, p, te) => (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location[p].substring(0, window.location[p].length - te)) === m,
+            expected,
             matches,
-        )
+            property,
+            trimEnd,
+        );
+    }
+
+    private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<this> {
+        return this._assertLocationProperty('protocol', scheme, matches, 1)
             .catch(error => {
                 throw new ExpectationFailed(matches ?
                     `Actual scheme [${this.scheme()}] does not equal expected scheme [${scheme}].`
@@ -1188,6 +1203,26 @@ export class Browser {
     // Assert that the current scheme does not match the given scheme.
     public assertSchemeIsNot(scheme: string): Promise<this> {
         return this._assertSchemeIs(scheme, false);
+    }
+
+    private _assertPathIs(path: string, matches: boolean = true): Promise<this> {
+        return this._assertLocationProperty('pathname', path, matches)
+            .catch(error => {
+                throw new ExpectationFailed(matches ?
+                    `Actual path [${this.path()}] does not equal expected path [${path}].`
+                    : `Path [${path}] should not equal the actual value.`, path, this.path())}
+            )
+            .then(this.self);
+    }
+
+    // Assert that the current URL path matches the given pattern.
+    public assertPathIs(scheme: string): Promise<this> {
+        return this._assertPathIs(scheme);
+    }
+
+    // Assert that the current URL path does not match the given path.
+    public assertPathIsNot(scheme: string): Promise<this> {
+        return this._assertPathIs(scheme, false);
     }
 
     // Assert that the current host matches the given host.
@@ -1213,6 +1248,16 @@ export class Browser {
     // Assert that the current URL path begins with given path.
     public assertPathBeginsWith(path: string): Promise<this> {
         return expects(this.url(), isStartingWith, path, `Actual path [${this.url()}] does not begin with expected path [${path}].`).then(this.self);
+    }
+
+    // Assert that the current URL path ends with the given path.
+    public assertPathEndsWith(path: string): Promise<this> {
+        return expects(this.url(), isEndingWith, path, `Actual path [${this.url()}] does not end with expected path [${path}].`).then(this.self);
+    }
+
+    // Assert that the current URL path contains the given path.
+    public assertPathContains(path: string): Promise<this> {
+        return expects(this.url(), isIncluding, path, `Actual path [${this.url()}] does not contain the expected string [${path}].`).then(this.self);
     }
 
 //     let port = this._url().port;

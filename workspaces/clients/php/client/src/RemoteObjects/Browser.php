@@ -203,15 +203,13 @@ class Browser extends RemoteObject
     }
 
     /**
-     * TODO fix args default value not correctly generated
-     * 
      * @debug-gen-original-name "evaluate"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["any"]
-     * @debug-gen-original-parameter pageFunction {"type":"string","isOptional":false}
+     * @debug-gen-original-returns ["any[]","any"]
+     * @debug-gen-original-parameter pageFunction {"type":"string[]|string","isOptional":false}
      * @debug-gen-original-parameter args {"type":"any[]","isOptional":false,"initializer":{"type":"array","members":[]}}
      */
-    public function evaluate(string $pageFunction, array $args = []): mixed
+    public function evaluate(mixed $pageFunction, array $args = []): mixed
     {
         return $this->callFunc('evaluate', [$pageFunction, $args]);
     }
@@ -254,6 +252,16 @@ class Browser extends RemoteObject
     public function host(): string
     {
         return $this->callFunc('host');
+    }
+
+    /**
+     * @debug-gen-original-name "path"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
+     */
+    public function path(): string
+    {
+        return $this->callFunc('path');
     }
 
     /**
@@ -1381,6 +1389,20 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "_assertLocationProperty"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter property {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter expected {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter matches {"type":"boolean","isOptional":false,"initializer":{"type":"true"}}
+     * @debug-gen-original-parameter trimEnd {"type":"integer","isOptional":false,"initializer":{"type":"numeric","value":"0"}}
+     */
+    public function _assertLocationProperty(string $property, string $expected, bool $matches = true, int $trimEnd = 0): void
+    {
+        $this->callFunc('_assertLocationProperty', [$property, $expected, $matches, $trimEnd]);
+    }
+
+    /**
      * Assert that the current scheme matches the given scheme.
      * 
      * @debug-gen-original-name "assertSchemeIs"
@@ -1404,6 +1426,32 @@ class Browser extends RemoteObject
     public function assertSchemeIsNot(string $scheme): Browser
     {
         return $this->callFunc('assertSchemeIsNot', [$scheme]);
+    }
+
+    /**
+     * Assert that the current URL path matches the given pattern.
+     * 
+     * @debug-gen-original-name "assertPathIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter scheme {"type":"string","isOptional":false}
+     */
+    public function assertPathIs(string $scheme): Browser
+    {
+        return $this->callFunc('assertPathIs', [$scheme]);
+    }
+
+    /**
+     * Assert that the current URL path does not match the given path.
+     * 
+     * @debug-gen-original-name "assertPathIsNot"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter scheme {"type":"string","isOptional":false}
+     */
+    public function assertPathIsNot(string $scheme): Browser
+    {
+        return $this->callFunc('assertPathIsNot', [$scheme]);
     }
 
     /**
@@ -1456,6 +1504,45 @@ class Browser extends RemoteObject
     public function assertPortIsNot(string $port): Browser
     {
         return $this->callFunc('assertPortIsNot', [$port]);
+    }
+
+    /**
+     * Assert that the current URL path begins with given path.
+     * 
+     * @debug-gen-original-name "assertPathBeginsWith"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter path {"type":"string","isOptional":false}
+     */
+    public function assertPathBeginsWith(string $path): Browser
+    {
+        return $this->callFunc('assertPathBeginsWith', [$path]);
+    }
+
+    /**
+     * Assert that the current URL path ends with the given path.
+     * 
+     * @debug-gen-original-name "assertPathEndsWith"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter path {"type":"string","isOptional":false}
+     */
+    public function assertPathEndsWith(string $path): Browser
+    {
+        return $this->callFunc('assertPathEndsWith', [$path]);
+    }
+
+    /**
+     * Assert that the current URL path contains the given path.
+     * 
+     * @debug-gen-original-name "assertPathContains"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter path {"type":"string","isOptional":false}
+     */
+    public function assertPathContains(string $path): Browser
+    {
+        return $this->callFunc('assertPathContains', [$path]);
     }
 
     /**
