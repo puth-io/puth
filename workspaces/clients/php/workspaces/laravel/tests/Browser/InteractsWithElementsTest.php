@@ -3,14 +3,11 @@
 namespace Browser;
 
 use Puth\Laravel\Browser;
-use Puth\Laravel\Concerns\LegacyBrowserHandling;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithElementsTest extends PuthTestCase
 {
-    use LegacyBrowserHandling;
-    
     function test_click_link()
     {
         $this->browse(function (Browser $browser) {

@@ -76,7 +76,6 @@ export class PuthStandardPlugin extends PuthContextPlugin {
                 url: this.url,
                 getCookieByName: PuthStandardPlugin.getCookieByName,
                 waitForDialog: this.waitForDialog,
-                clickNoBlockDialog: this.clickNoBlockDialog,
                 acceptDialog: this.acceptDialog,
                 dismissDialog: this.dismissDialog,
                 type: async (page, selector, chars, options = {}) => await type(await page.$(selector), chars, options),
@@ -415,39 +414,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     }
 
     click(elementHandle, options: any = {}) {
-        if (options?.unblockOnDialogOpen) {
-            return this.clickNoBlockDialog(elementHandle.frame.page(), elementHandle, options);
-        }
-
         return elementHandle.click(options);
-    }
-
-    async clickNoBlockDialog(page, selectorOrElement, options: any = {}) {
-        if (!(selectorOrElement instanceof ElementHandle)) {
-            selectorOrElement = await page.$(selectorOrElement);
-        }
-
-        return await this.scrollIntoView(selectorOrElement)
-            .then(() => selectorOrElement.clickablePoint(options.offset))
-            .then(async ({ x, y }) => {
-                const mouse = page.mouse;
-
-                await mouse.move(x, y);
-                await mouse.down(options);
-
-                return mouse;
-            })
-            .then(async (mouse) => {
-                if (options.delay) {
-                    await new Promise((f) => {
-                        return setTimeout(f, options.delay);
-                    });
-                }
-
-                return mouse;
-            })
-            .then((mouse) => Promise.race([new Promise((resolve) => page.once('dialog', resolve)), mouse.up()]))
-            .then(Return.Undefined());
     }
 
     acceptDialog(page, message = '', options = {}) {

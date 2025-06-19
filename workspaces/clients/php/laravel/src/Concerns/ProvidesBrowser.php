@@ -137,12 +137,7 @@ trait ProvidesBrowser
             'headless' => $this->headless,
         ], $this->getLaunchOptions()));
 
-        return new Browser(
-            $remote,
-            options: [
-                'legacyBrowserHandling' => $this->legacyBrowserHandling ?? false,
-            ],
-        );
+        return new Browser($remote);
     }
 
     /**

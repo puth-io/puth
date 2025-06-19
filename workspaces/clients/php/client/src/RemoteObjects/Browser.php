@@ -1643,6 +1643,59 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "waitForDialog"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     */
+    public function waitForDialog(): Browser
+    {
+        return $this->callFunc('waitForDialog');
+    }
+
+    /**
+     * @debug-gen-original-name "assertDialogOpened"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter message {"type":"string","isOptional":false}
+     */
+    public function assertDialogOpened(string $message): Browser
+    {
+        return $this->callFunc('assertDialogOpened', [$message]);
+    }
+
+    /**
+     * @debug-gen-original-name "typeInDialog"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     */
+    public function typeInDialog(string $value): Browser
+    {
+        return $this->callFunc('typeInDialog', [$value]);
+    }
+
+    /**
+     * @debug-gen-original-name "acceptDialog"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function acceptDialog(mixed $value = null): Browser
+    {
+        return $this->callFunc('acceptDialog', [$value]);
+    }
+
+    /**
+     * @debug-gen-original-name "dismissDialog"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     */
+    public function dismissDialog(): Browser
+    {
+        return $this->callFunc('dismissDialog');
+    }
+
+    /**
      * @debug-gen-original-name "isPage"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]

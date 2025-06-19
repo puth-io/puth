@@ -124,13 +124,9 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public $fitOnFailure = true;
 
-    public $legacyBrowserHandling = true;
-
     public function __construct(\Puth\RemoteObjects\Browser $remote, $resolver = null, $options = [])
     {
         parent::__construct($remote->id, $remote->type, $remote->represents, $remote->parent, $remote->context);
-
-        $this->legacyBrowserHandling = $options['legacyBrowserHandling'] ?? false;
 
         $this->setResolver($resolver ?? new ElementResolver($this));
     }

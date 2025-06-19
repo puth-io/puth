@@ -534,10 +534,6 @@ class Context extends Generic {
         let beforeReturn = async () => {
             await this.emitAsync('call:apply:after', {command, page});
 
-            if (! this.isPageBlockedByDialog(page)) {
-                // await Snapshots.createAfter(this, page, command);
-            }
-
             // TODO Implement this in events. Event: 'function:call:return'
             Snapshots.pushToCache(this, command);
         };

@@ -284,20 +284,7 @@ trait WaitsForElements
         
         return $this;
     }
-    
-    /**
-     * Wait for a JavaScript dialog to open.
-     *
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForDialog($seconds = 15) // TODO let puth context handle timeout
-    {
-        $this->site->waitForDialog(['timeout' => $seconds * 1000]);
-        
-        return $this;
-    }
-    
+
     /**
      * Wait for the current page to reload.
      *

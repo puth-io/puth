@@ -1,4 +1,4 @@
-import { Browser as PPTRBrowser, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
+import { Browser as PPTRBrowser, Dialog, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -92,6 +92,8 @@ export class Browser {
     public resolverDuskSelectorHtmlAttribute: string = 'dusk';
     public resolverPrefix: string = 'body';
     public resolverPageElements: {} = {};
+
+    private dialogTypeCache: string = '';
 
     constructor(context: Context, page: Page | Frame) {
         this.context = context;
@@ -1365,20 +1367,63 @@ export class Browser {
         return (this.resolverPrefix + ' ' + selector).trim();
     }
 
-    public waitForDialog(): this {
+    private _waitForDialog(): Promise<Dialog> {
         if (this.context.isPageBlockedByDialog(this.site)) {
-            return this.self();
+            return Promise.resolve(this.context.caches.dialog.get(this.site));
         }
-        // return retryFor()
+        // TODO return retryFor()
+    }
+
+    public waitForDialog(): Promise<this> {
+        return this._waitForDialog().then(this.self);
+    }
+
+    public assertDialogOpened(message: string): Promise<Return<this>> {
+        return this._waitForDialog().then(dialog => expects(
+            dialog.message(),
+            isEqualTo,
+            message,
+            `Expected dialog message [${message}] does not equal actual message [${dialog.message()}].`,
+        )).then(this.selfWithAsserts());
+    }
+
+    public typeInDialog(value: string): Promise<this> {
+        return this._waitForDialog().then(dialog => {
+            this.dialogTypeCache += value;
+        }).then(this.self);
     }
 
     public acceptDialog(value: string|null = null): Promise<this> {
+        return this._waitForDialog()
+            .then(dialog => dialog.accept(value ?? this.dialogTypeCache ?? undefined))
+            .finally(() => {
+                this.dialogTypeCache = '';
+                this.context.caches.dialog.delete(this.site);
+            })
+            .then(this.self);
+    }
+
+    public dismissDialog(): Promise<this> {
+        return this._waitForDialog()
+            .then(dialog => dialog.dismiss())
+            .finally(() => {
+                this.dialogTypeCache = '';
+                this.context.caches.dialog.delete(this.site);
+            })
+            .then(this.self);
+    }
+
+    private _dialog(): Dialog {
         if (!this.context.isPageBlockedByDialog(this.site)) {
-            // TODO auto wait for dialog
             throw new ExpectationFailed('Expected page to have an open dialog but non was found.')
         }
 
-        return this.context.caches.dialog.get(this.site)?.accept(value ?? undefined).then(this.self);
+        let dialog = this.context.caches.dialog.get(this.site);
+        if (dialog == null) {
+            throw new ExpectationFailed('Expected page to have an open dialog but non was found.');
+        }
+
+        return dialog;
     }
 
     private expectsHandleFunction(evalFn, handle, expected , message, ...args) {

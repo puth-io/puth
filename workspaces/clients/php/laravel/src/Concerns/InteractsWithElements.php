@@ -362,39 +362,4 @@ trait InteractsWithElements
         
         return $this;
     }
-    
-    /**
-     * Accept a JavaScript dialog.
-     *
-     * @return $this
-     */
-    public function acceptDialog($value = '')
-    {
-        $this->site->acceptDialog($value);
-        
-        return $this;
-    }
-    
-    /**
-     * Type the given value in an open JavaScript prompt dialog.
-     *
-     * @param  string  $value
-     * @return $this
-     */
-    public function typeInDialog($value)
-    {
-        throw new \Exception('The `typeInDialog` function is not supported. Please use `acceptDialog($value)`.');
-    }
-    
-    /**
-     * Dismiss a JavaScript dialog.
-     *
-     * @return $this
-     */
-    public function dismissDialog()
-    {
-        $this->site->dismissDialog();
-    
-        return $this;
-    }
 }
