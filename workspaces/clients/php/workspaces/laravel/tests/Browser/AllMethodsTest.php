@@ -26,9 +26,10 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->press('#actions-click-button')
+                ->press('click me')
                 ->assertSeeIn('#actions-click-verify', 'clicked button')
-                ->pressAndWaitFor('#actions-click-wait');
+                ->pressAndWaitFor('click and wait')
+                ->assertButtonEnabled('click and wait');
         });
     }
     
@@ -163,6 +164,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertDisabled('#actions-click-disabled')
                 ->assertButtonDisabled('#actions-click-disabled')
                 ->assertButtonEnabled('#actions-click-double')
+                ->assertButtonEnabled('double clicks')
                 ->click('#actions-focus')
                 ->assertFocused('#actions-focus')
                 ->assertNotFocused('#actions-type input')

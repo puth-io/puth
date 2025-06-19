@@ -738,15 +738,30 @@ export class Browser {
         selectors.push(`input[type=button][value='${field}']`);
         selectors.push(`button[name='${field}']`);
 
-        return new Promise(async (resolve, reject) => {
-            let timerId = setTimeout(_ => reject(new ExpectationFailed(this.createElementNotFoundMessage(field))));
-
-            await Promise.any(
-                this.firstOrFail(this.resolver(selectors)),
-            ).then(element => {
-                clearTimeout(timerId);
-                resolve(element);
-            });
+        return Promise.any([
+            this.firstOrFail(this.resolver(selectors)),
+            this.site.waitForFunction(
+                (selector, text) => {
+                    let els = document.querySelectorAll(selector);
+                    for (let i = 0; i < els.length; i++) {
+                        if (els[i]?.innerText.includes(text)) {
+                            return els[i];
+                        }
+                    }
+                    return false;
+                },
+                { timeout: this.timeout, polling: 'mutation' },
+                this.resolver('button'),
+                field,
+            ) as Promise<ElementHandle>,
+        ]).catch((error) => {
+            if (error instanceof AggregateError) {
+                error = error.errors[0];
+            }
+            if (error instanceof TimeoutError || error instanceof ExpectationFailed) {
+                throw new ExpectationFailed(`Unable to locate button [${field}]`);
+            }
+            throw error;
         });
     }
 
