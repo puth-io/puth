@@ -201,10 +201,10 @@ trait ProvidesBrowser
     protected function storeSourceLogsFor($browsers)
     {
         $browsers->each(function ($browser, $key) {
-            if (property_exists($browser, 'madeSourceAssertion') &&
-                $browser->madeSourceAssertion) {
+//            if (property_exists($browser, 'madeSourceAssertion') &&
+//                $browser->madeSourceAssertion) {
                 $browser->storeSource($this->getCallerName() . '-' . $key);
-            }
+//            }
         });
     }
     

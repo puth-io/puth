@@ -1013,6 +1013,7 @@ export class Browser {
     }
 
     public async assertMissing(selector: string, options: {} = {}): Promise<Return | this> {
+        console.error({selector: this.resolver(selector)});
         return this.waitFor(this.resolver(selector), { ...options, state: 'hidden' })
             .then((element) => expects(element, isNull, undefined, `Saw unexpected element [${selector}].`))
             .then(this.self);

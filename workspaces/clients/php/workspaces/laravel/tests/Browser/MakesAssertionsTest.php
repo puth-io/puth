@@ -10,20 +10,22 @@ use PHPUnit\Framework\Assert;
 class MakesAssertionsTest extends PuthTestCase
 {
     public static bool $testAfterClassDone;
+
+    public static bool $debug = true;
     
-    function test_move_mouse_exception()
+    function test_assert_missing_exception()
     {
         $this->expectException(ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
-            $browser->setContent('<body></body>');
-            $browser->assertMissing('body', 0);
+            $browser->setContent('<body><div></div></body>');
+            $browser->assertMissing('div');
         });
     }
     
     function test_stores_source_logs()
     {
         $fileName = Browser::$storeSourceAt . '/' . $this->getCallerName() . '-0.txt';
-        $html = '<html><head></head><body></body></html>';
+        $html = '<html><head></head><body><div></div></body></html>';
         
         if (file_exists($fileName)) {
             unlink($fileName); // remove old test file outputs
@@ -32,8 +34,8 @@ class MakesAssertionsTest extends PuthTestCase
         try {
             $this->browse(function (Browser $browser) use ($html) {
                 $browser->setContent($html);
-                $browser->assertSourceHas('body');
-                $browser->assertMissing('body', 0);
+                $browser->assertSourceHas('div');
+                $browser->assertMissing('div');
             });
         } catch (\Exception) {
         }

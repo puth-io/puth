@@ -15,7 +15,7 @@ class Browser extends \Puth\RemoteObjects\Browser
     use Concerns\InteractsWithElements;
     use Concerns\InteractsWithKeyboard;
     use Concerns\InteractsWithMouse;
-    use Concerns\MakesAssertions;
+    use Concerns\MakesAssertions; // done
     use Concerns\WaitsForElements;
 
     use Macroable {
