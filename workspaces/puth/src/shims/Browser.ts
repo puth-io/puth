@@ -744,11 +744,23 @@ export class Browser {
                 (selector, text) => {
                     let els = document.querySelectorAll(selector);
                     for (let i = 0; i < els.length; i++) {
+                        if (els[i]?.value == text) {
+                            return els[i];
+                        }
+                    }
+                },
+                { timeout: this.timeout, polling: 'mutation' },
+                this.resolver('input[type=submit]'),
+                field,
+            ) as Promise<ElementHandle>,
+            this.site.waitForFunction(
+                (selector, text) => {
+                    let els = document.querySelectorAll(selector);
+                    for (let i = 0; i < els.length; i++) {
                         if (els[i]?.innerText.includes(text)) {
                             return els[i];
                         }
                     }
-                    return false;
                 },
                 { timeout: this.timeout, polling: 'mutation' },
                 this.resolver('button'),

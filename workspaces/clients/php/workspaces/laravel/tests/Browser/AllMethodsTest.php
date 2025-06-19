@@ -164,7 +164,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertDisabled('#actions-click-disabled')
                 ->assertButtonDisabled('#actions-click-disabled')
                 ->assertButtonEnabled('#actions-click-double')
-                ->assertButtonEnabled('double clicks')
+                ->assertButtonEnabled('double click')
                 ->click('#actions-focus')
                 ->assertFocused('#actions-focus')
                 ->assertNotFocused('#actions-type input')
