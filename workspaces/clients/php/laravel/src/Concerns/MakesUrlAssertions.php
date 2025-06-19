@@ -39,55 +39,6 @@ trait MakesUrlAssertions
     use PuthUtils;
 
     /**
-     * Assert that the current port matches the given port.
-     *
-     * @param string $port
-     * @return $this
-     */
-    public function assertPortIs($port)
-    {
-        $pattern = str_replace('\*', '.*', preg_quote($port, '/'));
-        
-        $actual = (string)parse_url($this->url(), PHP_URL_PORT) ?? '';
-
-        if (empty($actual)) {
-            $scheme = parse_url($this->url(), PHP_URL_SCHEME);
-
-            if ($scheme === 'http') {
-                $actual = '80';
-            }
-            if ($scheme === 'https') {
-                $actual = '443';
-            }
-        }
-
-        Assert::assertThat(
-            $actual, new RegularExpression('/^' . $pattern . '$/u'),
-            "Actual port [{$actual}] does not equal expected port [{$pattern}]."
-        );
-        
-        return $this;
-    }
-    
-    /**
-     * Assert that the current host does not match the given host.
-     *
-     * @param string $port
-     * @return $this
-     */
-    public function assertPortIsNot($port)
-    {
-        $actual = parse_url($this->url(), PHP_URL_PORT) ?? '';
-        
-        Assert::assertNotEquals(
-            $port, $actual,
-            "Port [{$port}] should not equal the actual value."
-        );
-        
-        return $this;
-    }
-    
-    /**
      * Assert that the current URL path begins with given path.
      *
      * @param string $path

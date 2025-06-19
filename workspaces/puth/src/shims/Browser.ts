@@ -14,16 +14,19 @@ import {clearTimeout} from 'node:timers';
 
 export type integer = number;
 
-const isEqualTo = (expected: any, actual: any) => expected == actual;
-const isNotEqual = (expected: any, actual: any) => expected != actual;
-const isNull = (expected: any, actual: any) => actual == null;
-const isNotNull = (expected: any, actual: any) => actual != null;
-const isEmpty = (expected: any, actual: any) => actual == null || actual == '';
-const isNotEmpty = (expected: any, actual: any) => actual != null && actual != '';
+const isEqualTo    = (actual: any, expected: any) => expected == actual;
+const isNotEqualTo = (actual: any, expected: any) => expected != actual;
+const isStartingWith   = (actual: any, expected: any) => actual.startsWith(expected);
+
+// "actual" only assertions
+const isNull     = (actual: any, _: any) => actual == null;
+const isNotNull  = (actual: any, _: any) => actual != null;
+const isEmpty    = (actual: any, _: any) => actual == null || actual == '';
+const isNotEmpty = (actual: any, _: any) => actual != null && actual != '';
 
 export async function expects(
     actual: any,
-    compareFn: (expected: any, actual: any) => boolean,
+    compareFn: (actual: any, expected: any) => boolean,
     expected: any,
     message: any,
 ): Promise<void> {
@@ -33,7 +36,7 @@ export async function expects(
     actual = await resolveValue(actual);
     expected = await resolveValue(expected);
 
-    if (!compareFn(expected, actual)) {
+    if (!compareFn(actual, expected)) {
         throw new ExpectationFailed(await resolveValue(message, { actual, expected }), expected, actual);
     }
 }
@@ -545,7 +548,7 @@ export class Browser {
     public assertTitleContains(title: string): Promise<Return | this> {
         return expects(
             this.site.title(),
-            (expected, actual) => actual.includes(expected),
+            (actual, expected) => actual.includes(expected),
             title,
             ({ expected, actual }) => `Did not see expected value [${expected}] within title [${actual}].`,
         ).then(this.self);
@@ -591,7 +594,7 @@ export class Browser {
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(
                 actual,
-                (e, a) => (ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
+                (a, e) => (ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
                 text,
                 ({ expected }) => `Did not see expected text [${expected}] within element [${selector}].`,
             ))
@@ -603,7 +606,7 @@ export class Browser {
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(
                 actual,
-                (e, a) => !(ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
+                (a, e) => !(ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
                 text,
                 ({ expected }) => `Saw unexpected text [${expected}] within element [${selector}].`,
             ))
@@ -636,7 +639,7 @@ export class Browser {
     public assertSourceHas(code: string): Promise<Return | this> {
         return expects(
             this.site.content(),
-            (e, a) => a.includes(e),
+            (a, e) => a.includes(e),
             code,
             ({ expected }) => `Did not find expected source code [${expected}]`,
         ).then(this.self);
@@ -645,7 +648,7 @@ export class Browser {
     public assertSourceMissing(code: string): Promise<Return | this> {
         return expects(
             this.site.content(),
-            (e, a) => !a.includes(e),
+            (a, e) => !a.includes(e),
             code,
             ({ expected }) => `Found unexpected source code [${expected}]`,
         ).then(this.self);
@@ -675,7 +678,7 @@ export class Browser {
     public assertInputValueIsNot(field: any, value: string): Promise<Return | this> {
         return this.resolveForTyping(field).then(element => expects(
             PuthStandardPlugin.its(element, 'value'),
-            isNotEqual,
+            isNotEqualTo,
             value,
             ({ expected, actual }) => `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
         )).then(this.self);
@@ -931,7 +934,7 @@ export class Browser {
     public assertValueIsNot(selector: string, value: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector)).then(el => expects(
             PuthStandardPlugin.its(el, 'value'),
-            isNotEqual,
+            isNotEqualTo,
             value,
             `Saw unexpected value [${value}] within element [${this.resolver(selector)}].`,
         )).then(this.self);
@@ -1091,7 +1094,7 @@ export class Browser {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
-            isNotEqual,
+            isNotEqualTo,
             value,
             `Vue attribute for key [${key}] should not equal [${value}].`,
         ).then(this.self);
@@ -1101,7 +1104,7 @@ export class Browser {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
-            (e, a) => Array.isArray(a) && a.includes(e),
+            (a, e) => Array.isArray(a) && a.includes(e),
             value,
             () => `The attribute for key [${key}] is not an array that contains [${value}].`,
         ).then(this.self);
@@ -1123,7 +1126,7 @@ export class Browser {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
-            (e, a) => Array.isArray(a) && !a.includes(e),
+            (a, e) => Array.isArray(a) && !a.includes(e),
             value,
             () => `Vue attribute for key [${key}] should not contain [${value}].`,
         ).then(this.self);
@@ -1194,7 +1197,22 @@ export class Browser {
 
     // Assert that the current host does not match the given host.
     public assertHostIsNot(host: string): Promise<this> {
-        return expects(this.host(), isNotEqual, host, `Host [${host}] should not equal the actual value.`).then(this.self);
+        return expects(this.host(), isNotEqualTo, host, `Host [${host}] should not equal the actual value.`).then(this.self);
+    }
+
+    // Assert that the current port matches the given port.
+    public assertPortIs(port: string): Promise<this> {
+        return expects(this.port(), isEqualTo, port, `Actual host [${this.port()}] does not equal expected port [${port}].`).then(this.self);
+    }
+
+    // Assert that the current host does not match the given host.
+    public assertPortIsNot(port: string): Promise<this> {
+        return expects(this.port(), isNotEqualTo, port, `Port [${port}] should not equal the actual value.`).then(this.self);
+    }
+
+    // Assert that the current URL path begins with given path.
+    public assertPathBeginsWith(path: string): Promise<this> {
+        return expects(this.url(), isStartingWith, path, `Actual path [${this.url()}] does not begin with expected path [${path}].`).then(this.self);
     }
 
 //     let port = this._url().port;

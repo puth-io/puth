@@ -1407,6 +1407,8 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Assert that the current host matches the given host.
+     * 
      * @debug-gen-original-name "assertHostIs"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -1418,6 +1420,8 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Assert that the current host does not match the given host.
+     * 
      * @debug-gen-original-name "assertHostIsNot"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -1426,6 +1430,32 @@ class Browser extends RemoteObject
     public function assertHostIsNot(string $host): Browser
     {
         return $this->callFunc('assertHostIsNot', [$host]);
+    }
+
+    /**
+     * Assert that the current port matches the given port.
+     * 
+     * @debug-gen-original-name "assertPortIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter port {"type":"string","isOptional":false}
+     */
+    public function assertPortIs(string $port): Browser
+    {
+        return $this->callFunc('assertPortIs', [$port]);
+    }
+
+    /**
+     * Assert that the current host does not match the given host.
+     * 
+     * @debug-gen-original-name "assertPortIsNot"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter port {"type":"string","isOptional":false}
+     */
+    public function assertPortIsNot(string $port): Browser
+    {
+        return $this->callFunc('assertPortIsNot', [$port]);
     }
 
     /**
