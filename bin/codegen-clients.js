@@ -137,8 +137,6 @@ function extractTypes(node) {
                 return ['void'];
             }
             node = node.typeArguments[0];
-            // console.error(node);
-            // process.exit(0);
         }
     }
 

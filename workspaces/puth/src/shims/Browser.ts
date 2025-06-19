@@ -558,7 +558,7 @@ export class Browser {
     }
 
     // Assert that the page title contains the given value.
-    public assertTitleContains(title: string): Promise<Return | this> {
+    public assertTitleContains(title: string): Promise<Return<this>> {
         return expects(
             this.site.title(),
             (actual, expected) => actual.includes(expected),
@@ -567,7 +567,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public async assertHasCookie(name: string): Promise<Return | this> {
+    public async assertHasCookie(name: string): Promise<Return<this>> {
         return expects(
             (await this.getCookieByName(name))?.value,
             isNotNull,
@@ -576,7 +576,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public async assertCookieMissing(name: string): Promise<Return | this> {
+    public async assertCookieMissing(name: string): Promise<Return<this>> {
         return expects(
             (await this.getCookieByName(name))?.value,
             isNull,
@@ -585,7 +585,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public async assertCookieValue(name: string, value: string): Promise<Return | this> {
+    public async assertCookieValue(name: string, value: string): Promise<Return<this>> {
         return expects(
             (await this.getCookieByName(name))?.value?.value ?? '',
             isEqualTo,
@@ -594,15 +594,15 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
+    public assertSee(text: string, ignoreCase: boolean = false): Promise<Return<this>> {
         return this.assertSeeIn('', text, ignoreCase);
     }
 
-    public assertDontSee(text: string, ignoreCase: boolean = false): Promise<Return | this> {
+    public assertDontSee(text: string, ignoreCase: boolean = false): Promise<Return<this>> {
         return this.assertDontSeeIn('', text, ignoreCase);
     }
 
-    public assertSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {
+    public assertSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(
@@ -614,7 +614,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertDontSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {
+    public assertDontSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(
@@ -626,21 +626,21 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertSeeAnythingIn(selector: string): Promise<Return | this> {
+    public assertSeeAnythingIn(selector: string): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(actual, isNotEmpty, undefined, `Saw unexpected text [''] within element [${selector}].`))
             .then(this.selfWithAsserts());
     }
 
-    public assertSeeNothingIn(selector: string): Promise<Return | this> {
+    public assertSeeNothingIn(selector: string): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(actual, isEmpty, undefined, `Did not see expected text [''] within element [${selector}].`))
             .then(this.selfWithAsserts());
     }
 
-    public async assertScript(expression: string, expected: any = true): Promise<Return | this> {
+    public async assertScript(expression: string, expected: any = true): Promise<Return<this>> {
         return expects(
             this.site.evaluate(expression),
             isEqualTo,
@@ -649,7 +649,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertSourceHas(code: string): Promise<Return | this> {
+    public assertSourceHas(code: string): Promise<Return<this>> {
         return expects(
             this.site.content(),
             (a, e) => a.includes(e),
@@ -658,7 +658,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertSourceMissing(code: string): Promise<Return | this> {
+    public assertSourceMissing(code: string): Promise<Return<this>> {
         return expects(
             this.site.content(),
             (a, e) => !a.includes(e),
@@ -668,13 +668,13 @@ export class Browser {
     }
 
     // Assert that the given link is present on the page
-    public assertSeeLink(link: string, selector: string = 'a'): Promise<Return | this> {
+    public assertSeeLink(link: string, selector: string = 'a'): Promise<Return<this>> {
         link = link.replace("'", "\\'");
         return this.assertVisible(`${selector}[href='${link}']`);
     }
 
     // Assert that the given link is not present on the page
-    public assertDontSeeLink(link: string, selector: string = 'a'): Promise<Return | this> {
+    public assertDontSeeLink(link: string, selector: string = 'a'): Promise<Return<this>> {
         link = link.replace("'", "\\'");
         return this.assertMissing(`${selector}[href='${link}']`);
     }
@@ -688,7 +688,7 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertInputValueIsNot(field: any, value: string): Promise<Return | this> {
+    public assertInputValueIsNot(field: any, value: string): Promise<Return<this>> {
         return this.resolveForTyping(field).then(element => expects(
             PuthStandardPlugin.its(element, 'value'),
             isNotEqualTo,
@@ -832,11 +832,11 @@ export class Browser {
         return this.resolveForTyping(field).value();
     }
 
-    public async assertInputPresent(field: string, timeout = 5): Promise<Return | this> {
+    public async assertInputPresent(field: string, timeout = 5): Promise<Return<this>> {
         return this.assertPresent(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, timeout);
     }
 
-    public async assertInputMissing(field: string, timeout = 5): Promise<Return | this> {
+    public async assertInputMissing(field: string, timeout = 5): Promise<Return<this>> {
         await this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, timeout);
         return this;
     }
@@ -845,15 +845,15 @@ export class Browser {
         return element.then(element => expects(PuthStandardPlugin.its(element, property), compareFn, expected, message)).then(this.selfWithAsserts());
     }
 
-    public assertChecked(field: string, value: string|null = null): Promise<Return | this> {
+    public assertChecked(field: string, value: string|null = null): Promise<Return<this>> {
         return this._assertProperty(this.resolveForChecking(field, value), 'checked', isEqualTo, true, `Expected checkbox [${field}] to be checked, but it wasn't.`);
     }
 
-    public assertNotChecked(field: string, value: string|null = null): Promise<Return | this> {
+    public assertNotChecked(field: string, value: string|null = null): Promise<Return<this>> {
         return this._assertProperty(this.resolveForChecking(field, value), 'checked', isEqualTo, false, `Checkbox [${field}] was unexpectedly checked.`);
     }
 
-    public async assertIndeterminate(field: string, value: string | null = null): Promise<Return | this> {
+    public async assertIndeterminate(field: string, value: string | null = null): Promise<Return<this>> {
         return this.assertNotChecked(field, value)
             .then(_ => this.firstOrFail(this.resolver(field)))
             .then(async element => expects(
@@ -864,11 +864,11 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertRadioSelected(field: string, value: string): Promise<Return | this> {
+    public assertRadioSelected(field: string, value: string): Promise<Return<this>> {
         return this._assertProperty(this.resolveForRadioSelection(field, value), 'checked', isEqualTo, true, `Expected radio [${field}] to be selected, but it wasn't.`);
     }
 
-    public assertRadioNotSelected(field: string, value: string | null = null): Promise<Return | this> {
+    public assertRadioNotSelected(field: string, value: string | null = null): Promise<Return<this>> {
         return this._assertProperty(this.resolveForRadioSelection(field, value), 'checked', isEqualTo, false, `Radio [${field}] was unexpectedly selected.`);
     }
 
@@ -882,7 +882,7 @@ export class Browser {
             .then(selected => value.every(v => selected.includes(v)));
     }
 
-    public assertSelected(field: string, value: string[]|string): Promise<Return | this> {
+    public assertSelected(field: string, value: string[]|string): Promise<Return<this>> {
         if (!Array.isArray(value)) {
             value = [value];
         }
@@ -895,7 +895,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertNotSelected(field: string, value: string[]|string): Promise<Return | this> {
+    public assertNotSelected(field: string, value: string[]|string): Promise<Return<this>> {
         if (!Array.isArray(value)) {
             value = [value];
         }
@@ -908,7 +908,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertSelectHasOptions(field: string, values: string[]): Promise<Return | this> {
+    public assertSelectHasOptions(field: string, values: string[]): Promise<Return<this>> {
         return this.resolveSelectOptions(field).then(selectable => expects(
             values.every(v => selectable.includes(v)),
             isEqualTo,
@@ -917,7 +917,7 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertSelectMissingOptions(field: string, values: string[]): Promise<Return | this> {
+    public assertSelectMissingOptions(field: string, values: string[]): Promise<Return<this>> {
         return this.resolveSelectOptions(field).then(selectable => expects(
             selectable.some(s => values.includes(s)),
             isEqualTo,
@@ -926,15 +926,15 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertSelectHasOption(field: string, value: string): Promise<Return | this> {
+    public assertSelectHasOption(field: string, value: string): Promise<Return<this>> {
         return this.assertSelectHasOptions(field, [value]);
     }
 
-    public assertSelectMissingOption(field: string, value: string): Promise<Return | this> {
+    public assertSelectMissingOption(field: string, value: string): Promise<Return<this>> {
         return this.assertSelectMissingOptions(field, [value]);
     }
 
-    public assertValue(selector: string, value: string): Promise<Return | this> {
+    public assertValue(selector: string, value: string): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector)).then(el => expects(
             PuthStandardPlugin.its(el, 'value'),
             isEqualTo,
@@ -943,7 +943,7 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertValueIsNot(selector: string, value: string): Promise<Return | this> {
+    public assertValueIsNot(selector: string, value: string): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector)).then(el => expects(
             PuthStandardPlugin.its(el, 'value'),
             isNotEqualTo,
@@ -959,7 +959,7 @@ export class Browser {
     //     }
     // }
 
-    public assertAttribute(selector: string, attribute: string, value: string): Promise<Return | this> {
+    public assertAttribute(selector: string, attribute: string, value: string): Promise<Return<this>> {
         let fullSelector = this.resolver(selector);
         return this.firstOrFail(fullSelector).then(el => expects(
             PuthStandardPlugin.attr(el, attribute),
@@ -969,7 +969,7 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertAttributeMissing(selector: string, attribute: string): Promise<Return | this> {
+    public assertAttributeMissing(selector: string, attribute: string): Promise<Return<this>> {
         let fullSelector = this.resolver(selector);
         return this.firstOrFail(fullSelector).then(el => expects(
             PuthStandardPlugin.attr(el, attribute),
@@ -979,7 +979,7 @@ export class Browser {
         )).then(this.selfWithAsserts());
     }
 
-    public assertAttributeContains(selector: string, attribute: string, value: string): Promise<Return | this> {
+    public assertAttributeContains(selector: string, attribute: string, value: string): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector))
             .then(this.eEHW(
                 (element, expected, attribute) => element.getAttribute(attribute)?.includes(expected),
@@ -990,7 +990,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertAttributeDoesntContain(selector: string, attribute: string, value: string): Promise<Return | this> {
+    public assertAttributeDoesntContain(selector: string, attribute: string, value: string): Promise<Return<this>> {
         return this.firstOrFail(this.resolver(selector))
             .then(this.eEHW(
                 (element, expected, attribute) => !element.getAttribute(attribute)?.includes(expected),
@@ -1001,35 +1001,35 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertAriaAttribute(selector: string, attribute: string, value: string): Promise<Return | this> {
+    public assertAriaAttribute(selector: string, attribute: string, value: string): Promise<Return<this>> {
         return this.assertAttribute(selector, `aria-${attribute}`, value);
     }
 
-    public assertDataAttribute(selector: string, attribute: string, value: string): Promise<Return | this> {
+    public assertDataAttribute(selector: string, attribute: string, value: string): Promise<Return<this>> {
         return this.assertAttribute(selector, `data-${attribute}`, value);
     }
 
-    public async assertVisible(selector: string, options: {} = {}): Promise<Return | this> {
+    public async assertVisible(selector: string, options: {} = {}): Promise<Return<this>> {
         return this.waitFor(this.resolver(selector), { ...options, state: 'visible' })
             .then((element) => expects(element, isNotNull, undefined, `Element [${selector}] is not visible.`))
             .then(this.selfWithAsserts());
     }
 
-    public async assertMissing(selector: string, options: {} = {}): Promise<Return | this> {
+    public async assertMissing(selector: string, options: {} = {}): Promise<Return<this>> {
         return this.waitFor(this.resolver(selector), { ...options, state: 'hidden' })
             .then((element) => expects(element, isNull, undefined, `Saw unexpected element [${selector}].`))
             .then(this.selfWithAsserts());
     }
 
-    public async assertPresent(selector: string, options: {} = {}): Promise<Return | this> {
+    public async assertPresent(selector: string, options: {} = {}): Promise<Return<this>> {
         return this.waitFor(this.resolver(selector), options).then(this.selfWithAsserts());
     }
 
-    public assertNotPresent(selector: string, options: {} = {}): Promise<Return | this> {
+    public assertNotPresent(selector: string, options: {} = {}): Promise<Return<this>> {
         return this.waitForNotPresent(this.resolver(selector));
     }
 
-    // public async assertDialogOpened(message: string): Promise<Return | this> {
+    // public async assertDialogOpened(message: string): Promise<Return<this>> {
     //     const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
     //     return expects(
     //         actual,
@@ -1087,7 +1087,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertNotFocused(field: string): Promise<Return | this> {
+    public assertNotFocused(field: string): Promise<Return<this>> {
         return this.resolveForField(field)
             .then(this.eEHW(
                 element => document?.activeElement !== element,
@@ -1102,7 +1102,7 @@ export class Browser {
         return expects(actual, isEqualTo, value, `Vue attribute for key [${key}] mismatched.`).then(this.selfWithAsserts());
     }
 
-    public assertVueIsNot(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
+    public assertVueIsNot(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
@@ -1112,7 +1112,7 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertVueContains(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
+    public assertVueContains(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
@@ -1126,7 +1126,7 @@ export class Browser {
         key: string,
         value: any,
         componentSelector: string | null = null,
-    ): Promise<Return | this> {
+    ): Promise<Return<this>> {
         return this.assertVueDoesNotContain(key, value, componentSelector);
     }
 
@@ -1134,7 +1134,7 @@ export class Browser {
         key: string,
         value: any,
         componentSelector: string | null = null,
-    ): Promise<Return | this> {
+    ): Promise<Return<this>> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
@@ -1160,7 +1160,7 @@ export class Browser {
     }
 
     // Assert that the current URL (without the query string) matches the given string.
-    public assertUrlIs(url: string): Promise<this> {
+    public assertUrlIs(url: string): Promise<Return<this>> {
         return this.eW(
             (u) => {
                 let _url = new URL(window.location.href);
@@ -1188,7 +1188,7 @@ export class Browser {
         );
     }
 
-    private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<this> {
+    private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<Return<this>> {
         return this._assertLocationProperty('protocol', scheme, matches, 1)
             .catch(error => {
                 throw new ExpectationFailed(matches ?
@@ -1199,16 +1199,16 @@ export class Browser {
     }
 
     // Assert that the current scheme matches the given scheme.
-    public assertSchemeIs(scheme: string): Promise<this> {
+    public assertSchemeIs(scheme: string): Promise<Return<this>> {
         return this._assertSchemeIs(scheme);
     }
 
     // Assert that the current scheme does not match the given scheme.
-    public assertSchemeIsNot(scheme: string): Promise<this> {
+    public assertSchemeIsNot(scheme: string): Promise<Return<this>> {
         return this._assertSchemeIs(scheme, false);
     }
 
-    private _assertPathIs(path: string, matches: boolean = true): Promise<this> {
+    private _assertPathIs(path: string, matches: boolean = true): Promise<Return<this>> {
         return this._assertLocationProperty('pathname', path, matches)
             .catch(error => {
                 throw new ExpectationFailed(matches ?
@@ -1219,47 +1219,47 @@ export class Browser {
     }
 
     // Assert that the current URL path matches the given pattern.
-    public assertPathIs(scheme: string): Promise<this> {
+    public assertPathIs(scheme: string): Promise<Return<this>> {
         return this._assertPathIs(scheme);
     }
 
     // Assert that the current URL path does not match the given path.
-    public assertPathIsNot(scheme: string): Promise<this> {
+    public assertPathIsNot(scheme: string): Promise<Return<this>> {
         return this._assertPathIs(scheme, false);
     }
 
     // Assert that the current host matches the given host.
-    public assertHostIs(host: string): Promise<this> {
+    public assertHostIs(host: string): Promise<Return<this>> {
         return expects(this.host(), isEqualTo, host, `Actual host [${this.host()}] does not equal expected host [${host}].`).then(this.selfWithAsserts());
     }
 
     // Assert that the current host does not match the given host.
-    public assertHostIsNot(host: string): Promise<this> {
+    public assertHostIsNot(host: string): Promise<Return<this>> {
         return expects(this.host(), isNotEqualTo, host, `Host [${host}] should not equal the actual value.`).then(this.selfWithAsserts());
     }
 
     // Assert that the current port matches the given port.
-    public assertPortIs(port: string): Promise<this> {
+    public assertPortIs(port: string): Promise<Return<this>> {
         return expects(this.port(), isEqualTo, port, `Actual host [${this.port()}] does not equal expected port [${port}].`).then(this.selfWithAsserts());
     }
 
     // Assert that the current host does not match the given host.
-    public assertPortIsNot(port: string): Promise<this> {
+    public assertPortIsNot(port: string): Promise<Return<this>> {
         return expects(this.port(), isNotEqualTo, port, `Port [${port}] should not equal the actual value.`).then(this.selfWithAsserts());
     }
 
     // Assert that the current URL path begins with given path.
-    public assertPathBeginsWith(path: string): Promise<this> {
+    public assertPathBeginsWith(path: string): Promise<Return<this>> {
         return expects(this.path(), isStartingWith, path, `Actual path [${this.path()}] does not begin with expected path [${path}].`).then(this.selfWithAsserts());
     }
 
     // Assert that the current URL path ends with the given path.
-    public assertPathEndsWith(path: string): Promise<this> {
+    public assertPathEndsWith(path: string): Promise<Return<this>> {
         return expects(this.path(), isEndingWith, path, `Actual path [${this.path()}] does not end with expected path [${path}].`).then(this.selfWithAsserts());
     }
 
     // Assert that the current URL path contains the given path.
-    public assertPathContains(path: string): Promise<this> {
+    public assertPathContains(path: string): Promise<Return<this>> {
         return expects(this.path(), isIncluding, path, `Actual path [${this.path()}] does not contain the expected string [${path}].`).then(this.selfWithAsserts());
     }
 
@@ -1290,7 +1290,7 @@ export class Browser {
         ));
     }
 
-    public assertQueryStringHas(name: string, value: string|null = null): Promise<this> {
+    public assertQueryStringHas(name: string, value: string|null = null): Promise<Return<this>> {
         if (value == null) {
             return this._assertHasQueryStringParameter(name).then(this.selfWithAsserts());
         }
@@ -1305,12 +1305,12 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertQueryStringMissing(name: string): Promise<this> {
+    public assertQueryStringMissing(name: string): Promise<Return<this>> {
         return this._assertHasQueryStringParameter(name, false).then(this.selfWithAsserts());
     }
 
     // Assert that the current URL fragment matches the given pattern.
-    public assertFragmentIs(fragment: string): Promise<this> {
+    public assertFragmentIs(fragment: string): Promise<Return<this>> {
         return this.eW(
             f => (new RegExp('^' + f.replace(/\*/g, '.*') + '$')).test(window.location.hash.substring(1, window.location.hash.length)),
             fragment,
@@ -1320,14 +1320,14 @@ export class Browser {
     }
 
     // Assert that the current URL fragment begins with given fragment.
-    public assertFragmentBeginsWith(fragment: string): Promise<this> {
+    public assertFragmentBeginsWith(fragment: string): Promise<Return<this>> {
         return this.eW(f => window.location.hash.substring(1, window.location.hash.length).startsWith(f), fragment)
             .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
             .then(this.selfWithAsserts());
     }
 
     // Assert that the current URL fragment does not match the given fragment.
-    public assertFragmentIsNot(fragment: string): Promise<Return<this>> {
+    public assertFragmentIsNot(fragment: string): Promise<Return<Return<this>>> {
         return this.eW(f => window.location.hash.substring(1, window.location.hash.length) != f, fragment)
             .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
             .then(this.selfWithAsserts());

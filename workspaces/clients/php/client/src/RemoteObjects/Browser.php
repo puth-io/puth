@@ -621,10 +621,10 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertTitleContains"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter title {"type":"string","isOptional":false}
      */
-    public function assertTitleContains(string $title): mixed
+    public function assertTitleContains(string $title): Browser
     {
         return $this->callFunc('assertTitleContains', [$title]);
     }
@@ -632,10 +632,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertHasCookie"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
      */
-    public function _assertHasCookie(string $name): mixed
+    public function _assertHasCookie(string $name): Browser
     {
         return $this->callFunc('assertHasCookie', [$name]);
     }
@@ -643,10 +643,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertCookieMissing"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
      */
-    public function _assertCookieMissing(string $name): mixed
+    public function _assertCookieMissing(string $name): Browser
     {
         return $this->callFunc('assertCookieMissing', [$name]);
     }
@@ -654,11 +654,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertCookieValue"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function _assertCookieValue(string $name, string $value): mixed
+    public function _assertCookieValue(string $name, string $value): Browser
     {
         return $this->callFunc('assertCookieValue', [$name, $value]);
     }
@@ -666,11 +666,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSee"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
      * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertSee(string $text, bool $ignoreCase = false): mixed
+    public function assertSee(string $text, bool $ignoreCase = false): Browser
     {
         return $this->callFunc('assertSee', [$text, $ignoreCase]);
     }
@@ -678,11 +678,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertDontSee"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
      * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertDontSee(string $text, bool $ignoreCase = false): mixed
+    public function assertDontSee(string $text, bool $ignoreCase = false): Browser
     {
         return $this->callFunc('assertDontSee', [$text, $ignoreCase]);
     }
@@ -690,12 +690,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSeeIn"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
      * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
+    public function assertSeeIn(string $selector, string $text, mixed $ignoreCase = false): Browser
     {
         return $this->callFunc('assertSeeIn', [$selector, $text, $ignoreCase]);
     }
@@ -703,12 +703,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertDontSeeIn"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string","isOptional":false}
      * @debug-gen-original-parameter ignoreCase {"type":"any","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function assertDontSeeIn(string $selector, string $text, mixed $ignoreCase = false): mixed
+    public function assertDontSeeIn(string $selector, string $text, mixed $ignoreCase = false): Browser
     {
         return $this->callFunc('assertDontSeeIn', [$selector, $text, $ignoreCase]);
     }
@@ -716,10 +716,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSeeAnythingIn"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
-    public function assertSeeAnythingIn(string $selector): mixed
+    public function assertSeeAnythingIn(string $selector): Browser
     {
         return $this->callFunc('assertSeeAnythingIn', [$selector]);
     }
@@ -727,10 +727,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSeeNothingIn"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      */
-    public function assertSeeNothingIn(string $selector): mixed
+    public function assertSeeNothingIn(string $selector): Browser
     {
         return $this->callFunc('assertSeeNothingIn', [$selector]);
     }
@@ -738,11 +738,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertScript"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter expression {"type":"string","isOptional":false}
      * @debug-gen-original-parameter expected {"type":"any","isOptional":false,"initializer":{"type":"true"}}
      */
-    public function assertScript(string $expression, mixed $expected = true): mixed
+    public function assertScript(string $expression, mixed $expected = true): Browser
     {
         return $this->callFunc('assertScript', [$expression, $expected]);
     }
@@ -750,10 +750,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSourceHas"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter code {"type":"string","isOptional":false}
      */
-    public function assertSourceHas(string $code): mixed
+    public function assertSourceHas(string $code): Browser
     {
         return $this->callFunc('assertSourceHas', [$code]);
     }
@@ -761,10 +761,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSourceMissing"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter code {"type":"string","isOptional":false}
      */
-    public function assertSourceMissing(string $code): mixed
+    public function assertSourceMissing(string $code): Browser
     {
         return $this->callFunc('assertSourceMissing', [$code]);
     }
@@ -774,11 +774,11 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertSeeLink"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
      */
-    public function assertSeeLink(string $link, string $selector = 'a'): mixed
+    public function assertSeeLink(string $link, string $selector = 'a'): Browser
     {
         return $this->callFunc('assertSeeLink', [$link, $selector]);
     }
@@ -788,11 +788,11 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertDontSeeLink"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
      */
-    public function assertDontSeeLink(string $link, string $selector = 'a'): mixed
+    public function assertDontSeeLink(string $link, string $selector = 'a'): Browser
     {
         return $this->callFunc('assertDontSeeLink', [$link, $selector]);
     }
@@ -812,11 +812,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertInputValueIsNot"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"any","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertInputValueIsNot(mixed $field, string $value): mixed
+    public function assertInputValueIsNot(mixed $field, string $value): Browser
     {
         return $this->callFunc('assertInputValueIsNot', [$field, $value]);
     }
@@ -914,11 +914,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertInputPresent"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter timeout {"type":"any","isOptional":false,"initializer":{"type":"numeric","value":"5"}}
      */
-    public function assertInputPresent(string $field, mixed $timeout): mixed
+    public function assertInputPresent(string $field, mixed $timeout): Browser
     {
         return $this->callFunc('assertInputPresent', [$field, $timeout]);
     }
@@ -926,11 +926,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertInputMissing"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter timeout {"type":"any","isOptional":false,"initializer":{"type":"numeric","value":"5"}}
      */
-    public function assertInputMissing(string $field, mixed $timeout): mixed
+    public function assertInputMissing(string $field, mixed $timeout): Browser
     {
         return $this->callFunc('assertInputMissing', [$field, $timeout]);
     }
@@ -938,11 +938,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertChecked"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertChecked(string $field, mixed $value = null): mixed
+    public function assertChecked(string $field, mixed $value = null): Browser
     {
         return $this->callFunc('assertChecked', [$field, $value]);
     }
@@ -950,11 +950,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertNotChecked"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertNotChecked(string $field, mixed $value = null): mixed
+    public function assertNotChecked(string $field, mixed $value = null): Browser
     {
         return $this->callFunc('assertNotChecked', [$field, $value]);
     }
@@ -962,11 +962,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertIndeterminate"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertIndeterminate(string $field, mixed $value = null): mixed
+    public function assertIndeterminate(string $field, mixed $value = null): Browser
     {
         return $this->callFunc('assertIndeterminate', [$field, $value]);
     }
@@ -974,11 +974,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertRadioSelected"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertRadioSelected(string $field, string $value): mixed
+    public function assertRadioSelected(string $field, string $value): Browser
     {
         return $this->callFunc('assertRadioSelected', [$field, $value]);
     }
@@ -986,11 +986,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertRadioNotSelected"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertRadioNotSelected(string $field, mixed $value = null): mixed
+    public function assertRadioNotSelected(string $field, mixed $value = null): Browser
     {
         return $this->callFunc('assertRadioNotSelected', [$field, $value]);
     }
@@ -998,11 +998,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSelected"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string[]|string","isOptional":false}
      */
-    public function assertSelected(string $field, mixed $value): mixed
+    public function assertSelected(string $field, mixed $value): Browser
     {
         return $this->callFunc('assertSelected', [$field, $value]);
     }
@@ -1010,11 +1010,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertNotSelected"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string[]|string","isOptional":false}
      */
-    public function assertNotSelected(string $field, mixed $value): mixed
+    public function assertNotSelected(string $field, mixed $value): Browser
     {
         return $this->callFunc('assertNotSelected', [$field, $value]);
     }
@@ -1022,11 +1022,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSelectHasOptions"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter values {"type":"string[]","isOptional":false}
      */
-    public function assertSelectHasOptions(string $field, array $values): mixed
+    public function assertSelectHasOptions(string $field, array $values): Browser
     {
         return $this->callFunc('assertSelectHasOptions', [$field, $values]);
     }
@@ -1034,11 +1034,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSelectMissingOptions"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter values {"type":"string[]","isOptional":false}
      */
-    public function assertSelectMissingOptions(string $field, array $values): mixed
+    public function assertSelectMissingOptions(string $field, array $values): Browser
     {
         return $this->callFunc('assertSelectMissingOptions', [$field, $values]);
     }
@@ -1046,11 +1046,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSelectHasOption"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertSelectHasOption(string $field, string $value): mixed
+    public function assertSelectHasOption(string $field, string $value): Browser
     {
         return $this->callFunc('assertSelectHasOption', [$field, $value]);
     }
@@ -1058,11 +1058,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertSelectMissingOption"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertSelectMissingOption(string $field, string $value): mixed
+    public function assertSelectMissingOption(string $field, string $value): Browser
     {
         return $this->callFunc('assertSelectMissingOption', [$field, $value]);
     }
@@ -1070,11 +1070,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertValue"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertValue(string $selector, string $value): mixed
+    public function assertValue(string $selector, string $value): Browser
     {
         return $this->callFunc('assertValue', [$selector, $value]);
     }
@@ -1082,11 +1082,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertValueIsNot"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertValueIsNot(string $selector, string $value): mixed
+    public function assertValueIsNot(string $selector, string $value): Browser
     {
         return $this->callFunc('assertValueIsNot', [$selector, $value]);
     }
@@ -1101,12 +1101,12 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertAttribute"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertAttribute(string $selector, string $attribute, string $value): mixed
+    public function assertAttribute(string $selector, string $attribute, string $value): Browser
     {
         return $this->callFunc('assertAttribute', [$selector, $attribute, $value]);
     }
@@ -1114,11 +1114,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertAttributeMissing"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      */
-    public function assertAttributeMissing(string $selector, string $attribute): mixed
+    public function assertAttributeMissing(string $selector, string $attribute): Browser
     {
         return $this->callFunc('assertAttributeMissing', [$selector, $attribute]);
     }
@@ -1126,12 +1126,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertAttributeContains"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertAttributeContains(string $selector, string $attribute, string $value): mixed
+    public function assertAttributeContains(string $selector, string $attribute, string $value): Browser
     {
         return $this->callFunc('assertAttributeContains', [$selector, $attribute, $value]);
     }
@@ -1139,12 +1139,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertAttributeDoesntContain"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertAttributeDoesntContain(string $selector, string $attribute, string $value): mixed
+    public function assertAttributeDoesntContain(string $selector, string $attribute, string $value): Browser
     {
         return $this->callFunc('assertAttributeDoesntContain', [$selector, $attribute, $value]);
     }
@@ -1152,12 +1152,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertAriaAttribute"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertAriaAttribute(string $selector, string $attribute, string $value): mixed
+    public function assertAriaAttribute(string $selector, string $attribute, string $value): Browser
     {
         return $this->callFunc('assertAriaAttribute', [$selector, $attribute, $value]);
     }
@@ -1165,12 +1165,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertDataAttribute"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter attribute {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      */
-    public function assertDataAttribute(string $selector, string $attribute, string $value): mixed
+    public function assertDataAttribute(string $selector, string $attribute, string $value): Browser
     {
         return $this->callFunc('assertDataAttribute', [$selector, $attribute, $value]);
     }
@@ -1178,11 +1178,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertVisible"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertVisible(string $selector, mixed $options = []): mixed
+    public function assertVisible(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('assertVisible', [$selector, $options]);
     }
@@ -1190,11 +1190,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertMissing"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertMissing(string $selector, mixed $options = []): mixed
+    public function assertMissing(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('assertMissing', [$selector, $options]);
     }
@@ -1202,11 +1202,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertPresent"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertPresent(string $selector, mixed $options = []): mixed
+    public function assertPresent(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('assertPresent', [$selector, $options]);
     }
@@ -1214,17 +1214,17 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertNotPresent"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertNotPresent(string $selector, mixed $options = []): mixed
+    public function assertNotPresent(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('assertNotPresent', [$selector, $options]);
     }
 
     /**
-     * public async assertDialogOpened(message: string): Promise<Return | this> {
+     * public async assertDialogOpened(message: string): Promise<Return<this>> {
      * const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
      * return expects(
      * actual,
@@ -1290,10 +1290,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertNotFocused"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      */
-    public function assertNotFocused(string $field): mixed
+    public function assertNotFocused(string $field): Browser
     {
         return $this->callFunc('assertNotFocused', [$field]);
     }
@@ -1314,12 +1314,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertVueIsNot"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter key {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"any","isOptional":false}
      * @debug-gen-original-parameter componentSelector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertVueIsNot(string $key, mixed $value, mixed $componentSelector = null): mixed
+    public function assertVueIsNot(string $key, mixed $value, mixed $componentSelector = null): Browser
     {
         return $this->callFunc('assertVueIsNot', [$key, $value, $componentSelector]);
     }
@@ -1327,12 +1327,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertVueContains"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter key {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"any","isOptional":false}
      * @debug-gen-original-parameter componentSelector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertVueContains(string $key, mixed $value, mixed $componentSelector = null): mixed
+    public function assertVueContains(string $key, mixed $value, mixed $componentSelector = null): Browser
     {
         return $this->callFunc('assertVueContains', [$key, $value, $componentSelector]);
     }
@@ -1340,12 +1340,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertVueDoesntContain"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter key {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"any","isOptional":false}
      * @debug-gen-original-parameter componentSelector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertVueDoesntContain(string $key, mixed $value, mixed $componentSelector = null): mixed
+    public function assertVueDoesntContain(string $key, mixed $value, mixed $componentSelector = null): Browser
     {
         return $this->callFunc('assertVueDoesntContain', [$key, $value, $componentSelector]);
     }
@@ -1353,12 +1353,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertVueDoesNotContain"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter key {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"any","isOptional":false}
      * @debug-gen-original-parameter componentSelector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertVueDoesNotContain(string $key, mixed $value, mixed $componentSelector = null): mixed
+    public function assertVueDoesNotContain(string $key, mixed $value, mixed $componentSelector = null): Browser
     {
         return $this->callFunc('assertVueDoesNotContain', [$key, $value, $componentSelector]);
     }
@@ -1612,10 +1612,10 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertFragmentIsNot"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-returns ["unknown"]
      * @debug-gen-original-parameter fragment {"type":"string","isOptional":false}
      */
-    public function assertFragmentIsNot(string $fragment): Browser
+    public function assertFragmentIsNot(string $fragment): mixed
     {
         return $this->callFunc('assertFragmentIsNot', [$fragment]);
     }
