@@ -42,6 +42,17 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "withinIframe"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     */
+    public function _withinIframe(string $selector): Browser
+    {
+        return $this->callFunc('withinIframe', [$selector]);
+    }
+
+    /**
      * @debug-gen-original-name "visit"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]

@@ -116,6 +116,17 @@ export class Browser {
         return this;
     }
 
+    public withinIframe(selector: string): Promise<Browser> {
+        return this.firstOrFail(selector).then(async element => {
+            let frame = await element.contentFrame();
+            if (frame == null) {
+                throw new ExpectationFailed(`Element [${selector} has no frame attached (is this an iframe?).]`);
+            }
+
+            return new Browser(this.context, frame);
+        })
+    }
+
     public visit(url: string): Promise<this> {
         return this.site.goto(url).then(this.self);
     }

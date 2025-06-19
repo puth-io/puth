@@ -13,7 +13,7 @@ use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
 {
-    public static bool $debug = false;
+    public static bool $debug = true;
 
     function test_browser_fit_content()
     {
@@ -73,8 +73,11 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->withinFrame('#iframe-example', function (Browser $iframe) {
-                    $iframe->assertUrlIs('https://playground.puth.dev/');
-                });
+                    $iframe->assertUrlIs('https://playground.puth.dev/')
+                        ->evaluate("document.body.insertAdjacentHTML('beforeend', '<div id=\'random-test-237654\'>bla</div>')")
+                        ->assertVisible('#random-test-237654');
+                })
+                ->assertMissing('#random-test-237654');
         });
     }
     

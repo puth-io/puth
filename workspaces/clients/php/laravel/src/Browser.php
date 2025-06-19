@@ -409,12 +409,9 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function withinFrame($selector, Closure $callback)
     {
-        $iframe = $this->resolver->findOrFail($selector)->contentFrame();
-
-        // TODO fix - need to create a new browser shim with same page but different "site" (rename page to site?)
         $browser = new static(
-            $this,
-            $iframe,
+            $this->_withinIframe($selector),
+            $this->resolver,
         );
 
         $callback($browser);

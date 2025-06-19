@@ -107,6 +107,7 @@ const NAME_TRANSLATION = {
                 waitUntilEnabled: '_waitUntilEnabled',
                 waitUntilDisabled: '_waitUntilDisabled',
                 format: '_format',
+                withinIframe: '_withinIframe',
             },
         },
     },
