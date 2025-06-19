@@ -608,10 +608,10 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertTitle"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter title {"type":"string","isOptional":false}
      */
-    public function assertTitle(string $title): mixed
+    public function assertTitle(string $title): Browser
     {
         return $this->callFunc('assertTitle', [$title]);
     }
@@ -1230,7 +1230,7 @@ class Browser extends RemoteObject
      * actual,
      * message,
      * ({ expected, actual }) => `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
-     * ).then(this.self);
+     * ).then(this.selfWithAsserts());
      * }
      * 
      * @debug-gen-original-name "assertEnabled"
@@ -1301,12 +1301,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertVue"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter key {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"any","isOptional":false}
      * @debug-gen-original-parameter componentSelector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertVue(string $key, mixed $value, mixed $componentSelector = null): mixed
+    public function assertVue(string $key, mixed $value, mixed $componentSelector = null): Browser
     {
         return $this->callFunc('assertVue', [$key, $value, $componentSelector]);
     }
@@ -1624,7 +1624,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "resolver"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter selector {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string[]|string|null","isOptional":false}
      */
     public function resolver(mixed $selector): void
     {

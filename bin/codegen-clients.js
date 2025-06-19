@@ -131,6 +131,15 @@ function extractTypes(node) {
             return ['void'];
         }
         node = node.typeArguments[0];
+
+        if (node.typeName?.escapedText === 'Return') {
+            if (!node.typeArguments?.length) {
+                return ['void'];
+            }
+            node = node.typeArguments[0];
+            // console.error(node);
+            // process.exit(0);
+        }
     }
 
     if (ts.isUnionTypeNode(node) || ts.isIntersectionTypeNode(node)) {

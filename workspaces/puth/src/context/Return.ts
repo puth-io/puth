@@ -1,8 +1,9 @@
-export class Return {
-    public readonly type: any;
-    public readonly value: any;
+export class Return<T = undefined> {
+    public readonly type: string;
+    public readonly value: T|undefined;
+    public meta: any = null;
 
-    constructor(type: any, value?: any) {
+    constructor(type: string, value?: T) {
         this.type = type;
         this.value = value;
     }
@@ -15,11 +16,11 @@ export class Return {
         return Return.make('GenericNull');
     }
 
-    static Self() {
-        return Return.make('GenericSelf');
+    static Self<T>() {
+        return Return.make<T>('GenericSelf');
     }
 
-    static Value(value) {
+    static Value<T>(value: T) {
         return Return.make('GenericValue', value);
     }
 
@@ -43,14 +44,29 @@ export class Return {
         return Return.make('ExpectationFailed', { message, expected, actual });
     }
 
-    static make(type: any, value?: any) {
+    withMeta(meta) {
+        if (this.meta == null) {
+            this.meta = meta;
+            return this;
+        }
+
+        this.meta = Object.assign(this.meta, meta);
+        return this;
+    }
+
+    static make<T = undefined>(type: string, value?: T) {
         return new Return(type, value);
     }
 
     serialize() {
-        return {
+        let s = {
             type: this.type,
             value: this.value,
         };
+        if (this.meta !== null) {
+            s.meta = this.meta;
+        }
+
+        return s;
     }
 }

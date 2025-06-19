@@ -18,7 +18,9 @@ class Context extends BaseContext
     
     protected bool $dev;
     protected bool $debug;
-    
+
+    protected ?\PHPUnit\Framework\TestCase $testCase;
+
     function __construct(string $baseUrl, array $options = [])
     {
         $this->baseUrl = $baseUrl;
@@ -76,5 +78,15 @@ class Context extends BaseContext
         if ($this->debug) {
             print('[CTX ' . substr($this->id, 0, 4) . '] ' . $string . ($newline ? "\n" : ''));
         }
+    }
+
+    public function setTestCase(\PHPUnit\Framework\TestCase $testCase)
+    {
+        $this->testCase = $testCase;
+    }
+
+    public function hasTestCase()
+    {
+        return $this->testCase !== null;
     }
 }

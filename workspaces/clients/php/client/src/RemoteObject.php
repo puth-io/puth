@@ -170,6 +170,14 @@ class RemoteObject
             throw new \Exception('Puth server response: $body->type not defined!');
         }
 
+        if (property_exists($generic, 'meta')) {
+            if (property_exists($generic->meta, 'assertions')) {
+                if ($this->context->hasTestCase()) {
+                    $this->context->testCase->addToAssertionCount($generic->meta->assertions);
+                }
+            }
+        }
+
         $rv = match ($generic->type) {
             'GenericValue', 'GenericValues' => $generic->value,
             'GenericObject' => $this->resolveGenericObject($generic),

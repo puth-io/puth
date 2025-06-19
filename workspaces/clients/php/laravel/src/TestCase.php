@@ -33,6 +33,8 @@ abstract class TestCase extends FoundationTestCase
             'snapshot' => true,
             'debug' => static::$debug,
         ], $this->getContextOptions()));
+
+        $this->context->setTestCase($this);
         
         Browser::$baseUrl = $this->baseUrl();
         Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
