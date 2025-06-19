@@ -1546,6 +1546,42 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "_assertQueryStringParameter"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter name {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter matches {"type":"boolean","isOptional":false,"initializer":{"type":"true"}}
+     */
+    public function _assertQueryStringParameter(string $name, mixed $value = null, bool $matches = true): void
+    {
+        $this->callFunc('_assertQueryStringParameter', [$name, $value, $matches]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertQueryStringHas"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter name {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function assertQueryStringHas(string $name, mixed $value = null): Browser
+    {
+        return $this->callFunc('assertQueryStringHas', [$name, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertQueryStringMissing"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter name {"type":"string","isOptional":false}
+     */
+    public function assertQueryStringMissing(string $name): Browser
+    {
+        return $this->callFunc('assertQueryStringMissing', [$name]);
+    }
+
+    /**
      * let port = this._url().port;
      * if (port === '') {
      * let scheme = this.scheme();

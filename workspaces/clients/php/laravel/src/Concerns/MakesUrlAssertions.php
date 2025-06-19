@@ -50,58 +50,58 @@ trait MakesUrlAssertions
         return $this->assertPathIs(route($route, $parameters, false));
     }
     
-    /**
-     * Assert that a query string parameter is present and has a given value.
-     *
-     * @param string $name
-     * @param string $value
-     * @return $this
-     */
-    public function assertQueryStringHas($name, $value = null)
-    {
-        $output = $this->assertHasQueryStringParameter($name);
-        
-        if (is_null($value)) {
-            return $this;
-        }
-        
-        $parsedOutputName = is_array($output[$name]) ? implode(',', $output[$name]) : $output[$name];
-        
-        $parsedValue = is_array($value) ? implode(',', $value) : $value;
-        
-        Assert::assertEquals(
-            $value, $output[$name],
-            "Query string parameter [{$name}] had value [{$parsedOutputName}], but expected [{$parsedValue}]."
-        );
-        
-        return $this;
-    }
-    
-    /**
-     * Assert that the given query string parameter is missing.
-     *
-     * @param string $name
-     * @return $this
-     */
-    public function assertQueryStringMissing($name)
-    {
-        $parsedUrl = parse_url($this->url());
-        
-        if (!array_key_exists('query', $parsedUrl)) {
-            Assert::assertTrue(true);
-            
-            return $this;
-        }
-        
-        parse_str($parsedUrl['query'], $output);
-        
-        Assert::assertArrayNotHasKey(
-            $name, $output,
-            "Found unexpected query string parameter [{$name}] in [" . $this->url() . '].'
-        );
-        
-        return $this;
-    }
+//    /**
+//     * Assert that a query string parameter is present and has a given value.
+//     *
+//     * @param string $name
+//     * @param string $value
+//     * @return $this
+//     */
+//    public function assertQueryStringHas($name, $value = null)
+//    {
+//        $output = $this->assertHasQueryStringParameter($name);
+//
+//        if (is_null($value)) {
+//            return $this;
+//        }
+//
+//        $parsedOutputName = is_array($output[$name]) ? implode(',', $output[$name]) : $output[$name];
+//
+//        $parsedValue = is_array($value) ? implode(',', $value) : $value;
+//
+//        Assert::assertEquals(
+//            $value, $output[$name],
+//            "Query string parameter [{$name}] had value [{$parsedOutputName}], but expected [{$parsedValue}]."
+//        );
+//
+//        return $this;
+//    }
+//
+//    /**
+//     * Assert that the given query string parameter is missing.
+//     *
+//     * @param string $name
+//     * @return $this
+//     */
+//    public function assertQueryStringMissing($name)
+//    {
+//        $parsedUrl = parse_url($this->url());
+//
+//        if (!array_key_exists('query', $parsedUrl)) {
+//            Assert::assertTrue(true);
+//
+//            return $this;
+//        }
+//
+//        parse_str($parsedUrl['query'], $output);
+//
+//        Assert::assertArrayNotHasKey(
+//            $name, $output,
+//            "Found unexpected query string parameter [{$name}] in [" . $this->url() . '].'
+//        );
+//
+//        return $this;
+//    }
     
     /**
      * Assert that the current URL fragment matches the given pattern.

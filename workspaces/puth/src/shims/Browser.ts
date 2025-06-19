@@ -1247,17 +1247,63 @@ export class Browser {
 
     // Assert that the current URL path begins with given path.
     public assertPathBeginsWith(path: string): Promise<this> {
-        return expects(this.url(), isStartingWith, path, `Actual path [${this.url()}] does not begin with expected path [${path}].`).then(this.self);
+        return expects(this.path(), isStartingWith, path, `Actual path [${this.path()}] does not begin with expected path [${path}].`).then(this.self);
     }
 
     // Assert that the current URL path ends with the given path.
     public assertPathEndsWith(path: string): Promise<this> {
-        return expects(this.url(), isEndingWith, path, `Actual path [${this.url()}] does not end with expected path [${path}].`).then(this.self);
+        return expects(this.path(), isEndingWith, path, `Actual path [${this.path()}] does not end with expected path [${path}].`).then(this.self);
     }
 
     // Assert that the current URL path contains the given path.
     public assertPathContains(path: string): Promise<this> {
-        return expects(this.url(), isIncluding, path, `Actual path [${this.url()}] does not contain the expected string [${path}].`).then(this.self);
+        return expects(this.path(), isIncluding, path, `Actual path [${this.path()}] does not contain the expected string [${path}].`).then(this.self);
+    }
+
+    private _assertHasQueryStringParameter(name: string, matches: boolean = true) {
+        return this.eW((n, m) => ((new URLSearchParams(window.location.search)).has(n)) === m, name, matches)
+            .catch(_ => {throw new ExpectationFailed(matches ?
+                `Did not see expected query string parameter [${name}] in [${this.url()}]`
+                : `Found unexpected query string parameter [${name}] in [${this.url()}]`
+            )});
+    }
+
+    public _assertQueryStringParameter(name: string, value: string|null = null, matches: boolean = true) {
+        return this._assertHasQueryStringParameter(name, matches).then(_ => this.eW(
+            (q, v, m) => {
+                let search = new URLSearchParams(window.location.search);
+                if (!search.has(q) === m) {
+                    return false;
+                }
+                if (v == null) {
+                    return true;
+                }
+
+                return (search.get(q) === v) === m;
+            },
+            name,
+            value,
+            matches,
+        ));
+    }
+
+    public assertQueryStringHas(name: string, value: string|null = null): Promise<this> {
+        if (value == null) {
+            return this._assertHasQueryStringParameter(name).then(this.self);
+        }
+
+        return this._assertQueryStringParameter(name, value)
+            .catch(error => {
+                if (!(error instanceof ExpectationFailed)) {
+                    throw new ExpectationFailed(`Query string parameter [${name}] had value [${this._url().searchParams.get(name)}], but expected [${value}].`);
+                }
+                throw error;
+            })
+            .then(this.self);
+    }
+
+    public assertQueryStringMissing(name: string): Promise<this> {
+        return this._assertHasQueryStringParameter(name, false).then(this.self);
     }
 
 //     let port = this._url().port;
