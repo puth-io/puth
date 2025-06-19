@@ -1095,7 +1095,7 @@ export class Browser {
             .then(this.self);
     }
 
-    public assertVue(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
+    public assertVue(key: string, value: any, componentSelector: string | null = null): Promise<this> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(actual, isEqualTo, value, `Vue attribute for key [${key}] mismatched.`).then(this.self);
     }
@@ -1143,17 +1143,17 @@ export class Browser {
     }
 
     public vueAttribute(componentSelector: string | null, key: string): any {
-        const fullSelector = this.resolver.format(componentSelector);
-        const script = `
-        const el = document.querySelector('${fullSelector}');
-        if (!el) return undefined;
-        if (typeof el.__vue__ !== 'undefined') return el.__vue__.${key};
-        try {
-          const attr = el.__vueParentComponent.ctx.${key};
-          if (typeof attr !== 'undefined') return attr;
-        } catch (_) {}
-        return el.__vueParentComponent.setupState.${key};
-      `;
+        const fullSelector = this.resolver(componentSelector);
+        const script = `JSON.parse(JSON.stringify((function() {
+            const el = document.querySelector('${fullSelector}');
+            if (!el) return undefined;
+            if (typeof el.__vue__ !== 'undefined') return el.__vue__.${key};
+            try {
+              const attr = el.__vueParentComponent.ctx.${key};
+              if (typeof attr !== 'undefined') return attr;
+            } catch (_) {}
+            return el.__vueParentComponent.setupState.${key} ?? null;
+        })()));`;
         return this.site.evaluate(script);
     }
 
@@ -1331,9 +1331,12 @@ export class Browser {
             .then(this.self);
     }
 
-    public resolver(selector: string[]|string) {
+    public resolver(selector: string[]|string|null) {
         if (Array.isArray(selector)) {
             return selector.map(s => this.resolver(s));
+        }
+        if (selector == null) {
+            selector = '';
         }
 
         const original = selector;
