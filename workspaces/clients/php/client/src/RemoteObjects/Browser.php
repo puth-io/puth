@@ -237,6 +237,36 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "scheme"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
+     */
+    public function scheme(): string
+    {
+        return $this->callFunc('scheme');
+    }
+
+    /**
+     * @debug-gen-original-name "host"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
+     */
+    public function host(): string
+    {
+        return $this->callFunc('host');
+    }
+
+    /**
+     * @debug-gen-original-name "port"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["string"]
+     */
+    public function port(): string
+    {
+        return $this->callFunc('port');
+    }
+
+    /**
      * @debug-gen-original-name "title"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["string"]
@@ -1339,6 +1369,48 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Assert that the current URL (without the query string) matches the given string.
+     * 
+     * @debug-gen-original-name "assertUrlIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter url {"type":"string","isOptional":false}
+     */
+    public function assertUrlIs(string $url): Browser
+    {
+        return $this->callFunc('assertUrlIs', [$url]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertSchemeIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter scheme {"type":"string","isOptional":false}
+     */
+    public function assertSchemeIs(string $scheme): Browser
+    {
+        return $this->callFunc('assertSchemeIs', [$scheme]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertSchemeIsNot"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter scheme {"type":"string","isOptional":false}
+     */
+    public function assertSchemeIsNot(string $scheme): Browser
+    {
+        return $this->callFunc('assertSchemeIsNot', [$scheme]);
+    }
+
+    /**
+     * let port = this._url().port;
+     * if (port === '') {
+     * let scheme = this.scheme();
+     * if (scheme === 'http') port = '80';
+     * else if (scheme === 'https') port = '443';
+     * }
+     * 
      * @debug-gen-original-name "resolver"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]

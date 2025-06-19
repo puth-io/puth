@@ -10,7 +10,7 @@ use Tests\PuthTestCase;
 
 class AllMethodsTest extends PuthTestCase
 {
-    public static bool $debug = true;
+    public static bool $debug = false;
 
     function test_querying_elements()
     {
@@ -240,7 +240,17 @@ class AllMethodsTest extends PuthTestCase
                 ->assertQueryStringMissing('no-query');
         });
     }
-    
+
+    function test_wip()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
+                ->evaluate('setTimeout(_ => window.location.href = "https://puth.io", 2000)')
+                ->assertUrlIs('https://playground.puth.dev/first/second')
+            ;
+        });
+    }
+
     function test_concerns_interacts_with_elements_values()
     {
         $this->browse(function (Browser $browser) {

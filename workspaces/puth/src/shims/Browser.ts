@@ -204,6 +204,30 @@ export class Browser {
         return this.site.url();
     }
 
+    private _url(): URL {
+        return new URL(this.site.url());
+    }
+
+    public scheme(): string {
+        let url = this._url();
+        return url.protocol.substring(0, url.protocol.length - 1);
+    }
+
+    public host(): string {
+        return this._url().hostname;
+    }
+
+    public port(): string {
+        let port = this._url().port;
+        if (port === '') {
+            let scheme = this.scheme();
+            if (scheme === 'http') port = '80';
+            else if (scheme === 'https') port = '443';
+        }
+
+        return port;
+    }
+
     public async title(): Promise<string> {
         return this.site.title();
     }
@@ -1128,6 +1152,59 @@ export class Browser {
         return this.site.evaluate(script);
     }
 
+    // Assert that the current URL (without the query string) matches the given string.
+    public assertUrlIs(url: string): Promise<this> {
+        return this.eW(
+            (u) => {
+                let _url = new URL(window.location.href);
+                let url = (_url.protocol === 'about:') ?
+                    (_url.protocol + _url.pathname)
+                    : `${_url.protocol}//${_url.hostname}${_url.port ? (':' + _url.port) : ''}${_url.pathname}`;
+
+                return (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(url);
+            },
+            url,
+        ).catch(error => {
+            let actual = this.url();
+            throw new ExpectationFailed(`Actual URL [${actual}] does not equal expected URL [${url}].`, url, actual);
+        })
+        .then(this.self);
+    }
+
+    private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<this> {
+        return this.eW(
+            (u, m) => {
+                let proto = window.location.protocol;
+                return (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location.protocol.substring(0, window.location.protocol.length - 1)) === m;
+            },
+            scheme,
+            matches,
+        )
+            .catch(error => {
+                throw new ExpectationFailed(matches ?
+                    `Actual scheme [${this.scheme()}] does not equal expected scheme [${scheme}].`
+                    : `Scheme [${scheme}] should not equal the actual value.`, scheme, this.scheme())}
+            )
+            .then(this.self);
+    }
+
+    // Assert that the current scheme matches the given scheme.
+    public assertSchemeIs(scheme: string): Promise<this> {
+        return this._assertSchemeIs(scheme);
+    }
+
+    // Assert that the current scheme does not match the given scheme.
+    public assertSchemeIsNot(scheme: string): Promise<this> {
+        return this._assertSchemeIs(scheme, false);
+    }
+
+//     let port = this._url().port;
+//     if (port === '') {
+//     let scheme = this.scheme();
+//     if (scheme === 'http') port = '80';
+//     else if (scheme === 'https') port = '443';
+// }
+
     public resolver(selector: string[]|string) {
         if (Array.isArray(selector)) {
             return selector.map(s => this.resolver(s));
@@ -1154,6 +1231,10 @@ export class Browser {
 
     private eEHW(evalFn, expected , message, ...args) {
         return handle => this.expectsHandleFunction(evalFn, handle, expected, message, ...args);
+    }
+
+    private eW(evalFn, ...args) {
+        return this.site.waitForFunction(evalFn, {timeout: this.timeout, polling: 'mutation'}, ...args);
     }
 
     private createElementNotFoundMessage(selector: string[] | string) {

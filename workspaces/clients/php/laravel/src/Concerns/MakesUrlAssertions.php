@@ -44,69 +44,69 @@ trait MakesUrlAssertions
      * @param string $url
      * @return $this
      */
-    public function assertUrlIs($url)
-    {
-        $pattern = str_replace('\*', '.*', preg_quote($url, '/'));
-        
-        $segments = parse_url($this->url());
-
-        if ($segments['scheme'] === 'about') {
-            $currentUrl = "{$segments['scheme']}:{$segments['path']}";
-        } else {
-            $currentUrl = sprintf(
-                '%s://%s%s%s',
-                $segments['scheme'],
-                $segments['host'],
-                array_key_exists('port', $segments) ? ':' . $segments['port'] : '',
-                array_key_exists('path', $segments) ? $segments['path'] : '',
-            );
-        }
-
-        Assert::assertThat(
-            $currentUrl, new RegularExpression('/^' . $pattern . '$/u'),
-            "Actual URL [{$this->url()}] does not equal expected URL [{$url}]."
-        );
-        
-        return $this;
-    }
+//    public function assertUrlIs($url)
+//    {
+//        $pattern = str_replace('\*', '.*', preg_quote($url, '/'));
+//
+//        $segments = parse_url($this->url());
+//
+//        if ($segments['scheme'] === 'about') {
+//            $currentUrl = "{$segments['scheme']}:{$segments['path']}";
+//        } else {
+//            $currentUrl = sprintf(
+//                '%s://%s%s%s',
+//                $segments['scheme'],
+//                $segments['host'],
+//                array_key_exists('port', $segments) ? ':' . $segments['port'] : '',
+//                array_key_exists('path', $segments) ? $segments['path'] : '',
+//            );
+//        }
+//
+//        Assert::assertThat(
+//            $currentUrl, new RegularExpression('/^' . $pattern . '$/u'),
+//            "Actual URL [{$this->url()}] does not equal expected URL [{$url}]."
+//        );
+//
+//        return $this;
+//    }
     
-    /**
-     * Assert that the current scheme matches the given scheme.
-     *
-     * @param string $scheme
-     * @return $this
-     */
-    public function assertSchemeIs($scheme)
-    {
-        $pattern = str_replace('\*', '.*', preg_quote($scheme, '/'));
-        
-        $actual = parse_url($this->url(), PHP_URL_SCHEME) ?? '';
-        
-        Assert::assertThat(
-            $actual, new RegularExpression('/^' . $pattern . '$/u'),
-            "Actual scheme [{$actual}] does not equal expected scheme [{$pattern}]."
-        );
-        
-        return $this;
-    }
-    
-    /**
-     * Assert that the current scheme does not match the given scheme.
-     *
-     * @param string $scheme
-     * @return $this
-     */
-    public function assertSchemeIsNot($scheme)
-    {
-        $actual = parse_url($this->url(), PHP_URL_SCHEME) ?? '';
-        
-        Assert::assertNotEquals(
-            $scheme, $actual,
-            "Scheme [{$scheme}] should not equal the actual value."
-        );
-        
-        return $this;
-    }
+//    /**
+//     * Assert that the current scheme matches the given scheme.
+//     *
+//     * @param string $scheme
+//     * @return $this
+//     */
+//    public function assertSchemeIs($scheme)
+//    {
+//        $pattern = str_replace('\*', '.*', preg_quote($scheme, '/'));
+//
+//        $actual = parse_url($this->url(), PHP_URL_SCHEME) ?? '';
+//
+//        Assert::assertThat(
+//            $actual, new RegularExpression('/^' . $pattern . '$/u'),
+//            "Actual scheme [{$actual}] does not equal expected scheme [{$pattern}]."
+//        );
+//
+//        return $this;
+//    }
+//
+//    /**
+//     * Assert that the current scheme does not match the given scheme.
+//     *
+//     * @param string $scheme
+//     * @return $this
+//     */
+//    public function assertSchemeIsNot($scheme)
+//    {
+//        $actual = parse_url($this->url(), PHP_URL_SCHEME) ?? '';
+//
+//        Assert::assertNotEquals(
+//            $scheme, $actual,
+//            "Scheme [{$scheme}] should not equal the actual value."
+//        );
+//
+//        return $this;
+//    }
     
     /**
      * Assert that the current host matches the given host.
