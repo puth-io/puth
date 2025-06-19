@@ -345,11 +345,11 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "value"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-returns ["this","string"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"any","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function value(string $selector, mixed $value = null): Browser
+    public function value(string $selector, mixed $value = null): mixed
     {
         return $this->callFunc('value', [$selector, $value]);
     }
@@ -1198,10 +1198,10 @@ class Browser extends RemoteObject
      * 
      * @debug-gen-original-name "assertEnabled"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      */
-    public function assertEnabled(string $field): mixed
+    public function assertEnabled(string $field): Browser
     {
         return $this->callFunc('assertEnabled', [$field]);
     }
@@ -1209,10 +1209,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertDisabled"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"any","isOptional":false}
      */
-    public function assertDisabled(mixed $field): mixed
+    public function assertDisabled(mixed $field): Browser
     {
         return $this->callFunc('assertDisabled', [$field]);
     }
@@ -1220,10 +1220,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertButtonEnabled"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter button {"type":"any","isOptional":false}
      */
-    public function assertButtonEnabled(mixed $button): mixed
+    public function assertButtonEnabled(mixed $button): Browser
     {
         return $this->callFunc('assertButtonEnabled', [$button]);
     }
@@ -1231,10 +1231,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertButtonDisabled"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter button {"type":"string","isOptional":false}
      */
-    public function assertButtonDisabled(string $button): mixed
+    public function assertButtonDisabled(string $button): Browser
     {
         return $this->callFunc('assertButtonDisabled', [$button]);
     }
@@ -1242,10 +1242,10 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "assertFocused"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["unknown","this"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
      */
-    public function assertFocused(string $field): mixed
+    public function assertFocused(string $field): Browser
     {
         return $this->callFunc('assertFocused', [$field]);
     }

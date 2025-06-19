@@ -290,10 +290,10 @@ export class Browser {
         return this;
     }
 
-    public async value(selector: string, value: any = null): Promise<this> {
+    public async value(selector: string, value: any = null): Promise<this|string> {
         return this.firstOrFail(selector)
             .then((element) => PuthStandardPlugin.value(element, value))
-            .then(this.self);
+            .then(rv => value == null ? rv : this);
     }
 
     public text(selector: string): Promise<string> {
@@ -494,7 +494,12 @@ export class Browser {
     public pressAndWaitFor(button: string): Promise<this> {
         return this.resolveForButtonPress(button)
             .then(async element => element.click().then(_ =>
-                this.expectsEH((handle, expected) => !!handle.disabled === expected, element, false, `Expected element [${button}] to be enabled, but it wasn't.`)
+                this.expectsHandleFunction(
+                    (handle, expected) => !!handle.disabled === expected,
+                    element,
+                    false,
+                    `Expected element [${button}] to be enabled, but it wasn't.`,
+                )
             ))
             .then(this.self);
     }
@@ -943,25 +948,25 @@ export class Browser {
     }
 
     public assertAttributeContains(selector: string, attribute: string, value: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).its(attribute);
-        return expects(
-            value,
-            actual,
-            () => `Attribute '${attribute}' does not contain [${value}]. Full attribute value was [${actual}].`,
-            (e, a) => a.includes(e),
-        ).then(this.self);
+        return this.firstOrFail(this.resolver(selector))
+            .then(this.eEHW(
+                (element, expected, attribute) => element.getAttribute(attribute)?.includes(expected),
+                value,
+                async ({element}) => `Attribute '${attribute}' does not contain [${value}]. Full attribute value was [${await PuthStandardPlugin.attr(element, attribute)}].`,
+                attribute,
+            ))
+            .then(this.self);
     }
 
     public assertAttributeDoesntContain(selector: string, attribute: string, value: string): Promise<Return | this> {
-        const fullSelector = this.resolver.format(selector);
-        const actual = () => this.resolver.findOrFail(selector).its(attribute);
-        return expects(
-            value,
-            actual,
-            () => `Attribute '${attribute}' contains [${value}]. Full attribute value was [${actual}].`,
-            (e, a) => !a.includes(e),
-        ).then(this.self);
+        return this.firstOrFail(this.resolver(selector))
+            .then(this.eEHW(
+                (element, expected, attribute) => !element.getAttribute(attribute)?.includes(expected),
+                value,
+                async ({element}) => `Attribute '${attribute}' contains [${value}]. Full attribute value was [${await PuthStandardPlugin.attr(element, attribute)}].`,
+                attribute,
+            ))
+            .then(this.self);
     }
 
     public assertAriaAttribute(selector: string, attribute: string, value: string): Promise<Return | this> {
@@ -1004,7 +1009,7 @@ export class Browser {
 
     public assertEnabled(field: string): Promise<this> {
         return this.resolveForField(field)
-            .then(el => this.expectsEH((handle, expected) => !!handle.disabled === expected, el, false, `Expected element [${field}] to be enabled, but it wasn't.`))
+            .then(el => this.expectsHandleFunction((handle, expected) => !!handle.disabled === expected, el, false, `Expected element [${field}] to be enabled, but it wasn't.`))
             .then(this.self);
     }
 
@@ -1043,13 +1048,21 @@ export class Browser {
 
     public assertFocused(field: string): Promise<this> {
         return this.resolveForField(field)
-            .then(el => this.expectsEH((handle) => document?.activeElement === handle, el, null, `Expected element [${field}] to be focused, but it wasn't.`))
+            .then(this.eEHW(
+                element => document?.activeElement === element,
+                null,
+                `Expected element [${field}] to be focused, but it wasn't.`,
+            ))
             .then(this.self);
     }
 
     public assertNotFocused(field: string): Promise<Return | this> {
         return this.resolveForField(field)
-            .then(el => this.expectsEH((handle) => document?.activeElement !== handle, el, null, `Expected element [${field}] to be focused, but it wasn't.`))
+            .then(this.eEHW(
+                element => document?.activeElement !== element,
+                null,
+                `Expected element [${field}] not to be focused, but it was.`,
+            ))
             .then(this.self);
     }
 
@@ -1132,11 +1145,15 @@ export class Browser {
         return (this.resolverPrefix + ' ' + selector).trim();
     }
 
-    private expectsEH(evalFn, handle, expected , message) {
-        return this.site.waitForFunction(evalFn, {timeout: this.timeout, polling: 'mutation'}, handle, expected)
+    private expectsHandleFunction(evalFn, handle, expected , message, ...args) {
+        return this.site.waitForFunction(evalFn, {timeout: this.timeout, polling: 'mutation'}, handle, expected, ...args)
             .catch(async error => {
-                throw new ExpectationFailed(await resolveValue(message, { expected, actual: undefined }), expected, undefined);
+                throw new ExpectationFailed(await resolveValue(message, { expected, actual: undefined, element: handle }), expected, undefined);
             });
+    }
+
+    private eEHW(evalFn, expected , message, ...args) {
+        return handle => this.expectsHandleFunction(evalFn, handle, expected, message, ...args);
     }
 
     private createElementNotFoundMessage(selector: string[] | string) {
