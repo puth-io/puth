@@ -44,6 +44,10 @@ export class Return<T = undefined> {
         return Return.make('ExpectationFailed', { message, expected, actual });
     }
 
+    static Dialog(dialog) {
+        return Return.make('Dialog', dialog);
+    }
+
     withMeta(meta) {
         if (this.meta == null) {
             this.meta = meta;

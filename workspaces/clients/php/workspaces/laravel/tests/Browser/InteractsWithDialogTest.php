@@ -10,13 +10,18 @@ use Tests\PuthTestCase;
 class InteractsWithDialogTest extends PuthTestCase
 {
     use LegacyBrowserHandling;
-    
-//    function test_dialogs()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                // alert
-//                ->click('#dialog-alert')
+
+    public static bool $debug = true;
+
+    function test_dialogs()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit(new Playground)
+                // alert
+                ->click('#dialog-alert')
+                ->waitForDialog()
+                ->acceptDialog()
+//                ->assertSee('Puth')
 //                ->waitForDialog()
 //                ->acceptDialog()
 //                // prompt
@@ -26,10 +31,11 @@ class InteractsWithDialogTest extends PuthTestCase
 //                // confirm
 //                ->click('#dialog-confirm')
 //                ->acceptDialog()
-//                ->assertSee('true');
-//        });
-//    }
-    
+//                ->assertSee('true')
+            ;
+        });
+    }
+
 //    function test_assertions()
 //    {
 //        $this->browse(function (Browser $browser) {

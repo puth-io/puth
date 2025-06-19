@@ -5,6 +5,7 @@ import { PuthStandardPlugin } from '../index';
 import { type } from '../plugins/utils/cy';
 import { Return } from '@puth/puth/src/context/Return';
 import {clearTimeout} from 'node:timers';
+import { retryFor } from '@puth/puth/src/Utils';
 
 // TODO
 // @gen-class ElementHandle
@@ -77,7 +78,7 @@ export class UnsupportedException extends Error {}
 export class Browser {
     private readonly context: Context;
     private readonly browser: PPTRBrowser;
-    private readonly site: Page | Frame;
+    public readonly site: Page | Frame;
 
     private readonly self: () => this;
     private readonly selfWithMeta: (meta) => () => Return<this>;
@@ -1037,7 +1038,7 @@ export class Browser {
     }
 
     public assertNotPresent(selector: string, options: {} = {}): Promise<Return<this>> {
-        return this.waitForNotPresent(this.resolver(selector));
+        return this.waitForNotPresent(this.resolver(selector)).then(this.selfWithAsserts());
     }
 
     // public async assertDialogOpened(message: string): Promise<Return<this>> {
@@ -1049,13 +1050,13 @@ export class Browser {
     //     ).then(this.selfWithAsserts());
     // }
 
-    public assertEnabled(field: string): Promise<this> {
+    public assertEnabled(field: string): Promise<Return<this>> {
         return this.resolveForField(field)
             .then(el => this.expectsHandleFunction((handle, expected) => !!handle.disabled === expected, el, false, `Expected element [${field}] to be enabled, but it wasn't.`))
             .then(this.selfWithAsserts());
     }
 
-    public assertDisabled(field: any): Promise<this> {
+    public assertDisabled(field: any): Promise<Return<this>> {
         return this.resolveForField(field)
             .then(element => expects(
                 PuthStandardPlugin.its(element, 'disabled'),
@@ -1066,7 +1067,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertButtonEnabled(button: any): Promise<this> {
+    public assertButtonEnabled(button: any): Promise<Return<this>> {
         return this.resolveForButtonPress(button)
             .then(element => expects(
                 PuthStandardPlugin.its(element, 'disabled'),
@@ -1077,7 +1078,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertButtonDisabled(button: string): Promise<this> {
+    public assertButtonDisabled(button: string): Promise<Return<this>> {
         return this.resolveForButtonPress(button)
             .then(element => expects(
                 PuthStandardPlugin.its(element, 'disabled'),
@@ -1088,7 +1089,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertFocused(field: string): Promise<this> {
+    public assertFocused(field: string): Promise<Return<this>> {
         return this.resolveForField(field)
             .then(this.eEHW(
                 element => document?.activeElement === element,
@@ -1108,7 +1109,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public assertVue(key: string, value: any, componentSelector: string | null = null): Promise<this> {
+    public assertVue(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(actual, isEqualTo, value, `Vue attribute for key [${key}] mismatched.`).then(this.selfWithAsserts());
     }
@@ -1362,6 +1363,22 @@ export class Browser {
         }
 
         return (this.resolverPrefix + ' ' + selector).trim();
+    }
+
+    public waitForDialog(): this {
+        if (this.context.isPageBlockedByDialog(this.site)) {
+            return this.self();
+        }
+        // return retryFor()
+    }
+
+    public acceptDialog(value: string|null = null): Promise<this> {
+        if (!this.context.isPageBlockedByDialog(this.site)) {
+            // TODO auto wait for dialog
+            throw new ExpectationFailed('Expected page to have an open dialog but non was found.')
+        }
+
+        return this.context.caches.dialog.get(this.site)?.accept(value ?? undefined).then(this.self);
     }
 
     private expectsHandleFunction(evalFn, handle, expected , message, ...args) {
