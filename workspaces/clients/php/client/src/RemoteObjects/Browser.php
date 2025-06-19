@@ -1219,10 +1219,9 @@ class Browser extends RemoteObject
      * public async assertDialogOpened(message: string): Promise<Return | this> {
      * const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
      * return expects(
-     * message,
      * actual,
-     * ({ expected, actual }) =>
-     * `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
+     * message,
+     * ({ expected, actual }) => `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
      * ).then(this.self);
      * }
      * 
@@ -1382,6 +1381,8 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Assert that the current scheme matches the given scheme.
+     * 
      * @debug-gen-original-name "assertSchemeIs"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -1393,6 +1394,8 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Assert that the current scheme does not match the given scheme.
+     * 
      * @debug-gen-original-name "assertSchemeIsNot"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
@@ -1401,6 +1404,28 @@ class Browser extends RemoteObject
     public function assertSchemeIsNot(string $scheme): Browser
     {
         return $this->callFunc('assertSchemeIsNot', [$scheme]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertHostIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter host {"type":"string","isOptional":false}
+     */
+    public function assertHostIs(string $host): Browser
+    {
+        return $this->callFunc('assertHostIs', [$host]);
+    }
+
+    /**
+     * @debug-gen-original-name "assertHostIsNot"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter host {"type":"string","isOptional":false}
+     */
+    public function assertHostIsNot(string $host): Browser
+    {
+        return $this->callFunc('assertHostIsNot', [$host]);
     }
 
     /**

@@ -22,19 +22,19 @@ const isEmpty = (expected: any, actual: any) => actual == null || actual == '';
 const isNotEmpty = (expected: any, actual: any) => actual != null && actual != '';
 
 export async function expects(
-    expected: any,
     actual: any,
-    message: any,
     compareFn: (expected: any, actual: any) => boolean,
+    expected: any,
+    message: any,
 ): Promise<void> {
     if (compareFn == null) {
         compareFn = (e, a) => e == a;
     }
-    expected = await resolveValue(expected);
     actual = await resolveValue(actual);
+    expected = await resolveValue(expected);
 
     if (!compareFn(expected, actual)) {
-        throw new ExpectationFailed(await resolveValue(message, { expected, actual }), expected, actual);
+        throw new ExpectationFailed(await resolveValue(message, { actual, expected }), expected, actual);
     }
 }
 
@@ -534,48 +534,47 @@ export class Browser {
     // Assert that the page title is the given value.
     public assertTitle(title: string): Promise<Return | this> {
         return expects(
-            title,
             this.site.title(),
-            ({ actual }) => `Expected title [${title}] does not equal actual title [${actual}].`,
             isEqualTo,
+            title,
+            ({ actual }) => `Expected title [${title}] does not equal actual title [${actual}].`,
         ).then(this.self);
     }
 
     // Assert that the page title contains the given value.
     public assertTitleContains(title: string): Promise<Return | this> {
         return expects(
-            title,
             this.site.title(),
-            ({ expected, actual }) => `Did not see expected value [${expected}] within title [${actual}].`,
             (expected, actual) => actual.includes(expected),
+            title,
+            ({ expected, actual }) => `Did not see expected value [${expected}] within title [${actual}].`,
         ).then(this.self);
     }
 
     public async assertHasCookie(name: string): Promise<Return | this> {
         return expects(
-            name,
             (await this.getCookieByName(name))?.value,
-            ({ expected }) => `Did not find expected cookie [${expected}].`,
             isNotNull,
+            undefined,
+            `Did not find expected cookie [${name}].`,
         ).then(this.self);
     }
 
     public async assertCookieMissing(name: string): Promise<Return | this> {
         return expects(
-            name,
             (await this.getCookieByName(name))?.value,
-            ({ expected }) => `Found unexpected cookie [${expected}].`,
             isNull,
+            undefined,
+            `Found unexpected cookie [${name}].`,
         ).then(this.self);
     }
 
     public async assertCookieValue(name: string, value: string): Promise<Return | this> {
         return expects(
-            value,
             (await this.getCookieByName(name))?.value?.value ?? '',
-            ({ expected, actual }) =>
-                `Cookie [${name}] had value [${actual?.value ?? ''}], but expected [${expected}].`,
             isEqualTo,
+            value,
+            ({ expected, actual }) => `Cookie [${name}] had value [${actual?.value ?? ''}], but expected [${expected}].`,
         ).then(this.self);
     }
 
@@ -590,69 +589,65 @@ export class Browser {
     public assertSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
-            .then((actual) =>
-                expects(
-                    text,
-                    actual,
-                    ({ expected, actual }) => `Did not see expected text [${expected}] within element [${selector}].`,
-                    (e: string, a: string) => (ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
-                ),
-            )
+            .then((actual) => expects(
+                actual,
+                (e, a) => (ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
+                text,
+                ({ expected }) => `Did not see expected text [${expected}] within element [${selector}].`,
+            ))
             .then(this.self);
     }
 
     public assertDontSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
-            .then((actual) =>
-                expects(
-                    text,
-                    actual,
-                    ({ expected }) => `Saw unexpected text [${expected}] within element [${selector}].`,
-                    (e, a) => !(ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
-                ),
-            )
+            .then((actual) => expects(
+                actual,
+                (e, a) => !(ignoreCase ? a.toLowerCase().includes(e.toLowerCase()) : a.includes(e)),
+                text,
+                ({ expected }) => `Saw unexpected text [${expected}] within element [${selector}].`,
+            ))
             .then(this.self);
     }
 
     public assertSeeAnythingIn(selector: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
-            .then((actual) => expects('', actual, () => `Saw unexpected text [''] within element [${selector}].`, isNotEmpty))
+            .then((actual) => expects(actual, isNotEmpty, undefined, `Saw unexpected text [''] within element [${selector}].`))
             .then(this.self);
     }
 
     public assertSeeNothingIn(selector: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector))
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
-            .then((actual) => expects('', actual, () => `Did not see expected text [''] within element [${selector}].`, isEmpty))
+            .then((actual) => expects(actual, isEmpty, undefined, `Did not see expected text [''] within element [${selector}].`))
             .then(this.self);
     }
 
     public async assertScript(expression: string, expected: any = true): Promise<Return | this> {
         return expects(
-            expected,
             this.site.evaluate(expression),
-            () => `JavaScript expression [${expression}] mismatched.`,
             isEqualTo,
+            expected,
+            `JavaScript expression [${expression}] mismatched.`,
         ).then(this.self);
     }
 
     public assertSourceHas(code: string): Promise<Return | this> {
         return expects(
-            code,
             this.site.content(),
-            ({ expected }) => `Did not find expected source code [${expected}]`,
             (e, a) => a.includes(e),
+            code,
+            ({ expected }) => `Did not find expected source code [${expected}]`,
         ).then(this.self);
     }
 
     public assertSourceMissing(code: string): Promise<Return | this> {
         return expects(
-            code,
             this.site.content(),
-            ({ expected }) => `Found unexpected source code [${expected}]`,
             (e, a) => !a.includes(e),
+            code,
+            ({ expected }) => `Found unexpected source code [${expected}]`,
         ).then(this.self);
     }
 
@@ -670,21 +665,19 @@ export class Browser {
 
     public assertInputValue(field: any, value: string): Promise<this> {
         return this.resolveForTyping(field).then(element => expects(
-            value,
             PuthStandardPlugin.its(element, 'value'),
-            ({ expected, actual }) =>
-                `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
             isEqualTo,
+            value,
+            ({ expected, actual }) => `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
         )).then(this.self);
     }
 
     public assertInputValueIsNot(field: any, value: string): Promise<Return | this> {
         return this.resolveForTyping(field).then(element => expects(
-            value,
             PuthStandardPlugin.its(element, 'value'),
-            ({ expected, actual }) =>
-                `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
             isNotEqual,
+            value,
+            ({ expected, actual }) => `Expected value [${expected}] for the [${field}] input does not equal the actual value [${actual}].`,
         )).then(this.self);
     }
 
@@ -834,7 +827,7 @@ export class Browser {
     }
 
     private _assertProperty(element: Promise<ElementHandle>, property, compareFn, expected, message) {
-        return element.then(element => expects(expected, PuthStandardPlugin.its(element, property), message, compareFn)).then(this.self);
+        return element.then(element => expects(PuthStandardPlugin.its(element, property), compareFn, expected, message)).then(this.self);
     }
 
     public assertChecked(field: string, value: string|null = null): Promise<Return | this> {
@@ -849,10 +842,10 @@ export class Browser {
         return this.assertNotChecked(field, value)
             .then(_ => this.firstOrFail(this.resolver(field)))
             .then(element => expects(
-                true,
                 PuthStandardPlugin.attr(element, 'indeterminate'),
-                `Checkbox [${field}] was not in indeterminate state.`,
                 isEqualTo,
+                true,
+                `Checkbox [${field}] was not in indeterminate state.`,
         )).then(this.self);
     }
 
@@ -880,10 +873,10 @@ export class Browser {
         }
 
         return expects(
-            true,
             this.selected(field, value),
-            `Expected value [${value.join(',')}] to be selected for [${field}], but it wasn't.`,
             isEqualTo,
+            true,
+            `Expected value [${value.join(',')}] to be selected for [${field}], but it wasn't.`,
         ).then(this.self);
     }
 
@@ -893,28 +886,28 @@ export class Browser {
         }
 
         return expects(
-            false,
             this.selected(field, value),
-            `Unexpected value [${value.join(',')}] selected for [${field}].`,
             isEqualTo,
+            false,
+            `Unexpected value [${value.join(',')}] selected for [${field}].`,
         ).then(this.self);
     }
 
     public assertSelectHasOptions(field: string, values: string[]): Promise<Return | this> {
         return this.resolveSelectOptions(field).then(selectable => expects(
-            true,
             values.every(v => selectable.includes(v)),
-            () => `Expected options [${values.join(',')}] for selection field [${field}] to be available.`,
             isEqualTo,
+            true,
+            `Expected options [${values.join(',')}] for selection field [${field}] to be available.`,
         )).then(this.self);
     }
 
     public assertSelectMissingOptions(field: string, values: string[]): Promise<Return | this> {
         return this.resolveSelectOptions(field).then(selectable => expects(
-            false,
             selectable.some(s => values.includes(s)),
-            () => `Unexpected options [${values.join(',')}] for selection field [${field}].`,
             isEqualTo,
+            false,
+            `Unexpected options [${values.join(',')}] for selection field [${field}].`,
         )).then(this.self);
     }
 
@@ -928,19 +921,19 @@ export class Browser {
 
     public assertValue(selector: string, value: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector)).then(el => expects(
-            value,
             PuthStandardPlugin.its(el, 'value'),
-            `Did not see expected value [${value}] within element [${this.resolver(selector)}].`,
             isEqualTo,
+            value,
+            `Did not see expected value [${value}] within element [${this.resolver(selector)}].`,
         )).then(this.self);
     }
 
     public assertValueIsNot(selector: string, value: string): Promise<Return | this> {
         return this.firstOrFail(this.resolver(selector)).then(el => expects(
-            value,
             PuthStandardPlugin.its(el, 'value'),
-            `Saw unexpected value [${value}] within element [${this.resolver(selector)}].`,
             isNotEqual,
+            value,
+            `Saw unexpected value [${value}] within element [${this.resolver(selector)}].`,
         )).then(this.self);
     }
 
@@ -954,20 +947,20 @@ export class Browser {
     public assertAttribute(selector: string, attribute: string, value: string): Promise<Return | this> {
         let fullSelector = this.resolver(selector);
         return this.firstOrFail(fullSelector).then(el => expects(
-            value,
             PuthStandardPlugin.attr(el, attribute),
-            `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
             isEqualTo,
+            value,
+            `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
         )).then(this.self);
     }
 
     public assertAttributeMissing(selector: string, attribute: string): Promise<Return | this> {
         let fullSelector = this.resolver(selector);
         return this.firstOrFail(fullSelector).then(el => expects(
-            null,
             PuthStandardPlugin.attr(el, attribute),
-            `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
             isEqualTo,
+            null,
+            `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
         )).then(this.self);
     }
 
@@ -1003,13 +996,13 @@ export class Browser {
 
     public async assertVisible(selector: string, options: {} = {}): Promise<Return | this> {
         return this.waitFor(this.resolver(selector), { ...options, state: 'visible' })
-            .then((element) => expects(null, element, `Element [${selector}] is not visible.`, isNotNull))
+            .then((element) => expects(element, isNotNull, undefined, `Element [${selector}] is not visible.`))
             .then(this.self);
     }
 
     public async assertMissing(selector: string, options: {} = {}): Promise<Return | this> {
         return this.waitFor(this.resolver(selector), { ...options, state: 'hidden' })
-            .then((element) => expects(null, element, `Saw unexpected element [${selector}].`, isNull))
+            .then((element) => expects(element, isNull, undefined, `Saw unexpected element [${selector}].`))
             .then(this.self);
     }
 
@@ -1024,10 +1017,9 @@ export class Browser {
     // public async assertDialogOpened(message: string): Promise<Return | this> {
     //     const actual = await this.site.waitForEvent('dialog').then((d) => d.message());
     //     return expects(
-    //         message,
     //         actual,
-    //         ({ expected, actual }) =>
-    //             `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
+    //         message,
+    //         ({ expected, actual }) => `Expected dialog message [${expected}] does not equal actual message [${actual}].`,
     //     ).then(this.self);
     // }
 
@@ -1040,10 +1032,10 @@ export class Browser {
     public assertDisabled(field: any): Promise<this> {
         return this.resolveForField(field)
             .then(element => expects(
-                true,
                 PuthStandardPlugin.its(element, 'disabled'),
-                `Expected element [${field}] to be disabled, but it wasn't.`,
                 isEqualTo,
+                true,
+                `Expected element [${field}] to be disabled, but it wasn't.`,
             ))
             .then(this.self);
     }
@@ -1051,10 +1043,10 @@ export class Browser {
     public assertButtonEnabled(button: any): Promise<this> {
         return this.resolveForButtonPress(button)
             .then(element => expects(
-                false,
                 PuthStandardPlugin.its(element, 'disabled'),
-                `Expected button [${button}] to be enabled, but it wasn't.`,
                 isEqualTo,
+                false,
+                `Expected button [${button}] to be enabled, but it wasn't.`,
             ))
             .then(this.self);
     }
@@ -1062,10 +1054,10 @@ export class Browser {
     public assertButtonDisabled(button: string): Promise<this> {
         return this.resolveForButtonPress(button)
             .then(element => expects(
-                true,
                 PuthStandardPlugin.its(element, 'disabled'),
-                `Expected button [${button}] to be disabled, but it wasn't.`,
                 isEqualTo,
+                true,
+                `Expected button [${button}] to be disabled, but it wasn't.`,
             ))
             .then(this.self);
     }
@@ -1092,26 +1084,26 @@ export class Browser {
 
     public assertVue(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
         const actual = () => this.vueAttribute(componentSelector, key);
-        return expects(value, actual, () => `Vue attribute for key [${key}] mismatched.`).then(this.self);
+        return expects(actual, isEqualTo, value, `Vue attribute for key [${key}] mismatched.`).then(this.self);
     }
 
     public assertVueIsNot(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
-            value,
             actual,
-            () => `Vue attribute for key [${key}] should not equal [${value}].`,
-            (e, a) => e !== a,
+            isNotEqual,
+            value,
+            `Vue attribute for key [${key}] should not equal [${value}].`,
         ).then(this.self);
     }
 
     public assertVueContains(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
-            value,
             actual,
-            () => `The attribute for key [${key}] is not an array that contains [${value}].`,
             (e, a) => Array.isArray(a) && a.includes(e),
+            value,
+            () => `The attribute for key [${key}] is not an array that contains [${value}].`,
         ).then(this.self);
     }
 
@@ -1130,10 +1122,10 @@ export class Browser {
     ): Promise<Return | this> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
-            value,
             actual,
-            () => `Vue attribute for key [${key}] should not contain [${value}].`,
             (e, a) => Array.isArray(a) && !a.includes(e),
+            value,
+            () => `Vue attribute for key [${key}] should not contain [${value}].`,
         ).then(this.self);
     }
 
@@ -1173,10 +1165,7 @@ export class Browser {
 
     private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<this> {
         return this.eW(
-            (u, m) => {
-                let proto = window.location.protocol;
-                return (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location.protocol.substring(0, window.location.protocol.length - 1)) === m;
-            },
+            (u, m) => (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location.protocol.substring(0, window.location.protocol.length - 1)) === m,
             scheme,
             matches,
         )
@@ -1196,6 +1185,16 @@ export class Browser {
     // Assert that the current scheme does not match the given scheme.
     public assertSchemeIsNot(scheme: string): Promise<this> {
         return this._assertSchemeIs(scheme, false);
+    }
+
+    // Assert that the current host matches the given host.
+    public assertHostIs(host: string): Promise<this> {
+        return expects(this.host(), isEqualTo, host, `Actual host [${this.host()}] does not equal expected host [${host}].`).then(this.self);
+    }
+
+    // Assert that the current host does not match the given host.
+    public assertHostIsNot(host: string): Promise<this> {
+        return expects(this.host(), isNotEqual, host, `Host [${host}] should not equal the actual value.`).then(this.self);
     }
 
 //     let port = this._url().port;

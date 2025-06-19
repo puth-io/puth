@@ -245,9 +245,8 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
-                ->evaluate('setTimeout(_ => window.location.href = "https://puth.io", 2000)')
-                ->assertUrlIs('https://playground.puth.dev/first/second')
-            ;
+                ->evaluate('setTimeout(_ => window.location.href = "https://puth.io", 2000)');
+            $browser->assertUrlIs('https://puth.io/');
         });
     }
 
