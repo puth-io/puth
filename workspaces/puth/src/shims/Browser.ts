@@ -1002,13 +1002,13 @@ export class Browser {
     //     ).then(this.self);
     // }
 
-    public assertEnabled(field: string): Promise<Return | this> {
+    public assertEnabled(field: string): Promise<this> {
         return this.resolveForField(field)
             .then(el => this.expectsEH((handle, expected) => !!handle.disabled === expected, el, false, `Expected element [${field}] to be enabled, but it wasn't.`))
             .then(this.self);
     }
 
-    public assertDisabled(field: any): Promise<Return | this> {
+    public assertDisabled(field: any): Promise<this> {
         return this.resolveForField(field)
             .then(element => expects(
                 true,
@@ -1019,7 +1019,7 @@ export class Browser {
             .then(this.self);
     }
 
-    public assertButtonEnabled(button: any): Promise<Return | this> {
+    public assertButtonEnabled(button: any): Promise<this> {
         return this.resolveForButtonPress(button)
             .then(element => expects(
                 false,
@@ -1030,7 +1030,7 @@ export class Browser {
             .then(this.self);
     }
 
-    public assertButtonDisabled(button: string): Promise<Return | this> {
+    public assertButtonDisabled(button: string): Promise<this> {
         return this.resolveForButtonPress(button)
             .then(element => expects(
                 true,
@@ -1041,26 +1041,16 @@ export class Browser {
             .then(this.self);
     }
 
-    public assertFocused(field: string): Promise<Return | this> {
-        const expected = this.resolver.resolveForField(field);
-        const actual = () => this.site.focused();
-        return expects(
-            expected,
-            actual,
-            () => `Expected element [${field}] to be focused, but it wasn't.`,
-            (e, a) => e === a,
-        ).then(this.self);
+    public assertFocused(field: string): Promise<this> {
+        return this.resolveForField(field)
+            .then(el => this.expectsEH((handle) => document?.activeElement === handle, el, null, `Expected element [${field}] to be focused, but it wasn't.`))
+            .then(this.self);
     }
 
     public assertNotFocused(field: string): Promise<Return | this> {
-        const expected = this.resolver.resolveForField(field);
-        const actual = () => this.site.focused();
-        return expects(
-            expected,
-            actual,
-            () => `Element [${field}] was unexpectedly focused.`,
-            (e, a) => e !== a,
-        ).then(this.self);
+        return this.resolveForField(field)
+            .then(el => this.expectsEH((handle) => document?.activeElement !== handle, el, null, `Expected element [${field}] to be focused, but it wasn't.`))
+            .then(this.self);
     }
 
     public assertVue(key: string, value: any, componentSelector: string | null = null): Promise<Return | this> {
