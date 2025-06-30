@@ -48,6 +48,10 @@ export class Return<T = undefined> {
         return Return.make('Dialog', dialog);
     }
 
+    static ServerRequest(request) {
+        return Return.make('ServerRequest', {request});
+    }
+
     withMeta(meta) {
         if (this.meta == null) {
             this.meta = meta;

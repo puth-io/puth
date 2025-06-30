@@ -117,8 +117,8 @@ export default class Puth {
     return context.serialize();
   }
 
-  public contextCall(packet) {
-    return this.contexts[packet.context.id].call(packet);
+  public contextCall(packet, res) {
+    return this.contexts[packet.context.id].call(packet, res);
   }
 
   public contextCallAll(packet) {
@@ -179,14 +179,12 @@ export default class Puth {
       });
 
       // Create new context
-      fastify.post('/context', async (request) => {
+      fastify.post('/context', async (request, response) => {
         return await this.contextCreate(request.body as {});
       });
 
-      // Perform method call on context
-      fastify.patch('/context/call', async (request, reply) => {
-        return reply.send(await this.contextCall(request.body));
-      });
+      fastify.patch('/context/call', (req, res) => this.contextCall(req.body, res));
+      fastify.patch('/context/portal/response', (req, res) => this.contexts[req.body.context.id].handlePortalResponse(req.body, res));
 
       // Perform all method call on context
       fastify.patch('/context/call/all', async (request, reply) => {
@@ -205,7 +203,7 @@ export default class Puth {
 
       // Perform action on context
       fastify.patch('/context/get', async (request, reply) => {
-        return reply.send(await this.contextGet(request.body));
+          return reply.send(await this.contextGet(request.body));
       });
 
       // Perform action on context

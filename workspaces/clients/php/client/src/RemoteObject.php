@@ -5,6 +5,7 @@ namespace Puth;
 use Exception;
 use Puth\Utils\BackTrace;
 use Puth\Utils\DontProxy;
+use RuntimeException;
 
 class RemoteObject
 {
@@ -178,7 +179,37 @@ class RemoteObject
             }
         }
 
-        $rv = match ($generic->type) {
+        if ($generic->type === 'ServerRequest') {
+            $this->log('server-request');
+
+            $response = ['test' => '123'];
+
+            $test = $this->context->client->patch('context/portal/response', ['json' => [
+                'context' => $this->context->serialize(),
+                'response' => $response,
+            ]]);
+
+            $this->log('server-request response:' . $test->getBody()->getContents());
+
+            return $this->handleResponse(
+                $test,
+                $arguments,
+                function ($body, $arguments) {
+                    throw new Exception(BackTrace::message(
+                        BackTrace::filter(debug_backtrace()),
+                        '[Server] ' . $body->message,
+                    ));
+                },
+            );
+        }
+
+        if ($generic->type === 'ExpectationFailed') {
+            $this->handleExpectationFailed($generic, $arguments);
+        } else if ($generic->type === 'error') {
+            $onError($generic, $arguments);
+        }
+
+        return match ($generic->type) {
             'GenericValue', 'GenericValues' => $generic->value,
             'GenericObject' => $this->resolveGenericObject($generic),
             'GenericObjects' => array_map(
@@ -192,16 +223,8 @@ class RemoteObject
             'GenericNull' => null,
             'GenericSelf', 'GenericUndefined' => $this,
             'PuthAssertion' => $generic,
-            default => $this,
+            default => throw new RuntimeException('Unexpected generic type ' . $generic->type),
         };
-
-        if ($generic->type === 'ExpectationFailed') {
-            $this->handleExpectationFailed($generic, $arguments);
-        } else if ($generic->type === 'error') {
-            $onError($generic, $arguments);
-        }
-
-        return $rv;
     }
 
     /**

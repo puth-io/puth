@@ -15,6 +15,7 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
+import { sleep } from './Utils';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -410,22 +411,32 @@ class Context extends Generic {
         return [await Promise.race(calls.map(call => this.call(call)))];
     }
 
-    public async call(packet) {
+    public async call(packet, res, skipQueue = false) {
         this._lastActivity = Date.now();
 
-        let on = this.resolveOn(packet);
-        // resolve page object
-        let page: Page = Utils.resolveConstructorName(on) === Constructors.Page ? on : on?.frame?.page();
+        if (!skipQueue && this.portal.queue.backlog.length !== 0) {
+            this.puth.logger.debug(packet, 'offsetting');
+            this.portal.initial.call = packet;
+            this.portal.queue.active = this.portal.queue.backlog;
+            this.portal.queue.backlog = [];
 
-        // Create command
-        const command = await this.createCommandInstance(packet, on);
-        // Create snapshot before command
-        if (! this.isPageBlockedByDialog(page)) {
-            // await Snapshots.createBefore(this, page, command);
+            return res.send(this.createServerRequest(this.portal.queue.active[0]));
         }
 
+        this.portal.open.response = res;
+
+        let on = this.resolveOn(packet);
+        // it's hideous, but it's better than 3 deep ifs imho
+        let page =
+            (on instanceof Page)
+                ? on
+                : (on instanceof Browser)
+                    ? on.site
+                    : (Utils.resolveConstructorName(on) === Constructors.Page
+                        ? on
+                        : on?.frame?.page());
+
         if (this.caches.dialog.size > 0) {
-            let page = (on instanceof Page) ? on : (on instanceof Browser) ? on.site : null;
             if (page && this.isPageBlockedByDialog(page) && (on instanceof Browser && !['assertDialogOpened', 'typeInDialog', 'acceptDialog', 'dismissDialog', 'waitForDialog'].includes(packet.function))) {
                 return Return.ExpectationFailed('The page has an open dialog that blocks all function calls except those that interact with it.').serialize();
             }
@@ -446,19 +457,17 @@ class Context extends Generic {
                 }
 
                 // Call extension function and pass object as first parameter
-                return this.handleCallApply(
+                return res.send(await this.handleCallApply(
                     packet,
                     page,
-                    command,
                     extension,
                     addition.func,
                     [on, ...packet.parameters],
                     addition.expects,
-                );
+                ));
             }
         }
 
-        // Check if object has function
         if (! on[packet.function]) {
             return {
                 type: 'error',
@@ -467,93 +476,113 @@ class Context extends Generic {
             };
         }
 
-        // Call original function on object
-        return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters, undefined);
+        return res.send(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
     }
 
     portal: any = {
-        inflight: null, // promise
+        initial: {
+            call: null,
+        },
+        open: {
+            response: null,
+        },
+        waiting: {
+            response: null,
+            call: false,
+        },
         queue: {
             backlog: [
-                // {request, promise: {resolve, reject}}
+                {request: 'test', promise: {resolve: null, reject: null}}
             ],
             active: [],
         },
     }
 
-    private waitForPortalQueue() {
-        if (this.portal.queue.backlog.length === 0) {
-            return Promise.resolve();
-        }
-
-        this.portal.queue.active = this.portal.queue.backlog;
-        this.portal.queue.backlog = [];
-
-        let waiter = new Promise((resolve, reject) => {
-            this.portal.inflight = {resolve, reject};
-        });
-        this.portal.inflight.waiter = waiter;
-
-        return waiter;
-    }
-
     public handlePortalRequest(im) {
         if (this.lastCallerPromise == null) {
             this.portal.queue.backlog.push(im);
-
             return;
         }
 
-        this.portal.queue.backlog.push(im);
-        return this.waitForPortalQueue();
+        this.portal.queue.active.push(im);
+        if (this.portal.queue.active.length === 1) {
+            return this.lastCallerPromise.resolve(
+                this.createServerRequest(this.portal.queue.active[0])
+            );
+        }
     }
 
-    public handlePortalResponse(response) {
+    public async handlePortalResponse(data, res) {
+        this.puth.logger.debug(data, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
+        // await current.promise.resolve(data);
 
-        return current.promise.resolve(response)
-            .then(() => {
-                if (this.portal.queue.active.length !== 0) {
-                    return this.createPortalResponse(this.portal.queue.active[0]);
-                }
+        if (this.portal.queue.active.length !== 0) {
+            return res.send(this.createServerRequest(this.portal.queue.active[0]));
+        }
+        if (this.portal.waiting.response) {
+            let waiting = this.portal.waiting.response;
+            this.portal.waiting.response = null;
+            return res.send(waiting);
+        }
+        if (this.portal.waiting.call) {
+            this.puth.logger.debug('resetting waiting call')
+            return res.send(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
+        }
 
-                let waiter = this.portal.inflight.waiter;
-                this.portal.inflight = {};
+        return this.call(this.portal.initial.call, res, true);
+    }
 
-                return waiter;
-            });
+    public createServerRequest(qi) {
+        return Return.ServerRequest(qi.request).serialize();
     }
 
     // TODO Cleanup parameters and maybe unify handling in special object
-    private async handleCallApply(packet, page, command, on, func, parameters, expects) {
-        return this.waitForPortalQueue()
-            .then(() => this.emitAsync('call:apply:before', {command, page}))
-            .then(() => new Promise(async (resolve, reject) => {
-                this.lastCallerPromise = {resolve, reject};
+    private async handleCallApply(packet, page, on, func, parameters, expects = null) {
+        const command = await this.createCommandInstance(packet, on);
+        if (this.caches.dialog.size === 0) {
+            // await Snapshots.createBefore(this, page, command);
+        }
 
+        this.portal.initial.call = null;
+        this.portal.waiting.call = true;
+
+        let p = new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined);
+
+        this.emitAsync('call:apply:before', {command, page})
+            .then(async () => {
                 try {
+                    setTimeout(() => this.handlePortalRequest({request: '123456'}), 100);
+
                     // @ts-ignore
-                    let returnValue = await Promise.try(func.bind(on, ...parameters))
+                    let returnValue = await sleep(200).then(() => Promise.try(func.bind(on, ...parameters)))
                         .catch((error) => {
+                            this.puth.logger.debug('handleCallApply throwing');
                             // TODO test if try also catches promise errors without this throw
                             throw error;
                         });
 
-                    if (this.portal.inflight != null) {
-                        // pause queue
-                        await this.portal.inflight.promise;
+                    if (command) {
+                        command.time.finished = Date.now();
+                        command.time.took = command.time.finished - command.time.started;
                     }
 
-                    command.time.finished = Date.now();
-                    command.time.took = command.time.finished - command.time.started;
+                    let response = await this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
+                    if (this.portal.queue.active.length !== 0) {
+                        this.puth.logger.debug('set waiting response');
+                        this.portal.waiting.response = response;
 
-                    return resolve(this.handleCallApplyAfter(packet, page, command, returnValue, expects, on));
+                        return;
+                    }
+
+                    this.puth.logger.debug({ packet, response }, 'lastCallerPromise response');
+                    this.lastCallerPromise.resolve(response);
                 } catch (error: any) {
                     this.puth.logger.debug(error, '[Call apply error]')
                     // call event before any pushToCache call
                     await this.emitAsync('call:apply:error', {error, command, page});
 
-                    if (this.shouldSnapshot) {
+                    if (this.shouldSnapshot && command) {
                         command.time.finished = Date.now();
                         command.time.took = command.time.finished - command.time.started;
 
@@ -570,19 +599,27 @@ class Context extends Generic {
                         Snapshots.pushToCache(this, command);
                     }
 
-                    if (error instanceof ExpectationFailed) {
-                        return resolve(error.getReturnInstance().serialize());
+                    let response =
+                        error instanceof ExpectationFailed
+                            ? error.getReturnInstance().serialize()
+                            : {
+                                  type: 'error',
+                                  code: 'MethodException',
+                                  message: `Function ${packet.function} threw error: ${error.message}`,
+                                  error,
+                              };
+                    if (this.portal.queue.active.length != 0) {
+                        this.portal.waiting.response = response;
+
+                        return;
                     }
 
-                    return resolve({
-                        type: 'error',
-                        code: 'MethodException',
-                        message: `Function ${packet.function} threw error: ${error.message}`,
-                        error,
-                    });
+                    this.lastCallerPromise.resolve(response);
                 }
-            }))
-            .finally(() => this.lastCallerPromise = undefined);
+            })
+            .finally(() => this.portal.waiting.call = false);
+
+        return p;
     }
 
     private async handleCallApplyAfter(packet, page, command, returnValue, expectation, on) {
@@ -593,7 +630,7 @@ class Context extends Generic {
             Snapshots.pushToCache(this, command);
         };
 
-        if (expectation) {
+        if (expectation != null) {
             if (expectation.test && ! expectation.test(returnValue)) {
                 // call event before any pushToCache call
                 await this.emit('call:expectation:error', {expectation, command, page});

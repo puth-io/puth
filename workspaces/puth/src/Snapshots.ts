@@ -7,7 +7,7 @@ class SnapshotHandler {
     private cache = new Map<Context, IPacket[]>();
     
     pushToCache(context: Context, item, {broadcast} = {broadcast: true}) {
-        if (item.cached) {
+        if (item == null || item.cached) {
             return;
         }
         
