@@ -8,8 +8,6 @@ use Tests\PuthTestCase;
 
 class InteractsWithDialogTest extends PuthTestCase
 {
-    public static bool $debug = true;
-
     function test_dialogs()
     {
         $this->browse(function (Browser $browser) {
@@ -44,14 +42,4 @@ class InteractsWithDialogTest extends PuthTestCase
             ;
         });
     }
-
-//    function test_assertions()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                ->click('#dialog-confirm')
-//                ->assertDialogOpened('confirm this')
-//                ->dismissDialog();
-//        });
-//    }
 }

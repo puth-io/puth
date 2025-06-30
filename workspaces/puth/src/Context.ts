@@ -471,63 +471,118 @@ class Context extends Generic {
         return await this.handleCallApply(packet, page, command, on, on[packet.function], packet.parameters, undefined);
     }
 
-    // TODO Cleanup parameters and maybe unify handling in special object
-    private async handleCallApply(packet, page, command, on, func, parameters, expects) {
-        await this.emitAsync('call:apply:before', {command, page});
+    portal: any = {
+        inflight: null, // promise
+        queue: {
+            backlog: [
+                // {request, promise: {resolve, reject}}
+            ],
+            active: [],
+        },
+    }
 
-        return await new Promise(async (resolve, reject) => {
-            this.lastCallerPromise = {resolve, reject};
+    private waitForPortalQueue() {
+        if (this.portal.queue.backlog.length === 0) {
+            return Promise.resolve();
+        }
 
-            try {
-                // TODO maybe us Promise.try
-                let returnValue = func.call(on, ...parameters);
+        this.portal.queue.active = this.portal.queue.backlog;
+        this.portal.queue.backlog = [];
 
-                // Check if func.call returns a Promise. If so, await return value
-                if (returnValue?.constructor?.name === 'Promise') {
-                    returnValue = await returnValue.catch((error) => {
-                        // TODO test if try also catches promise errors without this throw
-                        throw error;
-                    });
+        let waiter = new Promise((resolve, reject) => {
+            this.portal.inflight = {resolve, reject};
+        });
+        this.portal.inflight.waiter = waiter;
+
+        return waiter;
+    }
+
+    public handlePortalRequest(im) {
+        if (this.lastCallerPromise == null) {
+            this.portal.queue.backlog.push(im);
+
+            return;
+        }
+
+        this.portal.queue.backlog.push(im);
+        return this.waitForPortalQueue();
+    }
+
+    public handlePortalResponse(response) {
+        let current = this.portal.queue.active.shift();
+
+        return current.promise.resolve(response)
+            .then(() => {
+                if (this.portal.queue.active.length !== 0) {
+                    return this.createPortalResponse(this.portal.queue.active[0]);
                 }
 
-                command.time.finished = Date.now();
-                command.time.took = command.time.finished - command.time.started;
+                let waiter = this.portal.inflight.waiter;
+                this.portal.inflight = {};
 
-                return resolve(this.handleCallApplyAfter(packet, page, command, returnValue, expects, on));
-            } catch (error: any) {
-                this.puth.logger.debug(error, '[Call apply error]')
-                // call event before any pushToCache call
-                await this.emitAsync('call:apply:error', {error, command, page});
+                return waiter;
+            });
+    }
 
-                if (this.shouldSnapshot) {
+    // TODO Cleanup parameters and maybe unify handling in special object
+    private async handleCallApply(packet, page, command, on, func, parameters, expects) {
+        return this.waitForPortalQueue()
+            .then(() => this.emitAsync('call:apply:before', {command, page}))
+            .then(() => new Promise(async (resolve, reject) => {
+                this.lastCallerPromise = {resolve, reject};
+
+                try {
+                    // @ts-ignore
+                    let returnValue = await Promise.try(func.bind(on, ...parameters))
+                        .catch((error) => {
+                            // TODO test if try also catches promise errors without this throw
+                            throw error;
+                        });
+
+                    if (this.portal.inflight != null) {
+                        // pause queue
+                        await this.portal.inflight.promise;
+                    }
+
                     command.time.finished = Date.now();
                     command.time.took = command.time.finished - command.time.started;
 
-                    Snapshots.error(this, page, command, {
+                    return resolve(this.handleCallApplyAfter(packet, page, command, returnValue, expects, on));
+                } catch (error: any) {
+                    this.puth.logger.debug(error, '[Call apply error]')
+                    // call event before any pushToCache call
+                    await this.emitAsync('call:apply:error', {error, command, page});
+
+                    if (this.shouldSnapshot) {
+                        command.time.finished = Date.now();
+                        command.time.took = command.time.finished - command.time.started;
+
+                        Snapshots.error(this, page, command, {
+                            type: 'error',
+                            specific: 'apply',
+                            error: {
+                                message: error.message,
+                                name: error.name,
+                                stack: error.stack,
+                            },
+                            time: Date.now(),
+                        });
+                        Snapshots.pushToCache(this, command);
+                    }
+
+                    if (error instanceof ExpectationFailed) {
+                        return resolve(error.getReturnInstance().serialize());
+                    }
+
+                    return resolve({
                         type: 'error',
-                        specific: 'apply',
-                        error: {
-                            message: error.message,
-                            name: error.name,
-                            stack: error.stack,
-                        },
-                        time: Date.now(),
+                        code: 'MethodException',
+                        message: `Function ${packet.function} threw error: ${error.message}`,
+                        error,
                     });
-                    Snapshots.pushToCache(this, command);
                 }
-
-                if (error instanceof ExpectationFailed) {
-                    return resolve(error.getReturnInstance().serialize());
-                }
-
-                return resolve({
-                    type: 'error',
-                    code: 'MethodException',
-                    message: `Function ${packet.function} threw error: ${error.message}`,
-                    error,
-                });
-            }
-        }).finally(() => this.lastCallerPromise = undefined);
+            }))
+            .finally(() => this.lastCallerPromise = undefined);
     }
 
     private async handleCallApplyAfter(packet, page, command, returnValue, expectation, on) {
