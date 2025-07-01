@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser} from 'puppeteer-core';
+import puppeteer, { Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest } from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -230,9 +230,9 @@ class Context extends Generic {
 
         // Track default browser page (there is no 'targetcreated' event for page[0])
         return await browser.pages()
-            .then(pages => {
+            .then(async pages => {
                 let page0 = pages[0];
-                this.trackPage(page0);
+                await this.trackPage(page0);
                 this.emitter.emit('page:created', {browser, page: page0});
             });
     }
@@ -241,8 +241,8 @@ class Context extends Generic {
      * TODO maybe track "outgoing" navigation requests, and stall incoming request until finished loading
      *      but check if we need to make sure if call the object called on needs to be existing
      */
-    private trackPage(page) {
-        page.emulateMediaFeatures([{name: 'prefers-reduced-motion', value: 'reduce'}]);
+    private async trackPage(page) {
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         page.on('close', () => this.removeEventListenersFrom(page));
         page.on('dialog', (dialog: Dialog) => {
             this.caches.dialog.set(page, dialog);
@@ -289,6 +289,13 @@ class Context extends Generic {
                 stackTrace: consoleMessage.stackTrace(),
             });
         });
+
+        if (true) {
+            await page.setRequestInterception(true);
+            this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+                return this.handlePortalRequest(request);
+            });
+        }
     }
 
     // @codegen
@@ -492,20 +499,34 @@ class Context extends Generic {
         },
         queue: {
             backlog: [
-                {request: 'test', promise: {resolve: null, reject: null}}
+                //{request: 'test', promise: {resolve: null, reject: null}}
             ],
             active: [],
         },
     }
 
-    public handlePortalRequest(im) {
+    public handlePortalRequest(request: HTTPRequest) {
+        let portalRequest = {
+            serialized: {
+                url: request.url(),
+                headers: request.headers(),
+                data: request.fetchPostData(),
+                method: request.method(),
+                resourceType: request.resourceType(),
+            },
+            request,
+        };
+
+        this.puth.logger.debug(portalRequest, '[handlePortalRequest]');
+
         if (this.lastCallerPromise == null) {
-            this.portal.queue.backlog.push(im);
+            this.portal.queue.backlog.push(portalRequest);
             return;
         }
 
-        this.portal.queue.active.push(im);
+        this.portal.queue.active.push(portalRequest);
         if (this.portal.queue.active.length === 1) {
+            this.puth.logger.debug('sending portal request while client request active');
             return this.lastCallerPromise.resolve(
                 this.createServerRequest(this.portal.queue.active[0])
             );
@@ -515,6 +536,7 @@ class Context extends Generic {
     public async handlePortalResponse(data, res) {
         this.puth.logger.debug(data, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
+        await current.request.respond(data.response);
         // await current.promise.resolve(data);
 
         if (this.portal.queue.active.length !== 0) {
@@ -533,8 +555,8 @@ class Context extends Generic {
         return this.call(this.portal.initial.call, res, true);
     }
 
-    public createServerRequest(qi) {
-        return Return.ServerRequest(qi.request).serialize();
+    public createServerRequest(portalRequest) {
+        return Return.ServerRequest(portalRequest.serialized).serialize();
     }
 
     // TODO Cleanup parameters and maybe unify handling in special object
@@ -552,10 +574,11 @@ class Context extends Generic {
         this.emitAsync('call:apply:before', {command, page})
             .then(async () => {
                 try {
-                    setTimeout(() => this.handlePortalRequest({request: '123456'}), 100);
+                    //setTimeout(() => this.handlePortalRequest({request: '123456'}), 100);
 
                     // @ts-ignore
-                    let returnValue = await sleep(200).then(() => Promise.try(func.bind(on, ...parameters)))
+                    //let returnValue = await sleep(200).then(() => Promise.try(func.bind(on, ...parameters)))
+                    let returnValue = await Promise.try(func.bind(on, ...parameters))
                         .catch((error) => {
                             this.puth.logger.debug('handleCallApply throwing');
                             // TODO test if try also catches promise errors without this throw
