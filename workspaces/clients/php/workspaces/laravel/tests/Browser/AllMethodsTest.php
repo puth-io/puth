@@ -233,7 +233,12 @@ class AllMethodsTest extends PuthTestCase
                 ->assertQueryStringHas('param1')
                 ->assertQueryStringHas('param1', 'abc')
                 ->assertQueryStringMissing('test');
-            
+        });
+    }
+
+    function test_portal()
+    {
+        $this->browse(function (Browser $browser) {
             $browser->visit('/sub/path')
                 ->assertRouteIs('sub.path')
                 ->assertQueryStringMissing('no-query');

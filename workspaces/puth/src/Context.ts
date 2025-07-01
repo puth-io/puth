@@ -290,10 +290,10 @@ class Context extends Generic {
             });
         });
 
-        if (true) {
+        if (this.options?.supports?.portal != null) {
             await page.setRequestInterception(true);
             this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
-                return this.handlePortalRequest(request);
+                return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
             });
         }
     }
@@ -505,7 +505,23 @@ class Context extends Generic {
         },
     }
 
-    public handlePortalRequest(request: HTTPRequest) {
+    public handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
+        this.puth.logger.debug(prefixes, 'prefixes');
+        let url = request.url();
+        let handle = false;
+
+        for (let prefix of prefixes) {
+            if (url.startsWith(prefix)) {
+                handle = true;
+                url.replace(prefix, '');
+                break;
+            }
+        }
+
+        if (!handle) {
+            return request.continue();
+        }
+
         let portalRequest = {
             serialized: {
                 url: request.url(),

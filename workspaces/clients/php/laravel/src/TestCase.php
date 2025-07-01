@@ -32,6 +32,11 @@ abstract class TestCase extends FoundationTestCase
             ],
             'snapshot' => true,
             'debug' => static::$debug,
+            'supports' => [
+                'portal' => [
+                    'urlPrefixes' => $this->requestInterceptionUrlPrefixes(),
+                ],
+            ],
         ], $this->getContextOptions()));
 
         $this->context->setTestCase($this);
@@ -118,6 +123,11 @@ abstract class TestCase extends FoundationTestCase
         }
         
         return $this->status()->isFailure() || $this->status()->isError();
+    }
+
+    public function requestInterceptionUrlPrefixes(): array
+    {
+        return [$this->baseUrl()];
     }
     
     /**
