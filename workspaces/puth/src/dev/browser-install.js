@@ -31,7 +31,7 @@ const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
         return;
     }
 
-    const installOptions: any = {
+    const installOptions = {
         browser: channel,
         platform, buildId,
         cacheDir: cache,
@@ -51,7 +51,7 @@ const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
 
 function throttle(func, wait) {
     let timer;
-    let lastArgs: any = [];
+    let lastArgs = [];
     let mediator = _ => {
         timer = null;
         func(...lastArgs);

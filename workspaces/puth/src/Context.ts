@@ -248,7 +248,7 @@ class Context extends Generic {
             this.caches.dialog.set(page, dialog);
 
             if (this.lastCallerPromise) {
-                // this.puth.logger.debug('Resolved active request because dialog opened on page.');
+                this.puth.logger.debug('Resolved active request because dialog opened on page.');
                 this.lastCallerPromise.resolve(Return.Dialog({
                     message: dialog.message(),
                     defaultValue: dialog.defaultValue(),
@@ -506,10 +506,17 @@ class Context extends Generic {
     }
 
     public handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
-        // this.puth.logger.debug(prefixes, 'prefixes');
+        this.puth.logger.debug(prefixes, 'prefixes');
+        
         let url = request.url();
+        if (['script', 'stylesheet'].includes(request.resourceType())
+            || !['document', 'other'].includes(request.resourceType())
+            || url.endsWith('.ico')) {
+            this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url}`);
+            return request.continue();
+        }
+        
         let handle = false;
-
         for (let prefix of prefixes) {
             if (url.startsWith(prefix)) {
                 handle = true;
@@ -533,7 +540,7 @@ class Context extends Generic {
             request,
         };
 
-        // this.puth.logger.debug(portalRequest, '[handlePortalRequest]');
+        this.puth.logger.debug(portalRequest, '[handlePortalRequest]');
 
         if (this.lastCallerPromise == null) {
             this.portal.queue.backlog.push(portalRequest);
@@ -550,10 +557,9 @@ class Context extends Generic {
     }
 
     public async handlePortalResponse(data, res) {
-        // this.puth.logger.debug(data, 'handlePortalResponse');
+        this.puth.logger.debug(data, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
         await current.request.respond(data.response);
-        // await current.promise.resolve(data);
 
         if (this.portal.queue.active.length !== 0) {
             return res.send(this.createServerRequest(this.portal.queue.active[0]));

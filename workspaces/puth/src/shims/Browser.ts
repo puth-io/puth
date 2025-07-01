@@ -3,9 +3,9 @@ import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
 import { type } from '../plugins/utils/cy';
-import { Return } from '@puth/puth/src/context/Return';
+import { Return } from '../context/Return';
 import {clearTimeout} from 'node:timers';
-import { retryFor } from '@puth/puth/src/Utils';
+import { retryFor } from '../Utils';
 
 // TODO
 // @gen-class ElementHandle

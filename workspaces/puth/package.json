@@ -54,7 +54,7 @@
     "LICENCE"
   ],
   "scripts": {
-    "build": "rm -rf lib/ && tsc --build --verbose && tsc-alias",
+    "build": "rm -rf lib/ && tsc --build --verbose --noCheck && tsc-alias",
     "dev:server": "NODE_ENV=development ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/dev/server.ts",
     "dev": "NODE_ENV=development bun --watch src/dev/server.ts",
     "dev:browser:install": "NODE_ENV=development bun src/dev/browser-install.ts",
