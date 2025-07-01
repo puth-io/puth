@@ -293,6 +293,7 @@ class Context extends Generic {
         if (this.options?.supports?.portal != null) {
             await page.setRequestInterception(true);
             this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+                this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
                 return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
             });
         }
@@ -422,7 +423,7 @@ class Context extends Generic {
         this._lastActivity = Date.now();
 
         if (!skipQueue && this.portal.queue.backlog.length !== 0) {
-            // this.puth.logger.debug(packet, 'offsetting');
+            this.puth.logger.debug(packet, 'offsetting');
             this.portal.initial.call = packet;
             this.portal.queue.active = this.portal.queue.backlog;
             this.portal.queue.backlog = [];
@@ -505,7 +506,7 @@ class Context extends Generic {
         },
     }
 
-    public handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
+    public async handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
         let url = request.url();
         if (['script', 'stylesheet'].includes(request.resourceType())
             || !['document', 'other'].includes(request.resourceType())
@@ -524,14 +525,21 @@ class Context extends Generic {
         }
 
         if (!handle) {
+            this.puth.logger.debug(`[portal] no handle ${request.resourceType()} ${url.substring(0, 80)}`);
             return request.continue();
+        }
+        
+        let data = request.postData();
+        if (data === undefined && request.hasPostData()) {
+            this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
+            data = await request.fetchPostData();
         }
 
         let portalRequest = {
             serialized: {
                 url: request.url(),
                 headers: request.headers(),
-                data: request.fetchPostData(),
+                data: data ?? null,
                 method: request.method(),
                 resourceType: request.resourceType(),
             },
@@ -541,13 +549,15 @@ class Context extends Generic {
         this.puth.logger.debug(portalRequest.serialized, '[handlePortalRequest]');
 
         if (this.lastCallerPromise == null) {
+            this.puth.logger.debug(portalRequest.serialized, 'add portal request to backlog queue');
             this.portal.queue.backlog.push(portalRequest);
             return;
         }
 
         this.portal.queue.active.push(portalRequest);
+        this.puth.logger.debug(portalRequest.serialized, 'add portal request to active queue');
         if (this.portal.queue.active.length === 1) {
-            // this.puth.logger.debug('sending portal request while client request active');
+            this.puth.logger.debug('sending portal request while client request active');
             return this.lastCallerPromise.resolve(
                 this.createServerRequest(this.portal.queue.active[0])
             );
@@ -570,7 +580,7 @@ class Context extends Generic {
             return res.send(waiting);
         }
         if (this.portal.waiting.call) {
-            // this.puth.logger.debug('resetting waiting call')
+            this.puth.logger.debug('resetting waiting call')
             return res.send(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
         }
 
@@ -611,7 +621,7 @@ class Context extends Generic {
 
                     let response = await this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
                     if (this.portal.queue.active.length !== 0) {
-                        // this.puth.logger.debug('set waiting response');
+                        this.puth.logger.debug('set waiting response');
                         this.portal.waiting.response = response;
 
                         return;
