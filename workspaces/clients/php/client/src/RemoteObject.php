@@ -229,7 +229,7 @@ class RemoteObject
 
     private function handlePortalRequest($generic, $arguments, Closure $onError)
     {
-        dump('handlePortalRequest', $generic);
+        //dump('handlePortalRequest', $generic);
 
         $this->log('server-request');
         $response = ['type' => 'PortalResponse'];
@@ -258,10 +258,10 @@ class RemoteObject
                 'status' => $im->status(),
             ];
         }
-        dump('handlePortalRequest $response', $response);
+        //dump('handlePortalRequest $response', $response);
 
         $this->log('server-request response');
-        $this->log(var_export($response));
+        // $this->log(var_export($response));
 
         $portalResponse = $this->context->client->patch('context/portal/response', ['json' => [
             'context' => $this->context->serialize(),

@@ -248,7 +248,7 @@ class Context extends Generic {
             this.caches.dialog.set(page, dialog);
 
             if (this.lastCallerPromise) {
-                this.puth.logger.debug('Resolved active request because dialog opened on page.');
+                // this.puth.logger.debug('Resolved active request because dialog opened on page.');
                 this.lastCallerPromise.resolve(Return.Dialog({
                     message: dialog.message(),
                     defaultValue: dialog.defaultValue(),
@@ -422,7 +422,7 @@ class Context extends Generic {
         this._lastActivity = Date.now();
 
         if (!skipQueue && this.portal.queue.backlog.length !== 0) {
-            this.puth.logger.debug(packet, 'offsetting');
+            // this.puth.logger.debug(packet, 'offsetting');
             this.portal.initial.call = packet;
             this.portal.queue.active = this.portal.queue.backlog;
             this.portal.queue.backlog = [];
@@ -506,7 +506,7 @@ class Context extends Generic {
     }
 
     public handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
-        this.puth.logger.debug(prefixes, 'prefixes');
+        // this.puth.logger.debug(prefixes, 'prefixes');
         let url = request.url();
         let handle = false;
 
@@ -533,7 +533,7 @@ class Context extends Generic {
             request,
         };
 
-        this.puth.logger.debug(portalRequest, '[handlePortalRequest]');
+        // this.puth.logger.debug(portalRequest, '[handlePortalRequest]');
 
         if (this.lastCallerPromise == null) {
             this.portal.queue.backlog.push(portalRequest);
@@ -542,7 +542,7 @@ class Context extends Generic {
 
         this.portal.queue.active.push(portalRequest);
         if (this.portal.queue.active.length === 1) {
-            this.puth.logger.debug('sending portal request while client request active');
+            // this.puth.logger.debug('sending portal request while client request active');
             return this.lastCallerPromise.resolve(
                 this.createServerRequest(this.portal.queue.active[0])
             );
@@ -550,7 +550,7 @@ class Context extends Generic {
     }
 
     public async handlePortalResponse(data, res) {
-        this.puth.logger.debug(data, 'handlePortalResponse');
+        // this.puth.logger.debug(data, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
         await current.request.respond(data.response);
         // await current.promise.resolve(data);
@@ -564,7 +564,7 @@ class Context extends Generic {
             return res.send(waiting);
         }
         if (this.portal.waiting.call) {
-            this.puth.logger.debug('resetting waiting call')
+            // this.puth.logger.debug('resetting waiting call')
             return res.send(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
         }
 
@@ -590,13 +590,10 @@ class Context extends Generic {
         this.emitAsync('call:apply:before', {command, page})
             .then(async () => {
                 try {
-                    //setTimeout(() => this.handlePortalRequest({request: '123456'}), 100);
-
                     // @ts-ignore
-                    //let returnValue = await sleep(200).then(() => Promise.try(func.bind(on, ...parameters)))
                     let returnValue = await Promise.try(func.bind(on, ...parameters))
                         .catch((error) => {
-                            this.puth.logger.debug('handleCallApply throwing');
+                            // this.puth.logger.debug('handleCallApply throwing');
                             // TODO test if try also catches promise errors without this throw
                             throw error;
                         });
@@ -608,13 +605,13 @@ class Context extends Generic {
 
                     let response = await this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
                     if (this.portal.queue.active.length !== 0) {
-                        this.puth.logger.debug('set waiting response');
+                        // this.puth.logger.debug('set waiting response');
                         this.portal.waiting.response = response;
 
                         return;
                     }
 
-                    this.puth.logger.debug({ packet, response }, 'lastCallerPromise response');
+                    // this.puth.logger.debug({ packet, response }, 'lastCallerPromise response');
                     this.lastCallerPromise.resolve(response);
                 } catch (error: any) {
                     this.puth.logger.debug(error, '[Call apply error]')

@@ -1,5 +1,7 @@
 <?php
 
+use App\Mail\TestMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,3 +22,7 @@ Route::get('/', function () {
 Route::get('/sub/path', function () {
     return response('');
 })->name('sub.path');
+
+Route::get('send/mail', function () {
+    Mail::to('test@test.localhost')->send(new TestMail());
+})->name('send.mail');

@@ -2,6 +2,7 @@
 
 namespace Tests\Browser;
 
+use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Assert;
 use Illuminate\Support\Carbon;
 use Puth\Laravel\Browser;
@@ -10,7 +11,7 @@ use Tests\PuthTestCase;
 
 class AllMethodsTest extends PuthTestCase
 {
-    public static bool $debug = true;
+    public static bool $debug = false;
 
     function test_querying_elements()
     {
@@ -236,13 +237,16 @@ class AllMethodsTest extends PuthTestCase
         });
     }
 
-    function test_portal()
+    function test_portal_fake()
     {
+        Mail::fake();
+
         $this->browse(function (Browser $browser) {
-            $browser->visit('/sub/path')
-                ->assertRouteIs('sub.path')
-                ->assertQueryStringMissing('no-query');
+            $browser->visit('/send/mail')
+                ->assertRouteIs('send.mail');
         });
+
+        Mail::assertSentCount(1);
     }
 
     function test_wip()
