@@ -359,7 +359,7 @@ export class Browser {
     }
 
     public type(selector: string[] | string, value: string, options = {}): Promise<this> {
-        return this.firstOrFail(selector)
+        return this.firstOrFail(this.resolver(selector))
             .then((e) => PuthStandardPlugin.clear(e).then(() => type(e, value, options)))
             .then(this.self);
     }

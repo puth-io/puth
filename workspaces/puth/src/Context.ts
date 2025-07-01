@@ -506,13 +506,11 @@ class Context extends Generic {
     }
 
     public handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
-        this.puth.logger.debug(prefixes, 'prefixes');
-        
         let url = request.url();
         if (['script', 'stylesheet'].includes(request.resourceType())
             || !['document', 'other'].includes(request.resourceType())
             || url.endsWith('.ico')) {
-            this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url}`);
+            this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
             return request.continue();
         }
         
@@ -540,7 +538,7 @@ class Context extends Generic {
             request,
         };
 
-        this.puth.logger.debug(portalRequest, '[handlePortalRequest]');
+        this.puth.logger.debug(portalRequest.serialized, '[handlePortalRequest]');
 
         if (this.lastCallerPromise == null) {
             this.portal.queue.backlog.push(portalRequest);
@@ -557,7 +555,9 @@ class Context extends Generic {
     }
 
     public async handlePortalResponse(data, res) {
-        this.puth.logger.debug(data, 'handlePortalResponse');
+        let clone = structuredClone(data);
+        clone.response.body = clone.response.body.length;
+        this.puth.logger.debug(clone, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
         await current.request.respond(data.response);
 
