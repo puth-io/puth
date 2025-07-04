@@ -7,6 +7,7 @@ use Exception;
 use Puth\Utils\BackTrace;
 use Puth\Utils\DontProxy;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\Request;
 
 class RemoteObject
 {
@@ -237,9 +238,12 @@ class RemoteObject
         if (class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
             && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
 
+            $test = $this->context->handlePortalRequest($generic->value->request);
+            dd('handlePortalRequest', $test);
+
             $url = $generic->value->request->url;
-            $headers = (array) $generic->value->request->headers;
-            $data = (array) $generic->value->request->data;
+            $headers = (array)$generic->value->request->headers;
+            $data = (array)$generic->value->request->data;
 
             $im = match ($generic->value->request->method) {
                 'GET' => $this->context->testCase->get($url, $headers),

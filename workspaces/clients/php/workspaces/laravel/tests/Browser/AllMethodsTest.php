@@ -2,10 +2,14 @@
 
 namespace Tests\Browser;
 
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Assert;
 use Illuminate\Support\Carbon;
 use Puth\Laravel\Browser;
+use Puth\RemoteObject;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
@@ -247,6 +251,34 @@ class AllMethodsTest extends PuthTestCase
         });
 
         Mail::assertSentCount(1);
+    }
+    
+    function test_req_rec()
+    {
+        /*function executePortalRequest(Request $request) {
+            $server = $this->transformHeadersToServerVars($headers);
+            $cookies = $this->prepareCookiesForRequest();
+        }*/
+
+        $kernel = $this->app->make(HttpKernel::class);
+
+        $portalRequest = (object) [
+            'url' => '/',
+            'method' => 'post',
+            'headers' => [
+                'content-type' => 'application/x-www-form-urlencoded',
+            ],
+            'data' => 'username=test&path=1234',
+        ];
+
+        // $server = $this->transformHeadersToServerVars($portalRequest->headers);
+        $cookies = $this->prepareCookiesForRequest();
+        $request = RemoteObject::fromArray($portalRequest);
+
+        $response = $kernel->handle(
+            $request = $this->createTestRequest($request)
+        );
+        dd($response);
     }
 
     function test_wip()

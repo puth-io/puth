@@ -1,6 +1,7 @@
 <?php
 
 use App\Mail\TestMail;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
@@ -15,8 +16,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
+Route::get('/', function (Request $request) {
     return view('welcome');
+});
+Route::post('/', function (Request $request) {
+    dd($request->all());
 });
 
 Route::get('/sub/path', function () {
