@@ -43,8 +43,7 @@ abstract class TestCase extends FoundationTestCase
         ], $this->getContextOptions()));
 
         $this->context->setTestCase($this);
-        $this->registerPortalHandler();
-        
+
         Browser::$baseUrl = $this->baseUrl();
         Browser::$storeScreenshotsAt = base_path('tests/Browser/screenshots');
         Browser::$storeConsoleLogAt = base_path('tests/Browser/console');
@@ -157,14 +156,15 @@ abstract class TestCase extends FoundationTestCase
     // portal request handling
     public function handlePortalRequest(object $portalRequest)
     {
-        $portalRequest = (object) [
+        //dd($portalRequest);
+        /*$portalRequest = (object) [
             'url' => '/',
             'method' => 'post',
             'headers' => [
                 'content-type' => 'application/x-www-form-urlencoded',
             ],
             'data' => 'username=test&path=1234',
-        ];
+        ];*/
 
         $kernel = $this->app->make(HttpKernel::class);
         $request = $this->parsePortalRequest($portalRequest);
@@ -178,14 +178,33 @@ abstract class TestCase extends FoundationTestCase
 
     public function parsePortalRequest(object $portalRequest): Request
     {
-        $server = $this->transformHeadersToServerVars($portalRequest->headers);
+        $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
         $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
         $server['REQUEST_URI'] = $portalRequest->url;
 
         $cookies = $this->prepareCookiesForRequest();
 
+        // Extract query parameters
+        $urlParts = parse_url($portalRequest->url);
+        $queryParams = [];
+        if (isset($urlParts['query'])) {
+            parse_str($urlParts['query'], $queryParams);
+        }
+
+        // Extract cookies
+        $cookies = [];
+        if (isset($headers['cookie'])) {
+            parse_str(str_replace('; ', '&', $headers['cookie']), $cookies);
+        }
+
         $request = new Request(
-            [], [], [], $cookies, [], $server, $portalRequest->data,
+            $queryParams, // GET
+            [], // POST
+            [], // attributes
+            $cookies, // COOKIE
+            [], // FILES
+            $server,
+            $portalRequest->data,
         );
 
         static::populateParametersFromBody($request);

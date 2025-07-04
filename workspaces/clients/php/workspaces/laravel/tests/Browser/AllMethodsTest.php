@@ -255,30 +255,18 @@ class AllMethodsTest extends PuthTestCase
     
     function test_req_rec()
     {
-        /*function executePortalRequest(Request $request) {
-            $server = $this->transformHeadersToServerVars($headers);
-            $cookies = $this->prepareCookiesForRequest();
-        }*/
-
-        $kernel = $this->app->make(HttpKernel::class);
-
-        $portalRequest = (object) [
-            'url' => '/',
-            'method' => 'post',
-            'headers' => [
-                'content-type' => 'application/x-www-form-urlencoded',
-            ],
-            'data' => 'username=test&path=1234',
-        ];
-
-        // $server = $this->transformHeadersToServerVars($portalRequest->headers);
-        $cookies = $this->prepareCookiesForRequest();
-        $request = RemoteObject::fromArray($portalRequest);
-
-        $response = $kernel->handle(
-            $request = $this->createTestRequest($request)
-        );
-        dd($response);
+        $this->browse(function (Browser $browser) {
+            $browser->setContent('<html><body>
+                <form action="http://127.0.0.1:8000/?queryTest=1234" method="post">
+                    <input type="text" name="formTest" value="1234">
+                    <button>submit</button>
+                </form>
+            </body></html>');
+            $browser->click('button')
+                ->assertSee('"formTest": "1234"')
+                ->assertSee('"queryTest": "1234"')
+            ;
+        });
     }
 
     function test_wip()

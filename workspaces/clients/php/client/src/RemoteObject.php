@@ -183,7 +183,7 @@ class RemoteObject
         }
 
         if ($generic->type === 'ServerRequest') {
-            return $this->handlePortalRequest($generic, $arguments, $onError);
+            return $this->handlePortalRequestResponse($generic, $arguments, $onError);
         }
 
         if ($generic->type === 'ExpectationFailed') {
@@ -228,20 +228,23 @@ class RemoteObject
         throw new Exception($message);
     }
 
-    private function handlePortalRequest($generic, $arguments, Closure $onError)
+    private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
     {
-        //dump('handlePortalRequest', $generic);
+        dump('handlePortalRequest', $generic);
 
         $this->log('server-request');
         $response = ['type' => 'PortalResponse'];
 
-        if (class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
+        if ($this->context->testCase !== null
+            && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
             && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
 
-            $test = $this->context->handlePortalRequest($generic->value->request);
-            dd('handlePortalRequest', $test);
+            dump('before');
+            $im = $this->context->testCase->handlePortalRequest($generic->value->request);
+            dump('after');
+            // dd('handlePortalRequest', $test);
 
-            $url = $generic->value->request->url;
+            /*$url = $generic->value->request->url;
             $headers = (array)$generic->value->request->headers;
             $data = (array)$generic->value->request->data;
 
@@ -253,7 +256,7 @@ class RemoteObject
                 'PATCH' => $this->context->testCase->patch($url, $data, $headers),
                 'PUT' => $this->context->testCase->put($url, $data, $headers),
                 'DELETE' => $this->context->testCase->delete($url, $data, $headers),
-            };
+            };*/
 
             $response = [
                 'body' => $im->content(),

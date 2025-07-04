@@ -20,7 +20,12 @@ Route::get('/', function (Request $request) {
     return view('welcome');
 });
 Route::post('/', function (Request $request) {
-    dd($request->all());
+    /*dump($request->header());
+    dump($request->query());
+    dump($request->post());
+    dd($request->input());*/
+
+    return response()->json($request->input());
 });
 
 Route::get('/sub/path', function () {
