@@ -263,8 +263,8 @@ class AllMethodsTest extends PuthTestCase
                 </form>
             </body></html>');
             $browser->click('button')
-                ->assertSee('"formTest": "1234"')
-                ->assertSee('"queryTest": "1234"')
+                ->assertSee('"formTest":"1234"')
+                ->assertSee('"queryTest":"1234"')
             ;
         });
     }
