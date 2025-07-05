@@ -385,13 +385,15 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public function storeSource($name)
     {
-        $source = $this->content();
+        try {
+            $source = $this->content();
 
-        if (!empty($source)) {
-            file_put_contents(
-                sprintf('%s/%s.txt', rtrim(static::$storeSourceAt, '/'), $name), $source
-            );
-        }
+            if (!empty($source)) {
+                file_put_contents(
+                    sprintf('%s/%s.txt', rtrim(static::$storeSourceAt, '/'), $name), $source
+                );
+            }
+        } catch (\Throwable) {}
 
         return $this;
     }

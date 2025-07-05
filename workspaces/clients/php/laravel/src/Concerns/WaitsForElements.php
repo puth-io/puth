@@ -59,11 +59,7 @@ trait WaitsForElements
      */
     public function waitFor($selector, $seconds = null)
     {
-        $options = ['state' => 'visible'];
-        if ($seconds !== null) {
-            $options['timeout'] = $seconds;
-        }
-        $this->_waitFor($selector, $options);
+        $this->_waitFor($selector, ['state' => 'visible', 'timeout' => $seconds !== null ? ($seconds * 1000) : null]);
 
         return $this;
     }
@@ -77,11 +73,7 @@ trait WaitsForElements
      */
     public function waitUntilMissing($selector, $seconds = null)
     {
-        $options = ['state' => 'hidden'];
-        if ($seconds !== null) {
-            $options['timeout'] = $seconds;
-        }
-        $this->_waitFor($selector, $options);
+        $this->_waitFor($selector, ['state' => 'hidden', 'timeout' => $seconds !== null ? ($seconds * 1000) : null]);
 
         return $this;
     }
@@ -107,12 +99,15 @@ trait WaitsForElements
      */
     public function waitUntilMissingTextIn($selector, $text, $seconds = null, $ignoreCase = false)
     {
-        $options = ['ignoreCase' => $ignoreCase, 'missing' => true];
-        if ($seconds !== null) {
-            $options['timeout'] = $seconds;
-        }
-
-        $this->_waitForTextIn($this->resolver->format(''), $text, $options);
+        $this->_waitForTextIn(
+            $this->resolver->format(''),
+            $text,
+            [
+                'ignoreCase' => $ignoreCase,
+                'missing' => true,
+                'timeout' => $seconds !== null ? ($seconds * 1000) : null,
+            ],
+        );
 
         return $this;
     }
@@ -158,11 +153,9 @@ trait WaitsForElements
      */
     public function waitForLink($link, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for link', $link);
-        
-        return $this->waitUsing($seconds, 100, function () use ($link) {
-            return $this->seeLink($link);
-        }, $message);
+        // TODO $message = $this->formatTimeOutMessage('Waited %s seconds for link', $link);
+
+        return $this->assertSeeLink($link, 'a', ['timeout' => $seconds !== null ? ($seconds * 1000) : null]);
     }
     
     /**
@@ -176,7 +169,7 @@ trait WaitsForElements
     {
         return $this->waitFor("input[name='{$field}'], textarea[name='{$field}'], select[name='{$field}']", $seconds);
     }
-    
+
     /**
      * Wait for the given location.
      *
@@ -186,11 +179,8 @@ trait WaitsForElements
      */
     public function waitForLocation($path, $seconds = null)
     {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for location', $path);
-        
-        return Str::startsWith($path, ['http://', 'https://'])
-            ? $this->waitUntil('`${location.protocol}//${location.host}${location.pathname}` == \'' . $path . '\'', $seconds, $message)
-            : $this->waitUntil("window.location.pathname == '{$path}'", $seconds, $message);
+        // TODO $message = $this->formatTimeOutMessage('Waited %s seconds for location', $path);
+        return $this->assertUrlIs($path, $this->_waitOptions(seconds: $seconds));
     }
     
     /**
@@ -242,9 +232,9 @@ trait WaitsForElements
      * @param string|null $message
      * @return $this
      */
-    public function waitUntil($script, $seconds = null, $message = null)
+    public function waitUntil($script, $seconds = null, $message = 'Waited for script to be true')
     {
-        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds] : []);
+        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds * 1000] : []);
 
         return $this;
     }
@@ -404,5 +394,15 @@ trait WaitsForElements
     protected function escapePercentCharacters($message)
     {
         return str_replace('%', '%%', $message);
+    }
+
+    private function _waitOptions(int $seconds = null)
+    {
+        $options = [];
+        if ($seconds !== null) {
+            $options['timeout'] = $seconds * 1000;
+        }
+
+        return $options;
     }
 }

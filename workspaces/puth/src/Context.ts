@@ -293,7 +293,7 @@ class Context extends Generic {
         if (this.options?.supports?.portal != null) {
             await page.setRequestInterception(true);
             this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
-                this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
+                // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
                 return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
             });
         }
@@ -530,9 +530,9 @@ class Context extends Generic {
         }
         
         let data = request.postData();
-        this.puth.logger.debug('before');
-        this.puth.logger.debug(await request.fetchPostData(), 'postData');
-        this.puth.logger.debug('after');
+        // this.puth.logger.debug('before');
+        // this.puth.logger.debug(await request.fetchPostData(), 'postData');
+        // this.puth.logger.debug('after');
         if (data === undefined && request.hasPostData()) {
             this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
             data = await request.fetchPostData();

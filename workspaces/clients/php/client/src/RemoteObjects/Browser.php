@@ -551,7 +551,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle[]"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{}","isOptional":true,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function findAll(mixed $selector, mixed $options = []): array
     {
@@ -566,7 +566,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle[]"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{}","isOptional":true,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _findOrFail(mixed $selector, mixed $options = []): array
     {
@@ -581,7 +581,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{}","isOptional":true,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _firstOrFail(mixed $selector, mixed $options = []): RemoteObject
     {
@@ -788,10 +788,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertSeeLink(string $link, string $selector = 'a'): Browser
+    public function assertSeeLink(string $link, string $selector = 'a', mixed $options = []): Browser
     {
-        return $this->callFunc('assertSeeLink', [$link, $selector]);
+        return $this->callFunc('assertSeeLink', [$link, $selector, $options]);
     }
 
     /**
@@ -802,10 +803,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter link {"type":"string","isOptional":false}
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertDontSeeLink(string $link, string $selector = 'a'): Browser
+    public function assertDontSeeLink(string $link, string $selector = 'a', mixed $options = []): Browser
     {
-        return $this->callFunc('assertDontSeeLink', [$link, $selector]);
+        return $this->callFunc('assertDontSeeLink', [$link, $selector, $options]);
     }
 
     /**
@@ -1393,10 +1395,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter url {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function assertUrlIs(string $url): Browser
+    public function assertUrlIs(string $url, mixed $options = []): Browser
     {
-        return $this->callFunc('assertUrlIs', [$url]);
+        return $this->callFunc('assertUrlIs', [$url, $options]);
     }
 
     /**

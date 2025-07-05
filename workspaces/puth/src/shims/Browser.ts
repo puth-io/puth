@@ -498,7 +498,7 @@ export class Browser {
      * TODO gen-returns should be ElementHandle
      * TODO implement timeout
      */
-    public findAll(selector: string[] | string, options?: {} = {}): Promise<ElementHandle[]> {
+    public findAll(selector: string[] | string, options: {} = {}): Promise<ElementHandle[]> {
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
                 return Promise.allSettled(selector.flatMap((s) => this.site.$$(s)))
@@ -515,7 +515,7 @@ export class Browser {
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      */
-    public findOrFail(selector: string[] | string, options?: {} = {}): Promise<ElementHandle[]> {
+    public findOrFail(selector: string[] | string, options: {} = {}): Promise<ElementHandle[]> {
         return this.findAll(selector, options).then((elements) => {
             if (elements.length === 0) {
                 throw new ExpectationFailed(this.createElementNotFoundMessage(selector));
@@ -529,7 +529,7 @@ export class Browser {
      * @gen-returns RemoteObject
      * TODO gen-returns should be ElementHandle
      */
-    public firstOrFail(selector: string[] | string, options?: {} = {}): Promise<ElementHandle> {
+    public firstOrFail(selector: string[] | string, options: {} = {}): Promise<ElementHandle> {
         return this.findOrFail(selector, options).then((found) => found[0]);
     }
 
@@ -682,18 +682,18 @@ export class Browser {
     }
 
     // Assert that the given link is present on the page
-    public assertSeeLink(link: string, selector: string = 'a'): Promise<Return<this>> {
+    public assertSeeLink(link: string, selector: string = 'a', options: {} = {}): Promise<Return<this>> {
         link = link.replace("'", "\\'");
-        return this.assertVisible(`${selector}[href='${link}']`);
+        return this.assertVisible(`${selector}[href='${link}']`, options);
     }
 
     // Assert that the given link is not present on the page
-    public assertDontSeeLink(link: string, selector: string = 'a'): Promise<Return<this>> {
+    public assertDontSeeLink(link: string, selector: string = 'a', options: {} = {}): Promise<Return<this>> {
         link = link.replace("'", "\\'");
-        return this.assertMissing(`${selector}[href='${link}']`);
+        return this.assertMissing(`${selector}[href='${link}']`, options);
     }
 
-    public assertInputValue(field: any, value: string): Promise<this> {
+    public assertInputValue(field: any, value: string): Promise<Return<this>> {
         return this.resolveForTyping(field).then(element => expects(
             PuthStandardPlugin.its(element, 'value'),
             isEqualTo,
@@ -1174,8 +1174,9 @@ export class Browser {
     }
 
     // Assert that the current URL (without the query string) matches the given string.
-    public assertUrlIs(url: string): Promise<Return<this>> {
+    public assertUrlIs(url: string, options: {} = {}): Promise<Return<this>> {
         return this.eW(
+            options,
             (u) => {
                 let _url = new URL(window.location.href);
                 let url = (_url.protocol === 'about:') ?
@@ -1194,6 +1195,7 @@ export class Browser {
 
     public _assertLocationProperty(property: string, expected: string, matches: boolean = true, trimEnd: integer = 0) {
         return this.eW(
+            {},
             (u, m, p, te) => (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location[p].substring(0, window.location[p].length - te)) === m,
             expected,
             matches,
@@ -1278,7 +1280,7 @@ export class Browser {
     }
 
     private _assertHasQueryStringParameter(name: string, matches: boolean = true) {
-        return this.eW((n, m) => ((new URLSearchParams(window.location.search)).has(n)) === m, name, matches)
+        return this.eW({}, (n, m) => ((new URLSearchParams(window.location.search)).has(n)) === m, name, matches)
             .catch(_ => {throw new ExpectationFailed(matches ?
                 `Did not see expected query string parameter [${name}] in [${this.url()}]`
                 : `Found unexpected query string parameter [${name}] in [${this.url()}]`
@@ -1287,6 +1289,7 @@ export class Browser {
 
     public _assertQueryStringParameter(name: string, value: string|null = null, matches: boolean = true) {
         return this._assertHasQueryStringParameter(name, matches).then(_ => this.eW(
+            {},
             (q, v, m) => {
                 let search = new URLSearchParams(window.location.search);
                 if (!search.has(q) === m) {
@@ -1326,6 +1329,7 @@ export class Browser {
     // Assert that the current URL fragment matches the given pattern.
     public assertFragmentIs(fragment: string): Promise<Return<this>> {
         return this.eW(
+            {},
             f => (new RegExp('^' + f.replace(/\*/g, '.*') + '$')).test(window.location.hash.substring(1, window.location.hash.length)),
             fragment,
         )
@@ -1335,14 +1339,14 @@ export class Browser {
 
     // Assert that the current URL fragment begins with given fragment.
     public assertFragmentBeginsWith(fragment: string): Promise<Return<this>> {
-        return this.eW(f => window.location.hash.substring(1, window.location.hash.length).startsWith(f), fragment)
+        return this.eW({}, f => window.location.hash.substring(1, window.location.hash.length).startsWith(f), fragment)
             .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
             .then(this.selfWithAsserts());
     }
 
     // Assert that the current URL fragment does not match the given fragment.
     public assertFragmentIsNot(fragment: string): Promise<Return<this>> {
-        return this.eW(f => window.location.hash.substring(1, window.location.hash.length) != f, fragment)
+        return this.eW({}, f => window.location.hash.substring(1, window.location.hash.length) != f, fragment)
             .catch(_ => {throw new ExpectationFailed(`Actual fragment [${this._url().hash.substring(1, this._url().hash.length)}] does not begin with expected fragment [${fragment}].`)})
             .then(this.selfWithAsserts());
     }
@@ -1437,8 +1441,8 @@ export class Browser {
         return handle => this.expectsHandleFunction(evalFn, handle, expected, message, ...args);
     }
 
-    private eW(evalFn, ...args) {
-        return this.site.waitForFunction(evalFn, {timeout: this.timeout, polling: 'mutation'}, ...args);
+    private eW(options, evalFn, ...args) {
+        return this.site.waitForFunction(evalFn, {polling: 'mutation', ...options, timeout: options?.timeout ?? this.timeout}, ...args);
     }
 
     private createElementNotFoundMessage(selector: string[] | string) {

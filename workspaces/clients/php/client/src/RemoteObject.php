@@ -20,11 +20,11 @@ class RemoteObject
     ];
 
     function __construct(
-        public readonly string        $id,
-        public readonly string        $type,
-        public readonly string        $represents,
+        public readonly string $id,
+        public readonly string $type,
+        public readonly string $represents,
         public readonly ?RemoteObject $parent,
-        public readonly Context       $context,
+        public readonly Context $context,
     )
     {
     }
@@ -230,7 +230,7 @@ class RemoteObject
 
     private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
     {
-        dump('handlePortalRequest', $generic);
+//        dump('handlePortalRequest', $generic);
 
         $this->log('server-request');
         $response = ['type' => 'PortalResponse'];

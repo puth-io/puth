@@ -184,14 +184,13 @@ abstract class TestCase extends FoundationTestCase
 
         $cookies = $this->prepareCookiesForRequest();
 
-        // Extract query parameters
-        $urlParts = parse_url($portalRequest->url);
+        $url = parse_url($portalRequest->url);
         $queryParams = [];
-        if (isset($urlParts['query'])) {
-            parse_str($urlParts['query'], $queryParams);
+        if (isset($url['query'])) {
+            parse_str($url['query'], $queryParams);
         }
+        $server['HTTP_HOST'] = "{$url['host']}:{$url['port']}";
 
-        // Extract cookies
         $cookies = [];
         if (isset($headers['cookie'])) {
             parse_str(str_replace('; ', '&', $headers['cookie']), $cookies);
