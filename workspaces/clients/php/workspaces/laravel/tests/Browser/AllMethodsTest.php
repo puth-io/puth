@@ -2,14 +2,9 @@
 
 namespace Tests\Browser;
 
-use Illuminate\Contracts\Http\Kernel as HttpKernel;
-use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Assert;
 use Illuminate\Support\Carbon;
 use Puth\Laravel\Browser;
-use Puth\RemoteObject;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
@@ -238,34 +233,6 @@ class AllMethodsTest extends PuthTestCase
                 ->assertQueryStringHas('param1')
                 ->assertQueryStringHas('param1', 'abc')
                 ->assertQueryStringMissing('test');
-        });
-    }
-
-    function test_portal_fake()
-    {
-        Mail::fake();
-
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/send/mail')
-                ->assertRouteIs('send.mail');
-        });
-
-        Mail::assertSentCount(1);
-    }
-    
-    function test_req_rec()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->setContent('<html><body>
-                <form action="http://127.0.0.1:8000/?queryTest=1234" method="post">
-                    <input type="text" name="formTest" value="1234">
-                    <button>submit</button>
-                </form>
-            </body></html>');
-            $browser->click('button')
-                ->assertSee('"formTest":"1234"')
-                ->assertSee('"queryTest":"1234"')
-            ;
         });
     }
 

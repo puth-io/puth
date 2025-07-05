@@ -239,9 +239,7 @@ class RemoteObject
             && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
             && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
 
-            dump('before');
             $im = $this->context->testCase->handlePortalRequest($generic->value->request);
-            dump('after');
             // dd('handlePortalRequest', $test);
 
             /*$url = $generic->value->request->url;

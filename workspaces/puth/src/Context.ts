@@ -530,6 +530,9 @@ class Context extends Generic {
         }
         
         let data = request.postData();
+        this.puth.logger.debug('before');
+        this.puth.logger.debug(await request.fetchPostData(), 'postData');
+        this.puth.logger.debug('after');
         if (data === undefined && request.hasPostData()) {
             this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
             data = await request.fetchPostData();
