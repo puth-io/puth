@@ -621,6 +621,7 @@ class Context extends Generic {
                     // @ts-ignore
                     let returnValue = await Promise.try(func.bind(on, ...parameters))
                         .catch((error) => {
+                            // TODO handle puppeteer errors - should also be used when snapshotting
                             if (error instanceof TargetCloseError) {
                                 this.puth.logger.error('TargetCloseError');
                                 return;

@@ -25,14 +25,18 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
     public browserLimit = 3;
 
     // destroy the actual browser after it's unused for defined seconds
-    public browserUnusedTimeout = 30 * 1000;
+    public browserUnusedTimeout = 120 * 1000;
+
+    constructor() {
+        setInterval(() => this.cleanupUnused(), this.browserUnusedTimeout);
+    }
 
     async launch(options: any = {}): Promise<{ref: BrowserRef, context: BrowserContext}> {
         let optionsHash = objectHash(options);
 
         let ref = this.findBrowserRefForOptionsHash(optionsHash);
         if (ref) {
-            console.debug('reusing browser', optionsHash);
+            console.debug('[HandlesBrowsers] reusing ref', ref.optionsHash);
             ref.destroying = false;
             ref.unusedSince = undefined;
 
@@ -54,7 +58,6 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             ...(options.args ?? []),
         ];
 
-        console.debug('launching browser', optionsHash);
         return puppeteer.launch(options)
             .then(async browser => {
                 let ref: BrowserRef = {
@@ -63,6 +66,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
                     optionsHash,
                 };
                 this.refs.push(ref);
+                console.debug('[HandlesBrowsers] added ref', ref.optionsHash);
                 browser.once('disconnected', () => this.disconnected(browser));
 
                 return browser.createBrowserContext()
@@ -97,20 +101,19 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             .finally(() => {
                 if (ref.browserContexts.length === 0) {
                     ref.unusedSince = Date.now();
+                    return this.cleanupUnused();
                 }
-
-                return this.cleanupUnused();
             });
     }
 
-    async destroyBrowser(browser: Browser) {
-        let ref = this.findBrowserRef(browser);
-        if (ref == null) {
+    private async destroyRef(ref?: BrowserRef) {
+        if (ref == null || ref.destroying) {
             return;
         }
         ref.destroying = true;
+        console.debug('[HandlesBrowsers] destroying ref', ref.optionsHash);
 
-        let idx = this.refs.findIndex(ref => ref.browser = browser);
+        let idx = this.refs.findIndex(ref => ref === ref);
         this.refs.splice(idx, 1);
 
         return ref.browser.close()
@@ -119,38 +122,36 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
     }
 
     async disconnected(browser: Browser) {
-        // TODO handle unexpected browser disconnects
-
-        // get the cleanup object before we destroy the actual browser instance
-        // let ref = this.browsers.get(browser);
-        // if (ref == null) {
-        //     return;
-        // }
+        // TODO forward unexpected browser disconnects to client
+        return this.destroyRef(this.findBrowserRef(browser));
     }
 
-    findBrowserRefForOptionsHash(optionsHash: string): BrowserRef|void {
+    findBrowserRefForOptionsHash(optionsHash: string): BrowserRef|undefined {
         return this.refs.find(ref => ref.optionsHash === optionsHash);
     }
 
-    findBrowserRef(browser: Browser): BrowserRef|void {
+    findBrowserRef(browser: Browser): BrowserRef|undefined {
         return this.refs.find(ref => ref.browser === browser);
     }
 
-    // (ref.unusedSince + this.browserUnusedTimeout) < Date.now()
-
     async cleanupUnused() {
         let unused = this.allUnusedBrowsers();
-        let promises: Promise<any>[] = [];
+        let toDestroy: BrowserRef[] = [];
 
         let aboveLimit = unused.length - this.browserLimit;
         if (aboveLimit > 0) {
-            console.log('removing...', aboveLimit);
-            for (let i = 0; i < aboveLimit; i++) {
-                promises.push(this.destroyBrowser(unused[i].browser));
-            }
+            toDestroy.push(...unused.splice(0, Math.min(aboveLimit, unused.length)));
         }
 
-        return Promise.all(promises);
+        for (let ref of unused) {
+            if (ref?.unusedSince == null || (ref.unusedSince + this.browserUnusedTimeout) >= Date.now()) {
+                break;
+            }
+            toDestroy.push(ref);
+        }
+        console.debug('[HandlesBrowsers] GC checking...');
+
+        return Promise.all(toDestroy.map(ref => this.destroyRef(ref)));
     }
 
     allUnusedBrowsers(): BrowserRef[] {
