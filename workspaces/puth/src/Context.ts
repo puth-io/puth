@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, { Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest } from 'puppeteer-core';
+import {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest, BrowserContext, TargetCloseError, CDPSession} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -7,7 +7,7 @@ import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
-import path from 'node:path';
+import path, { join } from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import { Return } from './context/Return';
@@ -15,7 +15,9 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
-import { sleep } from './Utils';
+import { BrowserRef } from '@puth/puth/src/HandlesBrowsers';
+import {Protocol} from 'devtools-protocol';
+import { parseString } from 'typedoc/dist/lib/converter/comments/declarationReference';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -27,7 +29,7 @@ type ContextEvents = {
     'destroying',
     'browser:connected': {browser: PPTRBrowser},
     'browser:disconnected': {browser: PPTRBrowser},
-    'page:created': {browser: PPTRBrowser, page: Page},
+    'page:created': {browser?: PPTRBrowser, browserContext: BrowserContext, page: Page},
     'page:closed': {browser: PPTRBrowser, page: Page},
     'call:apply:before': {command: ICommand|undefined, page: Page},
     'call:apply:after': {command: ICommand|undefined, page: Page},
@@ -57,6 +59,13 @@ type ContextCaches = {
     dialog: Map<Page, Dialog>;
 }
 
+type PsuriResponseHandler = (
+    error: undefined|{reason: string},
+    status: number,
+    data: string,
+    headers: Protocol.Fetch.HeaderEntry[],
+) => Promise<void>;
+
 /**
  * @codegen
  */
@@ -73,7 +82,6 @@ class Context extends Generic {
     private eventFunctions: [any, string, () => {}][] = [];
     private cleanupCallbacks: any = [];
 
-    public browsers: PPTRBrowser[] = [];
     public caches: ContextCaches = {
         snapshot: {
             lastHtml: '',
@@ -97,6 +105,8 @@ class Context extends Generic {
         resolve: (value: any) => void;
         reject: (reason?: any) => void;
     };
+
+    public browsers: {ref: BrowserRef, context: BrowserContext}[] = [];
 
     constructor(puth: Puth, options: any = {}) {
         super();
@@ -131,37 +141,41 @@ class Context extends Generic {
         }
     }
 
-    public async connectBrowser(options): Promise<PPTRBrowser> {
-        return await puppeteer.connect(options)
-            .then(browser => this.handleNewBrowser(browser));
-    }
-    public async createBrowser(options: any = {}): Promise<PPTRBrowser> {
+    // public async connectBrowser(options): Promise<PPTRBrowser> {
+    //     return await puppeteer.connect(options)
+    //         .then(browser => this.handleNewBrowser(browser));
+    // }
+
+    public async createBrowserRef(options: any = {}): Promise<{ref: BrowserRef, context: BrowserContext}> {
         if (! options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
             options.executablePath = this.puth.getInstalledBrowser().executablePath;
         }
 
         return await this.puth.browserHandler.launch(options)
-            .then(browser => this.handleNewBrowser(browser));
+            .then(rv => {
+                this.browsers.push(rv);
+                //         .then(() => this.emitter.emit('browser:connected', {browser}))
+                return this.trackBrowser(rv.context).then(_ => rv)
+            });
     }
 
-    private async handleNewBrowser(browser: PPTRBrowser) {
-        this.browsers.push(browser);
-
-        return await this.trackBrowser(browser)
-            .then(() => this.emitter.emit('browser:connected', {browser}))
-            .then(() => browser);
+    public async createBrowser(options: any = {}): Promise<BrowserContext> {
+        return await this.createBrowserRef(options).then(({ref, context}) => context);
     }
 
     // @codegen
     public async createBrowserShim(options = {}): Promise<Browser> {
-        let browser = await this.createBrowser(options);
-        return new Browser(this, (await browser.pages())[0]);
+        return await this.createBrowserRef(options)
+            .then(({ref, context}) => context.pages()
+                .then(pages => pages.length > 0 ? pages[0] : context.newPage())
+                .then(page => new Browser(this, ref, context, page))
+            );
     }
 
-    // @codegen
-    public async createBrowserShimForPage(page: Page): Promise<Browser> {
-        return new Browser(this, page);
-    }
+    // // @codegen
+    // public async createBrowserShimForPage(page: Page): Promise<Browser> {
+    //     return new Browser(this, page);
+    // }
 
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
@@ -188,52 +202,56 @@ class Context extends Generic {
             page.off(event, func);
         });
 
-        return await Promise.all(this.browsers.map(browser => this.destroyBrowserByBrowser(browser)))
+        return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv.ref, rv.context)))
             .then(() => Promise.all(this.cleanupCallbacks))
             .then(() => true);
     }
 
-    public async destroyBrowserByBrowser(browser) {
-        return await this.puth.browserHandler.destroy(browser)
-            .then(() => this.removeBrowser(browser));
+    // public async destroyBrowserByBrowser(browser) {
+    //     return await browser.close()
+    //         .then(() => this.removeBrowser(browser));
+    // }
+
+    public async destroyBrowserContext(browserRef: BrowserRef, browserContext: BrowserContext) {
+        return this.puth.browserHandler.destroy(browserRef, browserContext);
     }
 
-    private removeBrowser(browser: PPTRBrowser) {
-        this.browsers.splice(
-            this.browsers.findIndex(b => b === browser),
-            1,
-        );
-    }
+    // private removeBrowser(browser: PPTRBrowser) {
+    //     this.browsers.splice(
+    //         this.browsers.findIndex(b => b === browser),
+    //         1,
+    //     );
+    // }
 
     isPageBlockedByDialog(page) {
         return this.caches.dialog.has(page);
     }
 
-    private async trackBrowser(browser: PPTRBrowser) {
-        browser.once('disconnected', () => {
-            this.removeEventListenersFrom(browser);
-            this.emitter.emit('browser:disconnected', {browser});
-            this.browsers = this.browsers.filter(b => b !== browser);
+    private async trackBrowser(browserContext: BrowserContext) {
+        browserContext.once('disconnected', () => {
+            this.removeEventListenersFrom(browserContext);
+            // this.emitter.emit('browser:disconnected', {browser});
+            // this.browsers = this.browsers.filter(b => b !== browser);
         });
 
-        this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
+        this.registerEventListenerOn(browserContext, 'targetcreated', async (target: Target) => {
             // TODO do we need to track more here? like 'browser' or 'background_page'...?
             if (target.type() === 'page') {
                 let page = await target.page();
                 this.trackPage(page);
                 // @ts-ignore
-                this.emitter.emit('page:created', {browser, page});
+                this.emitter.emit('page:created', { browserContext, page});
                 // @ts-ignore
-                page.on('close', _ => this.emitter.emit('page:closed', {browser, page}));
+                page.on('close', _ => this.emitter.emit('page:closed', { browser: browserContext, page}));
             }
         });
 
         // Track default browser page (there is no 'targetcreated' event for page[0])
-        return await browser.pages()
+        return await browserContext.pages()
             .then(async pages => {
                 let page0 = pages[0];
                 await this.trackPage(page0);
-                this.emitter.emit('page:created', {browser, page: page0});
+                this.emitter.emit('page:created', { browserContext, page: page0});
             });
     }
 
@@ -291,12 +309,181 @@ class Context extends Generic {
         });
 
         if (this.options?.supports?.portal != null) {
-            await page.setRequestInterception(true);
-            this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
-                // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
-                return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
+            // await page.setRequestInterception(true);
+            // this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+            //     // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
+            //     return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
+            // });
+
+            let cdp = await this.cdps(page);
+            cdp.on('Fetch.requestPaused', event => {
+                if (!this.portalShouldHandleRequest(event)) {
+                    return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
+                }
+
+                this.puth.logger.debug('[Portal][Intercepted] ' + event.request.url);
+                let psuri = this.portalSafeUniqueRequestId();
+                this.psuriCache.set(psuri, { page });
+
+                if (event.request.hasPostData) {
+                    if (event.request.postData === undefined) {
+                        this.puth.logger.debug('[Portal][Detour too large] ' + event.request.url);
+                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
+                    }
+
+                    let contentType = '';
+                    for (let key of Object.keys(event.request.headers)) {
+                        if (key.toLowerCase() === 'content-type') {
+                            contentType = event.request.headers[key].trim();
+                        }
+                    }
+                    if (contentType.startsWith('multipart/')) {
+                        this.puth.logger.debug('[Portal][Detour multipart] ' + event.request.url);
+                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
+                    }
+                }
+
+                this.setPsuriHandler(
+                    psuri,
+                    // TODO handle portal network error - Fetch.failRequest
+                    async (error, status, data, headers) => cdp.send('Fetch.fulfillRequest', {
+                        requestId: event.requestId,
+                        body: btoa(data),
+                        responseCode: status,
+                        responseHeaders: headers,
+                    }),
+                );
+                this.handlePortalRequest({
+                    psuri,
+                    url: event.request.url,
+                    headers: event.request.headers,
+                    data: btoa(event.request.postData ?? ''),
+                    method: event.request.method.toUpperCase(),
+                });
             });
+            await cdp.send('Fetch.enable');
         }
+    }
+
+    psuriCache: Map<string, {
+        page: Page;
+        handler?: PsuriResponseHandler;
+    }> = new Map();
+
+    public setPsuriHandler(psuri: string, handler: PsuriResponseHandler) {
+        let cache = this.psuriCache.get(psuri);
+        if (cache == null) {
+            throw new Error('Unreachable'); // TODO better error
+        }
+
+        cache.handler = handler;
+        this.psuriCache.set(psuri, cache);
+    }
+
+    public handlePortalRequest(
+        request: {
+            psuri: string;
+            url: string;
+            headers: TODO;
+            data: string;
+            method: string;
+        }
+    ) {
+        this.puth.logger.debug({
+            psuri: request.psuri,
+            url: request.url,
+            headers: request.headers,
+            data: request.data.length,
+        }, '[handlePortalRequest]');
+
+        if (this.lastCallerPromise == null) {
+            this.puth.logger.debug({
+                psuri: request.psuri,
+                url: request.url,
+                headers: request.headers,
+                data: request.data.length,
+            }, 'add portal request to backlog queue');
+            this.portal.queue.backlog.push(request);
+            return;
+        }
+
+        this.portal.queue.active.push(request);
+        this.puth.logger.debug({
+            psuri: request.psuri,
+            url: request.url,
+            headers: request.headers,
+            data: request.data.length,
+        }, 'add portal request to active queue');
+        if (this.portal.queue.active.length === 1) {
+            this.puth.logger.debug('sending portal request while client request active');
+            return this.lastCallerPromise.resolve(
+                this.createServerRequest(this.portal.queue.active[0])
+            );
+        }
+    }
+
+    private portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, cdp: CDPSession) {
+        let headers: Protocol.Fetch.HeaderEntry[] = [];
+        for (let key of Object.keys(request.headers)) {
+            headers.push({name: key, value: request.headers[key]});
+        }
+        headers.push({name: 'puth-portal-context-id', value: this.id});
+        headers.push({name: 'puth-portal-psuri', value: psuri});
+        headers.push({name: 'puth-portal-original-url', value: encodeURI(request.url)});
+
+        let addr = this.puth.http.url;
+        if (addr == undefined) {
+            throw new Error('Unreachable');
+        }
+
+        return cdp.send('Fetch.continueRequest', {
+            requestId,
+            url: join(addr, 'portal/detour'),
+            headers,
+        });
+    }
+
+    portalRequestCounter = 0;
+    private portalSafeUniqueRequestId(): string {
+        this.portalRequestCounter++;
+        return this.portalRequestCounter.toString();
+    }
+
+    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): boolean {
+        let prefixes = this.options?.supports?.portal?.urlPrefixes;
+        if (prefixes == null || !Array.isArray(prefixes)) {
+            return false;
+        }
+
+        let url = request.url;
+        if (['Script', 'Stylesheet', 'Font'].includes(resourceType)
+            || !['Document', 'Other'].includes(resourceType)
+            || url.endsWith('.ico')) {
+            this.puth.logger.debug(`[Portal][Skip ${resourceType}] ${url.substring(0, 80)}`);
+            return false;
+        }
+
+        for (let prefix of prefixes) {
+            if (url.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private pageCDPSessions: Map<Page, WeakRef<CDPSession>> = new Map();
+    private async cdps(page: Page): Promise<CDPSession> {
+        if (this.pageCDPSessions.has(page)) {
+            let found = this.pageCDPSessions.get(page)?.deref();
+            if (found !== undefined) {
+                return Promise.resolve(found);
+            }
+        }
+
+        let session = await page.createCDPSession();
+        this.pageCDPSessions.set(page, new WeakRef<CDPSession>(session));
+        return session;
     }
 
     // @codegen
@@ -423,12 +610,12 @@ class Context extends Generic {
         this._lastActivity = Date.now();
 
         if (!skipQueue && this.portal.queue.backlog.length !== 0) {
-            this.puth.logger.debug(packet, 'offsetting');
+            this.puth.logger.debug('offsetting packet...');
             this.portal.initial.call = packet;
             this.portal.queue.active = this.portal.queue.backlog;
             this.portal.queue.backlog = [];
 
-            return res.send(this.createServerRequest(this.portal.queue.active[0]));
+            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
         }
 
         this.portal.open.response = res;
@@ -465,7 +652,7 @@ class Context extends Generic {
                 }
 
                 // Call extension function and pass object as first parameter
-                return res.send(await this.handleCallApply(
+                return res.resolve(await this.handleCallApply(
                     packet,
                     page,
                     extension,
@@ -484,7 +671,7 @@ class Context extends Generic {
             };
         }
 
-        return res.send(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
+        return res.resolve(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
     }
 
     portal: any = {
@@ -506,92 +693,52 @@ class Context extends Generic {
         },
     }
 
-    public async handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
-        let url = request.url();
-        if (['script', 'stylesheet'].includes(request.resourceType())
-            || !['document', 'other'].includes(request.resourceType())
-            || url.endsWith('.ico')) {
-            this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
-            return request.continue();
-        }
-        
-        let handle = false;
-        for (let prefix of prefixes) {
-            if (url.startsWith(prefix)) {
-                handle = true;
-                url.replace(prefix, '');
-                break;
-            }
-        }
-
-        if (!handle) {
-            this.puth.logger.debug(`[portal] no handle ${request.resourceType()} ${url.substring(0, 80)}`);
-            return request.continue();
-        }
-        
-        let data = request.postData();
-        // this.puth.logger.debug('before');
-        // this.puth.logger.debug(await request.fetchPostData(), 'postData');
-        // this.puth.logger.debug('after');
-        if (data === undefined && request.hasPostData()) {
-            this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
-            data = await request.fetchPostData();
-        }
-
-        let portalRequest = {
-            serialized: {
-                url: request.url(),
-                headers: request.headers(),
-                data: data ?? null,
-                method: request.method(),
-                resourceType: request.resourceType(),
-            },
-            request,
-        };
-
-        this.puth.logger.debug(portalRequest.serialized, '[handlePortalRequest]');
-
-        if (this.lastCallerPromise == null) {
-            this.puth.logger.debug(portalRequest.serialized, 'add portal request to backlog queue');
-            this.portal.queue.backlog.push(portalRequest);
-            return;
-        }
-
-        this.portal.queue.active.push(portalRequest);
-        this.puth.logger.debug(portalRequest.serialized, 'add portal request to active queue');
-        if (this.portal.queue.active.length === 1) {
-            this.puth.logger.debug('sending portal request while client request active');
-            return this.lastCallerPromise.resolve(
-                this.createServerRequest(this.portal.queue.active[0])
-            );
-        }
-    }
-
     public async handlePortalResponse(data, res) {
-        let clone = structuredClone(data);
-        clone.response.body = clone.response.body.length;
-        this.puth.logger.debug(clone, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
-        await current.request.respond(data.response);
+
+        let cache = this.psuriCache.get(current.psuri);
+        if (cache == null) {
+            throw new Error('TODO');
+        }
+        if (cache.handler == null) {
+            throw new Error('TODO');
+        }
+        this.psuriCache.delete(current.psuri);
+
+        let body = atob(data.response.body);
+        this.puth.logger.debug({
+            status: data.response.status,
+            contentType: data.response.contentType,
+            headers: data.response.headers,
+            body: body.length,
+        }, '[handlePortalResponse]');
+
+        let headers: Protocol.Fetch.HeaderEntry[] = [];
+        for (let header of Object.keys(data.response.headers)) {
+            let values = data.response.headers[header];
+            if (!Array.isArray(values)) values =  [values];
+            values.forEach(value => headers.push({name: header, value}));
+        }
+        await cache.handler(undefined, data.response.status, body, headers);
 
         if (this.portal.queue.active.length !== 0) {
-            return res.send(this.createServerRequest(this.portal.queue.active[0]));
+            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
         }
         if (this.portal.waiting.response) {
             let waiting = this.portal.waiting.response;
             this.portal.waiting.response = null;
-            return res.send(waiting);
+            return res.resolve(waiting);
         }
         if (this.portal.waiting.call) {
             this.puth.logger.debug('resetting waiting call')
-            return res.send(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
+            return res.resolve(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
         }
 
         return this.call(this.portal.initial.call, res, true);
     }
 
     public createServerRequest(portalRequest) {
-        return Return.ServerRequest(portalRequest.serialized).serialize();
+        return Return.ServerRequest(portalRequest).serialize();
     }
 
     // TODO Cleanup parameters and maybe unify handling in special object
@@ -612,6 +759,20 @@ class Context extends Generic {
                     // @ts-ignore
                     let returnValue = await Promise.try(func.bind(on, ...parameters))
                         .catch((error) => {
+                            // TODO handle puppeteer errors - should also be used when snapshotting
+                            if (error instanceof TargetCloseError) {
+                                this.puth.logger.error('TargetCloseError');
+                                return;
+                            }
+                            if (error.message.includes('Attempted to use detached Frame')) {
+                                this.puth.logger.error('Attempted to use detached Frame');
+                                return;
+                            }
+                            if (error.message.includes('Execution context was destroyed')) {
+                                this.puth.logger.error('Execution context was destroyed');
+                                return;
+                            }
+
                             // this.puth.logger.debug('handleCallApply throwing');
                             // TODO test if try also catches promise errors without this throw
                             throw error;
@@ -857,8 +1018,7 @@ class Context extends Generic {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);
 
-        await writeFile(tmpFilePath, content);
-
+        await writeFile(tmpFilePath, content, {encoding: 'base64'});
         this.cleanupCallbacks.push(async () => fsPromise.rm(tmpPath, {force: true, recursive: true}));
 
         return tmpFilePath;

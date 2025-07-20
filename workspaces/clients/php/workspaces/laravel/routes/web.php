@@ -20,32 +20,31 @@ Route::get('/', function (Request $request) {
     return view('welcome');
 });
 Route::post('/', function (Request $request) {
-    /*dump($request->header());
-    dump($request->query());
-    dump($request->post());
-    dd($request->input());*/
+    return response()->stream(function() use ($request) {
+        echo json_encode([
+            'input' => $request->input(),
+            'files' => array_map(
+                function($file) {
+                    if (is_array($file)) {
+                        return array_map(fn($f) => [
+                            'name' => $f->getFilename(),
+                            'size' => $f->getSize(),
+                            'content' => base64_encode($f->getContent()),
+                        ], $file);
+                    }
 
-    /*dd($request->file('test2'));
-    dd(array_map(
-        fn(\Illuminate\Http\UploadedFile $file) => [
-            'name' => $file->getFilename(),
-            'size' => $file->getSize(),
-            'content' => $file->getContent(),
-        ],
-        $request->allFiles(),
-    ));*/
-
-    return response()->json([
-        'input' => $request->input(),
-        'files' => array_map(
-            fn(\Illuminate\Http\UploadedFile $file) => [
-                'name' => $file->getFilename(),
-                'size' => $file->getSize(),
-                'content' => $file->getContent(),
-            ],
-            $request->allFiles(),
-        ),
-    ]);
+                    return [
+                        'name' => $file->getFilename(),
+                        'size' => $file->getSize(),
+                        'content' => base64_encode($file->getContent()),
+                    ];
+                },
+                $request->allFiles(),
+            ),
+        ]);
+        ob_flush();
+        flush();
+    });
 });
 Route::post('/debug', function (Request $request) {
     dump($request->header());

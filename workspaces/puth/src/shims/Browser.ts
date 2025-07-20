@@ -1,4 +1,4 @@
-import { Browser as PPTRBrowser, Dialog, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
+import { Browser as PPTRBrowser, BrowserContext, Dialog, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -6,6 +6,7 @@ import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
 import {clearTimeout} from 'node:timers';
 import { retryFor } from '../Utils';
+import { BrowserRef } from '../HandlesBrowsers';
 
 // TODO
 // @gen-class ElementHandle
@@ -77,7 +78,8 @@ export class UnsupportedException extends Error {}
 
 export class Browser {
     private readonly context: Context;
-    private readonly browser: PPTRBrowser;
+    private readonly browserRef: BrowserRef;
+    private readonly browserContext: BrowserContext;
     public readonly site: Page | Frame;
 
     private readonly self: () => this;
@@ -95,18 +97,21 @@ export class Browser {
 
     private dialogTypeCache: string = '';
 
-    constructor(context: Context, page: Page | Frame) {
+    constructor(context: Context, browserRef: BrowserRef, browserContext: BrowserContext, site: Page | Frame) {
         this.context = context;
-        this.browser = page instanceof Page ? page.browser() : page.page().browser();
-        this.site = page;
+        this.browserRef = browserRef;
+        this.browserContext = browserContext;
+
+        // this.browser = page instanceof Page ? page.browser() : page.page().browser();
+        this.site = site;
 
         this.self = (): this => this;
         this.selfWithMeta = (meta) => (): Return<this> => Return.Self().withMeta(meta) as Return<this>;
         this.selfWithAsserts = (count = 1) => this.selfWithMeta({assertions: count});
     }
 
-    public clone(): Browser {
-        return new Browser(this.context, this.site);
+    public clone(site?: Page | Frame): Browser {
+        return new Browser(this.context, this.browserRef, this.browserContext, site ?? this.site);
     }
 
     public setResolverPrefix(prefix: string): this {
@@ -126,7 +131,7 @@ export class Browser {
                 throw new ExpectationFailed(`Element [${selector} has no frame attached (is this an iframe?).]`);
             }
 
-            return new Browser(this.context, frame);
+            return this.clone(frame);
         })
     }
 
@@ -175,15 +180,18 @@ export class Browser {
     }
 
     public maximize(): Promise<this> {
-        return maximize(this.browser).then(this.self);
+        // TODO give warning - add to documentation that multiple tests could use the same Browser
+        return maximize(this.browserRef.browser).then(this.self);
     }
 
     public bounds(): Promise<object> {
-        return getWindowBounds(this.browser);
+        // TODO give warning - add to documentation that multiple tests could use the same Browser
+        return getWindowBounds(this.browserRef.browser);
     }
 
     public setBounds(bounds: any): Promise<this> {
-        return setWindowBounds(this.browser, bounds).then(this.self);
+        // TODO give warning - add to documentation that multiple tests could use the same Browser
+        return setWindowBounds(this.browserRef.browser, bounds).then(this.self);
     }
 
     public resize(width, height): Promise<this> {
@@ -200,7 +208,8 @@ export class Browser {
     }
 
     public move(x: number, y: number): Promise<this> {
-        return move(this.browser, x, y).then(this.self);
+        // TODO give warning - add to documentation that multiple tests could use the same Browser
+        return move(this.browserRef.browser, x, y).then(this.self);
     }
 
     public scrollIntoView(selector: string): Promise<this> {
@@ -223,7 +232,7 @@ export class Browser {
     }
 
     public quit(): Promise<void> {
-        return this.context.destroyBrowserByBrowser(this.browser);
+        return this.context.destroyBrowserContext(this.browserRef, this.browserContext) as TODO as Promise<void>;
     }
 
     public url(): string {
