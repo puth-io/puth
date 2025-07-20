@@ -262,7 +262,7 @@ trait InteractsWithElements
         
         $tmpFilePaths = [];
         foreach ($paths as $path) {
-            $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
+            $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), base64_encode(file_get_contents($path)));
         }
         
         $element->uploadFile(...$tmpFilePaths);

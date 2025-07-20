@@ -1,4 +1,5 @@
 import {Encoder as BaseEncoder, Decoder as BaseDecoder, ExtensionCodec} from '@msgpack/msgpack';
+import { Peer, AdapterInternal } from 'crossws';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -20,13 +21,13 @@ export const Encoder = new BaseEncoder(PUTH_EXTENSION_CODEC);
 export const Decoder = new BaseDecoder(PUTH_EXTENSION_CODEC);
 
 class WebsocketConnectionHandler {
-    sockets: WebSocket[] = [];
+    sockets: Peer[] = [];
     
-    push(socket: WebSocket) {
+    push(socket: Peer) {
         this.sockets.push(socket);
     }
     
-    pop(socket: WebSocket) {
+    pop(socket: Peer) {
         let index = this.sockets.indexOf(socket);
         this.sockets.splice(index, 1);
     }

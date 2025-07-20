@@ -230,45 +230,23 @@ class RemoteObject
 
     private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
     {
-//        dump('handlePortalRequest', $generic);
-
         $this->log('server-request');
         $response = ['type' => 'PortalResponse'];
 
-        if ($this->context->testCase !== null
-            && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
-            && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
-
-            $im = $this->context->testCase->handlePortalRequest($generic->value->request);
-            // dd('handlePortalRequest', $test);
-
-            /*$url = $generic->value->request->url;
-            $headers = (array)$generic->value->request->headers;
-            $data = (array)$generic->value->request->data;
-
-            $im = match ($generic->value->request->method) {
-                'GET' => $this->context->testCase->get($url, $headers),
-                'HEAD' => $this->context->testCase->head($url, $headers),
-                'OPTIONS' => $this->context->testCase->options($url, $data, $headers),
-                'POST' => $this->context->testCase->post($url, $data, $headers),
-                'PATCH' => $this->context->testCase->patch($url, $data, $headers),
-                'PUT' => $this->context->testCase->put($url, $data, $headers),
-                'DELETE' => $this->context->testCase->delete($url, $data, $headers),
-            };*/
-
-            $response = [
-                'body' => $im->content(),
-                'contentType' => $im->headers->get('Content-Type'),
-                'headers' => $im->headers->all(),
-                'status' => $im->status(),
-            ];
+        try {
+            if ($this->context->testCase !== null
+                && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
+                && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
+                $response = $this->context->testCase->handlePortalRequest($generic->value->request);
+            }
+        } catch (\Throwable $throwable) {
+            print_r($throwable);
+            dd($throwable);
         }
-        //dump('handlePortalRequest $response', $response);
 
         $this->log('server-request response');
-        // $this->log(var_export($response));
 
-        $portalResponse = $this->context->client->patch('context/portal/response', ['json' => [
+        $portalResponse = $this->context->client->patch('portal/response', ['json' => [
             'context' => $this->context->serialize(),
             'response' => $response,
         ]]);

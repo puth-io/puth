@@ -4,6 +4,8 @@ namespace Puth\Laravel;
 
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Testing\TestResponseAssert as PHPUnit;
 use PHPUnit\Runner\Version;
 use Puth\Context;
 use Puth\Laravel\Concerns\ProvidesBrowser;
@@ -12,6 +14,8 @@ use Puth\RemoteObject;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 abstract class TestCase extends FoundationTestCase
 {
@@ -156,16 +160,6 @@ abstract class TestCase extends FoundationTestCase
     // portal request handling
     public function handlePortalRequest(object $portalRequest)
     {
-        //dd($portalRequest);
-        /*$portalRequest = (object) [
-            'url' => '/',
-            'method' => 'post',
-            'headers' => [
-                'content-type' => 'application/x-www-form-urlencoded',
-            ],
-            'data' => 'username=test&path=1234',
-        ];*/
-
         $kernel = $this->app->make(HttpKernel::class);
         $request = $this->parsePortalRequest($portalRequest);
         $response = $kernel->handle(
@@ -173,7 +167,22 @@ abstract class TestCase extends FoundationTestCase
         );
         $kernel->terminate($request, $response);
 
-        return $this->createTestResponse($response, $request);
+        $testResponse = $this->createTestResponse($response, $request);
+
+        $body = '';
+        if ($testResponse->baseResponse instanceof StreamedResponse
+            || $testResponse->baseResponse instanceof StreamedJsonResponse) {
+            $body = $testResponse->streamedContent();
+        } else {
+            $body = $testResponse->content();
+        }
+
+        return [
+            'body' => base64_encode($body),
+            'contentType' => $testResponse->headers->get('Content-Type'),
+            'headers' => $testResponse->headers->all(),
+            'status' => $testResponse->getStatusCode(),
+        ];
     }
 
     public function parsePortalRequest(object $portalRequest): Request
@@ -203,7 +212,7 @@ abstract class TestCase extends FoundationTestCase
             $cookies, // COOKIE
             [], // FILES
             $server,
-            $portalRequest->data,
+            base64_decode($portalRequest->data),
         );
 
         static::populateParametersFromBody($request);
@@ -275,14 +284,23 @@ abstract class TestCase extends FoundationTestCase
 
             $name = $matches[1];
             $filename = $matches[2] ?? null;
-            $content = rtrim($content, "\r\n");
+            if (str_ends_with($content, "\r\n")) {
+                $content = substr($content, 0, -2);
+            }
 
             if ($filename) {
                 $tmpPath = tempnam(sys_get_temp_dir(), 'upload_');
                 file_put_contents($tmpPath, $content);
                 $mime = $headers['content-type'] ?? 'application/octet-stream';
                 $file = new UploadedFile($tmpPath, $filename, $mime, null, true);
-                $result['files'][$name] = $file;
+
+                if (str_ends_with($name, '[]')) {
+                    $short = mb_substr($name, 0, -2);
+                    if (!array_key_exists($short, $result['files'])) $result['files'][$short] = [];
+                    $result['files'][$short][] = $file;
+                } else {
+                    $result['files'][$name] = $file;
+                }
             } else {
                 $result['fields'][$name] = $content;
             }
