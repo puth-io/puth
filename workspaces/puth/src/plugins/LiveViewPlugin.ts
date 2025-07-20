@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import {Browser, Page} from 'puppeteer-core';
+import { Browser, BrowserContext, Page } from 'puppeteer-core';
 import Context from "../Context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
 import Puth from "../";
@@ -48,11 +48,15 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     }
     
     private async handleContextCreated(context: Context) {
-        await Promise.all([context.browsers.map(async browser => {
-            return Promise.all([(await browser.pages()).map(page => {
-                return this.attachScreencastEvents({context, browser, page} as TODO);
-            })]);
-        })]);
+        await Promise.all([context.browsers.flatMap(
+            async rv => rv.ref.browserContexts.flatMap(
+                async browser => {
+                    return Promise.all([(await browser.pages()).map(page => {
+                        return this.attachScreencastEvents({context, browser, page} as TODO);
+                    })]);
+                },
+            ),
+        )]);
         
         const pageCreated = event => this.attachScreencastEvents({context, ...event});
         context.on('page:created', pageCreated);
@@ -69,11 +73,12 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     private async attachScreencastEvents({context, page, browser}: {
         context: Context,
         page: Page,
-        browser: Browser
+        browser: Browser|undefined,
+        browserContext: BrowserContext,
     }) {
         let pageIdx = this.pages.push(page);
-        let browserIdx = context.browsers.indexOf(browser as TODO);
-        
+        // let browserIdx = context.browsers.indexOf(browser as TODO);
+
         const client = await page.createCDPSession();
         const handler = async ({data, metadata, sessionId}) => {
             const serializedContext = context.serialize();
@@ -112,7 +117,8 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
                     viewport,
                 },
                 browser: {
-                    index: browserIdx,
+                    // index: browserIdx,
+                    index: 0,
                 },
                 frame,
             });

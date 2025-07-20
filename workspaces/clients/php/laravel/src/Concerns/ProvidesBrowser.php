@@ -119,25 +119,15 @@ trait ProvidesBrowser
      */
     protected function newBrowser()
     {
-//        $browser = $this->context->createBrowser(array_merge([
-//            'defaultViewport' => [
-//                'width' => 1280,
-//                'height' => 720,
-//            ],
-//            'headless' => $this->headless,
-//        ], $this->getLaunchOptions()));
-//        $page = $browser->pages()[0];
-//        $remote = $this->context->createBrowserShimForPage($page);
-
-        $remote = $this->context->createBrowserShim(array_merge([
-            'defaultViewport' => [
-                'width' => 1280,
-                'height' => 720,
-            ],
-            'headless' => $this->headless,
-        ], $this->getLaunchOptions()));
-
-        return new Browser($remote);
+        return new Browser(
+            $this->context->createBrowserShim(array_merge([
+                'defaultViewport' => [
+                    'width' => 1280,
+                    'height' => 720,
+                ],
+                'headless' => $this->headless,
+            ], $this->getLaunchOptions()))
+        );
     }
 
     /**

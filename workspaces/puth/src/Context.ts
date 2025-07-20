@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import puppeteer, { Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest } from 'puppeteer-core';
+import { Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest, BrowserContext, TargetCloseError } from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -15,7 +15,7 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
-import { sleep } from './Utils';
+import { BrowserRef } from '@puth/puth/src/HandlesBrowsers';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -27,7 +27,7 @@ type ContextEvents = {
     'destroying',
     'browser:connected': {browser: PPTRBrowser},
     'browser:disconnected': {browser: PPTRBrowser},
-    'page:created': {browser: PPTRBrowser, page: Page},
+    'page:created': {browser?: PPTRBrowser, browserContext: BrowserContext, page: Page},
     'page:closed': {browser: PPTRBrowser, page: Page},
     'call:apply:before': {command: ICommand|undefined, page: Page},
     'call:apply:after': {command: ICommand|undefined, page: Page},
@@ -73,7 +73,6 @@ class Context extends Generic {
     private eventFunctions: [any, string, () => {}][] = [];
     private cleanupCallbacks: any = [];
 
-    public browsers: PPTRBrowser[] = [];
     public caches: ContextCaches = {
         snapshot: {
             lastHtml: '',
@@ -97,6 +96,8 @@ class Context extends Generic {
         resolve: (value: any) => void;
         reject: (reason?: any) => void;
     };
+
+    public browsers: {ref: BrowserRef, context: BrowserContext}[] = [];
 
     constructor(puth: Puth, options: any = {}) {
         super();
@@ -131,37 +132,41 @@ class Context extends Generic {
         }
     }
 
-    public async connectBrowser(options): Promise<PPTRBrowser> {
-        return await puppeteer.connect(options)
-            .then(browser => this.handleNewBrowser(browser));
-    }
-    public async createBrowser(options: any = {}): Promise<PPTRBrowser> {
+    // public async connectBrowser(options): Promise<PPTRBrowser> {
+    //     return await puppeteer.connect(options)
+    //         .then(browser => this.handleNewBrowser(browser));
+    // }
+
+    public async createBrowserRef(options: any = {}): Promise<{ref: BrowserRef, context: BrowserContext}> {
         if (! options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
             options.executablePath = this.puth.getInstalledBrowser().executablePath;
         }
 
         return await this.puth.browserHandler.launch(options)
-            .then(browser => this.handleNewBrowser(browser));
+            .then(rv => {
+                this.browsers.push(rv);
+                //         .then(() => this.emitter.emit('browser:connected', {browser}))
+                return this.trackBrowser(rv.context).then(_ => rv)
+            });
     }
 
-    private async handleNewBrowser(browser: PPTRBrowser) {
-        this.browsers.push(browser);
-
-        return await this.trackBrowser(browser)
-            .then(() => this.emitter.emit('browser:connected', {browser}))
-            .then(() => browser);
+    public async createBrowser(options: any = {}): Promise<BrowserContext> {
+        return await this.createBrowserRef(options).then(({ref, context}) => context);
     }
 
     // @codegen
     public async createBrowserShim(options = {}): Promise<Browser> {
-        let browser = await this.createBrowser(options);
-        return new Browser(this, (await browser.pages())[0]);
+        return await this.createBrowserRef(options)
+            .then(({ref, context}) => context.pages()
+                .then(pages => pages.length > 0 ? pages[0] : context.newPage())
+                .then(page => new Browser(this, ref, context, page))
+            );
     }
 
-    // @codegen
-    public async createBrowserShimForPage(page: Page): Promise<Browser> {
-        return new Browser(this, page);
-    }
+    // // @codegen
+    // public async createBrowserShimForPage(page: Page): Promise<Browser> {
+    //     return new Browser(this, page);
+    // }
 
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
@@ -188,52 +193,56 @@ class Context extends Generic {
             page.off(event, func);
         });
 
-        return await Promise.all(this.browsers.map(browser => this.destroyBrowserByBrowser(browser)))
+        return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv.ref, rv.context)))
             .then(() => Promise.all(this.cleanupCallbacks))
             .then(() => true);
     }
 
-    public async destroyBrowserByBrowser(browser) {
-        return await this.puth.browserHandler.destroy(browser)
-            .then(() => this.removeBrowser(browser));
+    // public async destroyBrowserByBrowser(browser) {
+    //     return await browser.close()
+    //         .then(() => this.removeBrowser(browser));
+    // }
+
+    public async destroyBrowserContext(browserRef: BrowserRef, browserContext: BrowserContext) {
+        return this.puth.browserHandler.destroy(browserRef, browserContext);
     }
 
-    private removeBrowser(browser: PPTRBrowser) {
-        this.browsers.splice(
-            this.browsers.findIndex(b => b === browser),
-            1,
-        );
-    }
+    // private removeBrowser(browser: PPTRBrowser) {
+    //     this.browsers.splice(
+    //         this.browsers.findIndex(b => b === browser),
+    //         1,
+    //     );
+    // }
 
     isPageBlockedByDialog(page) {
         return this.caches.dialog.has(page);
     }
 
-    private async trackBrowser(browser: PPTRBrowser) {
-        browser.once('disconnected', () => {
-            this.removeEventListenersFrom(browser);
-            this.emitter.emit('browser:disconnected', {browser});
-            this.browsers = this.browsers.filter(b => b !== browser);
+    private async trackBrowser(browserContext: BrowserContext) {
+        browserContext.once('disconnected', () => {
+            this.removeEventListenersFrom(browserContext);
+            // this.emitter.emit('browser:disconnected', {browser});
+            // this.browsers = this.browsers.filter(b => b !== browser);
         });
 
-        this.registerEventListenerOn(browser, 'targetcreated', async (target: Target) => {
+        this.registerEventListenerOn(browserContext, 'targetcreated', async (target: Target) => {
             // TODO do we need to track more here? like 'browser' or 'background_page'...?
             if (target.type() === 'page') {
                 let page = await target.page();
                 this.trackPage(page);
                 // @ts-ignore
-                this.emitter.emit('page:created', {browser, page});
+                this.emitter.emit('page:created', { browserContext, page});
                 // @ts-ignore
-                page.on('close', _ => this.emitter.emit('page:closed', {browser, page}));
+                page.on('close', _ => this.emitter.emit('page:closed', { browser: browserContext, page}));
             }
         });
 
         // Track default browser page (there is no 'targetcreated' event for page[0])
-        return await browser.pages()
+        return await browserContext.pages()
             .then(async pages => {
                 let page0 = pages[0];
                 await this.trackPage(page0);
-                this.emitter.emit('page:created', {browser, page: page0});
+                this.emitter.emit('page:created', { browserContext, page: page0});
             });
     }
 
@@ -514,7 +523,7 @@ class Context extends Generic {
             this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
             return request.continue();
         }
-        
+
         let handle = false;
         for (let prefix of prefixes) {
             if (url.startsWith(prefix)) {
@@ -528,7 +537,7 @@ class Context extends Generic {
             this.puth.logger.debug(`[portal] no handle ${request.resourceType()} ${url.substring(0, 80)}`);
             return request.continue();
         }
-        
+
         let data = request.postData();
         // this.puth.logger.debug('before');
         // this.puth.logger.debug(await request.fetchPostData(), 'postData');
@@ -612,6 +621,19 @@ class Context extends Generic {
                     // @ts-ignore
                     let returnValue = await Promise.try(func.bind(on, ...parameters))
                         .catch((error) => {
+                            if (error instanceof TargetCloseError) {
+                                this.puth.logger.error('TargetCloseError');
+                                return;
+                            }
+                            if (error.message.includes('Attempted to use detached Frame')) {
+                                this.puth.logger.error('Attempted to use detached Frame');
+                                return;
+                            }
+                            if (error.message.includes('Execution context was destroyed')) {
+                                this.puth.logger.error('Execution context was destroyed');
+                                return;
+                            }
+
                             // this.puth.logger.debug('handleCallApply throwing');
                             // TODO test if try also catches promise errors without this throw
                             throw error;
