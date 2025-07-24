@@ -12,6 +12,7 @@ import { HandlesBrowsers, DefaultBrowserHandler } from './HandlesBrowsers';
 import mitt, { Emitter, Handler, WildcardHandler } from 'mitt';
 import { Logger } from 'pino';
 import Snapshots from './Snapshots';
+import { Protocol } from 'devtools-protocol';
 
 declare global {
     type TODO = any;
@@ -252,20 +253,11 @@ export default class Puth {
                 WebsocketConnections.push(socket);
             });
 
-            // Perform action on context
-            fastify.all('/detour*', async (request, reply) => {
-                console.log(
-                    request.params['*'],
-                    request.headers,
-                    request.url,
-                );
-
-                let cid = request.headers['puth-portal-context-id'];
-                if (Array.isArray(cid)) cid = cid[0];
+            // implement rawBody instead of setting bodyLimit: 1
+            fastify.all('/detour*', {bodyLimit: 1}, async (request, reply) => {
+                let cid = request.headers['puth-portal-context-id'] as string|undefined;
                 if (cid == null) throw new Error('Unreachable'); // TODO better error
-
-                let psuri = request.headers['puth-portal-psuri'];
-                if (Array.isArray(psuri)) psuri = psuri[0];
+                let psuri = request.headers['puth-portal-psuri'] as string|undefined;
                 if (psuri == null) throw new Error('Unreachable'); // TODO better error
 
                 let context = this.contexts[cid];
@@ -280,13 +272,14 @@ export default class Puth {
                             resolve(data);
                         },
                     );
+                    context.handlePortalRequestNew({
+                        psuri,
+                        url: request.params?.['*'] ?? '',
+                        headers: request.headers as TODO as Protocol.Network.Headers,
+                        data: request.body as string|undefined,
+                        method: request.method,
+                    });
                 }));
-
-
-
-                console.log({ context });
-
-                return reply.send('');
             });
 
             // fastify.post('/debug', async function (req, reply) {
