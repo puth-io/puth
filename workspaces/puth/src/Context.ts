@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import { Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest, BrowserContext, TargetCloseError } from 'puppeteer-core';
+import {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest, BrowserContext, TargetCloseError, CDPSession} from 'puppeteer-core';
 import Generic from './Generic';
 import Snapshots from './Snapshots';
 import * as Utils from './Utils';
@@ -16,6 +16,8 @@ import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
 import { BrowserRef } from '@puth/puth/src/HandlesBrowsers';
+import {Protocol} from 'devtools-protocol';
+import { parseString } from 'typedoc/dist/lib/converter/comments/declarationReference';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -56,6 +58,13 @@ type ContextCaches = {
     };
     dialog: Map<Page, Dialog>;
 }
+
+type PsuriResponseHandler = (
+    error: undefined|{reason: string},
+    status: number,
+    data: string,
+    headers: Protocol.Fetch.HeaderEntry[],
+) => Promise<void>;
 
 /**
  * @codegen
@@ -300,12 +309,164 @@ class Context extends Generic {
         });
 
         if (this.options?.supports?.portal != null) {
-            await page.setRequestInterception(true);
-            this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
-                // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
-                return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
+            // await page.setRequestInterception(true);
+            // this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+            //     // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
+            //     return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
+            // });
+
+            let cdp = await this.cdps(page);
+            cdp.on('Fetch.requestPaused', event => {
+                console.debug('Fetch.requestPaused', event);
+                if (!this.portalShouldHandleRequest(event)) {
+                    return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
+                }
+
+                let psuri = this.portalSafeUniqueRequestId();
+                this.psuriCache.set(psuri, { page });
+
+                if (event.request.hasPostData) {
+                    if (event.request.postData === undefined) {
+                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
+                    }
+
+                    let contentType = '';
+                    for (let key of Object.keys(event.request.headers)) {
+                        if (key.toLowerCase() === 'content-type') {
+                            contentType = event.request.headers[key].trim();
+                        }
+                    }
+                    if (contentType.startsWith('multipart/')) {
+                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
+                    }
+                }
+
+                this.setPsuriHandler(
+                    psuri,
+                    // TODO implement Fetch.failRequest when error set
+                    async (error, status, data, headers) => cdp.send('Fetch.fulfillRequest', {
+                        requestId: event.requestId,
+                        body: btoa(data),
+                        responseCode: status,
+                        responseHeaders: headers,
+                    }),
+                );
+                this.handlePortalRequestNew({
+                    psuri,
+                    url: event.request.url + (event.request.urlFragment ?? ''),
+                    headers: event.request.headers,
+                    data: event.request.hasPostData ? event.request.postData : undefined,
+                    method: event.request.method.toUpperCase(),
+                });
             });
+            await cdp.send('Fetch.enable');
         }
+    }
+
+    psuriCache: Map<string, {
+        page: Page;
+        handler?: PsuriResponseHandler;
+    }> = new Map();
+
+    public setPsuriHandler(psuri: string, handler: PsuriResponseHandler) {
+        let cache = this.psuriCache.get(psuri);
+        if (cache == null) {
+            throw new Error('Unreachable'); // TODO better error
+        }
+
+        cache.handler = handler;
+        this.psuriCache.set(psuri, cache);
+    }
+
+    public handlePortalRequestNew(
+        request: {
+            psuri: string;
+            url: string;
+            headers: Protocol.Network.Headers;
+            data: string|undefined;
+            method: string;
+        }
+    ) {
+        this.puth.logger.debug(request, '[handlePortalRequest]');
+
+        if (this.lastCallerPromise == null) {
+            this.puth.logger.debug(request, 'add portal request to backlog queue');
+            this.portal.queue.backlog.push(request);
+            return;
+        }
+
+        this.portal.queue.active.push(request);
+        this.puth.logger.debug(request, 'add portal request to active queue');
+        if (this.portal.queue.active.length === 1) {
+            this.puth.logger.debug('sending portal request while client request active');
+            return this.lastCallerPromise.resolve(
+                this.createServerRequest(this.portal.queue.active[0])
+            );
+        }
+    }
+
+    private portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, cdp: CDPSession) {
+        let headers: Protocol.Fetch.HeaderEntry[] = [];
+        for (let key of Object.keys(request.headers)) {
+            headers.push({name: key, value: request.headers[key]});
+        }
+        headers.push({name: 'puth-portal-context-id', value: this.id});
+        headers.push({name: 'puth-portal-request-id', value: psuri});
+
+        return cdp.send('Fetch.continueRequest', {
+            requestId,
+            url: 'http://127.0.0.1/',
+            headers,
+        });
+    }
+
+    portalRequestCounter = 0;
+    private portalSafeUniqueRequestId(): string {
+        this.portalRequestCounter++;
+        return this.portalRequestCounter.toString();
+    }
+
+    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): boolean {
+        console.log('portalShouldHandleRequest', request.url);
+        let prefixes = this.options?.supports?.portal?.urlPrefixes;
+        if (prefixes == null || !Array.isArray(prefixes)) {
+            return false;
+        }
+
+        console.log(resourceType);
+
+        let url = request.url;
+        if (['Script', 'Stylesheet', 'Font'].includes(resourceType)
+            || !['Document', 'Other'].includes(resourceType)
+            || url.endsWith('.ico')) {
+            console.log('portalShouldHandleRequest 2', request.url);
+            // this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
+            return false;
+        }
+
+        for (let prefix of prefixes) {
+            if (url.startsWith(prefix)) {
+                console.log('portalShouldHandleRequest true', request.url);
+                return true;
+            }
+        }
+        console.log('portalShouldHandleRequest 3', request.url);
+
+        return false;
+    }
+
+    private pageCDPSessions: Map<Page, WeakRef<CDPSession>> = new Map();
+    private async cdps(page: Page): Promise<CDPSession> {
+        if (this.pageCDPSessions.has(page)) {
+            let found = this.pageCDPSessions.get(page)?.deref();
+            if (found !== undefined) {
+                return Promise.resolve(found);
+            }
+        }
+
+        let session = await page.createCDPSession();
+        this.pageCDPSessions.set(page, new WeakRef<CDPSession>(session));
+        return session;
     }
 
     // @codegen
@@ -544,7 +705,9 @@ class Context extends Generic {
         // this.puth.logger.debug('after');
         if (data === undefined && request.hasPostData()) {
             this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
-            data = await request.fetchPostData();
+            // data = await request.fetchPostData();
+
+            // request.initiator().
         }
 
         let portalRequest = {

@@ -22,7 +22,7 @@ class PortalTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
-                <form action="http://127.0.0.1:8000/?queryTest=1234" method="post" enctype="multipart/form-data">
+                <form action="http://127.0.0.1:8000/?queryTest=1234#fragmentTest" method="post">
                     <input type="text" name="form-test" value="1234">
                     <button>submit</button>
                 </form>
@@ -38,9 +38,9 @@ class PortalTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
-                <form action="http://127.0.0.1:8000/" method="post">
-                    <input type="file" name="form-single" value="1234">
-                    <input type="file" name="form-multiple" value="1234" multiple>
+                <form action="http://127.0.0.1:8000/?queryTest=1234#fragmentTest" method="post" enctype="multipart/form-data">
+                    <input type="file" name="form-single">
+                    <input type="file" name="form-multiple" multiple>
                     <button>submit</button>
                 </form>
             </body></html>');
