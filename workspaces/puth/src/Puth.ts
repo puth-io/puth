@@ -108,6 +108,31 @@ export default class Puth {
     this.server = Fastify({ loggerInstance: this.logger, disableRequestLogging: true });
     this.setupFastify(allowedOrigins);
     this.server.listen({ port, host: address });
+
+      const server = Fastify();
+      server.register(route => {
+          route.all('*', async (request, reply) => {
+              let data = [
+                  request.headers,
+                  request.url,
+                  request.method,
+                  request.query,
+                  request.params['*'],
+                  request.host,
+              ];
+              console.log('proxy request', data);
+
+              let response = await fetch(request.url, {
+                  method: request.method,
+                  headers: request.headers,
+              })
+              console.log('response', response);
+
+              reply.code(response.status);
+              return reply.send(response.body);
+          })
+      })
+      server.listen({ port: 3000 });
   }
 
   public async contextCreate(options = {}) {

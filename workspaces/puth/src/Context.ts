@@ -538,6 +538,19 @@ class Context extends Generic {
             return request.continue();
         }
 
+
+        let headers = request.headers();
+        headers['x-puth-portal-request'] = request.initiator()?.requestId ?? '';
+        return request.continue({headers});
+
+        /*console.debug('proxying request', url);
+        await request.continue({
+            url: 'http://127.0.0.1:7345/context/proxy/test/test',
+        })
+        console.debug('finished proxied request');*/
+
+        // return;
+
         let data = request.postData();
         // this.puth.logger.debug('before');
         // this.puth.logger.debug(await request.fetchPostData(), 'postData');

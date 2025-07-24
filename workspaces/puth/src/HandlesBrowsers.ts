@@ -18,6 +18,8 @@ export type BrowserRef = {
     unusedSince?: number;
 }
 
+const DEBUG = false;
+
 export class DefaultBrowserHandler implements HandlesBrowsers {
     private refs: BrowserRef[] = [];
 
@@ -36,7 +38,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
 
         let ref = this.findBrowserRefForOptionsHash(optionsHash);
         if (ref) {
-            console.debug('[HandlesBrowsers] reusing ref', ref.optionsHash);
+            DEBUG && console.debug('[HandlesBrowsers] reusing ref', ref.optionsHash);
             ref.destroying = false;
             ref.unusedSince = undefined;
 
@@ -56,6 +58,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             '--no-sandbox',
             '--user-data-dir=' + tmpDir.name,
             ...(options.args ?? []),
+            '--proxy-server=127.0.0.1:3000'
         ];
 
         return puppeteer.launch(options)
@@ -66,9 +69,10 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
                     optionsHash,
                 };
                 this.refs.push(ref);
-                console.debug('[HandlesBrowsers] added ref', ref.optionsHash);
+                DEBUG && console.debug('[HandlesBrowsers] added ref', ref.optionsHash);
                 browser.once('disconnected', () => this.disconnected(browser));
 
+                // return browser.createBrowserContext({proxyServer: 'http://127.0.0.1:7345/context/proxy/test/test/'})
                 return browser.createBrowserContext()
                     .then(async context => {
                         ref.browserContexts.push(context);
@@ -111,7 +115,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             return;
         }
         ref.destroying = true;
-        console.debug('[HandlesBrowsers] destroying ref', ref.optionsHash);
+        DEBUG && console.debug('[HandlesBrowsers] destroying ref', ref.optionsHash);
 
         let idx = this.refs.findIndex(ref => ref === ref);
         this.refs.splice(idx, 1);
@@ -149,7 +153,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             }
             toDestroy.push(ref);
         }
-        console.debug('[HandlesBrowsers] GC checking...');
+        DEBUG && console.debug('[HandlesBrowsers] GC checking...');
 
         return Promise.all(toDestroy.map(ref => this.destroyRef(ref)));
     }
