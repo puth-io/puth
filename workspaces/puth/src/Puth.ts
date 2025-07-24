@@ -256,7 +256,35 @@ export default class Puth {
             fastify.all('/detour*', async (request, reply) => {
                 console.log(
                     request.params['*'],
+                    request.headers,
+                    request.url,
                 );
+
+                let cid = request.headers['puth-portal-context-id'];
+                if (Array.isArray(cid)) cid = cid[0];
+                if (cid == null) throw new Error('Unreachable'); // TODO better error
+
+                let psuri = request.headers['puth-portal-psuri'];
+                if (Array.isArray(psuri)) psuri = psuri[0];
+                if (psuri == null) throw new Error('Unreachable'); // TODO better error
+
+                let context = this.contexts[cid];
+
+                return reply.send(await new Promise((resolve, reject) => {
+                    context.setPsuriHandler(
+                        psuri,
+                        // TODO handle portal network error - Fetch.failRequest
+                        async (error, status, data, headers) => {
+                            reply.code(status);
+                            headers.forEach(header => reply.header(header.name, header.value));
+                            resolve(data);
+                        },
+                    );
+                }));
+
+
+
+                console.log({ context });
 
                 return reply.send('');
             });

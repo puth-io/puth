@@ -346,7 +346,7 @@ class Context extends Generic {
 
                 this.setPsuriHandler(
                     psuri,
-                    // TODO implement Fetch.failRequest when error set
+                    // TODO handle portal network error - Fetch.failRequest
                     async (error, status, data, headers) => cdp.send('Fetch.fulfillRequest', {
                         requestId: event.requestId,
                         body: btoa(data),
