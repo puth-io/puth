@@ -317,16 +317,17 @@ class Context extends Generic {
 
             let cdp = await this.cdps(page);
             cdp.on('Fetch.requestPaused', event => {
-                console.debug('Fetch.requestPaused', event);
                 if (!this.portalShouldHandleRequest(event)) {
                     return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
                 }
 
+                this.puth.logger.debug('[Portal][Intercepted] ' + event.request.url);
                 let psuri = this.portalSafeUniqueRequestId();
                 this.psuriCache.set(psuri, { page });
 
                 if (event.request.hasPostData) {
                     if (event.request.postData === undefined) {
+                        this.puth.logger.debug('[Portal][Detour too large] ' + event.request.url);
                         return this.portalRequestDetourToCatcher(psuri, event, cdp);
                     }
 
@@ -337,6 +338,7 @@ class Context extends Generic {
                         }
                     }
                     if (contentType.startsWith('multipart/')) {
+                        this.puth.logger.debug('[Portal][Detour multipart] ' + event.request.url);
                         return this.portalRequestDetourToCatcher(psuri, event, cdp);
                     }
                 }
@@ -411,7 +413,7 @@ class Context extends Generic {
             headers.push({name: key, value: request.headers[key]});
         }
         headers.push({name: 'puth-portal-context-id', value: this.id});
-        headers.push({name: 'puth-portal-request-id', value: psuri});
+        headers.push({name: 'puth-portal-psuri', value: psuri});
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
@@ -427,30 +429,24 @@ class Context extends Generic {
     }
 
     private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): boolean {
-        console.log('portalShouldHandleRequest', request.url);
         let prefixes = this.options?.supports?.portal?.urlPrefixes;
         if (prefixes == null || !Array.isArray(prefixes)) {
             return false;
         }
 
-        console.log(resourceType);
-
         let url = request.url;
         if (['Script', 'Stylesheet', 'Font'].includes(resourceType)
             || !['Document', 'Other'].includes(resourceType)
             || url.endsWith('.ico')) {
-            console.log('portalShouldHandleRequest 2', request.url);
-            // this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
+            this.puth.logger.debug(`[Portal][Skip ${resourceType}] ${url.substring(0, 80)}`);
             return false;
         }
 
         for (let prefix of prefixes) {
             if (url.startsWith(prefix)) {
-                console.log('portalShouldHandleRequest true', request.url);
                 return true;
             }
         }
-        console.log('portalShouldHandleRequest 3', request.url);
 
         return false;
     }
