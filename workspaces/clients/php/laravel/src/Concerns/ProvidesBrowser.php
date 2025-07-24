@@ -53,7 +53,7 @@ trait ProvidesBrowser
      */
     protected static $afterClassCallbacks = [];
     
-    public bool|string $headless = 'new';
+    public bool $headless = true;
     
     /**
      * Register an "after class" tear down callback.

@@ -68,7 +68,7 @@ trait PuthTestCaseTrait
             ]);
         } else {
             $this->browser = $this->context->createBrowser([
-                'headless' => $this->shouldStartInHeadlessMode() ? 'new' : false,
+                'headless' => $this->shouldStartInHeadlessMode(),
                 'defaultViewport' => $this->defaultViewport,
                 // 'args' => [
                 //     '--window-size=' . $this->defaultViewport['width'] . ',' . $this->defaultViewport['height'],
