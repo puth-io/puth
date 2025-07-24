@@ -317,7 +317,8 @@ class Context extends Generic {
 
             let cdp = await this.cdps(page);
             cdp.on('Fetch.requestPaused', event => {
-                if (!this.portalShouldHandleRequest(event)) {
+                let handle = this.portalShouldHandleRequest(event);
+                if (handle === false) {
                     return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
                 }
 
@@ -328,7 +329,7 @@ class Context extends Generic {
                 if (event.request.hasPostData) {
                     if (event.request.postData === undefined) {
                         this.puth.logger.debug('[Portal][Detour too large] ' + event.request.url);
-                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
+                        return this.portalRequestDetourToCatcher(psuri, handle, event, cdp);
                     }
 
                     let contentType = '';
@@ -339,7 +340,7 @@ class Context extends Generic {
                     }
                     if (contentType.startsWith('multipart/')) {
                         this.puth.logger.debug('[Portal][Detour multipart] ' + event.request.url);
-                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
+                        return this.portalRequestDetourToCatcher(psuri, handle, event, cdp);
                     }
                 }
 
@@ -407,7 +408,7 @@ class Context extends Generic {
         }
     }
 
-    private portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, cdp: CDPSession) {
+    private portalRequestDetourToCatcher(psuri: string, relativeUrl: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, cdp: CDPSession) {
         let headers: Protocol.Fetch.HeaderEntry[] = [];
         for (let key of Object.keys(request.headers)) {
             headers.push({name: key, value: request.headers[key]});
@@ -415,9 +416,16 @@ class Context extends Generic {
         headers.push({name: 'puth-portal-context-id', value: this.id});
         headers.push({name: 'puth-portal-psuri', value: psuri});
 
+        let addr = this.puth.getServer()?.addresses()?.[0];
+        if (addr == undefined) {
+            throw new Error('Unreachable');
+        }
+
+        console.error(path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl));
+
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            url: 'http://127.0.0.1/',
+            url: path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl),
             headers,
         });
     }
@@ -428,7 +436,7 @@ class Context extends Generic {
         return this.portalRequestCounter.toString();
     }
 
-    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): boolean {
+    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): false|string {
         let prefixes = this.options?.supports?.portal?.urlPrefixes;
         if (prefixes == null || !Array.isArray(prefixes)) {
             return false;
@@ -444,7 +452,7 @@ class Context extends Generic {
 
         for (let prefix of prefixes) {
             if (url.startsWith(prefix)) {
-                return true;
+                return url.replace(prefix, '') + (request.urlFragment ?? '');
             }
         }
 
