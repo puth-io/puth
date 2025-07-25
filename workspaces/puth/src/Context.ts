@@ -317,8 +317,7 @@ class Context extends Generic {
 
             let cdp = await this.cdps(page);
             cdp.on('Fetch.requestPaused', event => {
-                let handle = this.portalShouldHandleRequest(event);
-                if (handle === false) {
+                if (!this.portalShouldHandleRequest(event)) {
                     return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
                 }
 
@@ -356,7 +355,7 @@ class Context extends Generic {
                 );
                 this.handlePortalRequestNew({
                     psuri,
-                    url: event.request.url + (event.request.urlFragment ?? ''),
+                    url: event.request.url,
                     headers: event.request.headers,
                     data: event.request.hasPostData ? event.request.postData : undefined,
                     method: event.request.method.toUpperCase(),
@@ -415,6 +414,7 @@ class Context extends Generic {
         }
         headers.push({name: 'puth-portal-context-id', value: this.id});
         headers.push({name: 'puth-portal-psuri', value: psuri});
+        headers.push({name: 'puth-portal-original-url', value: encodeURI(request.url)});
 
         let addr = this.puth.getServer()?.addresses()?.[0];
         if (addr == undefined) {
@@ -425,6 +425,7 @@ class Context extends Generic {
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
+            // url: path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl),
             url: path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl),
             headers,
         });
@@ -436,7 +437,7 @@ class Context extends Generic {
         return this.portalRequestCounter.toString();
     }
 
-    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): false|string {
+    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): boolean {
         let prefixes = this.options?.supports?.portal?.urlPrefixes;
         if (prefixes == null || !Array.isArray(prefixes)) {
             return false;
@@ -452,7 +453,7 @@ class Context extends Generic {
 
         for (let prefix of prefixes) {
             if (url.startsWith(prefix)) {
-                return url.replace(prefix, '') + (request.urlFragment ?? '');
+                return true;
             }
         }
 
@@ -744,9 +745,8 @@ class Context extends Generic {
     }
 
     public async handlePortalResponse(data, res) {
-        let clone = structuredClone(data);
-        clone.response.body = clone.response.body.length;
-        this.puth.logger.debug(clone, 'handlePortalResponse');
+        console.error('response');
+        this.puth.logger.debug(data, 'handlePortalResponse');
         let current = this.portal.queue.active.shift();
         await current.request.respond(data.response);
 
@@ -767,7 +767,7 @@ class Context extends Generic {
     }
 
     public createServerRequest(portalRequest) {
-        return Return.ServerRequest(portalRequest.serialized).serialize();
+        return Return.ServerRequest(portalRequest).serialize();
     }
 
     // TODO Cleanup parameters and maybe unify handling in special object

@@ -230,8 +230,6 @@ class RemoteObject
 
     private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
     {
-//        dump('handlePortalRequest', $generic);
-
         $this->log('server-request');
         $response = ['type' => 'PortalResponse'];
 
@@ -240,21 +238,6 @@ class RemoteObject
             && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
 
             $im = $this->context->testCase->handlePortalRequest($generic->value->request);
-            // dd('handlePortalRequest', $test);
-
-            /*$url = $generic->value->request->url;
-            $headers = (array)$generic->value->request->headers;
-            $data = (array)$generic->value->request->data;
-
-            $im = match ($generic->value->request->method) {
-                'GET' => $this->context->testCase->get($url, $headers),
-                'HEAD' => $this->context->testCase->head($url, $headers),
-                'OPTIONS' => $this->context->testCase->options($url, $data, $headers),
-                'POST' => $this->context->testCase->post($url, $data, $headers),
-                'PATCH' => $this->context->testCase->patch($url, $data, $headers),
-                'PUT' => $this->context->testCase->put($url, $data, $headers),
-                'DELETE' => $this->context->testCase->delete($url, $data, $headers),
-            };*/
 
             $response = [
                 'body' => $im->content(),
@@ -263,10 +246,8 @@ class RemoteObject
                 'status' => $im->status(),
             ];
         }
-        //dump('handlePortalRequest $response', $response);
 
         $this->log('server-request response');
-        // $this->log(var_export($response));
 
         $portalResponse = $this->context->client->patch('context/portal/response', ['json' => [
             'context' => $this->context->serialize(),

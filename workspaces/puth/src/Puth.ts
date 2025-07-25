@@ -254,13 +254,19 @@ export default class Puth {
             });
 
             // implement rawBody instead of setting bodyLimit: 1
-            fastify.all('/detour*', {bodyLimit: 1}, async (request, reply) => {
+            fastify.all('/detour*', async (request, reply) => {
                 let cid = request.headers['puth-portal-context-id'] as string|undefined;
                 if (cid == null) throw new Error('Unreachable'); // TODO better error
                 let psuri = request.headers['puth-portal-psuri'] as string|undefined;
                 if (psuri == null) throw new Error('Unreachable'); // TODO better error
+                let url = request.headers['puth-portal-original-url'] as string|undefined;
+                if (url == null) throw new Error('Unreachable'); // TODO better error
 
                 let context = this.contexts[cid];
+
+                console.debug(request.raw);
+                console.debug(request.files());
+                console.debug('body', request.body);
 
                 return reply.send(await new Promise((resolve, reject) => {
                     context.setPsuriHandler(
@@ -274,7 +280,7 @@ export default class Puth {
                     );
                     context.handlePortalRequestNew({
                         psuri,
-                        url: request.params?.['*'] ?? '',
+                        url,
                         headers: request.headers as TODO as Protocol.Network.Headers,
                         data: request.body as string|undefined,
                         method: request.method,

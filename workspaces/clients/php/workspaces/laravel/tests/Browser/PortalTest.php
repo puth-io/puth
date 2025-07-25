@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class PortalTest extends PuthTestCase
 {
+    public static bool $debug = true;
+
     function test_portal_laravel_facade_fake()
     {
         Mail::fake();
@@ -22,7 +24,7 @@ class PortalTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
-                <form action="http://127.0.0.1:8000/?queryTest=1234#fragmentTest" method="post">
+                <form action="http://127.0.0.1:8000/?queryTest=1234" method="post">
                     <input type="text" name="form-test" value="1234">
                     <button>submit</button>
                 </form>
@@ -38,7 +40,7 @@ class PortalTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
-                <form action="http://127.0.0.1:8000/?queryTest=1234#fragmentTest" method="post" enctype="multipart/form-data">
+                <form action="http://127.0.0.1:8000/?queryTest=1234" method="post" enctype="multipart/form-data">
                     <input type="file" name="form-single">
                     <input type="file" name="form-multiple" multiple>
                     <button>submit</button>

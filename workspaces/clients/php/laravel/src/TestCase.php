@@ -178,6 +178,7 @@ abstract class TestCase extends FoundationTestCase
 
     public function parsePortalRequest(object $portalRequest): Request
     {
+
         $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
         $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
         $server['REQUEST_URI'] = $portalRequest->url;
@@ -185,6 +186,7 @@ abstract class TestCase extends FoundationTestCase
         $cookies = $this->prepareCookiesForRequest();
 
         $url = parse_url($portalRequest->url);
+        dd($url);
         $queryParams = [];
         if (isset($url['query'])) {
             parse_str($url['query'], $queryParams);
@@ -203,7 +205,7 @@ abstract class TestCase extends FoundationTestCase
             $cookies, // COOKIE
             [], // FILES
             $server,
-            $portalRequest->data,
+            $portalRequest?->data ?? null,
         );
 
         static::populateParametersFromBody($request);
