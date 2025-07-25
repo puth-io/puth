@@ -348,7 +348,7 @@ class Context extends Generic {
                     // TODO handle portal network error - Fetch.failRequest
                     async (error, status, data, headers) => cdp.send('Fetch.fulfillRequest', {
                         requestId: event.requestId,
-                        body: btoa(data),
+                        body: data,
                         responseCode: status,
                         responseHeaders: headers,
                     }),
@@ -423,7 +423,6 @@ class Context extends Generic {
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            // url: path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl),
             url: `http://${addr.address}:${addr.port}/detour`,
             headers,
         });
@@ -743,10 +742,19 @@ class Context extends Generic {
     }
 
     public async handlePortalResponse(data, res) {
-        console.error('response');
+        console.error('response', data);
         this.puth.logger.debug(data, 'handlePortalResponse');
+
         let current = this.portal.queue.active.shift();
-        await current.request.respond(data.response);
+
+        let cache = this.psuriCache.get(current.psuri);
+        this.psuriCache.delete(current.psuri);
+
+        let headers = [];
+        for (let header of Object.keys(data.response.headers)) {
+            headers.push({name: header, value: data.response.headers[header]});
+        }
+        await cache.handler(undefined, data.response.status, data.response.body, headers);
 
         if (this.portal.queue.active.length !== 0) {
             return res.send(this.createServerRequest(this.portal.queue.active[0]));

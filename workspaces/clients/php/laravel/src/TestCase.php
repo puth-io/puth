@@ -186,7 +186,6 @@ abstract class TestCase extends FoundationTestCase
         $cookies = $this->prepareCookiesForRequest();
 
         $url = parse_url($portalRequest->url);
-        dd($url);
         $queryParams = [];
         if (isset($url['query'])) {
             parse_str($url['query'], $queryParams);

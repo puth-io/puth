@@ -264,11 +264,9 @@ export default class Puth {
 
                 let context = this.contexts[cid];
 
-                console.debug(request.raw);
-                console.debug(request.files());
                 console.debug('body', request.body);
 
-                return reply.send(await new Promise((resolve, reject) => {
+                return await reply.send(await new Promise((resolve, reject) => {
                     context.setPsuriHandler(
                         psuri,
                         // TODO handle portal network error - Fetch.failRequest
@@ -287,20 +285,6 @@ export default class Puth {
                     });
                 }));
             });
-
-            // fastify.post('/debug', async function (req, reply) {
-            //     let files: any = [];
-            //
-            //     const parts = req.files();
-            //     for await (const part of parts) {
-            //         files.push({
-            //             filename: part.filename,
-            //             content: btoa(await part.toBuffer()),
-            //         });
-            //     }
-            //
-            //     reply.send(JSON.stringify(files));
-            // });
         });
     }
 
