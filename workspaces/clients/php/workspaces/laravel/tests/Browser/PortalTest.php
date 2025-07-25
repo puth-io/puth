@@ -9,7 +9,7 @@ use PHPUnit\Framework\Assert;
 
 class PortalTest extends PuthTestCase
 {
-    function test_portal_laravel_facade_fake()
+    function test_portal_facade_fake()
     {
         Mail::fake();
         $this->browse(function (Browser $browser) {
@@ -19,7 +19,7 @@ class PortalTest extends PuthTestCase
         Mail::assertSentCount(1);
     }
 
-    function test_portal_laravel_form_url_encode()
+    function test_portal_form_url_encode()
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
@@ -36,7 +36,7 @@ class PortalTest extends PuthTestCase
         });
     }
 
-    function test_portal_laravel_form_multipart()
+    function test_portal_form_multipart()
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
