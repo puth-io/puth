@@ -241,7 +241,7 @@ class RemoteObject
                 $im = $this->context->testCase->handlePortalRequest($generic->value->request);
 
                 $response = [
-                    'body' => $im->content(),
+                    'body' => base64_encode($im->content()),
                     'contentType' => $im->headers->get('Content-Type'),
                     'headers' => $im->headers->all(),
                     'status' => $im->status(),

@@ -116,7 +116,7 @@ export default class Puth {
         h3.delete('/context', json(data => this.contextDestroy(data)));
 
         h3.patch('/portal/response', json(data => defer(handle => this.contextPortalResponse(data, handle))));
-        h3.post('/portal/detour/**', (event) => {
+        h3.post('/portal/detour/**', async (event) => {
             let cid = event.req.headers.get('puth-portal-context-id');
             let psuri = event.req.headers.get('puth-portal-psuri');
             let url = event.req.headers.get('puth-portal-original-url');
@@ -127,8 +127,6 @@ export default class Puth {
 
             let context = this.contexts[cid];
             if (context == null) throw HTTPError.status(422, `Portal detour - context not found [${cid}]`);
-
-            // console.error(event.req.headers.forEach());
 
             return defer(async handle => {
                 context.setPsuriHandler(
@@ -141,11 +139,11 @@ export default class Puth {
                         }),
                     ),
                 );
-                context.handlePortalRequestNew({
+                context.handlePortalRequest({
                     psuri,
                     url,
                     headers: event.req.headers,
-                    data: await event.req.text(),
+                    data: btoa(await event.req.text()),
                     method: event.req.method,
                 });
             });

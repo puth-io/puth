@@ -157,16 +157,6 @@ abstract class TestCase extends FoundationTestCase
     // portal request handling
     public function handlePortalRequest(object $portalRequest)
     {
-        //dd($portalRequest);
-        /*$portalRequest = (object) [
-            'url' => '/',
-            'method' => 'post',
-            'headers' => [
-                'content-type' => 'application/x-www-form-urlencoded',
-            ],
-            'data' => 'username=test&path=1234',
-        ];*/
-
         $kernel = $this->app->make(HttpKernel::class);
         $request = $this->parsePortalRequest($portalRequest);
         $response = $kernel->handle(
@@ -179,7 +169,6 @@ abstract class TestCase extends FoundationTestCase
 
     public function parsePortalRequest(object $portalRequest): Request
     {
-
         $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
         $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
         $server['REQUEST_URI'] = $portalRequest->url;
@@ -205,7 +194,7 @@ abstract class TestCase extends FoundationTestCase
             $cookies, // COOKIE
             [], // FILES
             $server,
-            $portalRequest?->data ?? null,
+            base64_decode($portalRequest->data),
         );
 
         static::populateParametersFromBody($request);
@@ -284,7 +273,14 @@ abstract class TestCase extends FoundationTestCase
                 file_put_contents($tmpPath, $content);
                 $mime = $headers['content-type'] ?? 'application/octet-stream';
                 $file = new UploadedFile($tmpPath, $filename, $mime, null, true);
-                $result['files'][$name] = $file;
+
+                if (str_ends_with($name, '[]')) {
+                    $short = mb_substr($name, 0, -2);
+                    if (!array_key_exists($short, $result['files'])) $result['files'][$short] = [];
+                    $result['files'][$short][] = $file;
+                } else {
+                    $result['files'][$name] = $file;
+                }
             } else {
                 $result['fields'][$name] = $content;
             }

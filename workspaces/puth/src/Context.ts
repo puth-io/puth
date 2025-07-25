@@ -353,11 +353,11 @@ class Context extends Generic {
                         responseHeaders: headers,
                     }),
                 );
-                this.handlePortalRequestNew({
+                this.handlePortalRequest({
                     psuri,
                     url: event.request.url,
                     headers: event.request.headers,
-                    data: event.request.hasPostData ? event.request.postData : undefined,
+                    data: btoa(event.request.postData ?? ''),
                     method: event.request.method.toUpperCase(),
                 });
             });
@@ -380,25 +380,40 @@ class Context extends Generic {
         this.psuriCache.set(psuri, cache);
     }
 
-    public handlePortalRequestNew(
+    public handlePortalRequest(
         request: {
             psuri: string;
             url: string;
             headers: TODO;
-            data: string|undefined;
+            data: string;
             method: string;
         }
     ) {
-        this.puth.logger.debug(request, '[handlePortalRequest]');
+        this.puth.logger.debug({
+            psuri: request.psuri,
+            url: request.url,
+            headers: request.headers,
+            data: request.data.length,
+        }, '[handlePortalRequest]');
 
         if (this.lastCallerPromise == null) {
-            this.puth.logger.debug(request, 'add portal request to backlog queue');
+            this.puth.logger.debug({
+                psuri: request.psuri,
+                url: request.url,
+                headers: request.headers,
+                data: request.data.length,
+            }, 'add portal request to backlog queue');
             this.portal.queue.backlog.push(request);
             return;
         }
 
         this.portal.queue.active.push(request);
-        this.puth.logger.debug(request, 'add portal request to active queue');
+        this.puth.logger.debug({
+            psuri: request.psuri,
+            url: request.url,
+            headers: request.headers,
+            data: request.data.length,
+        }, 'add portal request to active queue');
         if (this.portal.queue.active.length === 1) {
             this.puth.logger.debug('sending portal request while client request active');
             return this.lastCallerPromise.resolve(
@@ -595,7 +610,7 @@ class Context extends Generic {
         this._lastActivity = Date.now();
 
         if (!skipQueue && this.portal.queue.backlog.length !== 0) {
-            this.puth.logger.debug(packet, 'offsetting');
+            this.puth.logger.debug('offsetting packet...');
             this.portal.initial.call = packet;
             this.portal.queue.active = this.portal.queue.backlog;
             this.portal.queue.backlog = [];
@@ -678,73 +693,7 @@ class Context extends Generic {
         },
     }
 
-    public async handlePortalRequest(request: HTTPRequest, prefixes: string[]) {
-        let url = request.url();
-        if (['script', 'stylesheet'].includes(request.resourceType())
-            || !['document', 'other'].includes(request.resourceType())
-            || url.endsWith('.ico')) {
-            this.puth.logger.debug(`[portal] skipping ${request.resourceType()} ${url.substring(0, 80)}`);
-            return request.continue();
-        }
-
-        let handle = false;
-        for (let prefix of prefixes) {
-            if (url.startsWith(prefix)) {
-                handle = true;
-                url.replace(prefix, '');
-                break;
-            }
-        }
-
-        if (!handle) {
-            this.puth.logger.debug(`[portal] no handle ${request.resourceType()} ${url.substring(0, 80)}`);
-            return request.continue();
-        }
-
-        let data = request.postData();
-        // this.puth.logger.debug('before');
-        // this.puth.logger.debug(await request.fetchPostData(), 'postData');
-        // this.puth.logger.debug('after');
-        if (data === undefined && request.hasPostData()) {
-            this.puth.logger.debug({method: request.method(), url: request.url()}, '[handlePortalRequest][fetch data]');
-            // data = await request.fetchPostData();
-
-            // request.initiator().
-        }
-
-        let portalRequest = {
-            serialized: {
-                url: request.url(),
-                headers: request.headers(),
-                data: data ?? null,
-                method: request.method(),
-                resourceType: request.resourceType(),
-            },
-            request,
-        };
-
-        this.puth.logger.debug(portalRequest.serialized, '[handlePortalRequest]');
-
-        if (this.lastCallerPromise == null) {
-            this.puth.logger.debug(portalRequest.serialized, 'add portal request to backlog queue');
-            this.portal.queue.backlog.push(portalRequest);
-            return;
-        }
-
-        this.portal.queue.active.push(portalRequest);
-        this.puth.logger.debug(portalRequest.serialized, 'add portal request to active queue');
-        if (this.portal.queue.active.length === 1) {
-            this.puth.logger.debug('sending portal request while client request active');
-            return this.lastCallerPromise.resolve(
-                this.createServerRequest(this.portal.queue.active[0])
-            );
-        }
-    }
-
     public async handlePortalResponse(data, res) {
-        console.error('response', data);
-        this.puth.logger.debug(data, 'handlePortalResponse');
-
         let current = this.portal.queue.active.shift();
 
         let cache = this.psuriCache.get(current.psuri);
@@ -756,6 +705,13 @@ class Context extends Generic {
         }
         this.psuriCache.delete(current.psuri);
 
+        let body = atob(data.response.body);
+        this.puth.logger.debug({
+            status: data.response.status,
+            contentType: data.response.contentType,
+            headers: data.response.headers,
+            body: body.length,
+        }, '[handlePortalResponse]');
 
         let headers: Protocol.Fetch.HeaderEntry[] = [];
         for (let header of Object.keys(data.response.headers)) {
@@ -763,8 +719,7 @@ class Context extends Generic {
             if (!Array.isArray(values)) values =  [values];
             values.forEach(value => headers.push({name: header, value}));
         }
-        console.error('headers', {headers});
-        await cache.handler(undefined, data.response.status, data.response.body, headers);
+        await cache.handler(undefined, data.response.status, body, headers);
 
         if (this.portal.queue.active.length !== 0) {
             return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
@@ -1063,7 +1018,7 @@ class Context extends Generic {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);
 
-        await writeFile(tmpFilePath, content);
+        await writeFile(tmpFilePath, atob(content));
 
         this.cleanupCallbacks.push(async () => fsPromise.rm(tmpPath, {force: true, recursive: true}));
 

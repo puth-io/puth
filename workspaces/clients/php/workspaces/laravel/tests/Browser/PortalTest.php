@@ -8,8 +8,6 @@ use Tests\PuthTestCase;
 
 class PortalTest extends PuthTestCase
 {
-    public static bool $debug = true;
-
     function test_portal_laravel_facade_fake()
     {
         Mail::fake();
@@ -42,21 +40,21 @@ class PortalTest extends PuthTestCase
             $browser->setContent('<html><body>
                 <form action="http://127.0.0.1:8000/?queryTest=1234" method="post" enctype="multipart/form-data">
                     <input type="file" name="form-single">
-                    <input type="file" name="form-multiple" multiple>
+                    <input type="file" name="form-multiple[]" multiple>
                     <button>submit</button>
                 </form>
             </body></html>');
             $browser
                 ->attach('form-single', __DIR__ . '/files/test.txt')
-                ->attach('form-multiple', [
-                    __DIR__ . '/files/test.txt',
+                ->attach('form-multiple[]', [
+                    __DIR__ . '/files/random.binary',
                     __DIR__ . '/files/test2.txt',
                 ])
                 ->click('button')
-                ->waitForText('form-single')
-                ->assertSee('"queryTest":"1234"')
-                ->assertSee('"form-single":"1234"')
-            ;
+                ->waitForText('form-single');
+
+            $content = json_decode($browser->content());
+            dd();
         });
     }
 }
