@@ -7,7 +7,7 @@ import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
-import path from 'node:path';
+import path, { join } from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import { Return } from './context/Return';
@@ -348,7 +348,7 @@ class Context extends Generic {
                     // TODO handle portal network error - Fetch.failRequest
                     async (error, status, data, headers) => cdp.send('Fetch.fulfillRequest', {
                         requestId: event.requestId,
-                        body: data,
+                        body: btoa(data),
                         responseCode: status,
                         responseHeaders: headers,
                     }),
@@ -416,14 +416,14 @@ class Context extends Generic {
         headers.push({name: 'puth-portal-psuri', value: psuri});
         headers.push({name: 'puth-portal-original-url', value: encodeURI(request.url)});
 
-        let addr = this.puth.getServer()?.addresses()?.[0];
+        let addr = this.puth.http.url;
         if (addr == undefined) {
             throw new Error('Unreachable');
         }
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            url: `http://${addr.address}:${addr.port}/detour`,
+            url: join(addr, 'portal/detour'),
             headers,
         });
     }
@@ -748,12 +748,22 @@ class Context extends Generic {
         let current = this.portal.queue.active.shift();
 
         let cache = this.psuriCache.get(current.psuri);
+        if (cache == null) {
+            throw new Error('TODO');
+        }
+        if (cache.handler == null) {
+            throw new Error('TODO');
+        }
         this.psuriCache.delete(current.psuri);
 
-        let headers = [];
+
+        let headers: Protocol.Fetch.HeaderEntry[] = [];
         for (let header of Object.keys(data.response.headers)) {
-            headers.push({name: header, value: data.response.headers[header]});
+            let values = data.response.headers[header];
+            if (!Array.isArray(values)) values =  [values];
+            values.forEach(value => headers.push({name: header, value}));
         }
+        console.error('headers', {headers});
         await cache.handler(undefined, data.response.status, data.response.body, headers);
 
         if (this.portal.queue.active.length !== 0) {

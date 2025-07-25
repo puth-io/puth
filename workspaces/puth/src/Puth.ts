@@ -54,7 +54,8 @@ export default class Puth {
         logger: any;
     };
 
-    private http?: Server;
+    // @ts-ignore
+    public http: Server;
 
     constructor(options?) {
         this.emitter = mitt<PuthEvents>();
@@ -126,6 +127,8 @@ export default class Puth {
 
             let context = this.contexts[cid];
             if (context == null) throw HTTPError.status(422, `Portal detour - context not found [${cid}]`);
+
+            // console.error(event.req.headers.forEach());
 
             return defer(async handle => {
                 context.setPsuriHandler(
@@ -334,37 +337,37 @@ export default class Puth {
             // });
 
             // implement rawBody instead of setting bodyLimit: 1
-            fastify.all('/detour', {config: {rawBody: true}}, async (request, reply) => {
-                console.error('body', request.rawBody);
-
-                let cid = request.headers['puth-portal-context-id'] as string|undefined;
-                if (cid == null) throw new Error('Unreachable'); // TODO better error
-                let psuri = request.headers['puth-portal-psuri'] as string|undefined;
-                if (psuri == null) throw new Error('Unreachable'); // TODO better error
-                let url = request.headers['puth-portal-original-url'] as string|undefined;
-                if (url == null) throw new Error('Unreachable'); // TODO better error
-
-                let context = this.contexts[cid];
-
-                return await reply.send(await new Promise((resolve, reject) => {
-                    context.setPsuriHandler(
-                        psuri,
-                        // TODO handle portal network error - Fetch.failRequest
-                        async (error, status, data, headers) => {
-                            reply.code(status);
-                            headers.forEach(header => reply.header(header.name, header.value));
-                            resolve(data);
-                        },
-                    );
-                    context.handlePortalRequestNew({
-                        psuri,
-                        url,
-                        headers: request.headers as TODO as Protocol.Network.Headers,
-                        data: request.body as string|undefined,
-                        method: request.method,
-                    });
-                }));
-            });
+            // fastify.all('/detour', {config: {rawBody: true}}, async (request, reply) => {
+            //     console.error('body', request.rawBody);
+            //
+            //     let cid = request.headers['puth-portal-context-id'] as string|undefined;
+            //     if (cid == null) throw new Error('Unreachable'); // TODO better error
+            //     let psuri = request.headers['puth-portal-psuri'] as string|undefined;
+            //     if (psuri == null) throw new Error('Unreachable'); // TODO better error
+            //     let url = request.headers['puth-portal-original-url'] as string|undefined;
+            //     if (url == null) throw new Error('Unreachable'); // TODO better error
+            //
+            //     let context = this.contexts[cid];
+            //
+            //     return await reply.send(await new Promise((resolve, reject) => {
+            //         context.setPsuriHandler(
+            //             psuri,
+            //             // TODO handle portal network error - Fetch.failRequest
+            //             async (error, status, data, headers) => {
+            //                 reply.code(status);
+            //                 headers.forEach(header => reply.header(header.name, header.value));
+            //                 resolve(data);
+            //             },
+            //         );
+            //         context.handlePortalRequestNew({
+            //             psuri,
+            //             url,
+            //             headers: request.headers as TODO as Protocol.Network.Headers,
+            //             data: request.body as string|undefined,
+            //             method: request.method,
+            //         });
+            //     }));
+            // });
         });
     }
 

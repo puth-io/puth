@@ -53,8 +53,9 @@ class PortalTest extends PuthTestCase
                     __DIR__ . '/files/test2.txt',
                 ])
                 ->click('button')
+                ->waitForText('form-single')
                 ->assertSee('"queryTest":"1234"')
-                ->assertSee('"form-test":"1234"')
+                ->assertSee('"form-single":"1234"')
             ;
         });
     }
