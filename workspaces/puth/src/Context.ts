@@ -1018,8 +1018,7 @@ class Context extends Generic {
         let tmpPath = await mkdtemp(path.join(tmpdir(), 'puth-tmp-file-'));
         let tmpFilePath = path.join(tmpPath, name);
 
-        await writeFile(tmpFilePath, atob(content));
-
+        await writeFile(tmpFilePath, content, {encoding: 'base64'});
         this.cleanupCallbacks.push(async () => fsPromise.rm(tmpPath, {force: true, recursive: true}));
 
         return tmpFilePath;

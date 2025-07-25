@@ -12,7 +12,6 @@ import { HandlesBrowsers, DefaultBrowserHandler } from './HandlesBrowsers';
 import mitt, { Emitter, Handler, WildcardHandler } from 'mitt';
 import { Logger } from 'pino';
 import Snapshots from './Snapshots';
-import { Protocol } from 'devtools-protocol';
 import { FastifyRawBodyPlugin } from '@puth/puth/src/utils/external/fastify-raw-body';
 import * as H3 from 'h3';
 import { plugin as ws } from "crossws/server";
@@ -128,6 +127,19 @@ export default class Puth {
             let context = this.contexts[cid];
             if (context == null) throw HTTPError.status(422, `Portal detour - context not found [${cid}]`);
 
+            // TODO instead of passing the request as is, catch multipart and decode it so it can be easier used
+            //      for mocking in laravel/symfony
+            // TODO implement detour for all other binary request types
+            // const multipart = await event.req.formData();
+            // const parts: any = [];
+            // multipart.forEach((value, key) => parts.push({key, value, type: value instanceof File ? 'file' : 'string'}));
+            // await Promise.all(parts.map(async part => {
+            //     if (part.type !== 'file') return;
+            //     return part.value.arrayBuffer()
+            //         .then(buffer => btoa(String.fromCharCode.apply(null, buffer)))
+            //         .then(base64 => part.value = base64);
+            // }));
+
             return defer(async handle => {
                 context.setPsuriHandler(
                     psuri,
@@ -139,11 +151,14 @@ export default class Puth {
                         }),
                     ),
                 );
+
+
+                let data = await event.req.bytes();
                 context.handlePortalRequest({
                     psuri,
                     url,
                     headers: event.req.headers,
-                    data: btoa(await event.req.text()),
+                    data: data.toBase64(),
                     method: event.req.method,
                 });
             });

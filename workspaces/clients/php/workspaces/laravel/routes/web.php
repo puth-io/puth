@@ -20,21 +20,6 @@ Route::get('/', function (Request $request) {
     return view('welcome');
 });
 Route::post('/', function (Request $request) {
-    /*dump($request->header());
-    dump($request->query());
-    dump($request->post());
-    dd($request->input());*/
-
-    /*dd($request->file('test2'));
-    dd(array_map(
-        fn(\Illuminate\Http\UploadedFile $file) => [
-            'name' => $file->getFilename(),
-            'size' => $file->getSize(),
-            'content' => $file->getContent(),
-        ],
-        $request->allFiles(),
-    ));*/
-
     return response()->stream(function() use ($request) {
         echo json_encode([
             'input' => $request->input(),

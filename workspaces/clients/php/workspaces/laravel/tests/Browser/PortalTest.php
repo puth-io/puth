@@ -5,9 +5,12 @@ namespace tests\Browser;
 use Illuminate\Support\Facades\Mail;
 use Puth\Laravel\Browser;
 use Tests\PuthTestCase;
+use PHPUnit\Framework\Assert;
 
 class PortalTest extends PuthTestCase
 {
+    public static bool $debug = true;
+
     function test_portal_laravel_facade_fake()
     {
         Mail::fake();
@@ -53,8 +56,18 @@ class PortalTest extends PuthTestCase
                 ->click('button')
                 ->waitForText('form-single');
 
-            var_dump($browser->content());
+            $content = str_replace('<html><head></head><body>', '', $browser->content());
+            $content = str_replace('</body></html>', '', $content);
+            $content = json_decode($content, true);
 
+            Assert::assertEquals('1234', $content['input']['queryTest']);
+            Assert::assertEquals(33, $content['files']['form-single']['size']);
+            Assert::assertEquals(file_get_contents(__DIR__ . '/files/test.txt'), base64_decode($content['files']['form-single']['content']));
+
+            Assert::assertEquals(256, $content['files']['form-multiple'][0]['size']);
+            Assert::assertEquals(file_get_contents(__DIR__ . '/files/random.binary'), base64_decode($content['files']['form-multiple'][0]['content']));
+            Assert::assertEquals(33, $content['files']['form-multiple'][1]['size']);
+            Assert::assertEquals(file_get_contents(__DIR__ . '/files/test2.txt'), base64_decode($content['files']['form-multiple'][1]['content']));
         });
     }
 }

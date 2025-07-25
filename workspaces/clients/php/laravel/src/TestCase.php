@@ -177,8 +177,6 @@ abstract class TestCase extends FoundationTestCase
             $body = $testResponse->content();
         }
 
-//        dd($body);
-
         return [
             'body' => base64_encode($body),
             'contentType' => $testResponse->headers->get('Content-Type'),
@@ -286,7 +284,9 @@ abstract class TestCase extends FoundationTestCase
 
             $name = $matches[1];
             $filename = $matches[2] ?? null;
-            $content = rtrim($content, "\r\n");
+            if (str_ends_with($content, "\r\n")) {
+                $content = substr($content, 0, -2);
+            }
 
             if ($filename) {
                 $tmpPath = tempnam(sys_get_temp_dir(), 'upload_');
