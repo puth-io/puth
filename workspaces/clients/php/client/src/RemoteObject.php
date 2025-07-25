@@ -233,18 +233,23 @@ class RemoteObject
         $this->log('server-request');
         $response = ['type' => 'PortalResponse'];
 
-        if ($this->context->testCase !== null
-            && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
-            && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
+        try {
+            if ($this->context->testCase !== null
+                && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
+                && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
 
-            $im = $this->context->testCase->handlePortalRequest($generic->value->request);
+                $im = $this->context->testCase->handlePortalRequest($generic->value->request);
 
-            $response = [
-                'body' => $im->content(),
-                'contentType' => $im->headers->get('Content-Type'),
-                'headers' => $im->headers->all(),
-                'status' => $im->status(),
-            ];
+                $response = [
+                    'body' => $im->content(),
+                    'contentType' => $im->headers->get('Content-Type'),
+                    'headers' => $im->headers->all(),
+                    'status' => $im->status(),
+                ];
+            }
+        } catch (\Throwable $throwable) {
+            print_r($throwable);
+            dd($throwable);
         }
 
         $this->log('server-request response');

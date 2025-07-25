@@ -4,6 +4,7 @@ namespace Puth\Laravel;
 
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
+use Illuminate\Http\UploadedFile;
 use PHPUnit\Runner\Version;
 use Puth\Context;
 use Puth\Laravel\Concerns\ProvidesBrowser;
