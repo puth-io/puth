@@ -254,7 +254,7 @@ export default class Puth {
             });
 
             // implement rawBody instead of setting bodyLimit: 1
-            fastify.all('/detour*', async (request, reply) => {
+            fastify.all('/detour', async (request, reply) => {
                 let cid = request.headers['puth-portal-context-id'] as string|undefined;
                 if (cid == null) throw new Error('Unreachable'); // TODO better error
                 let psuri = request.headers['puth-portal-psuri'] as string|undefined;

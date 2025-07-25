@@ -328,7 +328,7 @@ class Context extends Generic {
                 if (event.request.hasPostData) {
                     if (event.request.postData === undefined) {
                         this.puth.logger.debug('[Portal][Detour too large] ' + event.request.url);
-                        return this.portalRequestDetourToCatcher(psuri, handle, event, cdp);
+                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
                     }
 
                     let contentType = '';
@@ -339,7 +339,7 @@ class Context extends Generic {
                     }
                     if (contentType.startsWith('multipart/')) {
                         this.puth.logger.debug('[Portal][Detour multipart] ' + event.request.url);
-                        return this.portalRequestDetourToCatcher(psuri, handle, event, cdp);
+                        return this.portalRequestDetourToCatcher(psuri, event, cdp);
                     }
                 }
 
@@ -407,7 +407,7 @@ class Context extends Generic {
         }
     }
 
-    private portalRequestDetourToCatcher(psuri: string, relativeUrl: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, cdp: CDPSession) {
+    private portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, cdp: CDPSession) {
         let headers: Protocol.Fetch.HeaderEntry[] = [];
         for (let key of Object.keys(request.headers)) {
             headers.push({name: key, value: request.headers[key]});
@@ -421,12 +421,10 @@ class Context extends Generic {
             throw new Error('Unreachable');
         }
 
-        console.error(path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl));
-
         return cdp.send('Fetch.continueRequest', {
             requestId,
             // url: path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl),
-            url: path.join(`http://${addr.address}:${addr.port}/detour`, relativeUrl),
+            url: `http://${addr.address}:${addr.port}/detour`,
             headers,
         });
     }
