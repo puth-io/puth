@@ -53,10 +53,8 @@ class PortalTest extends PuthTestCase
                 ->click('button')
                 ->waitForText('form-single');
 
-            for ($i = 0; $i < 5; $i++) {
-                var_dump($browser->content());
-                sleep(1);
-            }
+            var_dump($browser->content());
+
         });
     }
 }
