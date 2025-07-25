@@ -13,6 +13,7 @@ import mitt, { Emitter, Handler, WildcardHandler } from 'mitt';
 import { Logger } from 'pino';
 import Snapshots from './Snapshots';
 import { Protocol } from 'devtools-protocol';
+import { FastifyRawBodyPlugin } from '@puth/puth/src/utils/external/fastify-raw-body';
 
 declare global {
     type TODO = any;
@@ -172,7 +173,12 @@ export default class Puth {
             });
         }
         this.server.register(fastifyWebsocket);
-        this.server.register(fastifyMultipart);
+        this.server.register(FastifyRawBodyPlugin);
+        // this.server.register(fastifyMultipart);
+
+        this.server.addContentTypeParser('*', function (request, payload, done) {
+            done(null, payload)
+        })
 
         this.server.register(require('@fastify/static'), {
             root: this.options?.staticDir ?? path.dirname(require.resolve('@puth/gui/dist/index.html')),
@@ -254,7 +260,9 @@ export default class Puth {
             });
 
             // implement rawBody instead of setting bodyLimit: 1
-            fastify.all('/detour', async (request, reply) => {
+            fastify.all('/detour', {config: {rawBody: true}}, async (request, reply) => {
+                console.error('body', request.rawBody);
+
                 let cid = request.headers['puth-portal-context-id'] as string|undefined;
                 if (cid == null) throw new Error('Unreachable'); // TODO better error
                 let psuri = request.headers['puth-portal-psuri'] as string|undefined;
@@ -264,7 +272,6 @@ export default class Puth {
 
                 let context = this.contexts[cid];
 
-                console.debug('body', request.body);
 
                 return await reply.send(await new Promise((resolve, reject) => {
                     context.setPsuriHandler(
