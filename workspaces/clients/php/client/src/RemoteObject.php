@@ -237,15 +237,7 @@ class RemoteObject
             if ($this->context->testCase !== null
                 && class_exists('\\Illuminate\\Foundation\\Testing\\TestCase')
                 && $this->context->testCase instanceof \Illuminate\Foundation\Testing\TestCase) {
-
-                $im = $this->context->testCase->handlePortalRequest($generic->value->request);
-
-                $response = [
-                    'body' => base64_encode($im->content()),
-                    'contentType' => $im->headers->get('Content-Type'),
-                    'headers' => $im->headers->all(),
-                    'status' => $im->status(),
-                ];
+                $response = $this->context->testCase->handlePortalRequest($generic->value->request);
             }
         } catch (\Throwable $throwable) {
             print_r($throwable);

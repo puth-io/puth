@@ -5,6 +5,7 @@ namespace Puth\Laravel;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Testing\TestCase as FoundationTestCase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Testing\TestResponseAssert as PHPUnit;
 use PHPUnit\Runner\Version;
 use Puth\Context;
 use Puth\Laravel\Concerns\ProvidesBrowser;
@@ -13,6 +14,8 @@ use Puth\RemoteObject;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 abstract class TestCase extends FoundationTestCase
 {
@@ -164,7 +167,24 @@ abstract class TestCase extends FoundationTestCase
         );
         $kernel->terminate($request, $response);
 
-        return $this->createTestResponse($response, $request);
+        $testResponse = $this->createTestResponse($response, $request);
+
+        $body = '';
+        if ($testResponse->baseResponse instanceof StreamedResponse
+            || $testResponse->baseResponse instanceof StreamedJsonResponse) {
+            $body = $testResponse->streamedContent();
+        } else {
+            $body = $testResponse->content();
+        }
+
+//        dd($body);
+
+        return [
+            'body' => base64_encode($body),
+            'contentType' => $testResponse->headers->get('Content-Type'),
+            'headers' => $testResponse->headers->all(),
+            'status' => $testResponse->getStatusCode(),
+        ];
     }
 
     public function parsePortalRequest(object $portalRequest): Request
