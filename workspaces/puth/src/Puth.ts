@@ -14,6 +14,10 @@ import { Logger } from 'pino';
 import Snapshots from './Snapshots';
 import { Protocol } from 'devtools-protocol';
 import { FastifyRawBodyPlugin } from '@puth/puth/src/utils/external/fastify-raw-body';
+import * as H3 from 'h3';
+import { plugin as ws } from "crossws/server";
+import { Server } from "srvx";
+import { HTTPError } from 'h3';
 
 declare global {
     type TODO = any;
@@ -50,6 +54,8 @@ export default class Puth {
         logger: any;
     };
 
+    private http?: Server;
+
     constructor(options?) {
         this.emitter = mitt<PuthEvents>();
         this.options = options;
@@ -72,6 +78,118 @@ export default class Puth {
         }
     }
 
+    private serve(port = 7345, hostname = '127.0.0.1', log = true): Server {
+        if (this.http !== undefined) {
+            throw new Error('Serve already called on this Puth instance.');
+        }
+
+        let h3 = new H3.H3();
+
+        const cors = {
+            origin: [
+                `http://${hostname}:${port}`,
+                ...(this.options?.server?.allowOrigins ?? []),
+            ],
+        };
+
+        // [Middleware] CORS
+        h3.use((event) => {
+            if (H3.handleCors(event, cors)) {
+                return;
+            }
+            // if (!H3.isCorsOriginAllowed(event.req.headers.get('origin'), cors)) {
+            //     if (event.req.headers.get('upgrade') === 'websocket') {
+            //         return; // let the websocket handle upgrade hook handle cors
+            //     }
+            //
+            //     return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
+            // }
+        });
+
+        const json = handler => event => event.req.json().then(handler);
+        const defer = handler => new Promise((resolve, reject) => handler({resolve, reject}));
+
+        h3.post('/context', json(data => this.contextCreate(data)));
+        h3.patch('/context/call', json(data => defer(handle => this.contextCall(data, handle))));
+        // TODO fix response based on contextDestroy return value (bool)
+        h3.delete('/context', json(data => this.contextDestroy(data)));
+
+        h3.patch('/portal/response', json(data => defer(handle => this.contextPortalResponse(data, handle))));
+        h3.post('/portal/detour/**', (event) => {
+            let cid = event.req.headers.get('puth-portal-context-id');
+            let psuri = event.req.headers.get('puth-portal-psuri');
+            let url = event.req.headers.get('puth-portal-original-url');
+
+            if (cid == null) throw HTTPError.status(422, 'Portal detour missing required header [cid]');
+            if (psuri == null) throw HTTPError.status(422, 'Portal detour missing required header [psuri]');
+            if (url == null) throw HTTPError.status(422, 'Portal detour missing required header [url]');
+
+            let context = this.contexts[cid];
+            if (context == null) throw HTTPError.status(422, `Portal detour - context not found [${cid}]`);
+
+            return defer(async handle => {
+                context.setPsuriHandler(
+                    psuri,
+                    // TODO handle portal network error - Fetch.failRequest
+                    (error, status, data, headers) => handle.resolve(
+                        new Response(data, {
+                            status,
+                            headers: headers.map(header => [header.name, header.value])
+                        }),
+                    ),
+                );
+                context.handlePortalRequestNew({
+                    psuri,
+                    url,
+                    headers: event.req.headers,
+                    data: await event.req.text(),
+                    method: event.req.method,
+                });
+            });
+        });
+
+        h3.get(
+            "/websocket",
+            H3.defineWebSocketHandler({
+                upgrade: (req) => {
+                    // if (!H3.isCorsOriginAllowed(req.headers.get('origin'), cors)) {
+                    //     return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
+                    // }
+                },
+                open: (peer) => {
+                    WebsocketConnections.push(peer)
+                    peer.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
+                },
+                close: (peer) => WebsocketConnections.pop(peer),
+                message: (peer, message) => {
+                    // TODO verify
+                    let packet: any = WebsocketConnections.decode(message.arrayBuffer());
+                    if (packet?.type === 'event') {
+                        if (packet.on === 'puth') {
+                            this.emitter.emit(packet.event.type, packet.event.arg);
+                        }
+                    }
+                },
+            }),
+        )
+
+        this.http = H3.serve(h3, {
+            hostname,
+            port,
+            plugins: [ws({ resolve: async (req) => (await h3.fetch(req)).crossws })],
+        });
+
+        return this.http;
+    }
+
+    // serve(port = 7345, address = '127.0.0.1', log = true) {
+    //     let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
+    //
+    //     this.server = Fastify({ loggerInstance: this.logger, disableRequestLogging: true });
+    //     this.setupFastify(allowedOrigins);
+    //     this.server.listen({ port, host: address });
+    // }
+
     use(plugin: PuthPluginGeneric<PuthPlugin>) {
         if (plugin.PluginType === PuthPluginType.ContextPlugin) {
             if (this.contextPlugins.find((v) => v === plugin)) {
@@ -89,7 +207,6 @@ export default class Puth {
             throw new Error('Unsupported plugin type!');
         }
 
-        // @ts-ignore
         this.info(`Plugin loaded: ${plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name}`);
     }
 
@@ -104,14 +221,6 @@ export default class Puth {
 
     getInstalledBrowser() {
         return this.options?.installedBrowser;
-    }
-
-    serve(port = 7345, address = '127.0.0.1', log = true) {
-        let allowedOrigins = [`http://${address}:${port}`, ...(this.options?.server?.allowOrigins ?? [])];
-
-        this.server = Fastify({ loggerInstance: this.logger, disableRequestLogging: true });
-        this.setupFastify(allowedOrigins);
-        this.server.listen({ port, host: address });
     }
 
     public async contextCreate(options = {}) {
@@ -136,6 +245,10 @@ export default class Puth {
 
     public contextCallRace(packet) {
         return this.contexts[packet.context.id].callRace(packet.calls);
+    }
+
+    public contextPortalResponse(packet, res) {
+        return this.contexts[packet.context.id].handlePortalResponse(packet, res);
     }
 
     public contextGet(packet) {
@@ -172,13 +285,14 @@ export default class Puth {
                 origin: allowedOrigins,
             });
         }
+
         this.server.register(fastifyWebsocket);
         this.server.register(FastifyRawBodyPlugin);
         // this.server.register(fastifyMultipart);
 
-        this.server.addContentTypeParser('*', function (request, payload, done) {
-            done(null, payload)
-        })
+        // this.server.addContentTypeParser('*', function (request, payload, done) {
+        //     done(null, payload)
+        // })
 
         this.server.register(require('@fastify/static'), {
             root: this.options?.staticDir ?? path.dirname(require.resolve('@puth/gui/dist/index.html')),
@@ -189,75 +303,35 @@ export default class Puth {
                 return reply.sendFile('index.html');
             });
 
-            // Create new context
-            fastify.post('/context', async (request, response) => {
-                return await this.contextCreate(request.body as {});
-            });
+            // // Perform all method call on context
+            // fastify.patch('/context/call/all', async (request, reply) => {
+            //     return reply.send(await this.contextCallAll(request.body));
+            // });
+            //
+            // // Perform all method call on context
+            // fastify.patch('/context/call/any', async (request, reply) => {
+            //     return reply.send(await this.contextCallAny(request.body));
+            // });
+            //
+            // // Perform all method call on context
+            // fastify.patch('/context/call/race', async (request, reply) => {
+            //     return reply.send(await this.contextCallRace(request.body));
+            // });
+            //
+            // // Perform action on context
+            // fastify.patch('/context/get', async (request, reply) => {
+            //     return reply.send(await this.contextGet(request.body));
+            // });
+            //
+            // // Perform action on context
+            // fastify.patch('/context/set', async (request, reply) => {
+            //     return reply.send(await this.contextSet(request.body));
+            // });
 
-            fastify.patch('/context/call', (req, res) => this.contextCall(req.body, res));
-            fastify.patch('/context/portal/response', (req, res) =>
-                this.contexts[req.body.context.id].handlePortalResponse(req.body, res),
-            );
-
-            // Perform all method call on context
-            fastify.patch('/context/call/all', async (request, reply) => {
-                return reply.send(await this.contextCallAll(request.body));
-            });
-
-            // Perform all method call on context
-            fastify.patch('/context/call/any', async (request, reply) => {
-                return reply.send(await this.contextCallAny(request.body));
-            });
-
-            // Perform all method call on context
-            fastify.patch('/context/call/race', async (request, reply) => {
-                return reply.send(await this.contextCallRace(request.body));
-            });
-
-            // Perform action on context
-            fastify.patch('/context/get', async (request, reply) => {
-                return reply.send(await this.contextGet(request.body));
-            });
-
-            // Perform action on context
-            fastify.patch('/context/set', async (request, reply) => {
-                return reply.send(await this.contextSet(request.body));
-            });
-
-            // Perform action on context
-            fastify.patch('/context/delete', async (request, reply) => {
-                return reply.send(await this.contextDelete(request.body));
-            });
-
-            // delete context with puthId
-            fastify.delete('/context', async (request, reply) => {
-                let destroyed: any = await this.contextDestroy(request.body);
-                return reply.code(destroyed ? 200 : 404).send();
-            });
-
-            fastify.get('/websocket', { websocket: true }, (socket: WebSocket, req: FastifyRequest) => {
-                // The websocket protocol doesn't care about CORS so we need to test for request origin.
-                if (this.options?.disableCors !== true && !allowedOrigins.includes(req.headers.origin ?? '')) {
-                    return socket.close();
-                }
-
-                socket.addEventListener('message', (data) => {
-                    let message: any = WebsocketConnections.decode(data);
-
-                    if (message?.type === 'event') {
-                        if (message.on === 'puth') {
-                            this.emitter.emit(message.event.type, message.event.arg);
-                        }
-                    }
-                });
-
-                socket.addEventListener('close', () => {
-                    WebsocketConnections.pop(socket);
-                });
-
-                socket.send(WebsocketConnections.serialize(Snapshots.getAllCachedItems()));
-                WebsocketConnections.push(socket);
-            });
+            // // Perform action on context
+            // fastify.patch('/context/delete', async (request, reply) => {
+            //     return reply.send(await this.contextDelete(request.body));
+            // });
 
             // implement rawBody instead of setting bodyLimit: 1
             fastify.all('/detour', {config: {rawBody: true}}, async (request, reply) => {
@@ -271,7 +345,6 @@ export default class Puth {
                 if (url == null) throw new Error('Unreachable'); // TODO better error
 
                 let context = this.contexts[cid];
-
 
                 return await reply.send(await new Promise((resolve, reject) => {
                     context.setPsuriHandler(

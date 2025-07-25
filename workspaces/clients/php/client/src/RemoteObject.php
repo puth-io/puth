@@ -249,7 +249,7 @@ class RemoteObject
 
         $this->log('server-request response');
 
-        $portalResponse = $this->context->client->patch('context/portal/response', ['json' => [
+        $portalResponse = $this->context->client->patch('portal/response', ['json' => [
             'context' => $this->context->serialize(),
             'response' => $response,
         ]]);

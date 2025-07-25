@@ -384,7 +384,7 @@ class Context extends Generic {
         request: {
             psuri: string;
             url: string;
-            headers: Protocol.Network.Headers;
+            headers: TODO;
             data: string|undefined;
             method: string;
         }
@@ -600,7 +600,7 @@ class Context extends Generic {
             this.portal.queue.active = this.portal.queue.backlog;
             this.portal.queue.backlog = [];
 
-            return res.send(this.createServerRequest(this.portal.queue.active[0]));
+            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
         }
 
         this.portal.open.response = res;
@@ -637,7 +637,7 @@ class Context extends Generic {
                 }
 
                 // Call extension function and pass object as first parameter
-                return res.send(await this.handleCallApply(
+                return res.resolve(await this.handleCallApply(
                     packet,
                     page,
                     extension,
@@ -656,7 +656,7 @@ class Context extends Generic {
             };
         }
 
-        return res.send(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
+        return res.resolve(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
     }
 
     portal: any = {
@@ -757,16 +757,16 @@ class Context extends Generic {
         await cache.handler(undefined, data.response.status, data.response.body, headers);
 
         if (this.portal.queue.active.length !== 0) {
-            return res.send(this.createServerRequest(this.portal.queue.active[0]));
+            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
         }
         if (this.portal.waiting.response) {
             let waiting = this.portal.waiting.response;
             this.portal.waiting.response = null;
-            return res.send(waiting);
+            return res.resolve(waiting);
         }
         if (this.portal.waiting.call) {
             this.puth.logger.debug('resetting waiting call')
-            return res.send(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
+            return res.resolve(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
         }
 
         return this.call(this.portal.initial.call, res, true);
