@@ -9,8 +9,6 @@ use PHPUnit\Framework\Assert;
 
 class PortalTest extends PuthTestCase
 {
-    public static bool $debug = true;
-
     function test_portal_laravel_facade_fake()
     {
         Mail::fake();
@@ -31,6 +29,7 @@ class PortalTest extends PuthTestCase
                 </form>
             </body></html>');
             $browser->click('button')
+                ->waitForText('form-test')
                 ->assertSee('"form-test":"1234"')
                 ->assertSee('"queryTest":"1234"')
             ;
