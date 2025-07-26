@@ -72,7 +72,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
                     ]);
                     return true;
                 },
-                // _dialog: (page, action, text) => this.getContext().tracked.dialogs.set(page, [action, text]),
+                // _dialog: (page, action, text) => this.context.tracked.dialogs.set(page, [action, text]),
                 url: this.url,
                 getCookieByName: PuthStandardPlugin.getCookieByName,
                 waitForDialog: this.waitForDialog,
@@ -197,7 +197,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
     get(element, search, options?) {
         return retryFor(
-            this.getContext().getTimeout(options),
+            this.context.getTimeout(options),
             async (_) => await element.$(search),
             (v) => v !== null,
         );
@@ -217,7 +217,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         let resolver = options?.exact ? 'text()' : '.';
 
         return retryFor(
-            this.getContext().getTimeout(options),
+            this.context.getTimeout(options),
             async () =>
                 (await element.$$(`xpath/descendant-or-self::${tag}[contains(${resolver}, "${search}")]`)).reverse(),
             options?.negate ? (v) => v.length === 0 : (v) => v.length > 0,
@@ -226,7 +226,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
     async $(element, selector, options?) {
         return retryFor(
-            this.getContext().getTimeout(options),
+            this.context.getTimeout(options),
             async (_) => await element.$(selector),
             (v) => v !== null,
         );
@@ -386,7 +386,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     }
 
     url(element, options?) {
-        return retryFor(this.getContext().getTimeout(options), async () => await element.url(), Expects.NotNull.test);
+        return retryFor(this.context.getTimeout(options), async () => await element.url(), Expects.NotNull.test);
     }
 
     static async getCookieByName(page: Page, name, options?) {
@@ -404,7 +404,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
     waitForDialog(page, options: any = {}) {
         return retryFor(
             options.timeout ?? 5000,
-            () => this.getContext().caches.dialog.get(page),
+            () => this.context.caches.dialog.get(page),
             (rv) => rv !== undefined,
         );
     }
@@ -423,9 +423,9 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
     private dialogAccept(dialog, message = '') {
         return dialog.accept(message).finally(() =>
-            this.getContext().caches.dialog.forEach((value, key) => {
+            this.context.caches.dialog.forEach((value, key) => {
                 if (value === dialog) {
-                    this.getContext().caches.dialog.delete(key);
+                    this.context.caches.dialog.delete(key);
                 }
             }),
         );
@@ -437,9 +437,9 @@ export class PuthStandardPlugin extends PuthContextPlugin {
 
     private dialogDismiss(dialog) {
         return dialog.dismiss().finally(() =>
-            this.getContext().caches.dialog.forEach((value, key) => {
+            this.context.caches.dialog.forEach((value, key) => {
                 if (value === dialog) {
-                    this.getContext().caches.dialog.delete(key);
+                    this.context.caches.dialog.delete(key);
                 }
             }),
         );

@@ -1,11 +1,10 @@
 import {v4} from 'uuid';
-import {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, HTTPRequest, BrowserContext, TargetCloseError, CDPSession} from 'puppeteer-core';
+import {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, BrowserContext, TargetCloseError, CDPSession} from 'puppeteer-core';
 import Generic from './Generic';
-import Snapshots from './Snapshots';
 import * as Utils from './Utils';
 import Puth from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
-import {PUTH_EXTENSION_CODEC} from './WebsocketConnections';
+import {PUTH_EXTENSION_CODEC} from './handlers/WebsocketHandler';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
 import path, { join } from 'node:path';
 import {encode} from '@msgpack/msgpack';
@@ -15,9 +14,8 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
-import { BrowserRef } from '@puth/puth/src/HandlesBrowsers';
+import { BrowserRef } from './handlers/BrowserHandler';
 import {Protocol} from 'devtools-protocol';
-import { parseString } from 'typedoc/dist/lib/converter/comments/declarationReference';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -122,7 +120,7 @@ class Context extends Generic {
         this.test.name = options?.test?.name ?? '';
 
         if (this.shouldSnapshot) { // Track context creation
-            Snapshots.pushToCache(this, {
+            this.puth.snapshotHandler.pushToCache(this, {
                 ...this.serialize(), // TODO remove -> GUI needs to use packet.context
                 context: this.serialize(),
                 type: 'context',
@@ -134,7 +132,7 @@ class Context extends Generic {
     }
 
     async setup() {
-        for (let pluginClass of this.getPuth().getContextPlugins()) {
+        for (let pluginClass of this.puth.contextPlugins) {
             let plugin = new pluginClass();
             await plugin.install(this);
             this.plugins.push(plugin);
@@ -147,8 +145,8 @@ class Context extends Generic {
     // }
 
     public async createBrowserRef(options: any = {}): Promise<{ref: BrowserRef, context: BrowserContext}> {
-        if (! options.executablePath && this.puth.getInstalledBrowser()?.executablePath) {
-            options.executablePath = this.puth.getInstalledBrowser().executablePath;
+        if (! options.executablePath && this.puth.installedBrowser?.executablePath) {
+            options.executablePath = this.puth.installedBrowser.executablePath;
         }
 
         return await this.puth.browserHandler.launch(options)
@@ -295,7 +293,7 @@ class Context extends Generic {
                     ),
             );
 
-            Snapshots.pushToCache(this, {
+            this.puth.snapshotHandler.pushToCache(this, {
                 id: v4(),
                 type: 'log',
                 context: this.serialize(),
@@ -489,7 +487,7 @@ class Context extends Generic {
     // @codegen
     // @gen-returns any[]
     public getSnapshotsByType(type): Return { // used by clients
-        return Return.Values(Snapshots.getAllCachedItemsFrom(this).filter(item => item?.type === type));
+        return Return.Values(this.puth.snapshotHandler.getAllCachedItemsFrom(this).filter(item => item?.type === type));
     }
 
     registerEventListenerOn(object, event, func) {
@@ -511,7 +509,7 @@ class Context extends Generic {
         this.test.status = ContextStatus.FAILED;
 
         if (this.shouldSnapshot) {
-            Snapshots.pushToCache(this, {
+            this.puth.snapshotHandler.pushToCache(this, {
                 type: 'test',
                 specific: 'status',
                 status: ContextStatus.FAILED,
@@ -526,7 +524,7 @@ class Context extends Generic {
         this.test.status = ContextStatus.SUCCESSFUL;
 
         if (this.shouldSnapshot) {
-            Snapshots.pushToCache(this, {
+            this.puth.snapshotHandler.pushToCache(this, {
                 type: 'test',
                 specific: 'status',
                 status: ContextStatus.SUCCESSFUL,
@@ -559,7 +557,7 @@ class Context extends Generic {
 
             return await writeFile(
                 storagePath,
-                encode(Snapshots.getAllCachedItemsFrom(this), {extensionCodec: PUTH_EXTENSION_CODEC}),
+                encode(this.puth.snapshotHandler.getAllCachedItemsFrom(this), {extensionCodec: PUTH_EXTENSION_CODEC}),
             );
         }
     }
@@ -594,17 +592,17 @@ class Context extends Generic {
         };
     }
 
-    public async callAll(calls) {
-        return Promise.all(calls.map(call => this.call(call)));
-    }
-
-    public async callAny(calls) {
-        return [await Promise.any(calls.map(call => this.call(call)))];
-    }
-
-    public async callRace(calls) {
-        return [await Promise.race(calls.map(call => this.call(call)))];
-    }
+    // public async callAll(calls) {
+    //     return Promise.all(calls.map(call => this.call(call)));
+    // }
+    //
+    // public async callAny(calls) {
+    //     return [await Promise.any(calls.map(call => this.call(call)))];
+    // }
+    //
+    // public async callRace(calls) {
+    //     return [await Promise.race(calls.map(call => this.call(call)))];
+    // }
 
     public async call(packet, res, skipQueue = false) {
         this._lastActivity = Date.now();
@@ -745,7 +743,7 @@ class Context extends Generic {
     private async handleCallApply(packet, page, on, func, parameters, expects = null) {
         const command = await this.createCommandInstance(packet, on);
         if (this.caches.dialog.size === 0) {
-            // await Snapshots.createBefore(this, page, command);
+            // await this.puth.snapshotHandler.createBefore(this, page, command);
         }
 
         this.portal.initial.call = null;
@@ -802,7 +800,7 @@ class Context extends Generic {
                         command.time.finished = Date.now();
                         command.time.took = command.time.finished - command.time.started;
 
-                        Snapshots.error(this, page, command, {
+                        this.puth.snapshotHandler.error(this, page, command, {
                             type: 'error',
                             specific: 'apply',
                             error: {
@@ -812,7 +810,7 @@ class Context extends Generic {
                             },
                             time: Date.now(),
                         });
-                        Snapshots.pushToCache(this, command);
+                        this.puth.snapshotHandler.pushToCache(this, command);
                     }
 
                     let response =
@@ -843,7 +841,7 @@ class Context extends Generic {
             await this.emitAsync('call:apply:after', {command, page});
 
             // TODO Implement this in events. Event: 'function:call:return'
-            Snapshots.pushToCache(this, command);
+            this.puth.snapshotHandler.pushToCache(this, command);
         };
 
         if (expectation != null) {
@@ -852,12 +850,12 @@ class Context extends Generic {
                 await this.emit('call:expectation:error', {expectation, command, page});
 
                 if (this.shouldSnapshot) {
-                    Snapshots.error(this, page, command, {
+                    this.puth.snapshotHandler.error(this, page, command, {
                         type: 'expectation',
                         expectation,
                         time: Date.now(),
                     });
-                    Snapshots.pushToCache(this, command);
+                    this.puth.snapshotHandler.pushToCache(this, command);
                 }
 
                 return {

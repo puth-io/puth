@@ -1,9 +1,11 @@
-import puppeteer, { Browser, BrowserContext, EventType, Handler, Page, PuppeteerError } from 'puppeteer-core';
-import chromeDefaultArgs from './chromeDefaultArgs.json';
+import Puth from '../Puth';
+import { BaseHandler } from './BaseHandler';
+import chromeDefaultArgs from '../chromeDefaultArgs.json';
+import {objectHash} from '../utils/external/object-hash';
+import puppeteer, { Browser, BrowserContext, PuppeteerError } from 'puppeteer-core';
 import tmp from 'tmp';
-import {objectHash} from './utils/external/object-hash';
 
-export type HandlesBrowsers = {
+export type IBrowserHandler = {
     launch: (options: any) => Promise<{ref: BrowserRef, context: BrowserContext}>;
     // connect: (options: any) => Promise<Browser>;
     destroy: (browserRef: BrowserRef, browserContext?: BrowserContext) => Promise<void[]>;
@@ -18,8 +20,8 @@ export type BrowserRef = {
     unusedSince?: number;
 }
 
-export class DefaultBrowserHandler implements HandlesBrowsers {
-    private refs: BrowserRef[] = [];
+export class BrowserHandler extends BaseHandler implements IBrowserHandler {
+    #refs: BrowserRef[] = [];
 
     // limits the browsers that are kept cached
     public browserLimit = 3;
@@ -27,7 +29,8 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
     // destroy the actual browser after it's unused for defined seconds
     public browserUnusedTimeout = 120 * 1000;
 
-    constructor() {
+    constructor(puth: Puth) {
+        super(puth);
         setInterval(() => this.cleanupUnused(), this.browserUnusedTimeout);
     }
 
@@ -36,7 +39,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
 
         let ref = this.findBrowserRefForOptionsHash(optionsHash);
         if (ref) {
-            console.debug('[HandlesBrowsers] reusing ref', ref.optionsHash);
+            this.logger.debug(`BrowserHandler pool reusing ref ${ref.optionsHash}`);
             ref.destroying = false;
             ref.unusedSince = undefined;
 
@@ -65,8 +68,8 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
                     browserContexts: [],
                     optionsHash,
                 };
-                this.refs.push(ref);
-                console.debug('[HandlesBrowsers] added ref', ref.optionsHash);
+                this.#refs.push(ref);
+                this.logger.debug(`BrowserHandler pool added ref ${ref.optionsHash}`);
                 browser.once('disconnected', () => this.disconnected(browser));
 
                 return browser.createBrowserContext()
@@ -94,7 +97,7 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
                 if (error instanceof PuppeteerError) {
                     return;
                 }
-                console.error({error});
+                this.logger.error({error});
                 throw error;
             });
         }))
@@ -111,10 +114,10 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             return;
         }
         ref.destroying = true;
-        console.debug('[HandlesBrowsers] destroying ref', ref.optionsHash);
+        this.logger.debug(`BrowserHandler pool destroying ref ${ref.optionsHash}`);
 
-        let idx = this.refs.findIndex(ref => ref === ref);
-        this.refs.splice(idx, 1);
+        let idx = this.#refs.findIndex(ref => ref === ref);
+        this.#refs.splice(idx, 1);
 
         return ref.browser.close()
             // return cause possibly async
@@ -127,11 +130,11 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
     }
 
     findBrowserRefForOptionsHash(optionsHash: string): BrowserRef|undefined {
-        return this.refs.find(ref => ref.optionsHash === optionsHash);
+        return this.#refs.find(ref => ref.optionsHash === optionsHash);
     }
 
     findBrowserRef(browser: Browser): BrowserRef|undefined {
-        return this.refs.find(ref => ref.browser === browser);
+        return this.#refs.find(ref => ref.browser === browser);
     }
 
     async cleanupUnused() {
@@ -149,13 +152,13 @@ export class DefaultBrowserHandler implements HandlesBrowsers {
             }
             toDestroy.push(ref);
         }
-        console.debug('[HandlesBrowsers] GC checking...');
+        this.logger.debug('BrowserHandler GC checking...');
 
         return Promise.all(toDestroy.map(ref => this.destroyRef(ref)));
     }
 
     allUnusedBrowsers(): BrowserRef[] {
-        return this.refs
+        return this.#refs
             .filter(ref => ref.unusedSince != null)
             // @ts-ignore
             .sort((a, b) => a.unusedSince - b.unusedSince);

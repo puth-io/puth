@@ -2,8 +2,7 @@ import {v4} from 'uuid';
 import { Browser, BrowserContext, Page } from 'puppeteer-core';
 import Context from "../Context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
-import Puth from "../";
-import Snapshots from "../Snapshots";
+import Puth from "../Puth";
 import PuthContextPlugin from "../PuthContextPlugin";
 import Constructors from "../context/Constructors";
 import sharp from "sharp";
@@ -105,7 +104,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
                     .toBuffer();
             }
             
-            Snapshots.pushToCache(context as TODO, {
+            this.puth.snapshotHandler.pushToCache(context as TODO, {
                 id: v4(),
                 type: 'screencasts',
                 version: 1,

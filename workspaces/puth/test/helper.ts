@@ -61,7 +61,7 @@ export function multiTest(callback, extended = false) {
             
             after(async function () {
                 if (env[0] === 'remote') {
-                    await this.__remoteTestInstance?.getServer()?.close();
+                    await this.__remoteTestInstance?.http?.close();
                 }
             });
             
