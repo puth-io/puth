@@ -155,7 +155,8 @@ export default class Puth {
         h3.post('/portal/detour/**', async (event) => {
             let cid = event.req.headers.get('puth-portal-context-id');
             let psuri = event.req.headers.get('puth-portal-psuri');
-            let url = event.req.headers.get('puth-portal-original-url');
+            let url = event.req.headers.get('puth-portal-url');
+            let path = event.req.headers.get('puth-portal-path');
 
             if (cid == null) throw H3.HTTPError.status(422, 'Portal detour missing required header [cid]');
             if (psuri == null) throw H3.HTTPError.status(422, 'Portal detour missing required header [psuri]');
@@ -191,7 +192,8 @@ export default class Puth {
 
                 context.handlePortalRequest({
                     psuri,
-                    url,
+                    url: decodeURI(url),
+                    path: decodeURI(path ?? ''),
                     headers: event.req.headers,
                     data: (await event.req.bytes()).toBase64(),
                     method: event.req.method,
