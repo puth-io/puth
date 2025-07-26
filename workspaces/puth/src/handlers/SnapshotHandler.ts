@@ -1,32 +1,32 @@
-import {Page} from 'puppeteer-core';
-import WebsocketConnections from './WebsocketConnections';
 import {ICommand, ICommandError, IPacket} from '@puth/core';
-import Context from './Context';
+import { BaseHandler } from './BaseHandler';
+import Context from '../Context';
+import {Page} from 'puppeteer-core';
 
-class SnapshotHandler {
-    private cache = new Map<Context, IPacket[]>();
-    
+export class SnapshotHandler extends BaseHandler {
+    #cache = new Map<Context, IPacket[]>();
+
     pushToCache(context: Context, item, {broadcast} = {broadcast: true}) {
         if (item == null || item.cached) {
             return;
         }
         
-        if (! this.cache.has(context)) {
+        if (! this.#cache.has(context)) {
             // cleanup cache to have at least some memory limit
-            if (this.cache.size >= 100) {
-                this.cache.delete(this.cache.keys()[0]);
+            if (this.#cache.size >= 100) {
+                this.#cache.delete(this.#cache.keys()[0]);
             }
             
-            this.cache.set(context, []);
+            this.#cache.set(context, []);
         }
         
         // @ts-ignore
-        this.cache.get(context).push(item);
+        this.#cache.get(context).push(item);
         item.cached = true;
         
         // TODO maybe implement a time buffer to send out multiple snapshots
         if (broadcast) {
-            WebsocketConnections.broadcastAll(item);
+            this.puth.websocketHandler.broadcast(item);
         }
     }
     
@@ -40,23 +40,19 @@ class SnapshotHandler {
     
     getAllCachedItems() {
         // @ts-ignore
-        return [].concat(...this.cache.values());
+        return [].concat(...this.#cache.values());
     }
     
     getAllCachedItemsFrom(context: Context): IPacket[] {
-        if (! this.cache.has(context)) {
+        if (! this.#cache.has(context)) {
             return [];
         }
         
         // @ts-ignore
-        return [].concat(...this.cache.get(context));
+        return [].concat(...this.#cache.get(context));
     }
     
     hasCachedItems() {
-        return this.cache.size !== 0;
+        return this.#cache.size !== 0;
     }
 }
-
-const Snapshots = new SnapshotHandler();
-
-export default Snapshots;
