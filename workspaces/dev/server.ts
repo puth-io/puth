@@ -1,4 +1,5 @@
-import Puth, {
+import {
+    Puth,
     usableBrowserInstallations,
     makeLogger,
     PuthStandardPlugin,
@@ -9,9 +10,9 @@ import Puth, {
 const stringifyBrowsers = browsers  => browsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ');
 
 const logger = makeLogger(true);
-logger.info(`All browsers: ${stringifyBrowsers(allBrowserInstallations)}`);
-logger.info(`Unusable browsers: ${stringifyBrowsers(unusableBrowserInstallations)}`);
-logger.info(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`);
+logger.debug(`All browsers: ${stringifyBrowsers(allBrowserInstallations)}`);
+logger.debug(`Unusable browsers: ${stringifyBrowsers(unusableBrowserInstallations)}`);
+logger.debug(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`);
 
 const instance = new Puth({
     debug: true,

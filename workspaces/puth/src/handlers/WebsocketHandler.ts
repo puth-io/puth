@@ -24,20 +24,22 @@ export const Decoder = new BaseDecoder(PUTH_EXTENSION_CODEC);
 export class WebsocketHandler extends BaseHandler {
     peers: Peer[] = [];
 
-    push(socket: Peer) {
-        this.peers.push(socket);
+    push(peer: Peer) {
+        this.logger.debug('WebsocketHandler peer connected');
+        this.peers.push(peer);
     }
 
-    pop(socket: Peer) {
-        let index = this.peers.indexOf(socket);
+    pop(peer: Peer) {
+        this.logger.debug('WebsocketHandler peer disconnected');
+        let index = this.peers.indexOf(peer);
         this.peers.splice(index, 1);
     }
 
     broadcast(message: string|object|object[]) {
         let data = this.serializeSharedRef(message);
 
-        for (let socket of this.peers) {
-            socket.send(data);
+        for (let peer of this.peers) {
+            peer.send(data);
         }
     }
 

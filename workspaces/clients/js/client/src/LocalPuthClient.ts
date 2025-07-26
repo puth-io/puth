@@ -1,4 +1,4 @@
-import Puth from "puth";
+import { Puth } from "puth";
 import { RemoteContext } from "./RemoteObject";
 import { PuthPlugin, PuthPluginGeneric } from "puth/src/PuthPluginGeneric";
 

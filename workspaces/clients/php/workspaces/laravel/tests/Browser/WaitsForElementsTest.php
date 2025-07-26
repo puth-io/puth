@@ -2,7 +2,6 @@
 
 namespace Tests\Browser;
 
-use Exception;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser;
@@ -39,8 +38,8 @@ class WaitsForElementsTest extends PuthTestCase
             ->andReturn($playground->url());
         
         $this->browse(function (Browser $browser) use ($playground) {
-            $browser->waitUntil("window.location = '{$playground->url()}'")
-                ->waitForRoute('playground')
+            $browser->evaluate("window.location = '{$playground->url()}'");
+            $browser->waitForRoute('mocked return')
                 ->assertUrlIs($playground->url());
         });
     }
@@ -99,13 +98,16 @@ class WaitsForElementsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            $time = now();
-            $browser->waitForEvent('test-event', '#wait-for-event-element', 1);
-            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+            $browser->functionTimeoutMultiplier = 1;
+
+            $first = now();
+            $browser->waitForEvent('test-event', '#wait-for-event-element', 100);
+            Assert::assertLessThan(500, now()->diffInMilliseconds($first, true));
             
-            $time = now();
-            $browser->waitForEvent('test-event', 'document', 1);
-            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+            $second = now();
+            $browser->waitForEvent('test-event', 'document', 100);
+            Assert::assertLessThan(500, now()->diffInMilliseconds($second, true));
+            Assert::assertGreaterThan(200, now()->diffInMilliseconds($first, true));
         });
     }
     

@@ -48,7 +48,7 @@ const visitedSymbols = new Set();        // symbol‑level guard (alias safe)
 const PRIMITIVES = new Set([
     'string', 'number', 'boolean', 'any', 'void', 'null', 'undefined',
     'bigint', 'symbol', 'never', 'mixed', 'unknown', 'Uint8Array',
-    'integer',
+    'int',
 ]);
 
 function isPrimitive(txt) {return PRIMITIVES.has(txt);} // simple check — arrays handled later
@@ -93,19 +93,15 @@ const NAME_TRANSLATION = {
         laravel: {
             Browser: {
                 screenshot: '_screenshot',
-                click: '_click',
-                type: '_type',
-                typeSlowly: '_typeSlowly',
+                // type: '_type',
+                keys: '_keys',
+                // typeSlowly: '_typeSlowly',
                 findOrFail: '_findOrFail',
                 firstOrFail: '_firstOrFail',
                 assertHasCookie: '_assertHasCookie',
                 assertCookieMissing: '_assertCookieMissing',
                 assertCookieValue: '_assertCookieValue',
-                waitFor: '_waitFor',
-                waitForTextIn: '_waitForTextIn',
                 waitUntil: '_waitUntil',
-                waitUntilEnabled: '_waitUntilEnabled',
-                waitUntilDisabled: '_waitUntilDisabled',
                 format: '_format',
                 withinIframe: '_withinIframe',
             },
@@ -491,7 +487,7 @@ function mapTypeToPHP(type, className) {
                 return 'bool';
             case 'void':
                 return 'void';
-            case 'integer':
+            case 'int':
                 return 'int';
             default:
                 return 'mixed';
@@ -531,7 +527,7 @@ function functionParameterOptional(p, className) {
         }  else if (p.initializer.type === 'true') {
             return ` = true`;
         } else if (p.initializer.value != null) {
-            if (p.type === 'integer') return ` = ${p.initializer.value}`;
+            if (p.type === 'int') return ` = ${p.initializer.value}`;
             else if (p.type === 'string') return ` = '${p.initializer.value}'`;
         }
     }

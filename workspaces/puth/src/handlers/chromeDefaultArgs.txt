@@ -1,0 +1,5 @@
+Removed
+- --disable-site-isolation-trials
+- --disable-web-resources
+- --disable-sync
+- --incognito

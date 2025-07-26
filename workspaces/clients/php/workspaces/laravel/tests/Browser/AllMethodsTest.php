@@ -33,9 +33,6 @@ class AllMethodsTest extends PuthTestCase
         });
     }
     
-    /**
-     * DONE
-     */
     function test_select()
     {
         $this->browse(function (Browser $browser) {
@@ -168,17 +165,15 @@ class AllMethodsTest extends PuthTestCase
                 ->click('#actions-focus')
                 ->assertFocused('#actions-focus')
                 ->assertNotFocused('#actions-type input')
-//                ->assertVue
-//                ->assertVueIsNot
-//                ->assertVueContains
-//                ->assertVueDoesNotContain
-//                ->vueAttribute
             ;
+        });
+    }
 
-
-            // TODO implement missing inverse tests
-
-            $inverse = function(string $message, \Closure $closure) {
+    // TODO implement missing inverse tests
+    function test_concern_makes_assertions_inverse()
+    {
+        $this->browse(function (Browser $browser) {
+            $inverse = function (string $message, \Closure $closure) {
                 try {
                     $closure();
                     $this->fail('Closure didn\'t throw any exception');
@@ -189,18 +184,21 @@ class AllMethodsTest extends PuthTestCase
                 }
             };
 
+            $browser->visit(new Playground);
+            $browser->timeout = 500;
+            $browser->functionTimeoutMultiplier = 1;
+
             $inverse('Did not see expected text [This text does not exists] within element [.querying-get]', fn() => $browser->assertSeeIn('.querying-get', 'This text does not exists'));
             $inverse('Saw unexpected text [Div] within element [.querying-get]', fn() => $browser->assertDontSeeIn('.querying-get', 'Div'));
             $inverse('JavaScript expression [1+1] mismatched', fn() => $browser->assertScript('1+1', 3));
             $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
             $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
 
-            // temporarily disabled because these functions have timeouts and therefore every line would take 5s to run
-//            $inverse("Element [a[href='https://notalink.io/']] not found", fn() => $browser->assertSeeLink('https://notalink.io/'));
-//            $inverse("Element [body #not-existing-element] not found", fn() => $browser->assertVisible('body #not-existing-element'));
+            $inverse("Waited 500ms for selector [body a[href='https://notalink.io/']]", fn() => $browser->assertSeeLink('https://notalink.io/'));
+            $inverse('Waited 500ms for selector [body body #not-existing-element]', fn() => $browser->assertVisible('body #not-existing-element'));
         });
     }
-    
+
     function test_assert_see_anything_exception()
     {
         $this->browse(function (Browser $browser) {
@@ -240,7 +238,7 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
-                ->evaluate('setTimeout(_ => window.location.href = "https://puth.io", 2000)');
+                ->evaluate('setTimeout(_ => window.location.href = "https://puth.io", 250)');
             $browser->assertUrlIs('https://puth.io/');
         });
     }

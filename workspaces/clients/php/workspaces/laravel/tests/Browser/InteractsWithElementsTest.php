@@ -2,12 +2,15 @@
 
 namespace Browser;
 
+use PHPUnit\Framework\ExpectationFailedException;
 use Puth\Laravel\Browser;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithElementsTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_click_link()
     {
         $this->browse(function (Browser $browser) {
@@ -23,7 +26,7 @@ class InteractsWithElementsTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->attach('file-test-input', __DIR__ . '/files/test.txt')
-                ->assertSeeIn('#file-attach-preview', 'test.txt content');
+                ->assertSeeIn('#file-attach-preview', file_get_contents(__DIR__ . '/files/test.txt'));
         });
     }
     
@@ -35,7 +38,10 @@ class InteractsWithElementsTest extends PuthTestCase
                     __DIR__ . '/files/test.txt',
                     __DIR__ . '/files/test2.txt',
                 ])
-                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
+                ->assertSeeIn(
+                    '#file-attach-preview',
+                    file_get_contents(__DIR__ . '/files/test.txt') . file_get_contents(__DIR__ . '/files/test2.txt'),
+                );
         });
     }
     
@@ -80,7 +86,7 @@ class InteractsWithElementsTest extends PuthTestCase
     
     function test_move_mouse_exception()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
             $browser->moveMouse(0, 0);
         });
