@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithMouseTest extends PuthTestCase
 {
+    public static bool $debug = true;
+
     function test_mouse_control_click()
     {
         $this->browse(function (Browser $browser) {

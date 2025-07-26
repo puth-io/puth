@@ -90,13 +90,12 @@ class RemoteObject
             'calls' => $this->context->accumulatedCalls,
         ]]);
 
+        $parts = json_decode($response->getBody());
         if ($this->context->debug) {
             $this->log('return: ', false);
-            var_export(json_decode($response->getBody()));
+            var_export($parts);
             print("\n\n");
         }
-
-        $parts = json_decode($response->getBody());
 
         $return = [];
         foreach ($parts as $idx => $part) {

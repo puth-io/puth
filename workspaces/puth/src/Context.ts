@@ -613,6 +613,7 @@ class Context extends Generic {
     // }
 
     public async call(packet, res, skipQueue = false) {
+        this.puth.logger.debug(packet, 'Context call');
         this._lastActivity = Date.now();
 
         if (!skipQueue && this.portal.queue.backlog.length !== 0) {
@@ -798,6 +799,10 @@ class Context extends Generic {
                     }
 
                     // this.puth.logger.debug({ packet, response }, 'lastCallerPromise response');
+                    if (this.lastCallerPromise == null) {
+                        this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
+                        throw new Error('Unexpected empty lastCallerPromise');
+                    }
                     this.lastCallerPromise.resolve(response);
                 } catch (error: any) {
                     this.puth.logger.debug(error, '[Call apply error]')
@@ -836,6 +841,10 @@ class Context extends Generic {
                         return;
                     }
 
+                    if (this.lastCallerPromise == null) {
+                        this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
+                        throw new Error('Unexpected empty lastCallerPromise');
+                    }
                     this.lastCallerPromise.resolve(response);
                 }
             })

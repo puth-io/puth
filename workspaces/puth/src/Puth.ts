@@ -148,6 +148,9 @@ export default class Puth {
 
         h3.post('/context', json(data => this.contextCreate(data)));
         h3.patch('/context/call', json(data => defer(handle => this.contextCall(data, handle))));
+        h3.patch('/context/get', json(data => this.contextGet(data)));
+        h3.patch('/context/set', json(data => this.contextSet(data)));
+        h3.patch('/context/delete', json(data => this.contextDelete(data)));
         // TODO fix response based on contextDestroy return value (bool)
         h3.delete('/context', json(data => this.contextDestroy(data)));
 

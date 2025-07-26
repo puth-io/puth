@@ -23,7 +23,7 @@ class InteractsWithElementsTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->attach('file-test-input', __DIR__ . '/files/test.txt')
-                ->assertSeeIn('#file-attach-preview', 'test.txt content');
+                ->assertSeeIn('#file-attach-preview', file_get_contents(__DIR__ . '/files/test.txt'));
         });
     }
     
@@ -35,7 +35,10 @@ class InteractsWithElementsTest extends PuthTestCase
                     __DIR__ . '/files/test.txt',
                     __DIR__ . '/files/test2.txt',
                 ])
-                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
+                ->assertSeeIn(
+                    '#file-attach-preview',
+                    file_get_contents(__DIR__ . '/files/test.txt') . file_get_contents(__DIR__ . '/files/test2.txt'),
+                );
         });
     }
     

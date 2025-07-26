@@ -50,7 +50,7 @@ trait InteractsWithMouse
         throw new \Exception('MoveMouse is currently not supported.');
         /**
          * Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse
-         * by an offset. Therefor puppeteer apis only work with "absolute" mouse positions.
+         * by an offset. Puppeteer apis only work with "absolute" mouse positions.
          */
     }
     
