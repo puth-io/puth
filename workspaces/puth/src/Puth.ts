@@ -1,4 +1,5 @@
-import path from 'node:path';
+import path, { join } from 'node:path';
+import { stat, readFile } from "node:fs/promises";
 import { BaseLogger } from 'pino';
 import { Server } from "srvx";
 import * as H3 from 'h3';
@@ -11,6 +12,7 @@ import PuthInstancePlugin from './PuthInstancePlugin';
 import { BrowserHandler, IBrowserHandler } from './handlers/BrowserHandler';
 import { WebsocketHandler } from './handlers/WebsocketHandler';
 import { SnapshotHandler } from './handlers/SnapshotHandler';
+import { createReadStream } from 'node:fs';
 
 declare global {
     type TODO = any;
@@ -109,14 +111,6 @@ export default class Puth {
          *                 origin: allowedOrigins,
          *             });
          *         }
-         *         this.server.register(require('@fastify/static'), {
-         *             root: this.options?.staticDir ?? path.dirname(require.resolve('@puth/gui/dist/index.html')),
-         *         });
-         *         this.server.register(async (fastify) => {
-         *             fastify.setNotFoundHandler(async (request, reply) => {
-         *                 return reply.sendFile('index.html');
-         *             });
-         *         });
          *     }
          */
 
@@ -229,11 +223,36 @@ export default class Puth {
             }),
         )
 
+        // GUI
+        h3.get('/', (event) => createReadStream(guiIndexFilePath));
+
+        const guiIndexFilePath = require.resolve('@puth/gui/dist/index.html');
+        const staticDir = this.options?.staticDir ?? path.dirname(guiIndexFilePath);
+        this.logger.debug(`Serving static files from ${staticDir}`);
+        h3.get('/**', (event) => H3.serveStatic(event, {
+            indexNames: [],
+            getContents: (id) => {
+                return readFile(join(staticDir, id === '/' ? 'index.html' : id));
+            },
+            getMeta: async (id) => {
+                const stats = await stat(join(staticDir, id === '/' ? 'index.html' : id)).catch(() => {});
+                if (stats?.isFile()) {
+                    return {
+                        size: stats.size,
+                        mtime: stats.mtimeMs,
+                    };
+                }
+            },
+        }));
+
         this.#http = H3.serve(h3, {
             hostname,
             port,
             plugins: [ws({ resolve: async (req) => (await h3.fetch(req)).crossws })],
+            silent: true,
         });
+
+        this.logger.info(`Server listening at ${this.#http.url}`);
 
         return this.#http;
     }
