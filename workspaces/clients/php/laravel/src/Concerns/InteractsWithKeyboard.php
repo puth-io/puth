@@ -17,19 +17,4 @@ trait InteractsWithKeyboard
         $callback(new Keyboard($this));
         return $this;
     }
-    
-    /**
-     * Parse the keys before sending to the keyboard.
-     *
-     * @param  array  $keys
-     * @return array
-     */
-    public function parseKeys($keys)
-    {
-        if (is_array($keys)) {
-            return array_map(fn ($comb) => is_array($comb) ? join('', $comb) : $comb, $keys);
-        } else {
-            throw new \Exception('Unsupported parameter type. Should be string or array.');
-        }
-    }
 }

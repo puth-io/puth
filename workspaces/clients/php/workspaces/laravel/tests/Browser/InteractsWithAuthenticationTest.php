@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithAuthenticationTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_user_resolver()
     {
         $this->browse(function (Browser $browser) {
@@ -26,6 +28,8 @@ class InteractsWithAuthenticationTest extends PuthTestCase
                 ->loginAs($user)
                 ->assertAuthenticatedAs($user);
         });
+
+        $this->assertAuthenticatedAs($user);
     }
     
     function test_logout()

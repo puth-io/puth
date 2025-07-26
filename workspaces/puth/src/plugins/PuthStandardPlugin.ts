@@ -195,6 +195,19 @@ export class PuthStandardPlugin extends PuthContextPlugin {
         return (await element.evaluateHandle((el, p) => el.getAttribute(p), attribute)).jsonValue();
     }
 
+    static async deselectAll(element) {
+        return element.evaluateHandle(select => {
+            if (select.tagName.toLowerCase() !== 'select' || !select.multiple) {
+                throw new Error('Element is not a <select multiple> element');
+            }
+            for (const option of select.options) {
+                option.selected = false;
+            }
+            const event = new Event('change', { bubbles: true });
+            select.dispatchEvent(event);
+        });
+    }
+
     get(element, search, options?) {
         return retryFor(
             this.context.getTimeout(options),

@@ -10,9 +10,9 @@ use PHPUnit\Runner\Version;
 use Puth\Context;
 use Puth\Laravel\Concerns\ProvidesBrowser;
 use Puth\Laravel\Facades\Puth;
-use Puth\RemoteObject;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
+use Puth\Utils\MimeType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -160,6 +160,18 @@ abstract class TestCase extends FoundationTestCase
     // portal request handling
     public function handlePortalRequest(object $portalRequest)
     {
+        if ($portalRequest->path !== '/' && file_exists($staticFile = public_path($portalRequest->path))) {
+            $content = file_get_contents($staticFile);
+            $mimeType = MimeType::detector()->detectMimeType($staticFile, $content);
+            return [
+                'body' => base64_encode($content),
+                'headers' => [
+                    'Content-Type' => $mimeType,
+                ],
+                'status' => 200,
+            ];
+        }
+
         $kernel = $this->app->make(HttpKernel::class);
         $request = $this->parsePortalRequest($portalRequest);
         $response = $kernel->handle(
@@ -179,7 +191,6 @@ abstract class TestCase extends FoundationTestCase
 
         return [
             'body' => base64_encode($body),
-            'contentType' => $testResponse->headers->get('Content-Type'),
             'headers' => $testResponse->headers->all(),
             'status' => $testResponse->getStatusCode(),
         ];

@@ -1,4 +1,6 @@
-import path from 'node:path';
+import path, { join } from 'node:path';
+import { stat, readFile } from "node:fs/promises";
+import { createReadStream } from 'node:fs';
 import { BaseLogger } from 'pino';
 import { Server } from "srvx";
 import * as H3 from 'h3';
@@ -38,7 +40,7 @@ export type PuthOptions = {
     logger?: BaseLogger;
 };
 
-export default class Puth {
+export class Puth {
     // @ts-ignore
     #http: Server;
     #logger: BaseLogger;
@@ -93,10 +95,11 @@ export default class Puth {
             throw new Error('Unsupported plugin type!');
         }
 
+        // @ts-ignore
         this.info(`Plugin loaded: ${plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name}`);
     }
 
-    private serve(port = 7345, hostname = '127.0.0.1', log = true): Server {
+    public serve(port = 7345, hostname = '127.0.0.1'): Server {
         if (this.http !== undefined) {
             throw new Error('Serve already called on this Puth instance.');
         }
@@ -109,18 +112,15 @@ export default class Puth {
          *                 origin: allowedOrigins,
          *             });
          *         }
-         *         this.server.register(require('@fastify/static'), {
-         *             root: this.options?.staticDir ?? path.dirname(require.resolve('@puth/gui/dist/index.html')),
-         *         });
-         *         this.server.register(async (fastify) => {
-         *             fastify.setNotFoundHandler(async (request, reply) => {
-         *                 return reply.sendFile('index.html');
-         *             });
-         *         });
          *     }
          */
 
-        let h3 = new H3.H3();
+        let h3 = new H3.H3({
+            debug: true,
+            onError: (error) => {
+                this.logger.error(error);
+            },
+        });
 
         const cors = {
             origin: [
@@ -148,6 +148,9 @@ export default class Puth {
 
         h3.post('/context', json(data => this.contextCreate(data)));
         h3.patch('/context/call', json(data => defer(handle => this.contextCall(data, handle))));
+        h3.patch('/context/get', json(data => this.contextGet(data)));
+        h3.patch('/context/set', json(data => this.contextSet(data)));
+        h3.patch('/context/delete', json(data => this.contextDelete(data)));
         // TODO fix response based on contextDestroy return value (bool)
         h3.delete('/context', json(data => this.contextDestroy(data)));
 
@@ -155,7 +158,8 @@ export default class Puth {
         h3.post('/portal/detour/**', async (event) => {
             let cid = event.req.headers.get('puth-portal-context-id');
             let psuri = event.req.headers.get('puth-portal-psuri');
-            let url = event.req.headers.get('puth-portal-original-url');
+            let url = event.req.headers.get('puth-portal-url');
+            let path = event.req.headers.get('puth-portal-path');
 
             if (cid == null) throw H3.HTTPError.status(422, 'Portal detour missing required header [cid]');
             if (psuri == null) throw H3.HTTPError.status(422, 'Portal detour missing required header [psuri]');
@@ -177,6 +181,9 @@ export default class Puth {
             //         .then(base64 => part.value = base64);
             // }));
 
+            let bytes = await event.req.bytes();
+            let data = process.versions.bun ? bytes.toBase64() : bytes.toString('base64');
+
             return defer(async handle => {
                 context.setPsuriHandler(
                     psuri,
@@ -184,16 +191,18 @@ export default class Puth {
                     (error, status, data, headers) => handle.resolve(
                         new Response(data, {
                             status,
-                            headers: headers.map(header => [header.name, header.value])
+                            headers: headers.map((header): [string, string] => [header.name, header.value]),
                         }),
                     ),
                 );
 
                 context.handlePortalRequest({
                     psuri,
-                    url,
+                    url: decodeURI(url),
+                    path: decodeURI(path ?? ''),
                     headers: event.req.headers,
-                    data: (await event.req.bytes()).toBase64(),
+                    // @ts-ignore
+                    data,
                     method: event.req.method,
                 });
             });
@@ -224,11 +233,37 @@ export default class Puth {
             }),
         )
 
+        // GUI
+        h3.get('/', (event) => createReadStream(guiIndexFilePath));
+
+        const guiIndexFilePath = require.resolve('@puth/gui/dist/index.html');
+        const staticDir = this.options?.staticDir ?? path.dirname(guiIndexFilePath);
+        this.logger.debug(`Serving static files from ${staticDir}`);
+        h3.get('/**', (event) => H3.serveStatic(event, {
+            indexNames: [],
+            getContents: (id) => {
+                return readFile(join(staticDir, id === '/' ? 'index.html' : id));
+            },
+            getMeta: async (id) => {
+                const stats = await stat(join(staticDir, id === '/' ? 'index.html' : id)).catch(() => {});
+                if (stats?.isFile()) {
+                    return {
+                        size: stats.size,
+                        mtime: stats.mtimeMs,
+                    };
+                }
+            },
+        }));
+
         this.#http = H3.serve(h3, {
             hostname,
             port,
+            // @ts-ignore
             plugins: [ws({ resolve: async (req) => (await h3.fetch(req)).crossws })],
+            silent: true,
         });
+
+        this.logger.info(`Server listening at http://${hostname}:${port}`);
 
         return this.#http;
     }

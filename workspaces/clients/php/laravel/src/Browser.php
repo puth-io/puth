@@ -12,9 +12,9 @@ class Browser extends \Puth\RemoteObjects\Browser
 {
     use Concerns\InteractsWithAuthentication; // done
     use Concerns\InteractsWithCookies; // done
-    use Concerns\InteractsWithElements;
-    use Concerns\InteractsWithKeyboard;
-    use Concerns\InteractsWithMouse;
+    use Concerns\InteractsWithElements; // done
+    use Concerns\InteractsWithKeyboard; // done - we can't really rewrite the keyboard in puth since
+//    use Concerns\InteractsWithMouse; // done (deleted)
     use Concerns\MakesAssertions; // done
     use Concerns\WaitsForElements;
 
@@ -101,7 +101,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      *
      * @var ElementResolver
      */
-    private $resolver;
+    public $resolver;
 
     /**
      * The page object currently being viewed.
@@ -670,21 +670,5 @@ class Browser extends \Puth\RemoteObjects\Browser
         }
 
         throw new BadMethodCallException("Call to undefined method [{$method}].");
-    }
-
-    /*
-     * Legacy functions
-     */
-
-    /**
-     * Execute JavaScript within the browser.
-     *
-     * @deprecated replace with evaluate()
-     * @param string|array $scripts
-     * @return array
-     */
-    public function script($scripts)
-    {
-        return $this->evaluate($scripts);
     }
 }

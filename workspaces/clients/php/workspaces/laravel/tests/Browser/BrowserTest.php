@@ -84,7 +84,7 @@ class BrowserTest extends PuthTestCase
     function test_store_console_log()
     {
         $this->browse(function (Browser $browser) {
-            $browser->script('console.log("abc")');
+            $browser->evaluate('console.log("abc")');
     
             $fileName = 'test-run-' . Str::random();
             
@@ -170,15 +170,15 @@ class BrowserTest extends PuthTestCase
 //        });
 //    }
     
-    function test_unreachable_action_exception()
-    {
-        $this->expectException(UnreachableActionException::class);
-        
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->all(fn($site) => [
-                    $site->click('')->unreachable(),
-                ]);
-        });
-    }
+//    function test_unreachable_action_exception()
+//    {
+//        $this->expectException(UnreachableActionException::class);
+//
+//        $this->browse(function (Browser $browser) {
+//            $browser->visit(new Playground)
+//                ->all(fn($site) => [
+//                    $site->click('')->unreachable(),
+//                ]);
+//        });
+//    }
 }

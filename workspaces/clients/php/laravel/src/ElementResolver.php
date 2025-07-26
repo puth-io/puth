@@ -95,41 +95,11 @@ class ElementResolver
     }
     
     /**
-     * Resolve the element for a given input "field".
-     */
-    public function resolveForTyping(string $field): RemoteObject
-    {
-        return $this->browser->_firstOrFail($this->getTypingSelectors($field));
-    }
-    
-    /**
      * Resolve the element for a given select "field".
      */
     public function resolveForSelection(string $field)
     {
         return $this->browser->_firstOrFail($this->getSelectionSelectors($field));
-    }
-    
-    /**
-     * Resolve all the options with the given value on the select field.
-     *
-     * @param string $field
-     * @param array $values
-     * @return mixed[]
-     *
-     * @throws \Exception
-     */
-    public function resolveSelectOptions($field, array $values)
-    {
-        $options = $this->resolveForSelection($field)->children('option');
-        
-        if (empty($options)) {
-            return [];
-        }
-        
-        return array_filter($options, function ($option) use ($values) {
-            return in_array($option->value, $values);
-        });
     }
     
     /**

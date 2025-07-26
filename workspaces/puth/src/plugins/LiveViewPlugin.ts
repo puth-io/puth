@@ -2,7 +2,7 @@ import {v4} from 'uuid';
 import { Browser, BrowserContext, Page } from 'puppeteer-core';
 import Context from "../Context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
-import Puth from "../Puth";
+import { Puth } from '../Puth';
 import PuthContextPlugin from "../PuthContextPlugin";
 import Constructors from "../context/Constructors";
 import sharp from "sharp";
@@ -48,7 +48,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     
     private async handleContextCreated(context: Context) {
         await Promise.all([context.browsers.flatMap(
-            async rv => rv.ref.browserContexts.flatMap(
+            async rv => rv.ref.contexts.flatMap(
                 async browser => {
                     return Promise.all([(await browser.pages()).map(page => {
                         return this.attachScreencastEvents({context, browser, page} as TODO);

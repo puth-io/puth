@@ -1,4 +1,4 @@
-import Puth, {usableBrowserInstallations, PuthStandardPlugin} from '../';
+import {Puth, usableBrowserInstallations, PuthStandardPlugin} from '../';
 import {LocalPuthClient, RemotePuthClient} from '@puth/client';
 import * as assert from "assert";
 

@@ -1,11 +1,11 @@
-import Puth, {usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin, allBrowserInstallations, unusableBrowserInstallations} from '../';
+import {Puth, usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin, allBrowserInstallations, unusableBrowserInstallations} from '../';
 
 const stringifyBrowsers = browsers => browsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ');
 
 const logger = makeLogger(true);
-logger.info(`All browsers: ${stringifyBrowsers(allBrowserInstallations)}`);
-logger.info(`Unusable browsers: ${stringifyBrowsers(unusableBrowserInstallations)}`);
-logger.info(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`);
+logger.debug(`All browsers: ${stringifyBrowsers(allBrowserInstallations)}`);
+logger.debug(`Unusable browsers: ${stringifyBrowsers(unusableBrowserInstallations)}`);
+logger.debug(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`);
 
 if (usableBrowserInstallations.length === 0) {
     logger.error('No usable browser installation found. Please install one.');

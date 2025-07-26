@@ -90,13 +90,12 @@ class RemoteObject
             'calls' => $this->context->accumulatedCalls,
         ]]);
 
+        $parts = json_decode($response->getBody());
         if ($this->context->debug) {
             $this->log('return: ', false);
-            var_export(json_decode($response->getBody()));
+            var_export($parts);
             print("\n\n");
         }
-
-        $parts = json_decode($response->getBody());
 
         $return = [];
         foreach ($parts as $idx => $part) {
@@ -136,6 +135,28 @@ class RemoteObject
             fn($body, $arguments) => throw new Exception(BackTrace::message(
                 BackTrace::filter(debug_backtrace()),
                 "Undefined property: '{$arguments[0]}' (" . get_class($this) . "::\${$arguments[0]})",
+            )),
+        );
+    }
+
+    protected function setProperty($property, $value)
+    {
+        $response = $this->context->client->patch('context/set', ['json' => [
+            'context' => $this->context->serialize(),
+            'type' => $this->type,
+            'id' => $this->id,
+            'property' => $property,
+            'value' => $value,
+        ]]);
+
+        $this->log('set: ' . $property);
+
+        return $this->handleResponse(
+            $response,
+            [$property],
+            fn($body, $arguments) => throw new Exception(BackTrace::message(
+                BackTrace::filter(debug_backtrace()),
+                "Could not set property: '{$arguments[0]}' (" . get_class($this) . "::\${$arguments[0]})",
             )),
         );
     }
@@ -204,7 +225,7 @@ class RemoteObject
                 $generic->value,
             ),
             'GenericNull' => null,
-            'GenericSelf', 'GenericUndefined' => $this,
+            'GenericSelf', 'GenericUndefined', 'Dialog' => $this,
             'PuthAssertion' => $generic,
             default => throw new RuntimeException('Unexpected generic type ' . $generic->type),
         };
@@ -230,7 +251,7 @@ class RemoteObject
 
     private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
     {
-        $this->log('server-request');
+        $this->log('server-request: handling');
         $response = ['type' => 'PortalResponse'];
 
         try {
@@ -243,8 +264,17 @@ class RemoteObject
             print_r($throwable);
             dd($throwable);
         }
+        $response['psuri'] = $generic->value->request->psuri;
 
-        $this->log('server-request response');
+        if ($this->context->debug) {
+            $this->log('server-request: response: ', false);
+            var_export([
+                'body' => substr($response['body'], 0, 500),
+                'headers' => $response['headers'],
+                'status' => $response['status'],
+            ]);
+            print("\n\n");
+        }
 
         $portalResponse = $this->context->client->patch('portal/response', ['json' => [
             'context' => $this->context->serialize(),
@@ -284,6 +314,13 @@ class RemoteObject
         $this->log('__get > ' . $property);
 
         return $this->getProperty($property);
+    }
+
+    public function __set($property, $value)
+    {
+        $this->log('__set > ' . $property . ' > ' . $value);
+
+        return $this->setProperty($property, $value);
     }
 
     protected function hasActionTranslation($action)

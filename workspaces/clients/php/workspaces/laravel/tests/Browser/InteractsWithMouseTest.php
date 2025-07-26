@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithMouseTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_mouse_control_click()
     {
         $this->browse(function (Browser $browser) {
@@ -39,8 +41,7 @@ class InteractsWithMouseTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
             
-            $element = $browser->resolver->findOrFail('#actions-click > button');
-            
+            $element = $browser->_firstOrFail('#actions-click > button');
             $element->scrollIntoView();
             $point = $element->clickablePoint();
             
@@ -51,9 +52,11 @@ class InteractsWithMouseTest extends PuthTestCase
     
     function test_mouse_click_exception()
     {
+        $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
-            $this->expectException(\Exception::class);
-            
+            $browser->timeout = 250;
+            $browser->functionTimeoutMultiplier = 1;
+
             $browser->visit(new Playground)
                 ->click('not-an-element');
         });
@@ -75,7 +78,7 @@ class InteractsWithMouseTest extends PuthTestCase
             $browser->visit(new Playground)
                 ->clickAtXPath('//*[@id="actions-click"]/*')
                 ->assertSeeIn('#actions-click', 'clicked button');
-            $this->expectException('Exception');
+            $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
             $browser->clickAtXPath('//*[@id="non-existing-element-id"]');
         });
     }

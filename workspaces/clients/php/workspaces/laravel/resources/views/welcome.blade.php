@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <title>laravel puth testbed</title>
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/js/app.js'])
     </head>
     <body class="antialiased">
         <div id="app">
