@@ -1,4 +1,4 @@
-import { Browser as PPTRBrowser, BrowserContext, Dialog, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
+import { BrowserContext, Dialog, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -6,7 +6,7 @@ import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
 import {clearTimeout} from 'node:timers';
 import { retryFor } from '../Utils';
-import { BrowserRef } from '../HandlesBrowsers';
+import { BrowserRef } from '../handlers/BrowserHandler';
 
 // TODO
 // @gen-class ElementHandle
@@ -1381,8 +1381,9 @@ export class Browser {
     }
 
     private _waitForDialog(): Promise<Dialog> {
-        if (this.context.isPageBlockedByDialog(this.site)) {
-            return Promise.resolve(this.context.caches.dialog.get(this.site));
+        let dialog = this.context.isPageBlockedByDialog(this.site);
+        if (dialog !== false) {
+            return Promise.resolve(dialog);
         }
         // TODO return retryFor()
     }

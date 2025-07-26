@@ -1,5 +1,6 @@
 import path, { join } from 'node:path';
 import { stat, readFile } from "node:fs/promises";
+import { createReadStream } from 'node:fs';
 import { BaseLogger } from 'pino';
 import { Server } from "srvx";
 import * as H3 from 'h3';
@@ -12,7 +13,6 @@ import PuthInstancePlugin from './PuthInstancePlugin';
 import { BrowserHandler, IBrowserHandler } from './handlers/BrowserHandler';
 import { WebsocketHandler } from './handlers/WebsocketHandler';
 import { SnapshotHandler } from './handlers/SnapshotHandler';
-import { createReadStream } from 'node:fs';
 
 declare global {
     type TODO = any;
@@ -95,10 +95,11 @@ export default class Puth {
             throw new Error('Unsupported plugin type!');
         }
 
+        // @ts-ignore
         this.info(`Plugin loaded: ${plugin?.default?.name ?? plugin?.name ?? plugin.constructor?.name}`);
     }
 
-    private serve(port = 7345, hostname = '127.0.0.1', log = true): Server {
+    public serve(port = 7345, hostname = '127.0.0.1'): Server {
         if (this.http !== undefined) {
             throw new Error('Serve already called on this Puth instance.');
         }
@@ -182,7 +183,7 @@ export default class Puth {
                     (error, status, data, headers) => handle.resolve(
                         new Response(data, {
                             status,
-                            headers: headers.map(header => [header.name, header.value])
+                            headers: headers.map((header): [string, string] => [header.name, header.value]),
                         }),
                     ),
                 );
@@ -192,6 +193,7 @@ export default class Puth {
                     url: decodeURI(url),
                     path: decodeURI(path ?? ''),
                     headers: event.req.headers,
+                    // @ts-ignore
                     data: (await event.req.bytes()).toBase64(),
                     method: event.req.method,
                 });
@@ -248,6 +250,7 @@ export default class Puth {
         this.#http = H3.serve(h3, {
             hostname,
             port,
+            // @ts-ignore
             plugins: [ws({ resolve: async (req) => (await h3.fetch(req)).crossws })],
             silent: true,
         });

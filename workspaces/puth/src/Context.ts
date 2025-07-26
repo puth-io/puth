@@ -221,8 +221,12 @@ class Context extends Generic {
     //     );
     // }
 
-    isPageBlockedByDialog(page) {
-        return this.caches.dialog.has(page);
+    isPageBlockedByDialog(page: Page): false|Dialog {
+        let dialog = this.caches.dialog.get(page);
+        if (dialog === undefined) {
+            return false;
+        }
+        return dialog;
     }
 
     private async trackBrowser(browserContext: BrowserContext) {
