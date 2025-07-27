@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithAuthenticationTest extends PuthTestCase
 {
+    public static bool $debug = true;
+
     function test_user_resolver()
     {
         $this->browse(function (Browser $browser) {

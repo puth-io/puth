@@ -229,7 +229,7 @@ class RemoteObject
 
     private function handlePortalRequestResponse($generic, $arguments, Closure $onError)
     {
-        $this->log('server-request');
+        $this->log('server-request: handling');
         $response = ['type' => 'PortalResponse'];
 
         try {
@@ -242,8 +242,17 @@ class RemoteObject
             print_r($throwable);
             dd($throwable);
         }
+        $response['psuri'] = $generic->value->request->psuri;
 
-        $this->log('server-request response');
+        if ($this->context->debug) {
+            $this->log('server-request: response: ', false);
+            var_export([
+                'body' => substr($response['body'], 0, 500),
+                'headers' => $response['headers'],
+                'status' => $response['status'],
+            ]);
+            print("\n\n");
+        }
 
         $portalResponse = $this->context->client->patch('portal/response', ['json' => [
             'context' => $this->context->serialize(),

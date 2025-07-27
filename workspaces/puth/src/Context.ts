@@ -269,7 +269,9 @@ class Context extends Generic {
 
             if (this.lastCallerPromise) {
                 this.puth.logger.debug('Resolved active request because dialog opened on page.');
-                this.lastCallerPromise.resolve(Return.Dialog({
+                let lcp = this.lastCallerPromise;
+                this.lastCallerPromise = undefined;
+                lcp.resolve(Return.Dialog({
                     message: dialog.message(),
                     defaultValue: dialog.defaultValue(),
                     type: dialog.type(),
@@ -369,6 +371,30 @@ class Context extends Generic {
         }
     }
 
+    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): false|string {
+        let prefixes = this.options?.supports?.portal?.urlPrefixes;
+        if (prefixes == null || !Array.isArray(prefixes)) {
+            return false;
+        }
+
+        let url = request.url;
+        // TODO add option for clients ignore intercepted requests
+        // if (['Script', 'Stylesheet', 'Font'].includes(resourceType)
+        //     || !['Document', 'Other'].includes(resourceType)
+        //     || url.endsWith('.ico')) {
+        //     this.puth.logger.debug(`[Portal][Skip ${resourceType}] ${url.substring(0, 80)}`);
+        //     return false;
+        // }
+
+        for (let prefix of prefixes) {
+            if (url.startsWith(prefix)) {
+                return url.replace(prefix, '');
+            }
+        }
+
+        return false;
+    }
+
     psuriCache: Map<string, {
         page: Page;
         handler?: PsuriResponseHandler;
@@ -394,37 +420,35 @@ class Context extends Generic {
             method: string;
         }
     ) {
-        this.puth.logger.debug({
-            psuri: request.psuri,
-            url: request.url,
-            path: request.path,
-            headers: request.headers,
-            data: request.data.length,
-        }, '[handlePortalRequest]');
+        // this.puth.logger.debug({
+        //     psuri: request.psuri,
+        //     url: request.url,
+        //     path: request.path,
+        //     method: request.method,
+        //     headers: request.headers,
+        //     data: request.data.length,
+        // }, `[handlePortalRequest] ${request.method} ${request.url}`);
+        this.puth.logger.debug(`[handlePortalRequest] ${request.psuri} ${request.method} ${request.url}`);
+
+        if (this.portal.queue.active.length > 0) {
+            this.puth.logger.debug('-> add portal request to active queue');
+            this.portal.queue.active.push(request);
+            return;
+        }
 
         if (this.lastCallerPromise == null) {
-            this.puth.logger.debug({
-                psuri: request.psuri,
-                url: request.url,
-                path: request.path,
-                headers: request.headers,
-                data: request.data.length,
-            }, 'add portal request to backlog queue');
+            this.puth.logger.debug('-> add portal request to backlog queue');
             this.portal.queue.backlog.push(request);
             return;
         }
 
         this.portal.queue.active.push(request);
-        this.puth.logger.debug({
-            psuri: request.psuri,
-            url: request.url,
-            path: request.path,
-            headers: request.headers,
-            data: request.data.length,
-        }, 'add portal request to active queue');
+        this.puth.logger.debug('-> add portal request to active queue');
         if (this.portal.queue.active.length === 1) {
-            this.puth.logger.debug('sending portal request while client request active');
-            return this.lastCallerPromise.resolve(
+            this.puth.logger.debug('-> sending portal request while client request active');
+            let lcp = this.lastCallerPromise;
+            this.lastCallerPromise = undefined;
+            return lcp.resolve(
                 this.createServerRequest(this.portal.queue.active[0])
             );
         }
@@ -458,28 +482,81 @@ class Context extends Generic {
         return this.portalRequestCounter.toString();
     }
 
-    private portalShouldHandleRequest({request, resourceType}: Protocol.Fetch.RequestPausedEvent): false|string {
-        let prefixes = this.options?.supports?.portal?.urlPrefixes;
-        if (prefixes == null || !Array.isArray(prefixes)) {
-            return false;
+    portal: any = {
+        initial: {
+            call: null,
+        },
+        open: {
+            response: null,
+        },
+        waiting: {
+            response: null,
+            call: false,
+        },
+        queue: {
+            backlog: [
+                //{request: 'test', promise: {resolve: null, reject: null}}
+            ],
+            active: [],
+        },
+    }
+
+    public async handlePortalResponse(data, res) {
+        let body = atob(data.response.body);
+        this.puth.logger.debug({
+            status: data.response.status,
+            contentType: data.response.contentType,
+            headers: data.response.headers,
+            body: body.length > 500 ? body.length : body,
+        }, `[handlePortalResponse] ${data.response.psuri}`);
+
+        let current = this.portal.queue.active[0];
+
+        let cache = this.psuriCache.get(current.psuri);
+        if (cache == null) {
+            throw new Error('TODO');
+        }
+        if (cache.handler == null) {
+            throw new Error('TODO');
+        }
+        this.psuriCache.delete(current.psuri);
+
+        let headers: Protocol.Fetch.HeaderEntry[] = [];
+        for (let header of Object.keys(data.response.headers)) {
+            let values = data.response.headers[header];
+            if (!Array.isArray(values)) values =  [values];
+            values.forEach(value => headers.push({name: header, value}));
+        }
+        this.puth.logger.debug('dbg portal before handler');
+        await cache.handler(undefined, data.response.status, body, headers)
+            .catch(error => {
+                if (error instanceof TargetCloseError) return;
+                throw error;
+            });
+        this.puth.logger.debug('dbg portal after handler');
+
+        this.portal.queue.active.shift();
+        if (this.portal.queue.active.length !== 0) {
+            this.puth.logger.debug('dbg portal queue not empty - returning next active');
+            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
+        }
+        if (this.portal.waiting.response != null) {
+            this.puth.logger.debug('dbg waiting for response - resolving');
+            let waiting = this.portal.waiting.response;
+            this.portal.waiting.response = null;
+            return res.resolve(waiting);
+        }
+        if (this.portal.waiting.call) {
+            this.puth.logger.debug('dbg resetting waiting call');
+            return res.resolve(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}));
         }
 
-        let url = request.url;
-        // TODO add option for clients ignore intercepted requests
-        // if (['Script', 'Stylesheet', 'Font'].includes(resourceType)
-        //     || !['Document', 'Other'].includes(resourceType)
-        //     || url.endsWith('.ico')) {
-        //     this.puth.logger.debug(`[Portal][Skip ${resourceType}] ${url.substring(0, 80)}`);
-        //     return false;
-        // }
+        this.puth.logger.debug('dbg executing initial call - skipping queue');
+        return this.call(this.portal.initial.call, res, true);
+    }
 
-        for (let prefix of prefixes) {
-            if (url.startsWith(prefix)) {
-                return url.replace(prefix, '');
-            }
-        }
-
-        return false;
+    public createServerRequest(portalRequest) {
+        return Return.ServerRequest(portalRequest).serialize();
     }
 
     private pageCDPSessions: Map<Page, WeakRef<CDPSession>> = new Map();
@@ -685,73 +762,6 @@ class Context extends Generic {
         return res.resolve(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
     }
 
-    portal: any = {
-        initial: {
-            call: null,
-        },
-        open: {
-            response: null,
-        },
-        waiting: {
-            response: null,
-            call: false,
-        },
-        queue: {
-            backlog: [
-                //{request: 'test', promise: {resolve: null, reject: null}}
-            ],
-            active: [],
-        },
-    }
-
-    public async handlePortalResponse(data, res) {
-        let current = this.portal.queue.active.shift();
-
-        let cache = this.psuriCache.get(current.psuri);
-        if (cache == null) {
-            throw new Error('TODO');
-        }
-        if (cache.handler == null) {
-            throw new Error('TODO');
-        }
-        this.psuriCache.delete(current.psuri);
-
-        let body = atob(data.response.body);
-        this.puth.logger.debug({
-            status: data.response.status,
-            contentType: data.response.contentType,
-            headers: data.response.headers,
-            body: body.length > 500 ? body.length : body,
-        }, '[handlePortalResponse]');
-
-        let headers: Protocol.Fetch.HeaderEntry[] = [];
-        for (let header of Object.keys(data.response.headers)) {
-            let values = data.response.headers[header];
-            if (!Array.isArray(values)) values =  [values];
-            values.forEach(value => headers.push({name: header, value}));
-        }
-        await cache.handler(undefined, data.response.status, body, headers);
-
-        if (this.portal.queue.active.length !== 0) {
-            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
-        }
-        if (this.portal.waiting.response) {
-            let waiting = this.portal.waiting.response;
-            this.portal.waiting.response = null;
-            return res.resolve(waiting);
-        }
-        if (this.portal.waiting.call) {
-            this.puth.logger.debug('resetting waiting call')
-            return res.resolve(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined));
-        }
-
-        return this.call(this.portal.initial.call, res, true);
-    }
-
-    public createServerRequest(portalRequest) {
-        return Return.ServerRequest(portalRequest).serialize();
-    }
-
     // TODO Cleanup parameters and maybe unify handling in special object
     private async handleCallApply(packet, page, on, func, parameters, expects = null) {
         const command = await this.createCommandInstance(packet, on);
@@ -762,7 +772,7 @@ class Context extends Generic {
         this.portal.initial.call = null;
         this.portal.waiting.call = true;
 
-        let p = new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}).finally(() => this.lastCallerPromise = undefined);
+        let p = new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject});
 
         this.emitAsync('call:apply:before', {command, page})
             .then(async () => {
@@ -798,6 +808,7 @@ class Context extends Generic {
                     if (this.portal.queue.active.length !== 0) {
                         this.puth.logger.debug('set waiting response');
                         this.portal.waiting.response = response;
+                        this.portal.waiting.call = false;
 
                         return;
                     }
@@ -807,7 +818,10 @@ class Context extends Generic {
                         this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
                         throw new Error('Unexpected empty lastCallerPromise');
                     }
-                    this.lastCallerPromise.resolve(response);
+                    let lcp = this.lastCallerPromise;
+                    this.lastCallerPromise = undefined;
+                    this.portal.waiting.call = false;
+                    lcp.resolve(response);
                 } catch (error: any) {
                     this.puth.logger.debug(error, '[Call apply error]')
                     // call event before any pushToCache call
@@ -840,7 +854,9 @@ class Context extends Generic {
                                   error,
                               };
                     if (this.portal.queue.active.length != 0) {
+                        this.puth.logger.debug('set waiting response');
                         this.portal.waiting.response = response;
+                        this.portal.waiting.call = false;
 
                         return;
                     }
@@ -849,10 +865,13 @@ class Context extends Generic {
                         this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
                         throw new Error('Unexpected empty lastCallerPromise');
                     }
-                    this.lastCallerPromise.resolve(response);
+                    let lcp = this.lastCallerPromise;
+                    this.lastCallerPromise = undefined;
+                    this.portal.waiting.call = false;
+                    lcp.resolve(response);
                 }
-            })
-            .finally(() => this.portal.waiting.call = false);
+            });
+            // .finally(() => this.portal.waiting.call = false);
 
         return p;
     }

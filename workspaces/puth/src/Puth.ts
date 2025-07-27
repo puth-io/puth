@@ -115,7 +115,12 @@ export default class Puth {
          *     }
          */
 
-        let h3 = new H3.H3();
+        let h3 = new H3.H3({
+            debug: true,
+            onError: (error) => {
+                this.logger.error(error);
+            },
+        });
 
         const cors = {
             origin: [
