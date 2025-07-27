@@ -1,6 +1,6 @@
 import Puth from '../Puth';
 import { BaseHandler } from './BaseHandler';
-import chromeDefaultArgs from '../chromeDefaultArgs.json';
+import chromeDefaultArgs from './chromeDefaultArgs.json';
 import {objectHash} from '../utils/external/object-hash';
 import puppeteer, { Browser, BrowserContext, PuppeteerError } from 'puppeteer-core';
 import tmp from 'tmp';

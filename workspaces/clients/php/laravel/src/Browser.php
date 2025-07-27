@@ -101,7 +101,7 @@ class Browser extends \Puth\RemoteObjects\Browser
      *
      * @var ElementResolver
      */
-    private $resolver;
+    public $resolver;
 
     /**
      * The page object currently being viewed.

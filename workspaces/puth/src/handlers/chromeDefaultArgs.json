@@ -17,17 +17,17 @@
   "--disable-new-avatar-menu",
   "--disable-device-discovery-notifications",
   "--disable-infobars",
+  "--disable-features=HttpsUpgrades",
+  "--disable-search-engine-choice-screen",
+  "--disable-smooth-scrolling",
+  "--disable-input-event-activation-protection",
 
   "--autoplay-policy=no-user-gesture-required",
-
-  "--disable-site-isolation-trials",
 
   "--metrics-recording-only",
   "--disable-prompt-on-repost",
   "--disable-hang-monitor",
-  "--disable-sync",
 
-  "--disable-web-resources",
   "--disable-component-update",
   "--disable-default-apps",
 
@@ -41,9 +41,5 @@
   "--password-store=basic",
   "--use-mock-keychain",
 
-  "--incognito",
-
-  "--window-size=1280,1020",
-
-  "--disable-features=HttpsUpgrades"
+  "--window-size=1280,1020"
 ]
