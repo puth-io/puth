@@ -8,7 +8,7 @@ use Tests\PuthTestCase;
 
 class InteractsWithAuthenticationTest extends PuthTestCase
 {
-    public static bool $debug = true;
+    public static bool $debug = false;
 
     function test_user_resolver()
     {

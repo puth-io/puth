@@ -351,12 +351,18 @@ class Context extends Generic {
                 this.setPsuriHandler(
                     psuri,
                     // TODO handle portal network error - Fetch.failRequest
-                    async (error, status, data, headers) => cdp.send('Fetch.fulfillRequest', {
-                        requestId: event.requestId,
-                        body: btoa(data),
-                        responseCode: status,
-                        responseHeaders: headers,
-                    }),
+                    async (error, status, data, headers) =>
+                        cdp
+                            .send('Fetch.fulfillRequest', {
+                                requestId: event.requestId,
+                                body: btoa(data),
+                                responseCode: status,
+                                responseHeaders: headers,
+                            })
+                            .catch((error) => {
+                                if (error instanceof TargetCloseError) return;
+                                throw error;
+                            }),
                 );
                 this.handlePortalRequest({
                     psuri,
@@ -513,10 +519,10 @@ class Context extends Generic {
         let current = this.portal.queue.active[0];
 
         let cache = this.psuriCache.get(current.psuri);
-        if (cache == null) {
+        if (cache == undefined) {
             throw new Error('TODO');
         }
-        if (cache.handler == null) {
+        if (cache.handler == undefined) {
             throw new Error('TODO');
         }
         this.psuriCache.delete(current.psuri);
@@ -527,12 +533,8 @@ class Context extends Generic {
             if (!Array.isArray(values)) values =  [values];
             values.forEach(value => headers.push({name: header, value}));
         }
-        this.puth.logger.debug('dbg portal before handler');
-        await cache.handler(undefined, data.response.status, body, headers)
-            .catch(error => {
-                if (error instanceof TargetCloseError) return;
-                throw error;
-            });
+        this.puth.logger.debug({cache, handler: cache?.handler.toString(), status: data?.response?.status, body: body.length, headers}, 'dbg portal before handler');
+        await cache.handler(undefined, data.response.status, body, headers);
         this.puth.logger.debug('dbg portal after handler');
 
         this.portal.queue.active.shift();
