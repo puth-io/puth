@@ -14,7 +14,7 @@ import { BrowserRef } from '../handlers/BrowserHandler';
 //     children: () => ElementHandle[];
 // }
 
-export type integer = number;
+export type int = number;
 
 const isEqualTo    = (actual: any, expected: any) => expected == actual;
 const isNotEqualTo = (actual: any, expected: any) => expected != actual;
@@ -89,7 +89,7 @@ export class Browser {
     public fitOnFailure: boolean = true;
 
     // timeout in milliseconds for wait functions
-    public timeout: integer = 3000;
+    public timeout: int = 3000;
 
     public resolverDuskSelectorHtmlAttribute: string = 'dusk';
     public resolverPrefix: string = 'body';
@@ -139,10 +139,44 @@ export class Browser {
         return this.site.goto(url).then(this.self);
     }
 
+    // error msg "Unable to locate element with selector [{$selector}]."
     public click(selector: string, options: any = {}): Promise<this> {
-        return this.firstOrFail(selector)
+        return this.firstOrFail(this.resolver(selector))
             .then((element) => element.click(options))
             .then(this.self);
+    }
+
+    public clickLink(selector: string, element: string = 'a'): Promise<this> {
+        return this.firstOrFail(this.resolver(element) + `[href='${selector}']`)
+            .then((element) => element.click())
+            .then(this.self);
+    }
+
+    public clickAtPoint(x: int, y: int): Promise<this> {
+        return this.site.mouse.click(x, y).then(this.self);
+    }
+
+    public clickAtXPath(expression: string): Promise<this> {
+        expression = expression.startsWith('.') ? expression.substring(1) : expression;
+
+        return this.firstOrFail(`xpath//.${expression}`)
+            .then((element) => element.click())
+            .then(this.self);
+    }
+
+    public async clickAndHold(selector: string|null = null): Promise<this> {
+        if (selector !== null) {
+            let element = await this.firstOrFail(this.resolver(selector));
+            await element.scrollIntoView();
+            let point = await element.clickablePoint();
+            this.site.mouse.click(point.x, point.y);
+        } else {
+            await this.site.mouse.down();
+            await this.site.mouse.up();
+        }
+        await this.site.mouse.down();
+
+        return this.self();
     }
 
     public setContent(html: string, options: WaitForOptions = {}): Promise<this> {
@@ -373,13 +407,13 @@ export class Browser {
             .then(this.self);
     }
 
-    public typeSlowly(selector: string, value: string, pause: integer = 100): Promise<this> {
+    public typeSlowly(selector: string, value: string, pause: int = 100): Promise<this> {
         return this.type(selector, value, { delay: pause });
     }
 
     public waitFor(
         selector: string[] | string,
-        options?: { timeout?: integer; state?: 'visible' | 'hidden' | 'present' | 'missing' },
+        options?: { timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' },
     ) {
         options = { state: 'present', timeout: this.timeout, ...options } as any;
 
@@ -427,7 +461,7 @@ export class Browser {
     public waitForTextIn(
         selector: string,
         text: string[] | string,
-        options: { timeout?: integer; ignoreCase?: boolean; missing?: boolean } = {},
+        options: { timeout?: int; ignoreCase?: boolean; missing?: boolean } = {},
     ) {
         if (!Array.isArray(text)) {
             text = [text];
@@ -1202,7 +1236,7 @@ export class Browser {
         .then(this.selfWithAsserts());
     }
 
-    public _assertLocationProperty(property: string, expected: string, matches: boolean = true, trimEnd: integer = 0) {
+    public _assertLocationProperty(property: string, expected: string, matches: boolean = true, trimEnd: int = 0) {
         return this.eW(
             {},
             (u, m, p, te) => (new RegExp('^' + u.replace(/\*/g, '.*') + '$')).test(window.location[p].substring(0, window.location[p].length - te)) === m,
@@ -1438,6 +1472,14 @@ export class Browser {
         }
 
         return dialog;
+    }
+
+
+    //// MOUSE /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public mouseover(selector: string): Promise<this> {
+        return this.firstOrFail(selector)
+            .then(element => element.hover())
+            .then(this.self);
     }
 
     private expectsHandleFunction(evalFn, handle, expected , message, ...args) {

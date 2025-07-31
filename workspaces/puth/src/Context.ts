@@ -2,7 +2,7 @@ import {v4} from 'uuid';
 import {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, BrowserContext, TargetCloseError, CDPSession} from 'puppeteer-core';
 import Generic from './Generic';
 import * as Utils from './Utils';
-import Puth from './Puth';
+import { Puth } from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './handlers/WebsocketHandler';
 import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
@@ -426,14 +426,6 @@ class Context extends Generic {
             method: string;
         }
     ) {
-        // this.puth.logger.debug({
-        //     psuri: request.psuri,
-        //     url: request.url,
-        //     path: request.path,
-        //     method: request.method,
-        //     headers: request.headers,
-        //     data: request.data.length,
-        // }, `[handlePortalRequest] ${request.method} ${request.url}`);
         this.puth.logger.debug(`[handlePortalRequest] ${request.psuri} ${request.method} ${request.url}`);
 
         if (this.portal.queue.active.length > 0) {

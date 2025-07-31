@@ -1,6 +1,4 @@
-import Puth from "./Puth";
-export default Puth;
-
+export * from './Puth';
 export * as Return from './context/Return';
 export * from './plugins/PuthStandardPlugin';
 export * from './plugins/LiveViewPlugin';

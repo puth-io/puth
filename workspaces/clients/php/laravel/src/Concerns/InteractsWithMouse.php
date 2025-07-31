@@ -54,95 +54,27 @@ trait InteractsWithMouse
          */
     }
     
-    /**
-     * Move the mouse over the given selector.
-     *
-     * @param string $selector
-     * @return $this
-     */
-    public function mouseover($selector)
-    {
-        $this->resolver->findOrFail($selector)->hover();
-        
-        return $this;
-    }
-    
-    /**
-     * Click the element at the given selector.
-     *
-     * @param string $selector
-     * @return $this
-     */
-    public function click($selector, $options = [])
-    {
-        foreach ($this->resolver->all($selector) as $element) {
-            try {
-                $element->click($options);
-                
-                return $this;
-            } catch (\Exception $e) {
-                //
-            }
-        }
-        
-        throw $e ?? new \Exception("Unable to locate element with selector [{$selector}].");
-    }
-    
-    /**
-     * Click the topmost element at the given pair of coordinates.
-     *
-     * @param int $x
-     * @param int $y
-     * @return $this
-     */
-    public function clickAtPoint($x, $y)
-    {
-        $this->site->mouse->click($x, $y);
-        
-        return $this;
-    }
-    
-    /**
-     * Click the element at the given XPath expression.
-     *
-     * @param string $expression
-     * @return $this
-     */
-    public function clickAtXPath($expression)
-    {
-        $expression = str_starts_with($expression, '.') ? substr($expression, 1) : $expression;
-        $elements = $this->site->getAll('xpath/.' . $expression);
-        
-        if (count($elements) === 0) {
-            throw new \Exception('No such element found');
-        }
-    
-        $elements[0]->click();
-        
-        return $this;
-    }
-    
-    /**
-     * Perform a mouse click and hold the mouse button down at the given selector.
-     *
-     * @param string|null $selector
-     * @return $this
-     */
-    public function clickAndHold($selector = null)
-    {
-        if ($selector !== null) {
-            $element = $this->resolver->findOrFail($selector);
-            $element->scrollIntoView();
-            $point = $element->clickablePoint();
-            $this->site->mouse->click($point->x, $point->y);
-        } else {
-            $this->site->mouse->down();
-            $this->site->mouse->up();
-        }
-        $this->site->mouse->down();
-        
-        return $this;
-    }
+//    /**
+//     * Perform a mouse click and hold the mouse button down at the given selector.
+//     *
+//     * @param string|null $selector
+//     * @return $this
+//     */
+//    public function clickAndHold($selector = null)
+//    {
+//        if ($selector !== null) {
+//            $element = $this->resolver->findOrFail($selector);
+//            $element->scrollIntoView();
+//            $point = $element->clickablePoint();
+//            $this->site->mouse->click($point->x, $point->y);
+//        } else {
+//            $this->site->mouse->down();
+//            $this->site->mouse->up();
+//        }
+//        $this->site->mouse->down();
+//
+//        return $this;
+//    }
     
     /**
      * Double click the element at the given selector.

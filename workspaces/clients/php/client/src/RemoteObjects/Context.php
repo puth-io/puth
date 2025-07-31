@@ -23,16 +23,21 @@ class Context extends RemoteObject
     }
 
     /**
-     * @codegen
+     * // @codegen
+     * public async createBrowserShimForPage(page: Page): Promise<Browser> {
+     * return new Browser(this, page);
+     * }
+     * when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
+     * this is to catch all screencast frames when the call ends too fast
      * 
-     * @debug-gen-original-name "createBrowserShimForPage"
+     * @debug-gen-original-name "destroy"
      * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["Browser"]
-     * @debug-gen-original-parameter page {"type":"Page","isOptional":false}
+     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function createBrowserShimForPage(mixed $page): Browser
+    public function destroy(mixed $options = []): void
     {
-        return $this->callFunc('createBrowserShimForPage', [$page]);
+        $this->callFunc('destroy', [$options]);
     }
 
     /**

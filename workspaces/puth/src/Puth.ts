@@ -40,7 +40,7 @@ export type PuthOptions = {
     logger?: BaseLogger;
 };
 
-export default class Puth {
+export class Puth {
     // @ts-ignore
     #http: Server;
     #logger: BaseLogger;

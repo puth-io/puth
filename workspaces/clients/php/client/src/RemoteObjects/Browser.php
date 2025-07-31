@@ -13,10 +13,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "clone"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter site {"type":"Page | Frame","isOptional":true}
      */
-    public function clone(): Browser
+    public function clone(mixed $site): Browser
     {
-        return $this->callFunc('clone');
+        return $this->callFunc('clone', [$site]);
     }
 
     /**
@@ -64,15 +65,63 @@ class Browser extends RemoteObject
     }
 
     /**
+     * error msg "Unable to locate element with selector [{$selector}]."
+     * 
      * @debug-gen-original-name "click"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _click(string $selector, mixed $options = []): Browser
+    public function click(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('click', [$selector, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "clickLink"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter element {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
+     */
+    public function clickLink(string $selector, string $element = 'a'): Browser
+    {
+        return $this->callFunc('clickLink', [$selector, $element]);
+    }
+
+    /**
+     * @debug-gen-original-name "clickAtPoint"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter x {"type":"int","isOptional":false}
+     * @debug-gen-original-parameter y {"type":"int","isOptional":false}
+     */
+    public function clickAtPoint(mixed $x, mixed $y): Browser
+    {
+        return $this->callFunc('clickAtPoint', [$x, $y]);
+    }
+
+    /**
+     * @debug-gen-original-name "clickAtXPath"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter expression {"type":"string","isOptional":false}
+     */
+    public function clickAtXPath(string $expression): Browser
+    {
+        return $this->callFunc('clickAtXPath', [$expression]);
+    }
+
+    /**
+     * @debug-gen-original-name "clickAndHold"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function clickAndHold(mixed $selector = null): Browser
+    {
+        return $this->callFunc('clickAndHold', [$selector]);
     }
 
     /**
@@ -445,9 +494,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter pause {"type":"integer","isOptional":false,"initializer":{"type":"numeric","value":"100"}}
+     * @debug-gen-original-parameter pause {"type":"int","isOptional":false,"initializer":{"type":"numeric","value":"100"}}
      */
-    public function _typeSlowly(string $selector, string $value, int $pause = 100): Browser
+    public function _typeSlowly(string $selector, string $value, mixed $pause): Browser
     {
         return $this->callFunc('typeSlowly', [$selector, $value, $pause]);
     }
@@ -457,7 +506,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
      */
     public function _waitFor(mixed $selector, mixed $options): void
     {
@@ -482,7 +531,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{ timeout?: integer; ignoreCase?: boolean; missing?: boolean }","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: int; ignoreCase?: boolean; missing?: boolean }","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function _waitForTextIn(string $selector, mixed $text, mixed $options = []): void
     {
@@ -1409,9 +1458,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter property {"type":"string","isOptional":false}
      * @debug-gen-original-parameter expected {"type":"string","isOptional":false}
      * @debug-gen-original-parameter matches {"type":"boolean","isOptional":false,"initializer":{"type":"true"}}
-     * @debug-gen-original-parameter trimEnd {"type":"integer","isOptional":false,"initializer":{"type":"numeric","value":"0"}}
+     * @debug-gen-original-parameter trimEnd {"type":"int","isOptional":false,"initializer":{"type":"numeric","value":"0"}}
      */
-    public function _assertLocationProperty(string $property, string $expected, bool $matches = true, int $trimEnd = 0): void
+    public function _assertLocationProperty(string $property, string $expected, bool $matches = true, mixed $trimEnd): void
     {
         $this->callFunc('_assertLocationProperty', [$property, $expected, $matches, $trimEnd]);
     }
@@ -1696,6 +1745,17 @@ class Browser extends RemoteObject
     public function dismissDialog(): Browser
     {
         return $this->callFunc('dismissDialog');
+    }
+
+    /**
+     * @debug-gen-original-name "mouseover"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     */
+    public function mouseover(string $selector): Browser
+    {
+        return $this->callFunc('mouseover', [$selector]);
     }
 
     /**

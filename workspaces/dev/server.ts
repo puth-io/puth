@@ -1,4 +1,5 @@
-import Puth, {
+import {
+    Puth,
     usableBrowserInstallations,
     makeLogger,
     PuthStandardPlugin,

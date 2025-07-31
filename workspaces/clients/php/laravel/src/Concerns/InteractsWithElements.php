@@ -57,22 +57,6 @@ trait InteractsWithElements
     }
     
     /**
-     * Click the link with the given text.
-     *
-     * @param string $link
-     * @param string $element
-     * @return $this
-     */
-    public function clickLink($link, $element = 'a')
-    {
-        $selector = $this->resolver->format($element) . "[href='{$link}']";
-        
-        $this->_click($selector);
-        
-        return $this;
-    }
-    
-    /**
      * Send the given keys to the element matching the given selector.
      *
      * @param string $selector

@@ -45,7 +45,7 @@ class Context extends BaseContext
         );
     }
 
-    public function destroy($options): void
+    public function destroy($options = []): void
     {
         try {
             $this->client->delete('context', [

@@ -53,9 +53,8 @@ class InteractsWithMouseTest extends PuthTestCase
     
     function test_mouse_click_exception()
     {
+        $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
-            $this->expectException(\Exception::class);
-            
             $browser->visit(new Playground)
                 ->click('not-an-element');
         });

@@ -93,7 +93,6 @@ const NAME_TRANSLATION = {
         laravel: {
             Browser: {
                 screenshot: '_screenshot',
-                click: '_click',
                 type: '_type',
                 typeSlowly: '_typeSlowly',
                 findOrFail: '_findOrFail',

@@ -2,7 +2,7 @@ import {v4} from 'uuid';
 import { Browser, BrowserContext, Page } from 'puppeteer-core';
 import Context from "../Context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
-import Puth from "../Puth";
+import { Puth } from '../Puth';
 import PuthContextPlugin from "../PuthContextPlugin";
 import Constructors from "../context/Constructors";
 import sharp from "sharp";
