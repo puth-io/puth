@@ -110,7 +110,7 @@ export class Browser {
         this.selfWithAsserts = (count = 1) => this.selfWithMeta({assertions: count});
     }
 
-    public clone(site?: Page | Frame): Browser {
+    public clone(site: Page|Frame|null = null): Browser {
         return new Browser(this.context, this.browserRef, this.browserContext, site ?? this.site);
     }
 
@@ -441,29 +441,38 @@ export class Browser {
         return this.type(selector, value, { delay: pause });
     }
 
+    public keys(selector: string, keys: string[] = []): Promise<this> {
+        let parsed = keys.map(comb => Array.isArray(comb) ? comb.join('') : comb);
+
+        return this.firstOrFail(this.resolver(selector))
+            .then(async element => type(element, parsed))
+            .then(this.self);
+    }
+
     public waitFor(
         selector: string[] | string,
         options?: { timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' },
-    ) {
+    ): Promise<ElementHandle|null|this> {
         options = { state: 'present', timeout: this.timeout, ...options } as any;
 
         if (options?.state === 'missing') {
-            return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout }).catch(
-                (error) => {
-                    console.error('selector is still present...');
-                },
-            );
+            return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout });
         } else if (options?.state === 'visible') {
             options.visible = true;
         } else if (options?.state === 'hidden') {
             options.hidden = true;
         }
 
-        return (
-            Array.isArray(selector)
-                ? Promise.any(selector.map((s) => this.site.waitForSelector(s, options)))
-                : this.site.waitForSelector(selector, options)
-        ).catch((error) => {
+        // TODO fails if one of the selectors is not a valid css selector, but this function should work indepentend
+        //      on all selectors. Need to implement a custom waitForSelector function to do so.
+        selector = Array.isArray(selector) ? selector.join(', ') : selector;
+        // return (
+        //     Array.isArray(selector)
+        //         ? Promise.any(selector.map((s) => this.site.waitForSelector(s, options)))
+        //         : this.site.waitForSelector(selector, options)
+        // ).catch((error) => {
+
+        return this.site.waitForSelector(selector, options).catch((error) => {
             if (error instanceof AggregateError) {
                 error = error.errors[0];
             }
@@ -564,6 +573,15 @@ export class Browser {
             `Waited %s seconds for element to be disabled`,
             options,
         );
+    }
+
+    /**
+     * @gen-returns RemoteObject|null
+     * TODO gen-returns should be ElementHandle
+     */
+    public find(selector: string, options: {} = {}): Promise<ElementHandle|null> {
+        // @ts-ignore
+        return this.waitFor(selector, options);
     }
 
     /**
@@ -1098,13 +1116,13 @@ export class Browser {
 
     public async assertVisible(selector: string, options: {} = {}): Promise<Return<this>> {
         return this.waitFor(this.resolver(selector), { ...options, state: 'visible' })
-            .then((element) => expects(element, isNotNull, undefined, `Element [${selector}] is not visible.`))
+            .then(element => expects(element, isNotNull, undefined, `Element [${selector}] is not visible.`))
             .then(this.selfWithAsserts());
     }
 
     public async assertMissing(selector: string, options: {} = {}): Promise<Return<this>> {
         return this.waitFor(this.resolver(selector), { ...options, state: 'hidden' })
-            .then((element) => expects(element, isNull, undefined, `Saw unexpected element [${selector}].`))
+            .then(element => expects(element, isNull, undefined, `Saw unexpected element [${selector}].`))
             .then(this.selfWithAsserts());
     }
 

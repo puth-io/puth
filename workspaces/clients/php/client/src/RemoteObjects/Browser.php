@@ -13,9 +13,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "clone"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["Browser"]
-     * @debug-gen-original-parameter site {"type":"Page | Frame","isOptional":true}
+     * @debug-gen-original-parameter site {"type":"Page|Frame|null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function clone(mixed $site): Browser
+    public function clone(mixed $site = null): Browser
     {
         return $this->callFunc('clone', [$site]);
     }
@@ -534,15 +534,27 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "keys"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter keys {"type":"string[]","isOptional":false,"initializer":{"type":"array","members":[]}}
+     */
+    public function _keys(string $selector, array $keys = []): Browser
+    {
+        return $this->callFunc('keys', [$selector, $keys]);
+    }
+
+    /**
      * @debug-gen-original-name "waitFor"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-returns ["ElementHandle","null","this"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{ timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
      */
-    public function _waitFor(mixed $selector, mixed $options): void
+    public function _waitFor(mixed $selector, mixed $options): mixed
     {
-        $this->callFunc('waitFor', [$selector, $options]);
+        return $this->callFunc('waitFor', [$selector, $options]);
     }
 
     /**
@@ -621,6 +633,21 @@ class Browser extends RemoteObject
     public function _waitUntilDisabled(string $selector, mixed $options = []): void
     {
         $this->callFunc('waitUntilDisabled', [$selector, $options]);
+    }
+
+    /**
+     * @gen-returns RemoteObject|null
+     * TODO gen-returns should be ElementHandle
+     * 
+     * @debug-gen-original-name "find"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["ElementHandle","null"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function find(string $selector, mixed $options = []): mixed
+    {
+        return $this->callFunc('find', [$selector, $options]);
     }
 
     /**

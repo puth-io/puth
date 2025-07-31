@@ -94,6 +94,7 @@ const NAME_TRANSLATION = {
             Browser: {
                 screenshot: '_screenshot',
                 type: '_type',
+                keys: '_keys',
                 typeSlowly: '_typeSlowly',
                 findOrFail: '_findOrFail',
                 firstOrFail: '_firstOrFail',

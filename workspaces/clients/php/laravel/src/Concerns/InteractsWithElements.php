@@ -43,7 +43,7 @@ trait InteractsWithElements
      */
     public function elements($selector)
     {
-        return $this->resolver->all($selector);
+        return $this->findAll($selector);
     }
     
     /**
@@ -53,7 +53,7 @@ trait InteractsWithElements
      */
     public function element($selector)
     {
-        return $this->resolver->find($selector);
+        return $this->find($selector);
     }
     
     /**
@@ -65,9 +65,7 @@ trait InteractsWithElements
      */
     public function keys($selector, ...$keys)
     {
-        $this->resolver->findOrFail($selector)->type($this->parseKeys($keys));
-        
-        return $this;
+        return $this->_keys($selector, $keys);
     }
 
     /**
