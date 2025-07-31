@@ -590,6 +590,8 @@ export class Browser {
      * TODO implement timeout
      */
     public findAll(selector: string[] | string, options: {} = {}): Promise<ElementHandle[]> {
+        selector = Array.isArray(selector) ? selector.map(s => this.resolver(s)) : this.resolver(selector);
+
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
                 return Promise.allSettled(selector.flatMap((s) => this.site.$$(s)))

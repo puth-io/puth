@@ -20,6 +20,9 @@ export type BrowserRef = {
     unusedSince?: number;
 }
 
+// TODO rework pool, either only push BrowserRefs into the pool when they are done or we need to give every ref its own
+//      browserContexts array and track the root browser context somewhere else but that implies that we track refs by
+//      context.
 export class BrowserHandler extends BaseHandler implements IBrowserHandler {
     #refs: BrowserRef[] = [];
 
@@ -60,6 +63,8 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
             '--user-data-dir=' + tmpDir.name,
             ...(options.args ?? []),
         ];
+
+        options.headless = false;
 
         return puppeteer.launch(options)
             .then(async browser => {
