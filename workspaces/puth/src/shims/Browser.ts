@@ -179,6 +179,36 @@ export class Browser {
         return this.self();
     }
 
+    public async doubleClick(selector: string|null = null): Promise<this> {
+        if (selector !== null) {
+            let element = await this.firstOrFail(this.resolver(selector));
+            await element.click({count: 2});
+        } else {
+            await this.site.mouse.down();
+            await this.site.mouse.up();
+            await this.site.mouse.down();
+            await this.site.mouse.up();
+        }
+
+        return this.self();
+    }
+
+    public async rightClick(selector: string|null = null): Promise<this> {
+        if (selector !== null) {
+            let element = await this.firstOrFail(this.resolver(selector));
+            await element.click({button: 'right'});
+        } else {
+            await this.site.mouse.down({button: 'right'});
+            await this.site.mouse.up({button: 'right'});
+        }
+
+        return this.self();
+    }
+
+    public async releaseMouse(): Promise<this> {
+        return this.site.mouse.up().then(this.self);
+    }
+
     public setContent(html: string, options: WaitForOptions = {}): Promise<this> {
         return this.site.setContent(html, options).then(this.self);
     }

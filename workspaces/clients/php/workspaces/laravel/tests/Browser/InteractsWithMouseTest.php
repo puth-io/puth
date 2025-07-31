@@ -76,7 +76,7 @@ class InteractsWithMouseTest extends PuthTestCase
             $browser->visit(new Playground)
                 ->clickAtXPath('//*[@id="actions-click"]/*')
                 ->assertSeeIn('#actions-click', 'clicked button');
-            $this->expectException('Exception');
+            $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
             $browser->clickAtXPath('//*[@id="non-existing-element-id"]');
         });
     }

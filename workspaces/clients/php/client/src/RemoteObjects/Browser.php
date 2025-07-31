@@ -125,6 +125,38 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "doubleClick"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function doubleClick(mixed $selector = null): Browser
+    {
+        return $this->callFunc('doubleClick', [$selector]);
+    }
+
+    /**
+     * @debug-gen-original-name "rightClick"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function rightClick(mixed $selector = null): Browser
+    {
+        return $this->callFunc('rightClick', [$selector]);
+    }
+
+    /**
+     * @debug-gen-original-name "releaseMouse"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     */
+    public function releaseMouse(): Browser
+    {
+        return $this->callFunc('releaseMouse');
+    }
+
+    /**
      * @debug-gen-original-name "setContent"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
