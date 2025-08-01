@@ -141,14 +141,14 @@ export class Browser {
 
     // error msg "Unable to locate element with selector [{$selector}]."
     public click(selector: string, options: any = {}): Promise<this> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then((element) => element.click(options))
             .then(this.self);
     }
 
     public clickLink(selector: string, element: string = 'a'): Promise<this> {
-        return this.firstOrFail(this.resolver(element) + `[href='${selector}']`)
-            .then((element) => element.click())
+        return this.firstOrFail(element + `[href='${selector}']`)
+            .then(element => element.click())
             .then(this.self);
     }
 
@@ -166,7 +166,7 @@ export class Browser {
 
     public async clickAndHold(selector: string|null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.firstOrFail(this.resolver(selector));
+            let element = await this.firstOrFail(selector);
             await element.scrollIntoView();
             let point = await element.clickablePoint();
             this.site.mouse.click(point.x, point.y);
@@ -181,7 +181,7 @@ export class Browser {
 
     public async doubleClick(selector: string|null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.firstOrFail(this.resolver(selector));
+            let element = await this.firstOrFail(selector);
             await element.click({count: 2});
         } else {
             await this.site.mouse.down();
@@ -195,7 +195,7 @@ export class Browser {
 
     public async rightClick(selector: string|null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.firstOrFail(this.resolver(selector));
+            let element = await this.firstOrFail(selector);
             await element.click({button: 'right'});
         } else {
             await this.site.mouse.down({button: 'right'});
@@ -432,7 +432,7 @@ export class Browser {
     }
 
     public type(selector: string[] | string, value: string, options = {}): Promise<this> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then((e) => PuthStandardPlugin.clear(e).then(() => type(e, value, options)))
             .then(this.self);
     }
@@ -444,7 +444,7 @@ export class Browser {
     public keys(selector: string, keys: string[] = []): Promise<this> {
         let parsed = keys.map(comb => Array.isArray(comb) ? comb.join('') : comb);
 
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then(async element => type(element, parsed))
             .then(this.self);
     }
@@ -463,7 +463,7 @@ export class Browser {
             options.hidden = true;
         }
 
-        // TODO fails if one of the selectors is not a valid css selector, but this function should work indepentend
+        // TODO fails if one of the selectors is not a valid css selector, but this function should work independent
         //      on all selectors. Need to implement a custom waitForSelector function to do so.
         selector = Array.isArray(selector) ? selector.join(', ') : selector;
         // return (
@@ -581,7 +581,7 @@ export class Browser {
      */
     public find(selector: string, options: {} = {}): Promise<ElementHandle|null> {
         // @ts-ignore
-        return this.waitFor(selector, options);
+        return this.waitFor(this.resolver(selector), options);
     }
 
     /**
@@ -590,7 +590,7 @@ export class Browser {
      * TODO implement timeout
      */
     public findAll(selector: string[] | string, options: {} = {}): Promise<ElementHandle[]> {
-        selector = Array.isArray(selector) ? selector.map(s => this.resolver(s)) : this.resolver(selector);
+        selector = this.resolver(selector);
 
         return this.waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
@@ -710,7 +710,7 @@ export class Browser {
     }
 
     public assertSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(
                 actual,
@@ -722,7 +722,7 @@ export class Browser {
     }
 
     public assertDontSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(
                 actual,
@@ -734,14 +734,14 @@ export class Browser {
     }
 
     public assertSeeAnythingIn(selector: string): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(actual, isNotEmpty, undefined, `Saw unexpected text [''] within element [${selector}].`))
             .then(this.selfWithAsserts());
     }
 
     public assertSeeNothingIn(selector: string): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
             .then((actual) => expects(actual, isEmpty, undefined, `Did not see expected text [''] within element [${selector}].`))
             .then(this.selfWithAsserts());
@@ -886,7 +886,7 @@ export class Browser {
         selectors.push(`button[name='${field}']`);
         selectors.push(field);
 
-        return this.firstOrFail(this.resolver(selectors));
+        return this.firstOrFail(selectors);
     }
 
     public resolveForButtonPress(field: string): Promise<ElementHandle> {
@@ -897,7 +897,7 @@ export class Browser {
         selectors.push(`button[name='${field}']`);
 
         return Promise.any([
-            this.firstOrFail(this.resolver(selectors)),
+            this.firstOrFail(selectors),
             this.site.waitForFunction(
                 (selector, text) => {
                     let els = document.querySelectorAll(selector);
@@ -962,7 +962,7 @@ export class Browser {
 
     public async assertIndeterminate(field: string, value: string | null = null): Promise<Return<this>> {
         return this.assertNotChecked(field, value)
-            .then(_ => this.firstOrFail(this.resolver(field)))
+            .then(_ => this.firstOrFail(field))
             .then(async element => expects(
                 (await PuthStandardPlugin.attr(element, 'indeterminate') || await PuthStandardPlugin.its(element, 'indeterminate')),
                 isEqualTo,
@@ -1042,20 +1042,20 @@ export class Browser {
     }
 
     public assertValue(selector: string, value: string): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector)).then(el => expects(
+        return this.firstOrFail(selector).then(el => expects(
             PuthStandardPlugin.its(el, 'value'),
             isEqualTo,
             value,
-            `Did not see expected value [${value}] within element [${this.resolver(selector)}].`,
+            `Did not see expected value [${value}] within element [${selector}].`,
         )).then(this.selfWithAsserts());
     }
 
     public assertValueIsNot(selector: string, value: string): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector)).then(el => expects(
+        return this.firstOrFail(selector).then(el => expects(
             PuthStandardPlugin.its(el, 'value'),
             isNotEqualTo,
             value,
-            `Saw unexpected value [${value}] within element [${this.resolver(selector)}].`,
+            `Saw unexpected value [${value}] within element [${selector}].`,
         )).then(this.selfWithAsserts());
     }
 
@@ -1067,27 +1067,25 @@ export class Browser {
     // }
 
     public assertAttribute(selector: string, attribute: string, value: string): Promise<Return<this>> {
-        let fullSelector = this.resolver(selector);
-        return this.firstOrFail(fullSelector).then(el => expects(
+        return this.firstOrFail(selector).then(el => expects(
             PuthStandardPlugin.attr(el, attribute),
             isEqualTo,
             value,
-            `Did not see expected attribute [${attribute}] within element [${fullSelector}].`,
+            `Did not see expected attribute [${attribute}] within element [${selector}].`,
         )).then(this.selfWithAsserts());
     }
 
     public assertAttributeMissing(selector: string, attribute: string): Promise<Return<this>> {
-        let fullSelector = this.resolver(selector);
-        return this.firstOrFail(fullSelector).then(el => expects(
+        return this.firstOrFail(selector).then(el => expects(
             PuthStandardPlugin.attr(el, attribute),
             isEqualTo,
             null,
-            `Saw unexpected attribute [${attribute}] within element [${fullSelector}].`,
+            `Saw unexpected attribute [${attribute}] within element [${selector}].`,
         )).then(this.selfWithAsserts());
     }
 
     public assertAttributeContains(selector: string, attribute: string, value: string): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then(this.eEHW(
                 (element, expected, attribute) => element.getAttribute(attribute)?.includes(expected),
                 value,
@@ -1098,7 +1096,7 @@ export class Browser {
     }
 
     public assertAttributeDoesntContain(selector: string, attribute: string, value: string): Promise<Return<this>> {
-        return this.firstOrFail(this.resolver(selector))
+        return this.firstOrFail(selector)
             .then(this.eEHW(
                 (element, expected, attribute) => !element.getAttribute(attribute)?.includes(expected),
                 value,
@@ -1252,9 +1250,8 @@ export class Browser {
     }
 
     public vueAttribute(componentSelector: string | null, key: string): any {
-        const fullSelector = this.resolver(componentSelector);
         const script = `JSON.parse(JSON.stringify((function() {
-            const el = document.querySelector('${fullSelector}');
+            const el = document.querySelector('${this.resolver(componentSelector)}');
             if (!el) return undefined;
             if (typeof el.__vue__ !== 'undefined') return el.__vue__.${key};
             try {
@@ -1446,10 +1443,26 @@ export class Browser {
 
     public resolver(selector: string[]|string|null) {
         if (Array.isArray(selector)) {
-            return selector.map(s => this.resolver(s));
+            return selector.map(s => {
+                try {
+                    return this.resolver(s);
+                } catch (e) {
+                    return null;
+                }
+            }).filter(i => !!i);
         }
         if (selector == null) {
             selector = '';
+        }
+
+        // TODO switch to ::-p-xpath selector but this requires nodejs
+        if (selector.startsWith('xpath//')) {
+            return selector;
+        }
+
+        // TODO switch to ::-p-xpath selector but this requires nodejs
+        if (selector.endsWith('[]')) {
+            throw new Error('Invalid selector, can not end with "[]".');
         }
 
         const original = selector;

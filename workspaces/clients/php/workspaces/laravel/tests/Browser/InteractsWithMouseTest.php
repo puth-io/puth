@@ -41,8 +41,7 @@ class InteractsWithMouseTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
             
-            $element = $browser->resolver->findOrFail('#actions-click > button');
-            
+            $element = $browser->_firstOrFail('#actions-click > button');
             $element->scrollIntoView();
             $point = $element->clickablePoint();
             

@@ -64,7 +64,7 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
             ...(options.args ?? []),
         ];
 
-        options.headless = false;
+        // options.headless = false;
 
         return puppeteer.launch(options)
             .then(async browser => {
