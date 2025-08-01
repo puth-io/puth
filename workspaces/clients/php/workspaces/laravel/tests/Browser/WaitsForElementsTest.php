@@ -39,8 +39,8 @@ class WaitsForElementsTest extends PuthTestCase
             ->andReturn($playground->url());
         
         $this->browse(function (Browser $browser) use ($playground) {
-            $browser->waitUntil("window.location = '{$playground->url()}'")
-                ->waitForRoute('playground')
+            $browser->evaluate("window.location = '{$playground->url()}'");
+            $browser->waitForRoute('mocked return')
                 ->assertUrlIs($playground->url());
         });
     }

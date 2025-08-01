@@ -102,7 +102,6 @@ const NAME_TRANSLATION = {
                 assertCookieMissing: '_assertCookieMissing',
                 assertCookieValue: '_assertCookieValue',
                 waitFor: '_waitFor',
-                waitForTextIn: '_waitForTextIn',
                 waitUntil: '_waitUntil',
                 waitUntilEnabled: '_waitUntilEnabled',
                 waitUntilDisabled: '_waitUntilDisabled',

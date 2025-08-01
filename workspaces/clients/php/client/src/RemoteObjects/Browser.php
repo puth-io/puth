@@ -13,7 +13,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "clone"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["Browser"]
-     * @debug-gen-original-parameter site {"type":"Page|Frame|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter site {"type":"Page | Frame | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function clone(mixed $site = null): Browser
     {
@@ -117,7 +117,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "clickAndHold"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter selector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function clickAndHold(mixed $selector = null): Browser
     {
@@ -128,7 +128,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "doubleClick"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter selector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function doubleClick(mixed $selector = null): Browser
     {
@@ -139,7 +139,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "rightClick"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter selector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function rightClick(mixed $selector = null): Browser
     {
@@ -298,7 +298,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "evaluate"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["any[]","any"]
-     * @debug-gen-original-parameter pageFunction {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter pageFunction {"type":"string[] | string","isOptional":false}
      * @debug-gen-original-parameter args {"type":"any[]","isOptional":false,"initializer":{"type":"array","members":[]}}
      */
     public function evaluate(mixed $pageFunction, array $args = []): mixed
@@ -560,26 +560,67 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "waitForNotPresent"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function waitForNotPresent(string $selector, mixed $options = []): void
+    public function waitForNotPresent(string $selector, mixed $options = []): Browser
     {
-        $this->callFunc('waitForNotPresent', [$selector, $options]);
+        return $this->callFunc('waitForNotPresent', [$selector, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitForText"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter text {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
+     */
+    public function waitForText(mixed $text, mixed $timeout = null, bool $ignoreCase = false): Browser
+    {
+        return $this->callFunc('waitForText', [$text, $timeout, $ignoreCase]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntilMissingText"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter text {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
+     */
+    public function waitUntilMissingText(mixed $text, mixed $timeout = null, bool $ignoreCase = false): Browser
+    {
+        return $this->callFunc('waitUntilMissingText', [$text, $timeout, $ignoreCase]);
     }
 
     /**
      * @debug-gen-original-name "waitForTextIn"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter text {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{ timeout?: int; ignoreCase?: boolean; missing?: boolean }","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter timeout {"type":"int | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
      */
-    public function _waitForTextIn(string $selector, mixed $text, mixed $options = []): void
+    public function waitForTextIn(string $selector, mixed $text, mixed $timeout = null, bool $ignoreCase = false): Browser
     {
-        $this->callFunc('waitForTextIn', [$selector, $text, $options]);
+        return $this->callFunc('waitForTextIn', [$selector, $text, $timeout, $ignoreCase]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntilMissingTextIn"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter text {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter ignoreCase {"type":"boolean","isOptional":false,"initializer":{"type":"false"}}
+     */
+    public function waitUntilMissingTextIn(string $selector, mixed $text, mixed $timeout = null, bool $ignoreCase = false): Browser
+    {
+        return $this->callFunc('waitUntilMissingTextIn', [$selector, $text, $timeout, $ignoreCase]);
     }
 
     /**
@@ -614,25 +655,25 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "waitUntilEnabled"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _waitUntilEnabled(string $selector, mixed $options = []): void
+    public function _waitUntilEnabled(string $selector, mixed $options = []): Browser
     {
-        $this->callFunc('waitUntilEnabled', [$selector, $options]);
+        return $this->callFunc('waitUntilEnabled', [$selector, $options]);
     }
 
     /**
      * @debug-gen-original-name "waitUntilDisabled"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _waitUntilDisabled(string $selector, mixed $options = []): void
+    public function _waitUntilDisabled(string $selector, mixed $options = []): Browser
     {
-        $this->callFunc('waitUntilDisabled', [$selector, $options]);
+        return $this->callFunc('waitUntilDisabled', [$selector, $options]);
     }
 
     /**
@@ -957,8 +998,8 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "resolveForChecking"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter field {"type":"string|null","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter field {"type":"string | null","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function resolveForChecking(mixed $field, mixed $value = null): void
     {
@@ -969,8 +1010,8 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "resolveForRadioSelection"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter field {"type":"string|null","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter field {"type":"string | null","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function resolveForRadioSelection(mixed $field, mixed $value = null): void
     {
@@ -1061,7 +1102,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function assertChecked(string $field, mixed $value = null): Browser
     {
@@ -1073,7 +1114,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function assertNotChecked(string $field, mixed $value = null): Browser
     {
@@ -1121,7 +1162,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string[] | string","isOptional":false}
      */
     public function assertSelected(string $field, mixed $value): Browser
     {
@@ -1133,7 +1174,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string[]|string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string[] | string","isOptional":false}
      */
     public function assertNotSelected(string $field, mixed $value): Browser
     {
@@ -1672,7 +1713,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      * @debug-gen-original-parameter matches {"type":"boolean","isOptional":false,"initializer":{"type":"true"}}
      */
     public function _assertQueryStringParameter(string $name, mixed $value = null, bool $matches = true): void
@@ -1685,7 +1726,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter name {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function assertQueryStringHas(string $name, mixed $value = null): Browser
     {
@@ -1746,7 +1787,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "resolver"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter selector {"type":"string[]|string|null","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string[] | string | null","isOptional":false}
      */
     public function resolver(mixed $selector): void
     {
@@ -1789,7 +1830,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "acceptDialog"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter value {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
      */
     public function acceptDialog(mixed $value = null): Browser
     {

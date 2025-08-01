@@ -120,13 +120,27 @@ trait ProvidesBrowser
     protected function newBrowser()
     {
         return new Browser(
-            $this->context->createBrowserShim(array_merge([
-                'defaultViewport' => [
-                    'width' => 1280,
-                    'height' => 720,
+            $this->context->createBrowserShim(
+                array_merge(
+                    [
+                        'defaultViewport' => [
+                            'width' => 1280,
+                            'height' => 720,
+                        ],
+                        'headless' => $this->headless,
+                    ],
+                    $this->getLaunchOptions(),
+                ),
+                [
+                    'timeout' => 3000,
+                    'timeoutMultiplier' => 1000,
+                    'resolver' => [
+                        'prefix' => 'body',
+                        'finder' => 'dusk',
+                    ],
+                    'fitOnFailure' => true,
                 ],
-                'headless' => $this->headless,
-            ], $this->getLaunchOptions()))
+            ),
         );
     }
 

@@ -53,7 +53,7 @@ trait WaitsForElements
     /**
      * Wait for the given selector to become visible.
      *
-     * @param string $selector
+     * @param string|string[] $selector
      * @param int|null $seconds
      * @return $this
      */
@@ -74,72 +74,6 @@ trait WaitsForElements
     public function waitUntilMissing($selector, $seconds = null)
     {
         $this->_waitFor($selector, ['state' => 'hidden', 'timeout' => $seconds !== null ? ($seconds * 1000) : null]);
-
-        return $this;
-    }
-    
-    /**
-     * Wait for the given text to be removed.
-     *
-     * @param string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitUntilMissingText($text, $seconds = null, $ignoreCase = false)
-    {
-        return $this->waitUntilMissingTextIn($this->resolver->findOrFail(''), $text, $seconds, $ignoreCase);
-    }
-
-    /**
-     * Wait for the given text to be removed.
-     *
-     * @param string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitUntilMissingTextIn($selector, $text, $seconds = null, $ignoreCase = false)
-    {
-        $this->_waitForTextIn(
-            $this->resolver->format(''),
-            $text,
-            [
-                'ignoreCase' => $ignoreCase,
-                'missing' => true,
-                'timeout' => $seconds !== null ? ($seconds * 1000) : null,
-            ],
-        );
-
-        return $this;
-    }
-    
-    /**
-     * Wait for the given text to become visible.
-     *
-     * @param array|string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForText($text, $seconds = null, $ignoreCase = false)
-    {
-        return $this->waitForTextIn('', $text, $seconds, $ignoreCase);
-    }
-    
-    /**
-     * Wait for the given text to become visible inside the given selector.
-     *
-     * @param string $selector
-     * @param array|string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForTextIn($selector, $text, $seconds = null, $ignoreCase = false)
-    {
-        $options = ['ignoreCase' => $ignoreCase];
-        if ($seconds !== null) {
-            $options['timeout'] = $seconds;
-        }
-
-        $this->_waitForTextIn($this->resolver->format(''), $text, $options);
 
         return $this;
     }
@@ -167,7 +101,7 @@ trait WaitsForElements
      */
     public function waitForInput($field, $seconds = null)
     {
-        return $this->waitFor("input[name='{$field}'], textarea[name='{$field}'], select[name='{$field}']", $seconds);
+        return $this->waitFor(["input[name='{$field}']", "textarea[name='{$field}']", "select[name='{$field}']"], $seconds);
     }
 
     /**
@@ -205,7 +139,7 @@ trait WaitsForElements
      */
     public function waitUntilEnabled($selector, $seconds = null)
     {
-        $this->_waitUntilEnabled($this->resolver->format($selector), $seconds ? ['timeout' => $seconds] : []);
+        $this->_waitUntilEnabled($selector, $seconds ? ['timeout' => $seconds] : []);
         
         return $this;
     }
@@ -219,7 +153,7 @@ trait WaitsForElements
      */
     public function waitUntilDisabled($selector, $seconds = null)
     {
-        $this->_waitUntilDisabled($this->resolver->format($selector), $seconds ? ['timeout' => $seconds] : []);
+        $this->_waitUntilDisabled($selector, $seconds ? ['timeout' => $seconds] : []);
 
         return $this;
     }

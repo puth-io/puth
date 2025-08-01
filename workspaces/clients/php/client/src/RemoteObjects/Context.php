@@ -16,10 +16,11 @@ class Context extends RemoteObject
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["Browser"]
      * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter shimOptions {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function createBrowserShim(mixed $options = []): Browser
+    public function createBrowserShim(mixed $options = [], mixed $shimOptions = []): Browser
     {
-        return $this->callFunc('createBrowserShim', [$options]);
+        return $this->callFunc('createBrowserShim', [$options, $shimOptions]);
     }
 
     /**
