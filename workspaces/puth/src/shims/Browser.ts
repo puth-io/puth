@@ -478,6 +478,57 @@ export class Browser {
             .then(this.self);
     }
 
+    // TODO check with laravel dusk community because the original function does not keep options select for multiple
+    public async select(selector: string, value: null|string|(string[]) = null): Promise<this> {
+        let element = await this.resolveForSelection(selector);
+        let options = await element.$$('option:not([disabled])');
+        if (options.length === 0) {
+            throw new ExpectationFailed('Element has no selectable/non-disabled options.');
+        }
+        value = value === null ? null : (!Array.isArray(value) ? [value] : value);
+
+        let select = (await PuthStandardPlugin.its(element, 'tagName') === 'SELECT') ? element : null;
+        let isMultiple = false;
+
+        if (select !== null) {
+            isMultiple = await PuthStandardPlugin.its(element, 'multiple');
+            if (isMultiple) {
+                await PuthStandardPlugin.deselectAll(select);
+            }
+        }
+
+        if (select != null) {
+            if (value == null) {
+                let options = await this.resolveSelectOptions(selector);
+                await select.select(options[Math.floor(Math.random() * options.length)]);
+            } else {
+                await select.select(...value);
+            }
+        } else {
+            if (value == null) {
+                await options[Math.floor(Math.random() * options.length)].click();
+            } else {
+                try {
+                    if (value.length > 1) await this.site.keyboard.down('ControlLeft');
+                    for (let option of options) {
+                        if (value.includes(await PuthStandardPlugin.its(option, 'value'))) {
+                            await option.click();
+                            if (!isMultiple) {
+                                console.error('break not multiple');
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    if (value.length > 1) await this.site.keyboard.up('ControlLeft');
+                    throw e;
+                }
+            }
+        }
+
+        return this.self();
+    }
+
     public radio(selector: string, value: string): Promise<this> {
         return this.resolveForRadioSelection(selector, value)
             .then(element => element.click())
@@ -1151,7 +1202,10 @@ export class Browser {
 
         return this.resolveForSelection(field)
             .then((el) => PuthStandardPlugin.selected(el))
-            .then((selected) => value.every((v) => selected.includes(v)));
+            .then((selected) => {
+                console.error(selected);
+                return value.every((v) => selected.includes(v))
+            });
     }
 
     public assertSelected(field: string, value: string[] | string): Promise<Return<this>> {

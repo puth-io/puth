@@ -594,6 +594,18 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "select"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"null|string|(string[])","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function select(string $selector, mixed $value = null): Browser
+    {
+        return $this->callFunc('select', [$selector, $value]);
+    }
+
+    /**
      * @debug-gen-original-name "radio"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]

@@ -37,41 +37,6 @@ trait InteractsWithElements
     }
 
     /**
-     * Select the given value or random value of a drop-down field.
-     *
-     * @param string $field
-     * @param string|array|null $value
-     * @return $this
-     */
-    public function select($field, $value = null)
-    {
-        $element = $this->resolver->resolveForSelection($field);
-    
-        $options = array_map(function ($option) {
-            return $option->value();
-        }, $element->children('option'));
-        
-        $select = $element->tagName === 'SELECT' ? $element : null;
-        
-        if (func_num_args() === 1) {
-            $element->select($options[array_rand($options)]);
-        } else {
-            $value = $value === null ? [] : (!is_array($value) ? [$value] : $value);
-            $values = collect($value)->transform(function ($value) {
-                if (is_bool($value)) {
-                    return $value ? '1' : '0';
-                }
-                
-                return (string)$value;
-            })->all();
-    
-            $select->select(...$values);
-        }
-        
-        return $this;
-    }
-    
-    /**
      * Attach the given file to the field.
      *
      * @param string $field

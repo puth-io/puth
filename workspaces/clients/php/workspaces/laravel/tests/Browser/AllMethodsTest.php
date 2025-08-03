@@ -33,9 +33,6 @@ class AllMethodsTest extends PuthTestCase
         });
     }
     
-    /**
-     * DONE
-     */
     function test_select()
     {
         $this->browse(function (Browser $browser) {
