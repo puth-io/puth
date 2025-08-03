@@ -437,14 +437,37 @@ export class Browser {
         return this.firstOrFail(selector).then((element) => PuthStandardPlugin.its(element, attribute));
     }
 
-    public type(selector: string[] | string, value: string, options = {}): Promise<this> {
-        return this.firstOrFail(selector)
-            .then((e) => PuthStandardPlugin.clear(e).then(() => type(e, value, options)))
+    public _type(selector: string, value: string, options = {}): Promise<this> {
+        return this.resolveForTyping(selector)
+            .then(async element => {
+                if (options?.clear) {
+                    await PuthStandardPlugin.clear(element);
+                }
+                await type(element, value, options);
+            })
             .then(this.self);
     }
 
+    public type(selector: string, value: string): Promise<this> {
+        return this._type(selector, value, { clear: true });
+    }
+
     public typeSlowly(selector: string, value: string, pause: int = 100): Promise<this> {
-        return this.type(selector, value, { delay: pause });
+        return this._type(selector, value, { delay: pause, clear: true });
+    }
+
+    public append(selector: string, value: string): Promise<this> {
+        return this._type(selector, value);
+    }
+
+    public appendSlowly(selector: string, value: string, pause: int = 100): Promise<this> {
+        return this._type(selector, value, { delay: pause });
+    }
+
+    public clear(selector: string): Promise<this> {
+        return this.resolveForTyping(selector)
+            .then(async element => PuthStandardPlugin.clear(element))
+            .then(this.self);
     }
 
     public keys(selector: string, keys: string[] = []): Promise<this> {

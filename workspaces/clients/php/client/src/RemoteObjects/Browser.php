@@ -97,7 +97,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter x {"type":"int","isOptional":false}
      * @debug-gen-original-parameter y {"type":"int","isOptional":false}
      */
-    public function clickAtPoint(mixed $x, mixed $y): Browser
+    public function clickAtPoint(int $x, int $y): Browser
     {
         return $this->callFunc('clickAtPoint', [$x, $y]);
     }
@@ -508,16 +508,28 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-gen-original-name "type"
+     * @debug-gen-original-name "_type"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _type(mixed $selector, string $value, mixed $options = []): Browser
+    public function _type(string $selector, string $value, mixed $options = []): Browser
     {
-        return $this->callFunc('type', [$selector, $value, $options]);
+        return $this->callFunc('_type', [$selector, $value, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "type"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     */
+    public function type(string $selector, string $value): Browser
+    {
+        return $this->callFunc('type', [$selector, $value]);
     }
 
     /**
@@ -528,9 +540,45 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter value {"type":"string","isOptional":false}
      * @debug-gen-original-parameter pause {"type":"int","isOptional":false,"initializer":{"type":"numeric","value":"100"}}
      */
-    public function _typeSlowly(string $selector, string $value, mixed $pause): Browser
+    public function typeSlowly(string $selector, string $value, int $pause = 100): Browser
     {
         return $this->callFunc('typeSlowly', [$selector, $value, $pause]);
+    }
+
+    /**
+     * @debug-gen-original-name "append"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     */
+    public function append(string $selector, string $value): Browser
+    {
+        return $this->callFunc('append', [$selector, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "appendSlowly"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter pause {"type":"int","isOptional":false,"initializer":{"type":"numeric","value":"100"}}
+     */
+    public function appendSlowly(string $selector, string $value, int $pause = 100): Browser
+    {
+        return $this->callFunc('appendSlowly', [$selector, $value, $pause]);
+    }
+
+    /**
+     * @debug-gen-original-name "clear"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     */
+    public function clear(string $selector): Browser
+    {
+        return $this->callFunc('clear', [$selector]);
     }
 
     /**
@@ -1560,7 +1608,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter matches {"type":"boolean","isOptional":false,"initializer":{"type":"true"}}
      * @debug-gen-original-parameter trimEnd {"type":"int","isOptional":false,"initializer":{"type":"numeric","value":"0"}}
      */
-    public function _assertLocationProperty(string $property, string $expected, bool $matches = true, mixed $trimEnd): void
+    public function _assertLocationProperty(string $property, string $expected, bool $matches = true, int $trimEnd = 0): void
     {
         $this->callFunc('_assertLocationProperty', [$property, $expected, $matches, $trimEnd]);
     }
