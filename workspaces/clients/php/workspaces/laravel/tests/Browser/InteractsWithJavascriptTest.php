@@ -9,6 +9,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithJavascriptTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_script()
     {
         $this->browse(function (Browser $browser) {

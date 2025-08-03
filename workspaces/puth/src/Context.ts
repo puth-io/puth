@@ -221,12 +221,40 @@ class Context extends Generic {
     //     );
     // }
 
+    waitingForDialog = [];
+
     isPageBlockedByDialog(page: Page): false|Dialog {
         let dialog = this.caches.dialog.get(page);
         if (dialog === undefined) {
             return false;
         }
         return dialog;
+    }
+
+    async pageOnDialog(page, dialog) {
+        this.caches.dialog.set(page, dialog);
+
+        let waiters = this.waitingForDialog.filter(i => i.page == page);
+        this.waitingForDialog = this.waitingForDialog.filter(i => i.page != page);
+
+        this.puth.logger.error(waiters, 'waiters');
+
+        if (waiters.length === 0) {
+            if (this.lastCallerPromise) {
+                this.puth.logger.debug('Resolved active request because dialog opened on page.');
+                let lcp = this.lastCallerPromise;
+                this.lastCallerPromise = undefined;
+                lcp.resolve(Return.Dialog({
+                    message: dialog.message(),
+                    defaultValue: dialog.defaultValue(),
+                    type: dialog.type(),
+                }).serialize());
+            }
+        } else {
+            for (let waiter of waiters) {
+                await waiter.resolve(dialog);
+            }
+        }
     }
 
     private async trackBrowser(browserContext: BrowserContext) {
@@ -264,20 +292,7 @@ class Context extends Generic {
     private async trackPage(page) {
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         page.on('close', () => this.removeEventListenersFrom(page));
-        page.on('dialog', (dialog: Dialog) => {
-            this.caches.dialog.set(page, dialog);
-
-            if (this.lastCallerPromise) {
-                this.puth.logger.debug('Resolved active request because dialog opened on page.');
-                let lcp = this.lastCallerPromise;
-                this.lastCallerPromise = undefined;
-                lcp.resolve(Return.Dialog({
-                    message: dialog.message(),
-                    defaultValue: dialog.defaultValue(),
-                    type: dialog.type(),
-                }).serialize());
-            }
-        });
+        page.on('dialog', (dialog: Dialog) => this.pageOnDialog(page, dialog));
 
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
             let args: any = [];
@@ -713,10 +728,8 @@ class Context extends Generic {
                         ? on
                         : on?.frame?.page());
 
-        if (this.caches.dialog.size > 0) {
-            if (page && this.isPageBlockedByDialog(page) && (on instanceof Browser && !['assertDialogOpened', 'typeInDialog', 'acceptDialog', 'dismissDialog', 'waitForDialog'].includes(packet.function))) {
-                return Return.ExpectationFailed('The page has an open dialog that blocks all function calls except those that interact with it.').serialize();
-            }
+        if (page && this.isPageBlockedByDialog(page) && (on instanceof Browser && !['assertDialogOpened', 'typeInDialog', 'acceptDialog', 'dismissDialog', 'waitForDialog'].includes(packet.function))) {
+            return Return.ExpectationFailed('The page has an open dialog that blocks all function calls except those that interact with it.').serialize();
         }
 
         // Turn object representations into the actual object

@@ -9,6 +9,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithKeyboardTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_keyboard_special_keys()
     {
         $this->browse(function (Browser $browser) {

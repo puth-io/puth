@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class WaitUntilTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_wait_until()
     {
         $this->browse(function (Browser $browser) {

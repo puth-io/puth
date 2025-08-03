@@ -225,7 +225,7 @@ class RemoteObject
                 $generic->value,
             ),
             'GenericNull' => null,
-            'GenericSelf', 'GenericUndefined' => $this,
+            'GenericSelf', 'GenericUndefined', 'Dialog' => $this,
             'PuthAssertion' => $generic,
             default => throw new RuntimeException('Unexpected generic type ' . $generic->type),
         };

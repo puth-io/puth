@@ -78,12 +78,12 @@ trait ProvidesBrowser
         } catch (\Exception $e) {
             $this->captureFailuresFor($browsers);
             $this->storeSourceLogsFor($browsers);
-            
+
             throw $e;
         } catch (Throwable $e) {
             $this->captureFailuresFor($browsers);
             $this->storeSourceLogsFor($browsers);
-            
+
             throw $e;
         } finally {
             $this->storeConsoleLogsFor($browsers);
@@ -133,7 +133,7 @@ trait ProvidesBrowser
                 ),
                 [
                     'timeout' => 3000,
-                    'functionTimeoutMultiplier' => 1000,
+                    'timeoutMultiplier' => 1000,
                     'resolver' => [
                         'prefix' => 'body',
                         'finder' => 'dusk',

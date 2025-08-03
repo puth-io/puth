@@ -1912,7 +1912,10 @@ export class Browser {
         if (dialog !== false) {
             return Promise.resolve(dialog);
         }
-        // TODO return retryFor()
+
+        let { promise, resolve, reject } = Promise.withResolvers();
+        this.context.waitingForDialog.push({page: this.site, resolve, reject});
+        return promise;
     }
 
     public waitForDialog(): Promise<this> {

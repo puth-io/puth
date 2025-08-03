@@ -9,6 +9,8 @@ use Tests\PuthTestCase;
 
 class InteractsWithElementsTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_click_link()
     {
         $this->browse(function (Browser $browser) {

@@ -9,6 +9,8 @@ use PHPUnit\Framework\Assert;
 
 class PortalTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_portal_facade_fake()
     {
         Mail::fake();
