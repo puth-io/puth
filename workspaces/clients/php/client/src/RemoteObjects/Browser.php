@@ -643,9 +643,82 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "drag"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter from {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter to {"type":"string","isOptional":false}
+     */
+    public function drag(string $from, string $to): Browser
+    {
+        return $this->callFunc('drag', [$from, $to]);
+    }
+
+    /**
+     * @debug-gen-original-name "dragOffset"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter x {"type":"int","isOptional":false}
+     * @debug-gen-original-parameter y {"type":"int","isOptional":false}
+     */
+    public function dragOffset(string $selector, int $x, int $y): Browser
+    {
+        return $this->callFunc('dragOffset', [$selector, $x, $y]);
+    }
+
+    /**
+     * @debug-gen-original-name "dragUp"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter offset {"type":"int","isOptional":false}
+     */
+    public function dragUp(string $selector, int $offset): Browser
+    {
+        return $this->callFunc('dragUp', [$selector, $offset]);
+    }
+
+    /**
+     * @debug-gen-original-name "dragDown"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter offset {"type":"int","isOptional":false}
+     */
+    public function dragDown(string $selector, int $offset): Browser
+    {
+        return $this->callFunc('dragDown', [$selector, $offset]);
+    }
+
+    /**
+     * @debug-gen-original-name "dragLeft"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter offset {"type":"int","isOptional":false}
+     */
+    public function dragLeft(string $selector, int $offset): Browser
+    {
+        return $this->callFunc('dragLeft', [$selector, $offset]);
+    }
+
+    /**
+     * @debug-gen-original-name "dragRight"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter offset {"type":"int","isOptional":false}
+     */
+    public function dragRight(string $selector, int $offset): Browser
+    {
+        return $this->callFunc('dragRight', [$selector, $offset]);
+    }
+
+    /**
      * @debug-gen-original-name "waitFor"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["ElementHandle","null","this"]
+     * @debug-gen-original-returns ["ElementHandle","null"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{ timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
      */
@@ -789,6 +862,7 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Applies the resolver to the selector
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      * TODO implement timeout
@@ -805,6 +879,7 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Applies the resolver to the selector
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      * 
@@ -820,6 +895,7 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Applies the resolver to the selector
      * @gen-returns RemoteObject
      * TODO gen-returns should be ElementHandle
      * 

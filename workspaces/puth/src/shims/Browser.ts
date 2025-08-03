@@ -501,14 +501,44 @@ export class Browser {
         return this._check(false, selector, value);
     }
 
+    public async drag(from: string, to: string): Promise<this> {
+        let [first, second] = await Promise.all([from, to].map(s => this.resolver(s)).map(s => this.waitFor(s)));
+        // @ts-ignore
+        await second.drop(first);
+
+        return this.self();
+    }
+
+    public dragOffset(selector: string, x: int, y: int): Promise<this> {
+        return this.firstOrFail(selector)
+            .then(element => element.drag({x, y}))
+            .then(this.self);
+    }
+
+    public dragUp(selector: string, offset: int): Promise<this> {
+        return this.dragOffset(selector, 0, -offset);
+    }
+
+    public dragDown(selector: string, offset: int): Promise<this> {
+        return this.dragOffset(selector, 0, offset);
+    }
+
+    public dragLeft(selector: string, offset: int): Promise<this> {
+        return this.dragOffset(selector, -offset, 0);
+    }
+
+    public dragRight(selector: string, offset: int): Promise<this> {
+        return this.dragOffset(selector, offset, 0);
+    }
+
     public waitFor(
         selector: string[] | string,
         options?: { timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' },
-    ): Promise<ElementHandle | null | this> {
+    ): Promise<ElementHandle|null> {
         options = { state: 'present', timeout: this.timeout, ...options } as any;
 
         if (options?.state === 'missing') {
-            return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout });
+            return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout }).then(_ => null);
         } else if (options?.state === 'visible') {
             options.visible = true;
         } else if (options?.state === 'hidden') {
@@ -657,6 +687,8 @@ export class Browser {
     }
 
     /**
+     * Applies the resolver to the selector
+     *
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      * TODO implement timeout
@@ -677,6 +709,8 @@ export class Browser {
     }
 
     /**
+     * Applies the resolver to the selector
+     *
      * @gen-returns RemoteObject[]
      * TODO gen-returns should be ElementHandle
      */
@@ -691,6 +725,8 @@ export class Browser {
     }
 
     /**
+     * Applies the resolver to the selector
+     *
      * @gen-returns RemoteObject
      * TODO gen-returns should be ElementHandle
      */
