@@ -619,7 +619,7 @@ export class Browser {
         options?: { timeout?: int|null; state?: 'visible' | 'hidden' | 'present' | 'missing' },
     ): Promise<ElementHandle|null> {
         options = { state: 'present', ...options };
-        options.timeout = options.timeout ?? this.timeout;
+        options.timeout = this.resolveTimeout(options.timeout);
 
         if (options?.state === 'missing') {
             return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout }).then(_ => null);
@@ -680,9 +680,7 @@ export class Browser {
     }
 
     public async waitForEvent(type: string, target: string = '', timeout: int|null = null): Promise<this> {
-        timeout = timeout != null ? (timeout * this.options.functionTimeoutMultiplier) : this.timeout;
-
-        let timeoutFunc = `setTimeout(resolve, ${timeout});`;
+        let timeoutFunc = `setTimeout(resolve, ${this.resolveTimeout(timeout)});`;
         if (target !== 'document' && target !== 'window') {
             // wait for the given target to be available
             await this.firstOrFail(target);
@@ -698,7 +696,7 @@ export class Browser {
         return this.site
             .waitForFunction(
                 (s) => document.querySelector(s) === null,
-                { timeout: this.timeout, ...options, polling: 'mutation' },
+                { ...options, timeout: this.resolveTimeout(options?.timeout), polling: 'mutation' },
                 this.resolver(selector),
             )
             .then(this.self);
@@ -713,9 +711,7 @@ export class Browser {
             text = [text];
         }
         selector = this.resolver(selector);
-        if (options.timeout != null) {
-            options.timeout = options.timeout * this.options.functionTimeoutMultiplier;
-        }
+        options.timeout = this.resolveTimeout(options.timeout);
 
         return this.waitUntil(
             (t, s, ic, m) => {
@@ -757,7 +753,7 @@ export class Browser {
 
     public waitUntil(pageFunction, args: any[], message: string, options: {} = {}) {
         return this.site
-            .waitForFunction(pageFunction, { timeout: this.timeout, ...options }, ...args)
+            .waitForFunction(pageFunction, { ...options, timeout: this.resolveTimeout(options?.timeout) }, ...args)
             .catch((error) => {
                 if (error instanceof TimeoutError) {
                     throw new ExpectationFailed(message);
@@ -1192,23 +1188,23 @@ export class Browser {
         });
     }
 
+    private resolveTimeout(timeout?: int|null) {
+        return timeout != null ? timeout * this.options.functionTimeoutMultiplier : this.timeout;
+    }
+
     public inputValue(field: any): string {
         return this.resolveForTyping(field).value();
     }
 
     public async assertInputPresent(field: string, timeout: int|null = null): Promise<Return<this>> {
-        timeout = timeout != null ? this.options.functionTimeoutMultiplier * timeout : this.timeout;
-
         return this.assertPresent(
             `input[name='${field}'], textarea[name='${field}'], select[name='${field}']`,
-            timeout,
+            this.resolveTimeout(timeout),
         );
     }
 
     public async assertInputMissing(field: string, timeout: int|null = null): Promise<Return<this>> {
-        timeout = timeout != null ? this.options.functionTimeoutMultiplier * timeout : this.timeout;
-
-        await this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, timeout);
+        await this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, this.resolveTimeout(timeout));
         return this;
     }
 

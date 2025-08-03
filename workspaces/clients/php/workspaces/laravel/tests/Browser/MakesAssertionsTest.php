@@ -113,6 +113,8 @@ class MakesAssertionsTest extends PuthTestCase
                 ->assertVueIsNot('count', 0, '#counter')
                 ->assertVueContains('array', 1, '#counter')
                 ->assertVueIsNot('count', '0', '#counter');
+
+            Assert::assertEquals(1, $browser->vueAttribute('#counter', 'count'));
         });
     }
 }

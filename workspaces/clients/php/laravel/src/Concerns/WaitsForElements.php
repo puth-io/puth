@@ -73,7 +73,7 @@ trait WaitsForElements
      */
     public function waitUntil($script, $seconds = null, $message = 'Waited for script to be true')
     {
-        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds * 1000] : []);
+        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds] : []);
 
         return $this;
     }

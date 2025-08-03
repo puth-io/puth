@@ -165,11 +165,6 @@ class AllMethodsTest extends PuthTestCase
                 ->click('#actions-focus')
                 ->assertFocused('#actions-focus')
                 ->assertNotFocused('#actions-type input')
-//                ->assertVue
-//                ->assertVueIsNot
-//                ->assertVueContains
-//                ->assertVueDoesNotContain
-//                ->vueAttribute
             ;
         });
     }
