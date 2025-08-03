@@ -594,6 +594,55 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "radio"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string","isOptional":false}
+     */
+    public function radio(string $selector, string $value): Browser
+    {
+        return $this->callFunc('radio', [$selector, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "_check"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter shouldBeChecked {"type":"boolean","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function _check(bool $shouldBeChecked, string $selector, mixed $value = null): Browser
+    {
+        return $this->callFunc('_check', [$shouldBeChecked, $selector, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "check"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function check(string $selector, mixed $value = null): Browser
+    {
+        return $this->callFunc('check', [$selector, $value]);
+    }
+
+    /**
+     * @debug-gen-original-name "uncheck"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter value {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function uncheck(string $selector, mixed $value = null): Browser
+    {
+        return $this->callFunc('uncheck', [$selector, $value]);
+    }
+
+    /**
      * @debug-gen-original-name "waitFor"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle","null","this"]

@@ -466,7 +466,7 @@ export class Browser {
 
     public clear(selector: string): Promise<this> {
         return this.resolveForTyping(selector)
-            .then(async element => PuthStandardPlugin.clear(element))
+            .then(element => PuthStandardPlugin.clear(element))
             .then(this.self);
     }
 
@@ -474,8 +474,31 @@ export class Browser {
         let parsed = keys.map((comb) => (Array.isArray(comb) ? comb.join('') : comb));
 
         return this.firstOrFail(selector)
-            .then(async (element) => type(element, parsed))
+            .then(element => type(element, parsed))
             .then(this.self);
+    }
+
+    public radio(selector: string, value: string): Promise<this> {
+        return this.resolveForRadioSelection(selector, value)
+            .then(element => element.click())
+            .then(this.self);
+    }
+
+    public async _check(shouldBeChecked: boolean, selector: string, value: string|null = null): Promise<this> {
+        let element = await this.resolveForChecking(selector, value);
+        if (shouldBeChecked !== await PuthStandardPlugin.its(element, 'checked')) {
+            await element.click();
+        }
+
+        return this.self();
+    }
+
+    public check(selector: string, value: string|null = null): Promise<this> {
+        return this._check(true, selector, value);
+    }
+
+    public uncheck(selector: string, value: string|null = null): Promise<this> {
+        return this._check(false, selector, value);
     }
 
     public waitFor(
