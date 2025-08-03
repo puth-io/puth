@@ -757,15 +757,88 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-gen-original-name "waitFor"
+     * @debug-gen-original-name "_waitFor"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["ElementHandle","null"]
      * @debug-gen-original-parameter selector {"type":"string[] | string","isOptional":false}
-     * @debug-gen-original-parameter options {"type":"{ timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
+     * @debug-gen-original-parameter options {"type":"{ timeout?: int|null; state?: 'visible' | 'hidden' | 'present' | 'missing' }","isOptional":true}
      */
     public function _waitFor(mixed $selector, mixed $options): mixed
     {
-        return $this->callFunc('waitFor', [$selector, $options]);
+        return $this->callFunc('_waitFor', [$selector, $options]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitFor"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function waitFor(string $selector, mixed $timeout = null): Browser
+    {
+        return $this->callFunc('waitFor', [$selector, $timeout]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitUntilMissing"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function waitUntilMissing(string $selector, mixed $timeout = null): Browser
+    {
+        return $this->callFunc('waitUntilMissing', [$selector, $timeout]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitForLink"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function waitForLink(string $selector, mixed $timeout = null): Browser
+    {
+        return $this->callFunc('waitForLink', [$selector, $timeout]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitForInput"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function waitForInput(string $selector, mixed $timeout = null): Browser
+    {
+        return $this->callFunc('waitForInput', [$selector, $timeout]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitForLocation"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function waitForLocation(string $selector, mixed $timeout = null): Browser
+    {
+        return $this->callFunc('waitForLocation', [$selector, $timeout]);
+    }
+
+    /**
+     * @debug-gen-original-name "waitForEvent"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter type {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter target {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function waitForEvent(string $type, mixed $target = null, mixed $timeout = null): Browser
+    {
+        return $this->callFunc('waitForEvent', [$type, $target, $timeout]);
     }
 
     /**
@@ -870,7 +943,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _waitUntilEnabled(string $selector, mixed $options = []): Browser
+    public function waitUntilEnabled(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('waitUntilEnabled', [$selector, $options]);
     }
@@ -882,7 +955,7 @@ class Browser extends RemoteObject
      * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"{}","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _waitUntilDisabled(string $selector, mixed $options = []): Browser
+    public function waitUntilDisabled(string $selector, mixed $options = []): Browser
     {
         return $this->callFunc('waitUntilDisabled', [$selector, $options]);
     }
@@ -1292,9 +1365,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter timeout {"type":"any","isOptional":false,"initializer":{"type":"numeric","value":"5"}}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertInputPresent(string $field, mixed $timeout): Browser
+    public function assertInputPresent(string $field, mixed $timeout = null): Browser
     {
         return $this->callFunc('assertInputPresent', [$field, $timeout]);
     }
@@ -1304,9 +1377,9 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter field {"type":"string","isOptional":false}
-     * @debug-gen-original-parameter timeout {"type":"any","isOptional":false,"initializer":{"type":"numeric","value":"5"}}
+     * @debug-gen-original-parameter timeout {"type":"int|null","isOptional":false,"initializer":{"type":"null"}}
      */
-    public function assertInputMissing(string $field, mixed $timeout): Browser
+    public function assertInputMissing(string $field, mixed $timeout = null): Browser
     {
         return $this->callFunc('assertInputMissing', [$field, $timeout]);
     }

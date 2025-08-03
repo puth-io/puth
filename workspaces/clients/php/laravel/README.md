@@ -42,6 +42,8 @@ Another difference is that `puth/laravel` does not start the browser process. Fo
 Docker) and point the client to the `puth` instance. `puth/laravel` once contained code to launch the `puth` process
 but I don't think enough people would use this feature so I removed it.
 
+Some exception messages changed, mostly the ones thrown by assert functions, e.g. instead of `Element [body #not-existing-element] not found` you will see `Waited 200ms for selector [body body #not-existing-element]` when calling `$browser->assertVisible('body #not-existing-element')`.
+
 ### Changes
 
 - `$browser->keys()`: This method now uses the [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) (instead of the php-webdriver keymap) is used (when using modifier keys you can only type/press american keyboard layout keys)

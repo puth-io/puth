@@ -585,7 +585,7 @@ export class Browser {
     }
 
     public async drag(from: string, to: string): Promise<this> {
-        let [first, second] = await Promise.all([from, to].map(s => this.resolver(s)).map(s => this.waitFor(s)));
+        let [first, second] = await Promise.all([from, to].map(s => this.resolver(s)).map(s => this._waitFor(s)));
         // @ts-ignore
         await second.drop(first);
 
@@ -614,18 +614,20 @@ export class Browser {
         return this.dragOffset(selector, offset, 0);
     }
 
-    public waitFor(
+    public _waitFor(
         selector: string[] | string,
-        options?: { timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' },
+        options?: { timeout?: int|null; state?: 'visible' | 'hidden' | 'present' | 'missing' },
     ): Promise<ElementHandle|null> {
-        options = { state: 'present', timeout: this.timeout, ...options } as any;
-        console.error(options);
+        options = { state: 'present', ...options };
+        options.timeout = options.timeout ?? this.timeout;
 
         if (options?.state === 'missing') {
             return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout }).then(_ => null);
         } else if (options?.state === 'visible') {
+            // @ts-ignore
             options.visible = true;
         } else if (options?.state === 'hidden') {
+            // @ts-ignore
             options.hidden = true;
         }
 
@@ -638,6 +640,7 @@ export class Browser {
         //         : this.site.waitForSelector(selector, options)
         // ).catch((error) => {
 
+        // @ts-ignore
         return this.site.waitForSelector(selector, options).catch((error) => {
             if (error instanceof AggregateError) {
                 error = error.errors[0];
@@ -651,6 +654,44 @@ export class Browser {
             }
             throw error;
         });
+    }
+
+    public waitFor(selector: string, timeout: int|null = null): Promise<this> {
+        return this._waitFor(selector, {state: 'visible', timeout}).then(this.self);
+    }
+
+    public waitUntilMissing(selector: string, timeout: int|null = null): Promise<this> {
+        return this._waitFor(selector, {state: 'hidden', timeout}).then(this.self);
+    }
+
+    public waitForLink(selector: string, timeout: int|null = null): Promise<Return<this>> {
+        return this.assertSeeLink(selector, 'a', {timeout});
+    }
+
+    public waitForInput(selector: string, timeout: int|null = null): Promise<this> {
+        return this._waitFor(
+            `input[name='${selector}'], textarea[name='${selector}'], select[name='${selector}']`,
+            {state: 'visible', timeout},
+        ).then(this.self);
+    }
+
+    public waitForLocation(selector: string, timeout: int|null = null): Promise<Return<this>> {
+        return this.assertUrlIs(selector, {timeout});
+    }
+
+    public async waitForEvent(type: string, target: string = '', timeout: int|null = null): Promise<this> {
+        timeout = timeout != null ? (timeout * this.options.functionTimeoutMultiplier) : this.timeout;
+
+        let timeoutFunc = `setTimeout(resolve, ${timeout});`;
+        if (target !== 'document' && target !== 'window') {
+            // wait for the given target to be available
+            await this.firstOrFail(target);
+            target = `document.querySelector('${this.resolver(target)}')`;
+        } else {
+        }
+        await this.site.evaluate(`(new Promise(function (resolve, reject) { ${timeoutFunc} ${target}.addEventListener('${type}', resolve, { once: true }); }))`);
+
+        return this.self();
     }
 
     public waitForNotPresent(selector: string, options: {} = {}): Promise<this> {
@@ -731,7 +772,7 @@ export class Browser {
             value = [value];
         }
 
-        return this.waitFor(selector, options).then((_) =>
+        return this._waitFor(selector, options).then((_) =>
             this.waitUntil(
                 (s, a, v) => v.includes(document.querySelector(s)?.[a]),
                 [selector, attribute, value],
@@ -767,7 +808,7 @@ export class Browser {
      */
     public find(selector: string, options: {} = {}): Promise<ElementHandle | null> {
         // @ts-ignore
-        return this.waitFor(this.resolver(selector), options);
+        return this._waitFor(this.resolver(selector), options);
     }
 
     /**
@@ -780,7 +821,7 @@ export class Browser {
     public findAll(selector: string[] | string, options: {} = {}): Promise<ElementHandle[]> {
         selector = this.resolver(selector);
 
-        return this.waitFor(selector, options).then((_) => {
+        return this._waitFor(selector, options).then((_) => {
             if (Array.isArray(selector)) {
                 return Promise.allSettled(selector.flatMap((s) => this.site.$$(s)))
                     .then((settled) => settled.map((s) => s?.value ?? null))
@@ -1407,19 +1448,19 @@ export class Browser {
     }
 
     public async assertVisible(selector: string, options: {} = {}): Promise<Return<this>> {
-        return this.waitFor(this.resolver(selector), { ...options, state: 'visible' })
+        return this._waitFor(this.resolver(selector), { ...options, state: 'visible' })
             .then((element) => expects(element, isNotNull, undefined, `Element [${selector}] is not visible.`))
             .then(this.selfWithAsserts());
     }
 
     public async assertMissing(selector: string, options: {} = {}): Promise<Return<this>> {
-        return this.waitFor(this.resolver(selector), { ...options, state: 'hidden' })
+        return this._waitFor(this.resolver(selector), { ...options, state: 'hidden' })
             .then((element) => expects(element, isNull, undefined, `Saw unexpected element [${selector}].`))
             .then(this.selfWithAsserts());
     }
 
     public async assertPresent(selector: string, options: {} = {}): Promise<Return<this>> {
-        return this.waitFor(this.resolver(selector), options).then(this.selfWithAsserts());
+        return this._waitFor(this.resolver(selector), options).then(this.selfWithAsserts());
     }
 
     public assertNotPresent(selector: string, options: {} = {}): Promise<Return<this>> {

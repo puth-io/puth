@@ -133,7 +133,7 @@ trait ProvidesBrowser
                 ),
                 [
                     'timeout' => 3000,
-                    'timeoutMultiplier' => 1000,
+                    'functionTimeoutMultiplier' => 1000,
                     'resolver' => [
                         'prefix' => 'body',
                         'finder' => 'dusk',

@@ -98,13 +98,16 @@ class WaitsForElementsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            $time = now();
-            $browser->waitForEvent('test-event', '#wait-for-event-element', 1);
-            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+            $browser->functionTimeoutMultiplier = 1;
+
+            $first = now();
+            $browser->waitForEvent('test-event', '#wait-for-event-element', 100);
+            Assert::assertLessThan(500, now()->diffInMilliseconds($first, true));
             
-            $time = now();
-            $browser->waitForEvent('test-event', 'document', 1);
-            Assert::assertLessThan(2000, now()->diffInMilliseconds($time));
+            $second = now();
+            $browser->waitForEvent('test-event', 'document', 100);
+            Assert::assertLessThan(500, now()->diffInMilliseconds($second, true));
+            Assert::assertGreaterThan(200, now()->diffInMilliseconds($first, true));
         });
     }
     
