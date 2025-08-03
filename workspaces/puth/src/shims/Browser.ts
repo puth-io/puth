@@ -146,7 +146,13 @@ export class Browser {
     }
 
     // error msg "Unable to locate element with selector [{$selector}]."
-    public click(selector: string, options: any = {}): Promise<this> {
+    public click(selector: string|null = null, options: any = {}): Promise<this> {
+        if (selector == null) {
+            return this.site.mouse.down()
+                .then(() => this.site.mouse.up())
+                .then(this.self);
+        }
+
         return this.firstOrFail(selector)
             .then((element) => element.click(options))
             .then(this.self);
@@ -211,8 +217,26 @@ export class Browser {
         return this.self();
     }
 
+    public async controlClick(selector: string | null = null): Promise<this> {
+        await this.site.keyboard.down('Control');
+        await this.click(selector);
+        await this.site.keyboard.up('Control');
+
+        return this.self();
+    }
+
     public async releaseMouse(): Promise<this> {
         return this.site.mouse.up().then(this.self);
+    }
+
+    /**
+     * Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse
+     * by an offset. Puppeteer apis only work with "absolute" mouse positions.
+     *
+     * @deprecated Can not be implemented by Puth
+     */
+    public async moveMouse(xOffset: int, yOffset: int): Promise<this> {
+        throw new ExpectationFailed('$browser->moveMouse() is not supported by Puth and might never be, please use a different approach.');
     }
 
     public setContent(html: string, options: WaitForOptions = {}): Promise<this> {
@@ -509,7 +533,7 @@ export class Browser {
                 await options[Math.floor(Math.random() * options.length)].click();
             } else {
                 try {
-                    if (value.length > 1) await this.site.keyboard.down('ControlLeft');
+                    if (value.length > 1) await this.site.keyboard.down('Control');
                     for (let option of options) {
                         if (value.includes(await PuthStandardPlugin.its(option, 'value'))) {
                             await option.click();
@@ -520,7 +544,7 @@ export class Browser {
                         }
                     }
                 } catch (e) {
-                    if (value.length > 1) await this.site.keyboard.up('ControlLeft');
+                    if (value.length > 1) await this.site.keyboard.up('Control');
                     throw e;
                 }
             }
@@ -1823,8 +1847,7 @@ export class Browser {
         }
 
         const original = selector;
-
-        for (const [key, value] of Object.entries(this.options.resolver.elements)) {
+        for (const [key, value] of Object.entries(this.options.resolver.elements ?? {})) {
             selector = selector.replaceAll(key, value);
         }
         if (selector.startsWith('@') && selector === original) {

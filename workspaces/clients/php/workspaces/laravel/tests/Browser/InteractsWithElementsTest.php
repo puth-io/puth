@@ -2,6 +2,7 @@
 
 namespace Browser;
 
+use PHPUnit\Framework\ExpectationFailedException;
 use Puth\Laravel\Browser;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
@@ -83,7 +84,7 @@ class InteractsWithElementsTest extends PuthTestCase
     
     function test_move_mouse_exception()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
             $browser->moveMouse(0, 0);
         });

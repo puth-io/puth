@@ -70,10 +70,10 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "click"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter selector {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
      * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function click(string $selector, mixed $options = []): Browser
+    public function click(mixed $selector = null, mixed $options = []): Browser
     {
         return $this->callFunc('click', [$selector, $options]);
     }
@@ -147,6 +147,17 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "controlClick"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string | null","isOptional":false,"initializer":{"type":"null"}}
+     */
+    public function controlClick(mixed $selector = null): Browser
+    {
+        return $this->callFunc('controlClick', [$selector]);
+    }
+
+    /**
      * @debug-gen-original-name "releaseMouse"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
@@ -154,6 +165,22 @@ class Browser extends RemoteObject
     public function releaseMouse(): Browser
     {
         return $this->callFunc('releaseMouse');
+    }
+
+    /**
+     * Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse
+     * by an offset. Puppeteer apis only work with "absolute" mouse positions.
+     * @deprecated Can not be implemented by Puth
+     * 
+     * @debug-gen-original-name "moveMouse"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter xOffset {"type":"int","isOptional":false}
+     * @debug-gen-original-parameter yOffset {"type":"int","isOptional":false}
+     */
+    public function moveMouse(int $xOffset, int $yOffset): Browser
+    {
+        return $this->callFunc('moveMouse', [$xOffset, $yOffset]);
     }
 
     /**
@@ -594,6 +621,8 @@ class Browser extends RemoteObject
     }
 
     /**
+     * TODO check with laravel dusk community because the original function does not keep options select for multiple
+     * 
      * @debug-gen-original-name "select"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
