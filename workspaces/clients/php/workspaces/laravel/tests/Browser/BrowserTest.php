@@ -84,7 +84,7 @@ class BrowserTest extends PuthTestCase
     function test_store_console_log()
     {
         $this->browse(function (Browser $browser) {
-            $browser->script('console.log("abc")');
+            $browser->evaluate('console.log("abc")');
     
             $fileName = 'test-run-' . Str::random();
             

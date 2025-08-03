@@ -139,6 +139,28 @@ class RemoteObject
         );
     }
 
+    protected function setProperty($property, $value)
+    {
+        $response = $this->context->client->patch('context/set', ['json' => [
+            'context' => $this->context->serialize(),
+            'type' => $this->type,
+            'id' => $this->id,
+            'property' => $property,
+            'value' => $value,
+        ]]);
+
+        $this->log('set: ' . $property);
+
+        return $this->handleResponse(
+            $response,
+            [$property],
+            fn($body, $arguments) => throw new Exception(BackTrace::message(
+                BackTrace::filter(debug_backtrace()),
+                "Could not set property: '{$arguments[0]}' (" . get_class($this) . "::\${$arguments[0]})",
+            )),
+        );
+    }
+
     protected function handleResponse($response, $arguments, $onError)
     {
         if ($response->getStatusCode() !== 200) {
@@ -292,6 +314,13 @@ class RemoteObject
         $this->log('__get > ' . $property);
 
         return $this->getProperty($property);
+    }
+
+    public function __set($property, $value)
+    {
+        $this->log('__set > ' . $property . ' > ' . $value);
+
+        return $this->setProperty($property, $value);
     }
 
     protected function hasActionTranslation($action)

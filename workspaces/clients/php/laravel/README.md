@@ -48,6 +48,8 @@ but I don't think enough people would use this feature so I removed it.
 - `$browser->typeInDialog(selector, value)`: Use the accept method instead which takes a value `$browser->acceptDialog(value)`
 - console logs are different from Dusk console logs. They now contain more information but the underlying json structure changed.
 
+- `$this->driver->executeScript()` becomes `$this->evaluate()`
+
 ### Unsupported
 
 - `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse by an offset

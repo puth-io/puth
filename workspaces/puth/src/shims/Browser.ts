@@ -90,7 +90,7 @@ export class Browser {
 
     public options = {
         timeout: 3000,
-        timeoutMultiplier: 1,
+        functionTimeoutMultiplier: 1,
         resolver: {
             prefix: 'body',
             finder: 'puth',
@@ -117,7 +117,15 @@ export class Browser {
     }
 
     get timeout() {
-        return this.options.timeout * (this.options?.timeoutMultiplier ?? 1);
+        return this.options.timeout;
+    }
+
+    set timeout(timeout: int) {
+        this.options.timeout = timeout;
+    }
+
+    set functionTimeoutMultiplier(timeout: int) {
+        this.options.functionTimeoutMultiplier = timeout;
     }
 
     public setResolverPrefix(prefix: string): this {
@@ -611,6 +619,7 @@ export class Browser {
         options?: { timeout?: int; state?: 'visible' | 'hidden' | 'present' | 'missing' },
     ): Promise<ElementHandle|null> {
         options = { state: 'present', timeout: this.timeout, ...options } as any;
+        console.error(options);
 
         if (options?.state === 'missing') {
             return this.waitForNotPresent(selector as string, { timeout: options?.timeout ?? this.timeout }).then(_ => null);
@@ -664,7 +673,7 @@ export class Browser {
         }
         selector = this.resolver(selector);
         if (options.timeout != null) {
-            options.timeout = options.timeout * this.options.timeoutMultiplier;
+            options.timeout = options.timeout * this.options.functionTimeoutMultiplier;
         }
 
         return this.waitUntil(
@@ -1146,14 +1155,18 @@ export class Browser {
         return this.resolveForTyping(field).value();
     }
 
-    public async assertInputPresent(field: string, timeout = 5): Promise<Return<this>> {
+    public async assertInputPresent(field: string, timeout: int|null = null): Promise<Return<this>> {
+        timeout = timeout != null ? this.options.functionTimeoutMultiplier * timeout : this.timeout;
+
         return this.assertPresent(
             `input[name='${field}'], textarea[name='${field}'], select[name='${field}']`,
             timeout,
         );
     }
 
-    public async assertInputMissing(field: string, timeout = 5): Promise<Return<this>> {
+    public async assertInputMissing(field: string, timeout: int|null = null): Promise<Return<this>> {
+        timeout = timeout != null ? this.options.functionTimeoutMultiplier * timeout : this.timeout;
+
         await this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, timeout);
         return this;
     }

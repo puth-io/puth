@@ -671,20 +671,4 @@ class Browser extends \Puth\RemoteObjects\Browser
 
         throw new BadMethodCallException("Call to undefined method [{$method}].");
     }
-
-    /*
-     * Legacy functions
-     */
-
-    /**
-     * Execute JavaScript within the browser.
-     *
-     * @deprecated replace with evaluate()
-     * @param string|array $scripts
-     * @return array
-     */
-    public function script($scripts)
-    {
-        return $this->evaluate($scripts);
-    }
 }
