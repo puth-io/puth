@@ -4,7 +4,7 @@ import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std
 import { PuthStandardPlugin } from '../index';
 import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
-import { BrowserRef } from '../handlers/BrowserHandler';
+import { BrowserRef, BrowserRefContext } from '../handlers/BrowserHandler';
 
 // TODO
 // @gen-class ElementHandle
@@ -75,9 +75,7 @@ export class ExpectationFailed extends Error {
 export class UnsupportedException extends Error {}
 
 export class Browser {
-    private readonly context: Context;
-    private readonly browserRef: BrowserRef;
-    private readonly browserContext: BrowserContext;
+    private readonly browserRefContext: BrowserRefContext;
     public readonly site: Page | Frame;
 
     private readonly self: () => this;
@@ -97,10 +95,8 @@ export class Browser {
         fitOnFailure: true,
     };
 
-    constructor(context: Context, browserRef: BrowserRef, browserContext: BrowserContext, site: Page | Frame, options = {}) {
-        this.context = context;
-        this.browserRef = browserRef;
-        this.browserContext = browserContext;
+    constructor(browserRefContext: BrowserRefContext, site: Page | Frame, options = {}) {
+        this.browserRefContext = browserRefContext;
         this.site = site;
 
         Object.assign(this.options, options);
@@ -110,8 +106,20 @@ export class Browser {
         this.selfWithAsserts = (count = 1) => this.selfWithMeta({ assertions: count });
     }
 
+    get context(): Context {
+        return this.browserRefContext.initiator;
+    }
+
+    get browserRef(): BrowserRef {
+        return this.browserRefContext.ref;
+    }
+
+    get browserContext(): BrowserContext {
+        return this.browserRefContext.context;
+    }
+
     public clone(site: Page | Frame | null = null): Browser {
-        return new Browser(this.context, this.browserRef, this.browserContext, site ?? this.site);
+        return new Browser(this.browserRefContext, site ?? this.site);
     }
 
     private get page() {
@@ -351,7 +359,7 @@ export class Browser {
     }
 
     public quit(): Promise<void> {
-        return this.context.destroyBrowserContext(this.browserRef, this.browserContext) as TODO as Promise<void>;
+        return this.context.destroyBrowserContext(this.browserRefContext);
     }
 
     public url(): string {

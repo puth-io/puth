@@ -14,7 +14,7 @@ import Constructors, {ConstructorValues} from './context/Constructors';
 import {tmpdir} from 'node:os';
 import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
-import { BrowserRef } from './handlers/BrowserHandler';
+import { BrowserRefContext } from './handlers/BrowserHandler';
 import {Protocol} from 'devtools-protocol';
 
 const {writeFile, mkdtemp} = fsPromise;
@@ -104,7 +104,7 @@ class Context extends Generic {
         reject: (reason?: any) => void;
     };
 
-    public browsers: {ref: BrowserRef, context: BrowserContext}[] = [];
+    public browsers: BrowserRefContext[] = [];
 
     constructor(puth: Puth, options: any = {}) {
         super();
@@ -144,16 +144,16 @@ class Context extends Generic {
     //         .then(browser => this.handleNewBrowser(browser));
     // }
 
-    public async createBrowserRef(options: any = {}): Promise<{ref: BrowserRef, context: BrowserContext}> {
+    public async createBrowserRef(options: any = {}): Promise<BrowserRefContext> {
         if (! options.executablePath && this.puth.installedBrowser?.executablePath) {
             options.executablePath = this.puth.installedBrowser.executablePath;
         }
 
-        return await this.puth.browserHandler.launch(options)
+        return await this.puth.browserHandler.launch(options, this)
             .then(rv => {
                 this.browsers.push(rv);
                 //         .then(() => this.emitter.emit('browser:connected', {browser}))
-                return this.trackBrowser(rv.context).then(_ => rv)
+                return this.trackBrowser(rv.context).then(_ => rv);
             });
     }
 
@@ -164,9 +164,9 @@ class Context extends Generic {
     // @codegen
     public async createBrowserShim(options = {}, shimOptions = {}): Promise<Browser> {
         return await this.createBrowserRef(options)
-            .then(({ref, context}) => context.pages()
-                .then(pages => pages.length > 0 ? pages[0] : context.newPage())
-                .then(page => new Browser(this, ref, context, page, shimOptions))
+            .then(brc => brc.context.pages()
+                .then(pages => pages.length > 0 ? pages[0] : brc.context.newPage())
+                .then(page => new Browser(brc, page, shimOptions))
             );
     }
 
@@ -200,7 +200,7 @@ class Context extends Generic {
             page.off(event, func);
         });
 
-        return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv.ref, rv.context)))
+        return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv)))
             .then(() => Promise.all(this.cleanupCallbacks))
             .then(() => true);
     }
@@ -210,8 +210,8 @@ class Context extends Generic {
     //         .then(() => this.removeBrowser(browser));
     // }
 
-    public async destroyBrowserContext(browserRef: BrowserRef, browserContext: BrowserContext) {
-        return this.puth.browserHandler.destroy(browserRef, browserContext);
+    public async destroyBrowserContext(brc: BrowserRefContext) {
+        return this.puth.browserHandler.destroy(brc);
     }
 
     // private removeBrowser(browser: PPTRBrowser) {

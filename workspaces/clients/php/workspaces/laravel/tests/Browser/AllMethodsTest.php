@@ -10,7 +10,7 @@ use Tests\PuthTestCase;
 
 class AllMethodsTest extends PuthTestCase
 {
-    public static bool $debug = true;
+    public static bool $debug = false;
 
     function test_querying_elements()
     {

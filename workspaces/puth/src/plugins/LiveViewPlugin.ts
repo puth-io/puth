@@ -48,7 +48,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     
     private async handleContextCreated(context: Context) {
         await Promise.all([context.browsers.flatMap(
-            async rv => rv.ref.browserContexts.flatMap(
+            async rv => rv.ref.contexts.flatMap(
                 async browser => {
                     return Promise.all([(await browser.pages()).map(page => {
                         return this.attachScreencastEvents({context, browser, page} as TODO);
