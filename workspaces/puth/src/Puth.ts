@@ -260,7 +260,7 @@ export class Puth {
             silent: true,
         });
 
-        this.logger.info(`Server listening at ${this.#http.url}`);
+        this.logger.info(`Server listening at http://${hostname}:${port}`);
 
         return this.#http;
     }

@@ -1885,13 +1885,14 @@ export class Browser {
         if (selector == null) {
             selector = '';
         }
-
-        // TODO switch to ::-p-xpath selector but this requires nodejs
         if (selector.startsWith('xpath//')) {
-            return selector;
-        }
+            if (process.versions.bun) {
+                this.context.puth.logger.warn('XPath selectors are only supported on the root document when using Bun.');
+                return selector;
+            }
 
-        // TODO switch to ::-p-xpath selector but this requires nodejs
+            return `::-p-xpath(${selector.replace('xpath//', '')})`;
+        }
         if (selector.endsWith('[]')) {
             throw new Error('Invalid selector, can not end with "[]".');
         }
