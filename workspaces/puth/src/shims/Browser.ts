@@ -69,7 +69,7 @@ export class ExpectationFailed extends Error {
         this.actual = actual;
     }
 
-    getReturnInstance(): Return {
+    getReturnInstance(): Return<{message: string, expected: any, actual: any}> {
         return Return.ExpectationFailed(this.message, this.expected, this.actual);
     }
 }
@@ -168,8 +168,8 @@ export class Browser {
     // error msg "Unable to locate element with selector [{$selector}]."
     public click(selector: string|null = null, options: any = {}): Promise<this> {
         if (selector == null) {
-            return this.site.mouse.down()
-                .then(() => this.site.mouse.up())
+            return this.page.mouse.down()
+                .then(() => this.page.mouse.up())
                 .then(this.self);
         }
 
@@ -185,7 +185,7 @@ export class Browser {
     }
 
     public clickAtPoint(x: int, y: int): Promise<this> {
-        return this.site.mouse.click(x, y).then(this.self);
+        return this.page.mouse.click(x, y).then(this.self);
     }
 
     public clickAtXPath(expression: string): Promise<this> {
@@ -201,12 +201,12 @@ export class Browser {
             let element = await this.firstOrFail(selector);
             await element.scrollIntoView();
             let point = await element.clickablePoint();
-            this.site.mouse.click(point.x, point.y);
+            await this.page.mouse.click(point.x, point.y);
         } else {
-            await this.site.mouse.down();
-            await this.site.mouse.up();
+            await this.page.mouse.down();
+            await this.page.mouse.up();
         }
-        await this.site.mouse.down();
+        await this.page.mouse.down();
 
         return this.self();
     }
@@ -216,10 +216,10 @@ export class Browser {
             let element = await this.firstOrFail(selector);
             await element.click({ count: 2 });
         } else {
-            await this.site.mouse.down();
-            await this.site.mouse.up();
-            await this.site.mouse.down();
-            await this.site.mouse.up();
+            await this.page.mouse.down();
+            await this.page.mouse.up();
+            await this.page.mouse.down();
+            await this.page.mouse.up();
         }
 
         return this.self();
@@ -230,23 +230,23 @@ export class Browser {
             let element = await this.firstOrFail(selector);
             await element.click({ button: 'right' });
         } else {
-            await this.site.mouse.down({ button: 'right' });
-            await this.site.mouse.up({ button: 'right' });
+            await this.page.mouse.down({ button: 'right' });
+            await this.page.mouse.up({ button: 'right' });
         }
 
         return this.self();
     }
 
     public async controlClick(selector: string | null = null): Promise<this> {
-        await this.site.keyboard.down('Control');
+        await this.page.keyboard.down('Control');
         await this.click(selector);
-        await this.site.keyboard.up('Control');
+        await this.page.keyboard.up('Control');
 
         return this.self();
     }
 
     public async releaseMouse(): Promise<this> {
-        return this.site.mouse.up().then(this.self);
+        return this.page.mouse.up().then(this.self);
     }
 
     /**
@@ -317,7 +317,7 @@ export class Browser {
         return setWindowBounds(this.page, bounds).then(this.self);
     }
 
-    public resize(width, height): Promise<this> {
+    public resize(width: int, height: int): Promise<this> {
         if (this.isFrame) {
             throw new UnsupportedException('Calling [resize] on an iframe is not supported.');
         }
@@ -325,7 +325,7 @@ export class Browser {
         return this.page.setViewport({ width, height }).then(this.self);
     }
 
-    public move(x: number, y: number): Promise<this> {
+    public move(x: int, y: int): Promise<this> {
         if (this.isFrame) {
             throw new UnsupportedException('Calling [move] on an iframe is not supported.');
         }
@@ -397,34 +397,34 @@ export class Browser {
     }
 
     public viewport(): Viewport | null {
-        if (!this.isPage()) {
+        if (this.isFrame) {
             throw new UnsupportedException('Calling [viewport] on an iframe is not supported.');
         }
 
-        return this.site.viewport();
+        return this.page.viewport();
     }
 
     public getCookieByName(name: string): Promise<any> {
         // TODO implement for frame - use Browser cookies instead of deprecated page cookies
-        if (!this.isPage()) {
+        if (this.isFrame) {
             throw new UnsupportedException('Calling [viewport] on a frame is currently not supported.');
         }
 
-        return PuthStandardPlugin.getCookieByName(this.site, name) as any;
+        return PuthStandardPlugin.getCookieByName(this.page, name) as any;
     }
 
     public setCookie(cookies: any[]): Promise<this> {
         // TODO implement for frame - use Browser cookies instead of deprecated page cookies
-        if (!this.isPage()) {
+        if (this.isFrame) {
             throw new UnsupportedException('Calling [setCookie] on a frame is currently not supported.');
         }
 
-        return this.site.setCookie(...cookies).then(this.self);
+        return this.page.setCookie(...cookies).then(this.self);
     }
 
     public deleteCookie(cookies: any[] | string): Promise<this> {
         // TODO implement for frame - use Browser cookies instead of deprecated page cookies
-        if (!this.isPage()) {
+        if (this.isFrame) {
             throw new UnsupportedException('Calling [viewport] on a frame is currently not supported.');
         }
 
@@ -432,15 +432,15 @@ export class Browser {
             cookies = [{ name: cookies }];
         }
 
-        return this.site.deleteCookie(...cookies).then(this.self);
+        return this.page.deleteCookie(...cookies).then(this.self);
     }
 
     public screenshot(options = {}): Promise<Uint8Array> {
-        if (!this.isPage()) {
+        if (this.isFrame) {
             throw new UnsupportedException('Calling [screenshot] on a frame is currently not supported.');
         }
 
-        return this.site.screenshot(options);
+        return this.page.screenshot(options);
     }
 
     // Make the browser window as large as the content
@@ -481,7 +481,7 @@ export class Browser {
     }
 
     public text(selector: string): Promise<string> {
-        return this.attribute(selector, 'innertext');
+        return this.attribute(selector, 'innerText');
     }
 
     public attribute(selector: string, attribute: string): Promise<string> {
@@ -1215,16 +1215,15 @@ export class Browser {
         return this.resolveForTyping(field).value();
     }
 
-    public async assertInputPresent(field: string, timeout: int|null = null): Promise<Return<this>> {
+    public assertInputPresent(field: string, timeout: int|null = null): Promise<Return<this>> {
         return this.assertPresent(
             `input[name='${field}'], textarea[name='${field}'], select[name='${field}']`,
             this.resolveTimeout(timeout),
         );
     }
 
-    public async assertInputMissing(field: string, timeout: int|null = null): Promise<Return<this>> {
-        await this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, this.resolveTimeout(timeout));
-        return this;
+    public assertInputMissing(field: string, timeout: int|null = null): Promise<Return<this>> {
+        return this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, this.resolveTimeout(timeout));
     }
 
     private _assertProperty(element: Promise<ElementHandle>, property, compareFn, expected, message) {
@@ -1576,9 +1575,7 @@ export class Browser {
 
     public assertVueIsNot(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
         const actual = () => this.vueAttribute(componentSelector, key);
-        return expects(actual, isNotEqualTo, value, `Vue attribute for key [${key}] should not equal [${value}].`).then(
-            this.selfWithAsserts(),
-        );
+        return expects(actual, isNotEqualTo, value, `Vue attribute for key [${key}] should not equal [${value}].`).then(this.selfWithAsserts());
     }
 
     public assertVueContains(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
@@ -1591,19 +1588,11 @@ export class Browser {
         ).then(this.selfWithAsserts());
     }
 
-    public assertVueDoesntContain(
-        key: string,
-        value: any,
-        componentSelector: string | null = null,
-    ): Promise<Return<this>> {
+    public assertVueDoesntContain(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
         return this.assertVueDoesNotContain(key, value, componentSelector);
     }
 
-    public assertVueDoesNotContain(
-        key: string,
-        value: any,
-        componentSelector: string | null = null,
-    ): Promise<Return<this>> {
+    public assertVueDoesNotContain(key: string, value: any, componentSelector: string | null = null): Promise<Return<this>> {
         const actual = () => this.vueAttribute(componentSelector, key);
         return expects(
             actual,
@@ -1928,13 +1917,13 @@ export class Browser {
     }
 
     private _waitForDialog(): Promise<Dialog> {
-        let dialog = this.context.isPageBlockedByDialog(this.site);
+        let dialog = this.context.isPageBlockedByDialog(this.page);
         if (dialog !== false) {
             return Promise.resolve(dialog);
         }
 
-        let { promise, resolve, reject } = Promise.withResolvers();
-        this.context.waitingForDialog.push({page: this.site, resolve, reject});
+        let { promise, resolve, reject } = Promise.withResolvers<Dialog>();
+        this.context.waitingForDialog.push({page: this.page, resolve, reject});
         return promise;
     }
 

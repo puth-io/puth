@@ -221,7 +221,11 @@ class Context extends Generic {
     //     );
     // }
 
-    waitingForDialog = [];
+    waitingForDialog: {
+        page: Page;
+        resolve: (value: Dialog) => void;
+        reject: (reason?: any) => void;
+    }[] = [];
 
     isPageBlockedByDialog(page: Page): false|Dialog {
         let dialog = this.caches.dialog.get(page);
