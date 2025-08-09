@@ -116,6 +116,18 @@ export class Browser {
         return new Browser(this.context, this.browserRef, this.browserContext, site ?? this.site);
     }
 
+    private get page() {
+        if (this.site instanceof Page) {
+            return this.site;
+        }
+
+        return this.site.page();
+    }
+
+    public get isFrame() {
+        return this.site instanceof Frame;
+    }
+
     get timeout() {
         return this.options.timeout;
     }
@@ -256,62 +268,69 @@ export class Browser {
     }
 
     public refresh(options = {}): Promise<this> {
-        if (!this.isPage()) {
-            throw new UnsupportedException('Calling [refresh] on a frame is not supported.');
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [refresh] on an iframe is not supported.');
         }
 
-        return this.site.reload(options).then(this.self);
+        return this.page.reload(options).then(this.self);
     }
 
     // Navigate to the previous page.
     public back(options = {}): Promise<this> {
-        if (!this.isPage()) {
-            throw new UnsupportedException('Calling [back] on a frame is not supported.');
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [back] on an iframe is not supported.');
         }
 
-        return this.site.goBack(options).then(this.self);
+        return this.page.goBack(options).then(this.self);
     }
 
     // Navigate to the next page.
     public forward(options = {}): Promise<this> {
-        if (!this.isPage()) {
-            throw new UnsupportedException('Calling [forward] on a frame is not supported.');
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [forward] on an iframe is not supported.');
         }
 
-        return this.site.goForward(options).then(this.self);
+        return this.page.goForward(options).then(this.self);
     }
 
     public maximize(): Promise<this> {
-        // TODO give warning - add to documentation that multiple tests could use the same Browser
-        return maximize(this.browserRef.browser).then(this.self);
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [maximize] on an iframe is not supported.');
+        }
+
+        return maximize(this.page).then(this.self);
     }
 
     public bounds(): Promise<object> {
-        // TODO give warning - add to documentation that multiple tests could use the same Browser
-        return getWindowBounds(this.browserRef.browser);
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [bounds] on an iframe is not supported.');
+        }
+
+        return getWindowBounds(this.page);
     }
 
     public setBounds(bounds: any): Promise<this> {
-        // TODO give warning - add to documentation that multiple tests could use the same Browser
-        return setWindowBounds(this.browserRef.browser, bounds).then(this.self);
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [setBounds] on an iframe is not supported.');
+        }
+
+        return setWindowBounds(this.page, bounds).then(this.self);
     }
 
     public resize(width, height): Promise<this> {
-        if (!this.isPage()) {
-            throw new UnsupportedException('Calling [resize] on a frame is not supported.');
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [resize] on an iframe is not supported.');
         }
 
-        return this.site
-            .setViewport({
-                width,
-                height,
-            })
-            .then(this.self);
+        return this.page.setViewport({ width, height }).then(this.self);
     }
 
     public move(x: number, y: number): Promise<this> {
-        // TODO give warning - add to documentation that multiple tests could use the same Browser
-        return move(this.browserRef.browser, x, y).then(this.self);
+        if (this.isFrame) {
+            throw new UnsupportedException('Calling [move] on an iframe is not supported.');
+        }
+
+        return move(this.page, x, y).then(this.self);
     }
 
     public scrollIntoView(selector: string): Promise<this> {
@@ -379,7 +398,7 @@ export class Browser {
 
     public viewport(): Viewport | null {
         if (!this.isPage()) {
-            throw new UnsupportedException('Calling [viewport] on a frame is not supported.');
+            throw new UnsupportedException('Calling [viewport] on an iframe is not supported.');
         }
 
         return this.site.viewport();

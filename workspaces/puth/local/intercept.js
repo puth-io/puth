@@ -1,9 +1,6 @@
-// import puppeteer from 'puppeteer';
 import puppeteer from 'puppeteer-core';
 import path from 'node:path';
-// Or import puppeteer from 'puppeteer-core';
 
-// Launch the browser and open a new blank page
 const browser = await puppeteer.launch({channel: 'chrome', headless: false});
 const page = await browser.newPage();
 
