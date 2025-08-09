@@ -245,7 +245,7 @@ class Context extends Generic {
         let waiters = this.waitingForDialog.filter(i => i.page == page);
         this.waitingForDialog = this.waitingForDialog.filter(i => i.page != page);
 
-        this.puth.logger.error(waiters, 'waiters');
+        // this.puth.logger.error(waiters, 'waiters');
 
         if (waiters.length === 0) {
             if (this.lastCallerPromise) {

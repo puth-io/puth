@@ -1306,10 +1306,7 @@ export class Browser {
 
         return this.resolveForSelection(field)
             .then((el) => PuthStandardPlugin.selected(el))
-            .then((selected) => {
-                console.error(selected);
-                return value.every((v) => selected.includes(v))
-            });
+            .then((selected) => value.every((v) => selected.includes(v)));
     }
 
     public assertSelected(field: string, value: string[] | string): Promise<Return<this>> {

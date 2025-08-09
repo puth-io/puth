@@ -149,7 +149,6 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
     }
 
     async disconnected(browser: Browser) {
-        console.error(browser)
         let ref = this.findBrowserRef(browser);
         this.logger.debug(ref, `BrowserHandler disconnected browser`);
         // TODO forward unexpected browser disconnects to client
