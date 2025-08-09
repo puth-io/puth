@@ -28,7 +28,6 @@ export async function setWindowBounds(
     return await cdp
         .send('Browser.getWindowForTarget')
         .then(({ windowId }) => cdp.send('Browser.setWindowBounds', { windowId, bounds }))
-        .then(async () => (autoClose ? await cdp.detach() : cdp))
         .finally(async () => {
             if (autoClose) await cdp?.detach();
         });

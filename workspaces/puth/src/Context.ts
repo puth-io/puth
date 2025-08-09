@@ -184,6 +184,7 @@ class Context extends Generic {
                 options = {};
             }
             options.immediately = true;
+            options.initiator = 'timeout';
             setTimeout(() => this.destroy(options), 400);
 
             return false;
@@ -200,6 +201,7 @@ class Context extends Generic {
             page.off(event, func);
         });
 
+        this.puth.logger.debug(options, `context destroy`);
         return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv)))
             .then(() => Promise.all(this.cleanupCallbacks))
             .then(() => true);
@@ -211,6 +213,7 @@ class Context extends Generic {
     // }
 
     public async destroyBrowserContext(brc: BrowserRefContext) {
+        this.puth.logger.debug(`destroyBrowserContext`);
         return this.puth.browserHandler.destroy(brc);
     }
 
@@ -235,6 +238,7 @@ class Context extends Generic {
         return dialog;
     }
 
+    skipRunningCallResponse = false;
     async pageOnDialog(page, dialog) {
         this.caches.dialog.set(page, dialog);
 
@@ -248,6 +252,8 @@ class Context extends Generic {
                 this.puth.logger.debug('Resolved active request because dialog opened on page.');
                 let lcp = this.lastCallerPromise;
                 this.lastCallerPromise = undefined;
+                this.skipRunningCallResponse = true;
+
                 lcp.resolve(Return.Dialog({
                     message: dialog.message(),
                     defaultValue: dialog.defaultValue(),
@@ -256,13 +262,15 @@ class Context extends Generic {
             }
         } else {
             for (let waiter of waiters) {
-                await waiter.resolve(dialog);
+                waiter.resolve(dialog);
+                // TODO possible race condition? await waiter.promise?
             }
         }
     }
 
     private async trackBrowser(browserContext: BrowserContext) {
         browserContext.once('disconnected', () => {
+            this.puth.logger.debug('browserContext disconnected');
             this.removeEventListenersFrom(browserContext);
             // this.emitter.emit('browser:disconnected', {browser});
             // this.browsers = this.browsers.filter(b => b !== browser);
@@ -272,7 +280,7 @@ class Context extends Generic {
             // TODO do we need to track more here? like 'browser' or 'background_page'...?
             if (target.type() === 'page') {
                 let page = await target.page();
-                this.trackPage(page);
+                await this.trackPage(page);
                 // @ts-ignore
                 this.emitter.emit('page:created', { browserContext, page});
                 // @ts-ignore
@@ -816,6 +824,7 @@ class Context extends Generic {
                     }
 
                     let response = await this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
+
                     if (this.portal.queue.active.length !== 0) {
                         this.puth.logger.debug('set waiting response');
                         this.portal.waiting.response = response;
@@ -824,8 +833,13 @@ class Context extends Generic {
                         return;
                     }
 
-                    // this.puth.logger.debug({ packet, response }, 'lastCallerPromise response');
                     if (this.lastCallerPromise == null) {
+                        if (this.skipRunningCallResponse) {
+                            this.skipRunningCallResponse = false;
+                            this.portal.waiting.call = false;
+                            return;
+                        }
+
                         this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
                         throw new Error('Unexpected empty lastCallerPromise');
                     }
@@ -873,6 +887,12 @@ class Context extends Generic {
                     }
 
                     if (this.lastCallerPromise == null) {
+                        if (this.skipRunningCallResponse) {
+                            this.skipRunningCallResponse = false;
+                            this.portal.waiting.call = false;
+                            return;
+                        }
+
                         this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
                         throw new Error('Unexpected empty lastCallerPromise');
                     }

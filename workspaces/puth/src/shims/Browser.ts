@@ -665,8 +665,11 @@ export class Browser {
         //         : this.site.waitForSelector(selector, options)
         // ).catch((error) => {
 
+        this.context.puth.logger.debug({ selector, options }, '_waitFor');
+
         // @ts-ignore
         return this.site.waitForSelector(selector, options).catch((error) => {
+            this.context.puth.logger.debug(error, '_waitFor error');
             if (error instanceof AggregateError) {
                 error = error.errors[0];
             }
@@ -678,6 +681,9 @@ export class Browser {
                 );
             }
             throw error;
+        }).then((element) => {
+            this.context.puth.logger.debug('_waitFor done')
+            return element;
         });
     }
 

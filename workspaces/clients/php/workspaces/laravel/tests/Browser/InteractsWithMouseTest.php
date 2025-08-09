@@ -54,6 +54,9 @@ class InteractsWithMouseTest extends PuthTestCase
     {
         $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
+            $browser->timeout = 250;
+            $browser->functionTimeoutMultiplier = 1;
+
             $browser->visit(new Playground)
                 ->click('not-an-element');
         });

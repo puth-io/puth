@@ -185,7 +185,7 @@ class AllMethodsTest extends PuthTestCase
             };
 
             $browser->visit(new Playground);
-            $browser->timeout = 200;
+            $browser->timeout = 500;
             $browser->functionTimeoutMultiplier = 1;
 
             $inverse('Did not see expected text [This text does not exists] within element [.querying-get]', fn() => $browser->assertSeeIn('.querying-get', 'This text does not exists'));
@@ -194,8 +194,8 @@ class AllMethodsTest extends PuthTestCase
             $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
             $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
 
-            $inverse("Waited 200ms for selector [body a[href='https://notalink.io/']]", fn() => $browser->assertSeeLink('https://notalink.io/'));
-            $inverse('Waited 200ms for selector [body body #not-existing-element]', fn() => $browser->assertVisible('body #not-existing-element'));
+            $inverse("Waited 500ms for selector [body a[href='https://notalink.io/']]", fn() => $browser->assertSeeLink('https://notalink.io/'));
+            $inverse('Waited 500ms for selector [body body #not-existing-element]', fn() => $browser->assertVisible('body #not-existing-element'));
         });
     }
 

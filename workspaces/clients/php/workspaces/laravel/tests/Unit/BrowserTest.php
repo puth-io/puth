@@ -92,7 +92,7 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->scrollTo('#actions-click-button');
-            
+
             Assert::assertTrue(
                 $browser->element('#actions-click-button')->isIntersectingViewport(),
             );
