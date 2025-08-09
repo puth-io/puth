@@ -181,6 +181,9 @@ export class Puth {
             //         .then(base64 => part.value = base64);
             // }));
 
+            let bytes = await event.req.bytes();
+            let data = process.versions.bun ? bytes.toBase64() : bytes.toString('base64');
+
             return defer(async handle => {
                 context.setPsuriHandler(
                     psuri,
@@ -199,7 +202,7 @@ export class Puth {
                     path: decodeURI(path ?? ''),
                     headers: event.req.headers,
                     // @ts-ignore
-                    data: (await event.req.bytes()).toBase64(),
+                    data,
                     method: event.req.method,
                 });
             });
