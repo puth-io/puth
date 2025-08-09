@@ -4,8 +4,6 @@ import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std
 import { PuthStandardPlugin } from '../index';
 import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
-import {clearTimeout} from 'node:timers';
-import { retryFor } from '../Utils';
 import { BrowserRef } from '../handlers/BrowserHandler';
 
 // TODO
@@ -560,7 +558,7 @@ export class Browser {
                 await options[Math.floor(Math.random() * options.length)].click();
             } else {
                 try {
-                    if (value.length > 1) await this.site.keyboard.down('Control');
+                    if (value.length > 1) await this.page.keyboard.down('Control');
                     for (let option of options) {
                         if (value.includes(await PuthStandardPlugin.its(option, 'value'))) {
                             await option.click();
@@ -571,7 +569,7 @@ export class Browser {
                         }
                     }
                 } catch (e) {
-                    if (value.length > 1) await this.site.keyboard.up('Control');
+                    if (value.length > 1) await this.page.keyboard.up('Control');
                     throw e;
                 }
             }
@@ -1957,7 +1955,7 @@ export class Browser {
             .then((dialog) => dialog.accept(value ?? this.dialogTypeCache ?? undefined))
             .finally(() => {
                 this.dialogTypeCache = '';
-                this.context.caches.dialog.delete(this.site);
+                this.context.caches.dialog.delete(this.page);
             })
             .then(this.self);
     }
@@ -1967,17 +1965,17 @@ export class Browser {
             .then((dialog) => dialog.dismiss())
             .finally(() => {
                 this.dialogTypeCache = '';
-                this.context.caches.dialog.delete(this.site);
+                this.context.caches.dialog.delete(this.page);
             })
             .then(this.self);
     }
 
     private _dialog(): Dialog {
-        if (!this.context.isPageBlockedByDialog(this.site)) {
+        if (!this.context.isPageBlockedByDialog(this.page)) {
             throw new ExpectationFailed('Expected page to have an open dialog but non was found.');
         }
 
-        let dialog = this.context.caches.dialog.get(this.site);
+        let dialog = this.context.caches.dialog.get(this.page);
         if (dialog == null) {
             throw new ExpectationFailed('Expected page to have an open dialog but non was found.');
         }
