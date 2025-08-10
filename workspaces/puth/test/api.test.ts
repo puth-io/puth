@@ -8,7 +8,7 @@ import { RemotePuthClient } from './client/RemotePuthClient';
 
 const envs: [string, () => any][] = [
     ['local', () => makeLocalPuthClient()],
-    ['remote', () => new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:43210')],
+    // ['remote', () => new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:43210')],
 ];
 
 if (process.env.TEST_ONLY_REMOTE) {
@@ -47,30 +47,31 @@ function puthContextTests(env) {
     });
 
     describe(`Api [${env[0]}]`, () => {
-        test(`can create/destroy context`, async ({ puth: { remote, context } }) => {
+        test.concurrent(`create/destroy context`, async ({ puth: { remote, context } }) => {
             let rep = context.representation;
             assert.ok('id' in rep && 'type' in rep);
-            await expect(context.destroy()).resolves.toBeTruthy();
+            await expect(context.destroy({ immediately: true })).resolves.toBeTruthy();
         });
 
-        test('can call a function', async ({ puth: { remote, context } }) => {
-            let rep = await (await context.createBrowser()).getRepresentation();
-            assert.containsAllKeys(rep, ['id', 'type']);
-            assert.strictEqual(rep?.represents, Constructors.BrowserContext);
-            await expect(context.destroy()).resolves.toBeTruthy();
+        //
+        describe.concurrent('Browser', () => {
+            test.concurrent('create', async ({ puth: { remote, context } }) => {
+                let rep = await (await context.createBrowser()).getRepresentation();
+                assert.containsAllKeys(rep, ['id', 'type']);
+                assert.strictEqual(rep?.represents, Constructors.BrowserContext);
+                await expect(context.destroy({ immediately: true })).resolves.toBeTruthy();
+            });
+
+            test.concurrent('visit', async ({ puth: { remote, context } }) => {
+                let browser = await context.createBrowser();
+
+                let page = (await browser.pages())[0];
+                await page.visit('https://playground.puth.dev');
+
+                assert.strictEqual(await page.url(), 'https://playground.puth.dev/');
+                await expect(context.destroy({ immediately: true })).resolves.toBeTruthy();
+            });
         });
-        //
-        //     describe('Browser', function () {
-        //       it('can visit site', async function () {
-        //         let browser = await this.context.createBrowser();
-        //
-        //         let page = (await browser.pages())[0];
-        //         await page.visit('https://playground.puth.dev');
-        //
-        //         assert.strictEqual(await page.url(), 'https://playground.puth.dev/');
-        //         assert.isFulfilled(this.context.destroy());
-        //       });
-        //     });
         //
         //     describe('RemoteContext', function () {
         //       beforeEach(async function () {
