@@ -1,15 +1,24 @@
-import {Puth, usableBrowserInstallations, PuthStandardPlugin} from '../';
-import {LocalPuthClient, RemotePuthClient} from '@puth/client';
-import * as assert from "assert";
+import { assert } from 'vitest';
+import { Puth, usableBrowserInstallations, PuthStandardPlugin } from '../';
+import { LocalPuthClient } from './client/LocalPuthClient';
+import { RemotePuthClient } from './client/RemotePuthClient';
 
 export const installedBrowser = usableBrowserInstallations[0];
 
 export function makeLocalPuthClient() {
-    return new LocalPuthClient({installedBrowser});
+    return new LocalPuthClient({ installedBrowser });
 }
 
 export function makePuthServer(port, address) {
-    let instance = new Puth({installedBrowser});
+    let instance = new Puth({
+        installedBrowser,
+        logger: {
+            info: () => {},
+            error: () => {},
+            warn: () => {},
+            debug: () => {},
+        },
+    });
     instance.use(PuthStandardPlugin);
     instance.serve(port, address);
     return instance;
@@ -40,42 +49,41 @@ export async function puthContextBinder(mochaContext, plugins: any = []) {
     };
 }
 
-
 export function multiTest(callback, extended = false) {
     const envs: [string, () => any][] = [
         ['remote', () => new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:43210')],
         ['local', () => makeLocalPuthClient()],
     ];
-    
+
     if (process.env.TEST_ONLY_REMOTE) {
         callback(envs[0]);
     } else if (process.env.TEST_ONLY_LOCAL) {
         callback(envs[1]);
     } else {
-        envs.forEach(async function(env) {
+        envs.forEach(async function (env) {
             before(function () {
                 if (env[0] === 'remote' && !process.env.PUTH_URL) {
                     this.__remoteTestInstance = makePuthServer(43210, '127.0.0.1');
                 }
             });
-            
+
             after(async function () {
                 if (env[0] === 'remote') {
                     await this.__remoteTestInstance?.http?.close();
                 }
             });
-            
+
             beforeEach(async function () {
                 this.remote = env[1]();
-                
+
                 if (env[0] === 'local') {
                     this.remote.use(PuthStandardPlugin);
                 }
-                
+
                 this.context = await this.remote.contextCreate({
                     snapshot: true,
                 });
-                
+
                 if (extended) {
                     this.remote.setAssertionHandler((assertion) => {
                         if (!assertion.result) {
@@ -93,11 +101,11 @@ export function multiTest(callback, extended = false) {
                     this.page = (await this.browser.pages())[0];
                 }
             });
-            
+
             afterEach(async function () {
-                await this.context.destroy({immediately: true});
+                await this.context.destroy({ immediately: true });
             });
-            
+
             callback(env);
         });
     }

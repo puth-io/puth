@@ -41,7 +41,8 @@
     "tsc-alias": "^1.8.10",
     "tsconfig-paths": "^4.2.0",
     "typedoc": "^0.26.6",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^3.2.4"
   },
   "files": [
     "bin/**/*",
@@ -58,6 +59,7 @@
     "dev:server:debug": "DEBUG=\"puppeteer:*\" NODE_ENV=development ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/dev/server.ts > puth.log 2> puth.cdp.log",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "mocha --exit --timeout 15000 -r ts-node/register 'test/**/*.ts'",
+    "test2": "vitest test/api.test.ts",
     "test:only:remote": "TEST_ONLY_REMOTE=true mocha --exit --timeout 15000 -r ts-node/register 'test/api.test.ts'",
     "test:only:plugins": "mocha --exit --timeout 15000 -r ts-node/register 'test/plugins/**/*.ts'",
     "test:only:translation": "mocha --exit --timeout 15000 -r ts-node/register 'test/translation/**/*.ts'",

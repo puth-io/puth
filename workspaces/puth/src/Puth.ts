@@ -269,7 +269,7 @@ export class Puth {
     }
 
     info(string) {
-        this.logger?.info(string);
+        this.logger.info(string);
     }
 
     public async contextCreate(options = {}) {
