@@ -17,9 +17,7 @@ jobs:
     strategy:
       matrix:
         node-version:
-          - 18
-          - 20
-          - 22
+          - 24
     name: puth | node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v3
