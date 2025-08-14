@@ -1,6 +1,13 @@
 import {RemoteContext} from './RemoteObject';
 import path from 'node:path';
 
+const catchBrokenPipe = (error) => {
+    if (error instanceof SyntaxError && error.message.includes('Unexpected end of JSON input')) {
+        return Promise.resolve();
+    }
+    throw error;
+}
+
 export class RemotePuthClient {
     private readonly externalUri: string;
     private options: any;
@@ -21,34 +28,40 @@ export class RemotePuthClient {
     
     async contextCreate(options = {}) {
         let response = await this.request('POST', '/context', options)
-            .then(res => res.json());
+            .then(res => res.json())
+            .catch(catchBrokenPipe);
         
         return new RemoteContext(this, response, {debug: this.options?.debug});
     }
     
     async contextCall(rpcPacket) {
         return await this.request('PATCH', '/context/call', rpcPacket)
-            .then(res => res.json());
+            .then(res => res.json())
+            .catch(catchBrokenPipe);
     }
     
     async contextGet(rpcPacket) {
         return await this.request('PATCH', '/context/get', rpcPacket)
-            .then(res => res.json());
+            .then(res => res.json())
+            .catch(catchBrokenPipe);
     }
     
     async contextSet(rpcPacket) {
         return await this.request('PATCH', '/context/set', rpcPacket)
-            .then(res => res.json());
+            .then(res => res.json())
+            .catch(catchBrokenPipe);
     }
     
     async contextDelete(rpcPacket) {
         return await this.request('PATCH', '/context/delete', rpcPacket)
-            .then(res => res.json());
+            .then(res => res.json())
+            .catch(catchBrokenPipe);
     }
     
     async contextDestroy(rpcPacket) {
         return await this.request('DELETE', '/context', rpcPacket)
-            .then(res => res.text());
+            .then(res => res.text())
+            .catch(catchBrokenPipe);
     }
     
     request(method, url, data = {}) {
