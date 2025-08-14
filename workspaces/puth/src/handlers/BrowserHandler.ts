@@ -112,7 +112,7 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
         ref.contexts.splice(idx, 1);
 
         await context.close().catch(error => {
-            if (error instanceof PuppeteerError) {
+            if (error instanceof PuppeteerError || error.message?.includes('Connection closed')) {
                 this.logger.error({error}, 'ignoring');
                 return;
             }
@@ -136,8 +136,8 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
         this.logger.debug(`BrowserHandler pool destroying ref ${ref.optionsHash}`);
 
         if (ref.contexts.length > 0) {
-            this.logger.debug(ref, `BrowserHandler could not close ref - still has open contexts.`);
-            throw new Error('Could not close ref - still has open contexts.');
+            this.logger.warn(ref, `[BrowserHandler] Browser disconnected with open browser contexts. This will interrupt all contexts.`);
+            await Promise.allSettled(ref.contexts.map(({initiator}) => initiator.fatal('FATAL: Browser context unexpectedly closed.')));
         }
 
         let idx = this.#refs.indexOf(ref);
@@ -150,8 +150,7 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
 
     async disconnected(browser: Browser) {
         let ref = this.findBrowserRef(browser);
-        this.logger.debug(ref, `BrowserHandler disconnected browser`);
-        // TODO forward unexpected browser disconnects to client
+        this.logger.debug(ref, `[BrowserHandler] disconnected browser`);
         return this.destroyRef(ref);
     }
 
@@ -178,7 +177,7 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
             }
             toDestroy.push(ref);
         }
-        this.logger.debug(toDestroy, 'BrowserHandler GC checking...');
+        this.logger.debug(toDestroy, '[BrowserHandler] GC checking...');
 
         return Promise.all(toDestroy.map(ref => this.destroyRef(ref)));
     }

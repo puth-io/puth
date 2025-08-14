@@ -177,18 +177,24 @@ class Context extends Generic {
 
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
+    destroyingTimeout?: NodeJS.Timeout;
     public async destroy(options: any = {}) {
         if (! options?.immediately) {
-            this.destroying = true;
             if (options == null) {
                 options = {};
             }
             options.immediately = true;
             options.initiator = 'timeout';
-            setTimeout(() => this.destroy(options), 400);
+            this.destroyingTimeout = setTimeout(() => this.destroy(options), 400);
 
             return false;
         }
+        
+        clearTimeout(this.destroyingTimeout);
+        if (this.destroying) {
+            return Promise.resolve();
+        }
+        this.destroying = true;
 
         if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
@@ -205,6 +211,11 @@ class Context extends Generic {
         return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv)))
             .then(() => Promise.all(this.cleanupCallbacks))
             .then(() => true);
+    }
+    
+    // TODO implement sending fatal message to connected client/or next incoming client request
+    fatal(message: string): Promise<void> {
+        return Promise.resolve();
     }
 
     // public async destroyBrowserByBrowser(browser) {

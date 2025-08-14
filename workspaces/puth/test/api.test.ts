@@ -6,9 +6,13 @@ import { makeLocalPuthClient, makePuthServer } from './helper';
 import { sleep } from '../src/Utils';
 import { RemotePuthClient } from './client/RemotePuthClient';
 
-const envs: [string, () => any][] = [
-    ['local', () => makeLocalPuthClient()],
-    // ['remote', () => new RemotePuthClient(process.env.PUTH_URL ?? 'http://127.0.0.1:43210')],
+
+const envs: [string, () => [any, number?]][] = [
+    ['local', () => [() => makeLocalPuthClient()]],
+    ['remote', () => {
+        let port = 10000 + Math.floor(Math.random() * 55535);
+        return [() => new RemotePuthClient(process.env.PUTH_URL ?? `http://127.0.0.1:${port}`), port];
+    }],
 ];
 
 if (process.env.TEST_ONLY_REMOTE) {
@@ -22,18 +26,19 @@ if (process.env.TEST_ONLY_REMOTE) {
 }
 
 function puthContextTests(env) {
-    let remoteInstance;
-
+    
     const test = testBase.extend({
         puth: async ({ task }, use) => {
+            let remoteInstance;
+            const config = env[1]();
+            
             if (env[0] === 'remote' && !process.env.PUTH_URL) {
-                remoteInstance = makePuthServer(43210, '127.0.0.1');
+                remoteInstance = makePuthServer(config[1], '127.0.0.1');
             }
-            let remote = env[1]();
+            let remote = config[0]();
             if (env[0] === 'local') {
                 remote.use(PuthStandardPlugin);
             }
-
             let context = await remote.contextCreate({
                 snapshot: true,
             });
@@ -41,7 +46,9 @@ function puthContextTests(env) {
             await use({ remote, context });
 
             if (env[0] === 'remote') {
-                await remoteInstance.http.close();
+                await remoteInstance.destroy();
+            } else {
+                await remote.destroy();
             }
         },
     });
@@ -50,16 +57,15 @@ function puthContextTests(env) {
         test.concurrent(`create/destroy context`, async ({ puth: { remote, context } }) => {
             let rep = context.representation;
             assert.ok('id' in rep && 'type' in rep);
-            await expect(context.destroy({ immediately: true })).resolves.toBeTruthy();
+            await expect(context.destroy()).resolves.toBeTruthy();
         });
 
-        //
         describe.concurrent('Browser', () => {
             test.concurrent('create', async ({ puth: { remote, context } }) => {
                 let rep = await (await context.createBrowser()).getRepresentation();
                 assert.containsAllKeys(rep, ['id', 'type']);
                 assert.strictEqual(rep?.represents, Constructors.BrowserContext);
-                await expect(context.destroy({ immediately: true })).resolves.toBeTruthy();
+                await expect(context.destroy()).resolves.toBeTruthy();
             });
 
             test.concurrent('visit', async ({ puth: { remote, context } }) => {
@@ -69,7 +75,7 @@ function puthContextTests(env) {
                 await page.visit('https://playground.puth.dev');
 
                 assert.strictEqual(await page.url(), 'https://playground.puth.dev/');
-                await expect(context.destroy({ immediately: true })).resolves.toBeTruthy();
+                await expect(context.destroy()).resolves.toBeTruthy();
             });
         });
         //

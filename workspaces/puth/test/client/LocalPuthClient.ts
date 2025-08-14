@@ -64,4 +64,8 @@ export class LocalPuthClient {
     use(plugin: PuthPluginGeneric<PuthPlugin>) {
         return this.puth.use(plugin);
     }
+    
+    destroy() {
+        return this.puth.destroy();
+    }
 }

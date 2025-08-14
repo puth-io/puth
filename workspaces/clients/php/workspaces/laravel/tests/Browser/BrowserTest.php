@@ -151,7 +151,7 @@ class BrowserTest extends PuthTestCase
 //                ->assertSeeIn('#dialog-prompt-result', '1234');
 //        });
 //    }
-    
+
 //    function test_file_chooser_multiple()
 //    {
 //        $this->browse(function (Browser $browser) {
@@ -169,7 +169,7 @@ class BrowserTest extends PuthTestCase
 //                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
 //        });
 //    }
-    
+
 //    function test_unreachable_action_exception()
 //    {
 //        $this->expectException(UnreachableActionException::class);

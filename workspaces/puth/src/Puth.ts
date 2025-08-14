@@ -104,18 +104,7 @@ export class Puth {
             throw new Error('Serve already called on this Puth instance.');
         }
 
-        /**
-         * TODO
-         *     private setupFastify(allowedOrigins: string[]) {
-         *         if (this.options?.disableCors !== true) {
-         *             this.server.register(fastifyCors, {
-         *                 origin: allowedOrigins,
-         *             });
-         *         }
-         *     }
-         */
-
-        let h3 = new H3.H3({
+        const h3 = new H3.H3({
             debug: true,
             onError: (error) => {
                 this.logger.error(error);
@@ -130,18 +119,20 @@ export class Puth {
         };
 
         // [Middleware] CORS
-        h3.use((event) => {
-            if (H3.handleCors(event, cors)) {
-                return;
-            }
-            // if (!H3.isCorsOriginAllowed(event.req.headers.get('origin'), cors)) {
-            //     if (event.req.headers.get('upgrade') === 'websocket') {
-            //         return; // let the websocket handle upgrade hook handle cors
-            //     }
-            //
-            //     return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
-            // }
-        });
+        if (this.options?.disableCors !== true) {
+            h3.use((event) => {
+                if (H3.handleCors(event, cors)) {
+                    return;
+                }
+                if (!H3.isCorsOriginAllowed(event.req.headers.get('origin'), cors)) {
+                    if (event.req.headers.get('upgrade') === 'websocket') {
+                        return; // let the websocket handle upgrade hook handle cors
+                    }
+                
+                    return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
+                }
+            });
+        }
 
         const json = handler => event => event.req.json().then(handler);
         const defer = handler => new Promise((resolve, reject) => handler({resolve, reject}));
@@ -181,6 +172,7 @@ export class Puth {
             //         .then(base64 => part.value = base64);
             // }));
 
+            // @ts-ignore
             let bytes = await event.req.bytes();
             let data = process.versions.bun ? bytes.toBase64() : bytes.toString('base64');
 
@@ -212,9 +204,11 @@ export class Puth {
             "/websocket",
             H3.defineWebSocketHandler({
                 upgrade: (req) => {
-                    // if (!H3.isCorsOriginAllowed(req.headers.get('origin'), cors)) {
-                    //     return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
-                    // }
+                    if (this.options?.disableCors !== true) {
+                        if (!H3.isCorsOriginAllowed(req.headers.get('origin'), cors)) {
+                            return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
+                        }
+                    }
                 },
                 open: (peer) => {
                     this.websocketHandler.push(peer)
@@ -261,6 +255,7 @@ export class Puth {
             // @ts-ignore
             plugins: [ws({ resolve: async (req) => (await h3.fetch(req)).crossws })],
             silent: true,
+            reusePort: true,
         });
 
         this.logger.info(`Server listening at http://${hostname}:${port}`);
@@ -314,6 +309,13 @@ export class Puth {
         }
 
         return false;
+    }
+    
+    destroy(): Promise<any> {
+        return Promise.allSettled([
+            this.http?.close(true),
+            ...Object.values(this.#contexts).map(context => context.destroy({immediately: true})),
+        ]);
     }
 
     // public contextCallAll(packet) {
