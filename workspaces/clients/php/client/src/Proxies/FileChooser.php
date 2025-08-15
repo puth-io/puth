@@ -2,27 +2,27 @@
 
 namespace Puth\Proxies;
 
-use Puth\GenericObject;
+use Puth\RemoteObject;
 
-class FileChooser extends GenericObject
+class FileChooser extends RemoteObject
 {
     public function accept($filePaths)
     {
         $tmpFilePaths = [];
         foreach ($filePaths as $path) {
-            $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), file_get_contents($path));
+            $tmpFilePaths[] = $this->context->saveTemporaryFile(basename($path), base64_encode(file_get_contents($path)));
         }
         
-        return $this->callMethod('accept', [$tmpFilePaths]);
+        return $this->callFunc('accept', [$tmpFilePaths]);
     }
     
     public function cancel()
     {
-        return $this->callMethod('cancel');
+        return $this->callFunc('cancel');
     }
     
     public function isMultiple()
     {
-        return $this->callMethod('isMultiple');
+        return $this->callFunc('isMultiple');
     }
 }

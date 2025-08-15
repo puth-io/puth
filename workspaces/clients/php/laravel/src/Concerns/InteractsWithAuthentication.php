@@ -78,9 +78,9 @@ trait InteractsWithAuthentication
      */
     protected function currentUserInfo($guard = null)
     {
-        $response = $this->visit(route('puth.dusk.user', ['guard' => $guard], $this->shouldUseAbsoluteRouteForAuthentication()));
+        $this->visit(route('puth.dusk.user', ['guard' => $guard], $this->shouldUseAbsoluteRouteForAuthentication()));
         
-        return json_decode(strip_tags($response->site->content()), true);
+        return json_decode(strip_tags($this->content()), true);
     }
     
     /**
@@ -91,7 +91,7 @@ trait InteractsWithAuthentication
      */
     public function assertAuthenticated($guard = null)
     {
-        $currentUrl = $this->site->url();
+        $currentUrl = $this->url();
         
         Assert::assertNotEmpty($this->currentUserInfo($guard), 'The user is not authenticated.');
         
@@ -106,7 +106,7 @@ trait InteractsWithAuthentication
      */
     public function assertGuest($guard = null)
     {
-        $currentUrl = $this->site->url();
+        $currentUrl = $this->url();
     
         Assert::assertEmpty(
             $this->currentUserInfo($guard), 'The user is unexpectedly authenticated.'
@@ -124,7 +124,7 @@ trait InteractsWithAuthentication
      */
     public function assertAuthenticatedAs($user, $guard = null)
     {
-        $currentUrl = $this->site->url();
+        $currentUrl = $this->url();
         
         $expected = [
             'id' => $user->getAuthIdentifier(),

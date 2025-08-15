@@ -51,141 +51,6 @@ trait WaitsForElements
     }
     
     /**
-     * Wait for the given selector to become visible.
-     *
-     * @param string $selector
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitFor($selector, $seconds = null)
-    {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for selector', $selector);
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->visible();
-        }, $message);
-    }
-    
-    /**
-     * Wait for the given selector to be removed.
-     *
-     * @param string $selector
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitUntilMissing($selector, $seconds = null)
-    {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for removal of selector', $selector);
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector) {
-            try {
-                $missing = !$this->resolver->findOrFail($selector)->visible();
-            } catch (\Exception $e) {
-                $missing = true;
-            }
-            
-            return $missing;
-        }, $message);
-    }
-    
-    /**
-     * Wait for the given text to be removed.
-     *
-     * @param string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitUntilMissingText($text, $seconds = null)
-    {
-        $text = Arr::wrap($text);
-        
-        $message = $this->formatTimeOutMessage('Waited %s seconds for removal of text', implode("', '", $text));
-        
-        return $this->waitUsing($seconds, 100, function () use ($text) {
-            return !Str::contains($this->resolver->findOrFail('')->innerText, $text);
-        }, $message);
-    }
-    
-    /**
-     * Wait for the given text to become visible.
-     *
-     * @param array|string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForText($text, $seconds = null, $ignoreCase = false)
-    {
-        $text = Arr::wrap($text);
-        
-        $message = $this->formatTimeOutMessage('Waited %s seconds for text', implode("', '", $text));
-        
-        return $this->waitUsing($seconds, 100, function () use ($text, $ignoreCase) {
-            return Str::contains($this->resolver->findOrFail('')->innerText, $text, $ignoreCase);
-        }, $message);
-    }
-    
-    /**
-     * Wait for the given text to become visible inside the given selector.
-     *
-     * @param string $selector
-     * @param array|string $text
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForTextIn($selector, $text, $seconds = null, $ignoreCase = false)
-    {
-        $message = 'Waited %s seconds for text "' . $text . '" in selector ' . $selector;
-        
-        return $this->waitUsing($seconds, 100, function () use ($selector, $text, $ignoreCase) {
-            return $this->assertSeeIn($selector, $text, $ignoreCase);
-        }, $message);
-    }
-    
-    /**
-     * Wait for the given link to become visible.
-     *
-     * @param string $link
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForLink($link, $seconds = null)
-    {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for link', $link);
-        
-        return $this->waitUsing($seconds, 100, function () use ($link) {
-            return $this->seeLink($link);
-        }, $message);
-    }
-    
-    /**
-     * Wait for an input field to become visible.
-     *
-     * @param string $field
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForInput($field, $seconds = null)
-    {
-        return $this->waitFor("input[name='{$field}'], textarea[name='{$field}'], select[name='{$field}']", $seconds);
-    }
-    
-    /**
-     * Wait for the given location.
-     *
-     * @param string $path
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForLocation($path, $seconds = null)
-    {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for location', $path);
-        
-        return Str::startsWith($path, ['http://', 'https://'])
-            ? $this->waitUntil('`${location.protocol}//${location.host}${location.pathname}` == \'' . $path . '\'', $seconds, $message)
-            : $this->waitUntil("window.location.pathname == '{$path}'", $seconds, $message);
-    }
-    
-    /**
      * Wait for the given location using a named route.
      *
      * @param string $route
@@ -197,43 +62,7 @@ trait WaitsForElements
     {
         return $this->waitForLocation(route($route, $parameters, false), $seconds);
     }
-    
-    /**
-     * Wait until an element is enabled.
-     *
-     * @param string $selector
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitUntilEnabled($selector, $seconds = null)
-    {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for element to be enabled', $selector);
-        
-        $this->waitUsing($seconds, 100, function () use ($selector) {
-            return !$this->resolver->findOrFail($selector)->disabled;
-        }, $message);
-        
-        return $this;
-    }
-    
-    /**
-     * Wait until an element is disabled.
-     *
-     * @param string $selector
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitUntilDisabled($selector, $seconds = null)
-    {
-        $message = $this->formatTimeOutMessage('Waited %s seconds for element to be disabled', $selector);
-        
-        $this->waitUsing($seconds, 100, function () use ($selector) {
-            return $this->resolver->findOrFail($selector)->disabled;
-        }, $message);
-        
-        return $this;
-    }
-    
+
     /**
      * Wait until the given script returns true.
      *
@@ -242,15 +71,11 @@ trait WaitsForElements
      * @param string|null $message
      * @return $this
      */
-    public function waitUntil($script, $seconds = null, $message = null)
+    public function waitUntil($script, $seconds = null, $message = 'Waited for script to be true')
     {
-        if (!Str::endsWith($script, ';')) {
-            $script = $script . ';';
-        }
-        
-        return $this->waitUsing($seconds, 100, function () use ($script) {
-            return $this->site->evaluate($script);
-        }, $message);
+        $this->_waitUntil($script, [], $message, $seconds ? ['timeout' => $seconds] : []);
+
+        return $this;
     }
     
     /**
@@ -288,20 +113,7 @@ trait WaitsForElements
         
         return $this;
     }
-    
-    /**
-     * Wait for a JavaScript dialog to open.
-     *
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForDialog($seconds = 15) // TODO let puth context handle timeout
-    {
-        $this->site->waitForDialog(['timeout' => $seconds * 1000]);
-        
-        return $this;
-    }
-    
+
     /**
      * Wait for the current page to reload.
      *
@@ -312,8 +124,7 @@ trait WaitsForElements
     public function waitForReload($callback = null, $seconds = null)
     {
         $token = Str::random();
-        
-        $this->site->evaluate("window['{$token}'] = {};");
+        $this->evaluate("window['{$token}'] = {};");
         
         if ($callback) {
             $callback($this);
@@ -337,30 +148,7 @@ trait WaitsForElements
             $browser->click($selector);
         }, $seconds);
     }
-    
-    /**
-     * Wait for the given event type to occur on a target.
-     *
-     * @param string $type
-     * @param string|null $target
-     * @param int|null $seconds
-     * @return $this
-     */
-    public function waitForEvent($type, $target = '', $seconds = null)
-    {
-        $seconds = $seconds === null ? static::$waitSeconds : $seconds;
-        $timeout = "setTimeout(resolve, {$seconds}000);";
-        
-        if ($target !== 'document' && $target !== 'window') {
-            $this->resolver->findOrFail($target)
-                ->evaluate("element => (new Promise(function (resolve, reject) { $timeout element.addEventListener('$type', resolve, { once: true }); }))");
-        } else {
-            $this->site->evaluate("(new Promise(function (resolve, reject) { $timeout $target.addEventListener('$type', resolve, { once: true }); }))");
-        }
 
-        return $this;
-    }
-    
     /**
      * Wait for the given callback to be true.
      *

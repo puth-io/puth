@@ -2,9 +2,10 @@ import path from 'path';
 import {homedir} from 'os';
 import {select} from '@inquirer/prompts';
 import fs from 'fs';
-import {canDownload, detectBrowserPlatform, install, InstallOptions, Browser} from '@puppeteer/browsers';
-import {PUPPETEER_REVISIONS} from 'puppeteer-core';
+import {canDownload, detectBrowserPlatform, install, Browser} from '@puppeteer/browsers';
 import {makeLogger} from 'puth';
+// @ts-ignore
+import { PUPPETEER_REVISIONS } from 'puppeteer-core';
 
 const logger = makeLogger(true, 'info');
 const cwd = process.cwd();
@@ -31,7 +32,7 @@ const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
         return;
     }
 
-    const installOptions: any = {
+    const installOptions = {
         browser: channel,
         platform, buildId,
         cacheDir: cache,
@@ -49,14 +50,14 @@ const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
     logger.info(`Successfully downloaded ${browser.browser} ${browser.buildId} (${browser.platform})`);
 })();
 
-function throttle(func, wait) {
-    let timer;
-    let lastArgs: any = [];
+function throttle(func: any, wait: number) {
+    let timer: NodeJS.Timeout | null;
+    let lastArgs: any[] = [];
     let mediator = _ => {
         timer = null;
         func(...lastArgs);
     }
-    return function (...args) {
+    return function (...args: any[]) {
         lastArgs = args;
         if (!timer) timer = setTimeout(mediator, wait);
     };

@@ -53,7 +53,7 @@ trait ProvidesBrowser
      */
     protected static $afterClassCallbacks = [];
     
-    public bool|string $headless = 'new';
+    public bool $headless = true;
     
     /**
      * Register an "after class" tear down callback.
@@ -78,12 +78,12 @@ trait ProvidesBrowser
         } catch (\Exception $e) {
             $this->captureFailuresFor($browsers);
             $this->storeSourceLogsFor($browsers);
-            
+
             throw $e;
         } catch (Throwable $e) {
             $this->captureFailuresFor($browsers);
             $this->storeSourceLogsFor($browsers);
-            
+
             throw $e;
         } finally {
             $this->storeConsoleLogsFor($browsers);
@@ -119,24 +119,31 @@ trait ProvidesBrowser
      */
     protected function newBrowser()
     {
-        $browser = $this->context->createBrowser(array_merge([
-            'defaultViewport' => [
-                'width' => 1280,
-                'height' => 720,
-            ],
-            'headless' => $this->headless,
-        ], $this->getLaunchOptions()));
-        
         return new Browser(
-            $this->context,
-            $browser,
-            $browser->pages()[0],
-            options: [
-                'legacyBrowserHandling' => $this->legacyBrowserHandling ?? false,
-            ],
+            $this->context->createBrowserShim(
+                array_merge(
+                    [
+                        'defaultViewport' => [
+                            'width' => 1280,
+                            'height' => 720,
+                        ],
+                        'headless' => $this->headless,
+                    ],
+                    $this->getLaunchOptions(),
+                ),
+                [
+                    'timeout' => 3000,
+                    'timeoutMultiplier' => 1000,
+                    'resolver' => [
+                        'prefix' => 'body',
+                        'finder' => 'dusk',
+                    ],
+                    'fitOnFailure' => true,
+                ],
+            ),
         );
     }
-    
+
     /**
      * Get the number of browsers needed for a given callback.
      *
@@ -193,10 +200,11 @@ trait ProvidesBrowser
     protected function storeSourceLogsFor($browsers)
     {
         $browsers->each(function ($browser, $key) {
-            if (property_exists($browser, 'madeSourceAssertion') &&
-                $browser->madeSourceAssertion) {
+            // TODO reimplement? seems unnecessary
+//            if (property_exists($browser, 'madeSourceAssertion') &&
+//                $browser->madeSourceAssertion) {
                 $browser->storeSource($this->getCallerName() . '-' . $key);
-            }
+//            }
         });
     }
     

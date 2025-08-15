@@ -17,12 +17,10 @@ jobs:
     strategy:
       matrix:
         node-version:
-          - 18
-          - 20
-          - 22
+          - 24
     name: puth | node ${{ matrix.node-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
@@ -48,10 +46,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ '8.0', 8.1, 8.2, 8.3 ]
+        php: [ 8.2, 8.3, 8.4 ]
     name: PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 24
       - id: cache-npm
         uses: actions/cache@v4
         with:
@@ -84,18 +85,18 @@ jobs:
       - name: test
         run: |
           cd workspaces/puth && bin/puth.js start &
-          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
   test-image:
-    needs: [test-puth-node]
+    #needs: [test-puth-node]
     name: test image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 24
       - id: cache-npm
         uses: actions/cache@v4
         with:
@@ -125,28 +126,20 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [8.1, 8.2, 8.3]
-        laravel: [10, 11]
-        phpunit: [10, 11]
-        collision: [7, 8]
+        php: [8.2, 8.3, 8.4]
+        laravel: [11, 12]
+        phpunit: [11, 12]
+        collision: [8]
         exclude:
-          - php: 8.1
-            laravel: 11
-          - phpunit: 10
-            collision: 8
-          - phpunit: 11
-            collision: 7
-          - php: 8.1
-            collision: 8
-          - php: 8.1
-            phpunit: 11
-          - laravel: 11
-            collision: 7
-          - laravel: 10
-            collision: 8
+          - php: 8.2
+            phpunit: 12
+
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 24
       - id: cache-npm
         uses: actions/cache@v4
         with:
@@ -186,7 +179,7 @@ jobs:
           cd workspaces/clients/php/workspaces/laravel
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &
-          timeout 10 bash -c 'until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           php artisan migrate --force
           php artisan test --without-tty
         env:
@@ -200,7 +193,7 @@ jobs:
           mv workspaces/puth/puth.cdp.log workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-logs
           path: |

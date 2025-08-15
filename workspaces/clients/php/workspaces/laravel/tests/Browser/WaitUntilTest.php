@@ -8,6 +8,8 @@ use Tests\PuthTestCase;
 
 class WaitUntilTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_wait_until()
     {
         $this->browse(function (Browser $browser) {
@@ -34,7 +36,8 @@ class WaitUntilTest extends PuthTestCase
                 ->waitUntilEnabled('#actions-click-wait')
                 ->click('#actions-click-wait')
                 ->waitUntilEnabled('#actions-click-disabled')
-                ->waitUntilDisabled('#actions-click-disabled');
+                ->waitUntilDisabled('#actions-click-disabled')
+            ;
         });
     }
 }

@@ -1,11 +1,15 @@
 <?php
 
+namespace Tests\Browser;
+
 use Puth\Laravel\Browser;
 use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithDraggingTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_drag_and_drop()
     {
         $this->browse(function (Browser $browser) {

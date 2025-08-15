@@ -1,4 +1,6 @@
+import { BaseHandler } from './BaseHandler';
 import {Encoder as BaseEncoder, Decoder as BaseDecoder, ExtensionCodec} from '@msgpack/msgpack';
+import { Peer } from 'crossws';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 
@@ -19,49 +21,45 @@ PUTH_EXTENSION_CODEC.register({
 export const Encoder = new BaseEncoder(PUTH_EXTENSION_CODEC);
 export const Decoder = new BaseDecoder(PUTH_EXTENSION_CODEC);
 
-class WebsocketConnectionHandler {
-    sockets: WebSocket[] = [];
-    
-    push(socket: WebSocket) {
-        this.sockets.push(socket);
+export class WebsocketHandler extends BaseHandler {
+    peers: Peer[] = [];
+
+    push(peer: Peer) {
+        this.logger.debug('WebsocketHandler peer connected');
+        this.peers.push(peer);
     }
-    
-    pop(socket: WebSocket) {
-        let index = this.sockets.indexOf(socket);
-        this.sockets.splice(index, 1);
+
+    pop(peer: Peer) {
+        this.logger.debug('WebsocketHandler peer disconnected');
+        let index = this.peers.indexOf(peer);
+        this.peers.splice(index, 1);
     }
-    
-    broadcastAll(message: string|object|object[]) {
+
+    broadcast(message: string|object|object[]) {
         let data = this.serializeSharedRef(message);
-        
-        for (let socket of this.sockets) {
-            socket.send(data);
+
+        for (let peer of this.peers) {
+            peer.send(data);
         }
     }
-    
+
     serialize(object: string|object|object[]) {
         if (typeof object === 'object' || Array.isArray(object)) {
             return Encoder.encode(object);
         }
-        
+
         throw Error('Unsupported serialization type');
     }
-    
+
     serializeSharedRef(object: string|object|object[]) {
         if (typeof object === 'object' || Array.isArray(object)) {
             return Encoder.encodeSharedRef(object);
         }
-        
+
         throw Error('Unsupported serialization type');
     }
-    
+
     decode(data) {
         return Decoder.decode(data);
     }
 }
-
-const WebsocketConnections = new WebsocketConnectionHandler();
-
-export default WebsocketConnections;
-
-

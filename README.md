@@ -17,7 +17,7 @@ Known problems:
 
 ## Important
 
-Puth is a browser testing tool designed for development and CI/CD pipelines. Do **not** expose Puth to the internet, only run Puth with the least access needed. It comes with CORS out of the box but disabled in the Docker Image. The security risk with Puth has nothing to do with Puppeteer/Chrome but with Puth allowing calling **any** function and setting/getting any value that exists on remote objects (basically every object in a Puth Context that can be accessed via the API). Although this disclaimer might sound scary, this is true for most applications running on your system.
+Puth is a browser testing tool designed for development and CI/CD pipelines. Do **not** expose Puth to the internet, only run Puth with the least access needed. It comes with CORS out of the box but disabled in the Docker Image. The security risk with Puth has nothing to do with Puppeteer/Chrome but with Puth allowing calling **any** function and setting/getting any value that exists on remote objects (basically every object in a Puth Context that can be accessed via the API). Although this disclaimer might sound scary, this is true for any applications that exposes a web api locally on your system.
 
 ## Usage
 

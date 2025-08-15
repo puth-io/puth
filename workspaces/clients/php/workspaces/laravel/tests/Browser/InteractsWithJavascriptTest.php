@@ -9,11 +9,13 @@ use Tests\PuthTestCase;
 
 class InteractsWithJavascriptTest extends PuthTestCase
 {
+    public static bool $debug = false;
+
     function test_script()
     {
         $this->browse(function (Browser $browser) {
             $response = $browser->visit(new Playground)
-                ->script([
+                ->evaluate([
                     '1 + 1',
                     'window.document.location.href',
                 ]);
