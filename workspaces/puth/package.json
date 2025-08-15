@@ -55,7 +55,7 @@
     "dev:browser:install": "NODE_ENV=development bun src/dev/browser-install.ts",
     "dev:server:debug": "DEBUG=\"puppeteer:*\" NODE_ENV=development ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/dev/server.ts > puth.log 2> puth.cdp.log",
     "format": "prettier --write \"src/**/*.ts\"",
-    "test": "vitest test/api.test.ts",
+    "test": "vitest",
     "test:only:remote": "TEST_ONLY_REMOTE=true vitest test/api.test.ts",
     "test:only:plugins": "vitest 'tst/plugins/**/*.ts",
     "test:only:translation": "vitest test/translation/**/*.ts",
