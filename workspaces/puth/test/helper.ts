@@ -68,7 +68,7 @@ export function makePuthServer(port, address) {
             warn: () => {},
             debug: () => {},
         },
-        disableCors: true,
+        cors: { enabled: false },
     });
     instance.use(PuthStandardPlugin);
     instance.serve(port, address);
