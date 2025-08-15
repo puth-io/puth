@@ -20,7 +20,7 @@ jobs:
           - 24
     name: puth | node ${{ matrix.node-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: '${{ matrix.node-version }}'
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ '8.0', 8.1, 8.2, 8.3 ]
+        php: [ 8.2, 8.3, 8.4 ]
     name: PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 24
       - id: cache-npm
         uses: actions/cache@v4
         with:
@@ -123,25 +123,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [8.1, 8.2, 8.3]
-        laravel: [10, 11]
-        phpunit: [10, 11]
-        collision: [7, 8]
-        exclude:
-          - php: 8.1
-            laravel: 11
-          - phpunit: 10
-            collision: 8
-          - phpunit: 11
-            collision: 7
-          - php: 8.1
-            collision: 8
-          - php: 8.1
-            phpunit: 11
-          - laravel: 11
-            collision: 7
-          - laravel: 10
-            collision: 8
+        php: [8.2, 8.3, 8.4]
+        laravel: [11, 12]
+        phpunit: [10, 11, 12]
+        collision: [8]
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
       - uses: actions/checkout@v4
