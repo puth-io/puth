@@ -1,7 +1,7 @@
 import { describe, assert, beforeEach } from 'vitest';
 import { testLocal } from '../helper';
 
-describe(`PuthStandardPlugin`, function () {
+describe(`PuthStandardPlugin`, () => {
     beforeEach(async ({ puth: { page } }) => {
         await page.goto('https://playground.puth.dev/');
     });
