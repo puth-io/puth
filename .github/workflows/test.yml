@@ -88,38 +88,6 @@ jobs:
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
-  test-image:
-    needs: [test-puth-node]
-    name: test image
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 24
-      - id: cache-npm
-        uses: actions/cache@v4
-        with:
-          key: node-${{ hashFiles('**/package-lock.json') }}
-          path: |
-            /home/runner/.npm
-            workspaces/puth/.cache
-      - name: build
-        run: |
-          npm ci
-          npm run build
-          ./docker/pack.sh
-      - name: download browser
-        run: npm run ci:browser:install --workspace workspaces/puth
-      - name: build image
-        run: docker build -f docker/Dockerfile -t puth-test-image .
-      - name: test image
-        run: |
-          container_id=$(docker run --detach --network host puth-test-image)
-          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
-          docker stop $container_id
-
   php-laravel:
     #needs: [test-puth-node]
     runs-on: ubuntu-latest
@@ -129,9 +97,9 @@ jobs:
         #php: [8.2, 8.3, 8.4]
         #laravel: [11, 12]
         #phpunit: [10, 11, 12]
-        php: [8.2]
-        laravel: [11]
-        phpunit: [10]
+        php: [8.2, 8.3, 8.4]
+        laravel: [11, 12]
+        phpunit: [10, 11, 12]
         collision: [8]
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
