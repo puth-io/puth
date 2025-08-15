@@ -9,7 +9,7 @@ const {detectBrowserPlatform, canDownload, install} = require('@puppeteer/browse
 const {PUPPETEER_REVISIONS} = require('puppeteer-core');
 const pkg = require('../package.json');
 
-const { Puth } = require('../lib').default;
+const { Puth } = require('../lib');
 const {usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin} = require("../lib");
 
 const cli = meow(`
