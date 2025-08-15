@@ -1,21 +1,7 @@
-import { describe, test as testBase, assert, expect } from 'vitest';
-import { PuthStandardPlugin } from '../';
-// import { RemotePuthClient } from '@puth/client';
+import { describe, assert, expect } from 'vitest';
+import { envs, testFn } from './helper';
 import Constructors from '../src/context/Constructors';
-import { makeLocalPuthClient, makePuthServer } from './helper';
 import { sleep } from '../src/Utils';
-import { RemotePuthClient } from './client/RemotePuthClient';
-
-const envs: [string, () => [any, number?]][] = [
-    ['local', () => [() => makeLocalPuthClient()]],
-    [
-        'remote',
-        () => {
-            let port = 10000 + Math.floor(Math.random() * 55535);
-            return [() => new RemotePuthClient(process.env.PUTH_URL ?? `http://127.0.0.1:${port}`), port];
-        },
-    ],
-];
 
 if (process.env.TEST_ONLY_REMOTE) {
     puthContextTests(envs[1]);
@@ -28,33 +14,7 @@ if (process.env.TEST_ONLY_REMOTE) {
 }
 
 function puthContextTests(env) {
-    const test = testBase.extend({
-        puth: async ({ task }, use) => {
-            let remoteInstance;
-            const config = env[1]();
-
-            if (env[0] === 'remote' && !process.env.PUTH_URL) {
-                remoteInstance = makePuthServer(config[1], '127.0.0.1');
-            }
-            let remote = config[0]();
-            if (env[0] === 'local') {
-                remote.use(PuthStandardPlugin);
-            }
-            let context = await remote.contextCreate({
-                snapshot: true,
-            });
-            let browser = await context.createBrowser();
-            let page = (await browser.pages())[0];
-
-            await use({ remote, context, browser, page });
-
-            if (env[0] === 'remote') {
-                await remoteInstance.destroy();
-            } else {
-                await remote.destroy();
-            }
-        },
-    });
+    const test = testFn(env);
 
     describe(`Api [${env[0]}]`, () => {
         test.concurrent(`create/destroy context`, async ({ puth: { remote, context } }) => {

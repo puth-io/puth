@@ -2,6 +2,56 @@ import { assert } from 'vitest';
 import { Puth, usableBrowserInstallations, PuthStandardPlugin } from '../';
 import { LocalPuthClient } from './client/LocalPuthClient';
 import { RemotePuthClient } from './client/RemotePuthClient';
+import { test as testBase } from '@vitest/runner';
+
+export const envs: [string, () => [any, number?]][] = [
+    ['local', () => [() => makeLocalPuthClient()]],
+    [
+        'remote',
+        () => {
+            let port = 10000 + Math.floor(Math.random() * 55535);
+            return [() => new RemotePuthClient(process.env.PUTH_URL ?? `http://127.0.0.1:${port}`), port];
+        },
+    ],
+];
+
+export const testFn = env => testBase.extend({
+    puth: async ({ task }, use) => {
+        let remoteInstance;
+        const config = env[1]();
+        
+        if (env[0] === 'remote' && !process.env.PUTH_URL) {
+            remoteInstance = makePuthServer(config[1], '127.0.0.1');
+        }
+        let remote = config[0]();
+        if (env[0] === 'local') {
+            remote.use(PuthStandardPlugin);
+        }
+        let context = await remote.contextCreate({
+            snapshot: true,
+        });
+        let browser = await context.createBrowser();
+        let page = (await browser.pages())[0];
+        
+        const assertHandleEquals = async (handle1, handle2) => {
+            let response = await context.assertStrictEqual(
+                await handle1.getRepresentation(),
+                await handle2.getRepresentation(),
+            );
+            return assert.ok(response.result, 'handle1 and handle2 are not equal');
+        }
+        
+        await use({ remote, context, browser, page, assertHandleEquals });
+        
+        if (env[0] === 'remote') {
+            await remoteInstance.destroy();
+        } else {
+            await remote.destroy();
+        }
+    },
+});
+
+export const testLocal = testFn(envs[0]);
 
 export const installedBrowser = usableBrowserInstallations[0];
 
@@ -23,31 +73,6 @@ export function makePuthServer(port, address) {
     instance.use(PuthStandardPlugin);
     instance.serve(port, address);
     return instance;
-}
-
-export async function puthContextBinder(mochaContext, plugins: any = []) {
-    mochaContext.remote = makeLocalPuthClient();
-    for (let plugin of plugins) {
-        mochaContext.remote.use(plugin);
-    }
-    mochaContext.remote.setAssertionHandler((assertion) => {
-        if (!assertion.result) {
-            assert.fail(assertion.message);
-        }
-    });
-    mochaContext.context = await mochaContext.remote.contextCreate({
-        snapshot: true,
-        track: ['commands', 'console', 'network'],
-    });
-    mochaContext.browser = await mochaContext.context.createBrowser();
-    mochaContext.page = (await mochaContext.browser.pages())[0];
-    mochaContext.puthAssertStrictEqual = async (handle1, handle2) => {
-        let response = await mochaContext.context.assertStrictEqual(
-            await handle1.getRepresentation(),
-            await handle2.getRepresentation(),
-        );
-        return assert.ok(response.result, 'handle1 and handle2 are not equal');
-    };
 }
 
 export function multiTest(callback, extended = false) {
