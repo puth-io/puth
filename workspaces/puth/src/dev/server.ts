@@ -13,7 +13,7 @@ if (usableBrowserInstallations.length === 0) {
 
 const instance = new Puth({
     debug: true,
-    disableCors: true,
+    cors: { enabled: false },
     installedBrowser: usableBrowserInstallations[0],
     logger,
 });

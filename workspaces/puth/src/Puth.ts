@@ -32,10 +32,10 @@ export type PuthOptions = {
     plugins?: string[];
     dev?: boolean;
     staticDir?: string;
-    server?: {
-        allowOrigins: string[];
+    cors?: {
+        enabled: boolean,
+        allow: string[];
     };
-    disableCors?: boolean;
     installedBrowser?: any;
     logger?: BaseLogger;
 };
@@ -110,27 +110,27 @@ export class Puth {
                 this.logger.error(error);
             },
         });
-
+        
         const cors = {
             origin: [
                 `http://${hostname}:${port}`,
-                ...(this.options?.server?.allowOrigins ?? []),
+                ...(this.options?.cors?.allow ?? []),
             ],
         };
 
         // [Middleware] CORS
-        if (this.options?.disableCors !== true) {
+        if (this.options?.cors?.enabled !== false) {
             h3.use((event) => {
                 if (H3.handleCors(event, cors)) {
                     return;
                 }
-                if (!H3.isCorsOriginAllowed(event.req.headers.get('origin'), cors)) {
+                /*if (!H3.isCorsOriginAllowed(event.req.headers.get('origin'), cors)) {
                     if (event.req.headers.get('upgrade') === 'websocket') {
                         return; // let the websocket handle upgrade hook handle cors
                     }
                 
                     return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
-                }
+                }*/
             });
         }
 
@@ -204,7 +204,7 @@ export class Puth {
             "/websocket",
             H3.defineWebSocketHandler({
                 upgrade: (req) => {
-                    if (this.options?.disableCors !== true) {
+                    if (this.options?.cors?.enabled !== false) {
                         if (!H3.isCorsOriginAllowed(req.headers.get('origin'), cors)) {
                             return new Response('Request blocked - Origin not in CORS allowlist.', {status: 401});
                         }
