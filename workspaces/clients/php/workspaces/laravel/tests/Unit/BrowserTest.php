@@ -15,9 +15,13 @@ class BrowserTest extends PuthTestCase
     function test_multiple_browsers()
     {
         $this->browse(function (Browser $browser1, Browser $browser2) {
-            $browser1->visit('https://puth.io/');
-            $browser2->visit('https://playground.puth.dev/');
-            Assert::assertNotEquals($browser1->url(), $browser2->url());
+            $browser1->setContent('<div id="a">a</div>');
+            $browser2->setContent('<div id="b">b</div>');
+            
+            $browser1->assertVisible('#a')
+                ->assertMissing('#b');
+            $browser2->assertVisible('#b')
+                ->assertMissing('#a');
         });
     }
     

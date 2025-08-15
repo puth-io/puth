@@ -1,4 +1,4 @@
-FROM node:lts-slim
+FROM node:24-slim
 
 RUN apt-get update && \
     apt-get clean && \

@@ -16,7 +16,7 @@ logger.debug(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`
 
 const instance = new Puth({
     debug: true,
-    disableCors: true,
+    cors: { enabled: false },
     installedBrowser: usableBrowserInstallations[0],
     logger,
 });
