@@ -16,6 +16,8 @@ import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
 import { BrowserRefContext } from './handlers/BrowserHandler';
 import {Protocol} from 'devtools-protocol';
+import { CallStack, PortalRequest, PortalResponse } from './utils/CallStack';
+import { Call } from './utils/Call';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -99,7 +101,7 @@ class Context extends Generic {
 
     public destroying: boolean = false;
 
-    private lastCallerPromise?: {
+    lastCallerPromise?: {
         resolve: (value: any) => void;
         reject: (reason?: any) => void;
     };
@@ -237,7 +239,7 @@ class Context extends Generic {
 
     waitingForDialog: {
         page: Page;
-        resolve: (value: Dialog) => void;
+        resolve: (value: Dialog) => Promise<void>;
         reject: (reason?: any) => void;
     }[] = [];
 
@@ -250,6 +252,7 @@ class Context extends Generic {
     }
 
     skipRunningCallResponse = false;
+    skipCallResponses = [];
     async pageOnDialog(page, dialog) {
         this.caches.dialog.set(page, dialog);
 
@@ -290,7 +293,8 @@ class Context extends Generic {
         this.registerEventListenerOn(browserContext, 'targetcreated', async (target: Target) => {
             // TODO do we need to track more here? like 'browser' or 'background_page'...?
             if (target.type() === 'page') {
-                let page = await target.page();
+                // @ts-ignore
+                let page: Page = await target.page();
                 await this.trackPage(page);
                 // @ts-ignore
                 this.emitter.emit('page:created', { browserContext, page});
@@ -312,15 +316,19 @@ class Context extends Generic {
      * TODO maybe track "outgoing" navigation requests, and stall incoming request until finished loading
      *      but check if we need to make sure if call the object called on needs to be existing
      */
-    private async trackPage(page) {
+    private async trackPage(page: Page) {
+        let stack = this.callStacks.get(page);
+        if (stack == null) {
+            stack = new CallStack(this, page);
+            this.callStacks.set(page, stack);
+        }
+        
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         page.on('close', () => this.removeEventListenersFrom(page));
-        page.on('dialog', (dialog: Dialog) => this.pageOnDialog(page, dialog));
+        page.on('dialog', (dialog: Dialog) => stack.omDialogOpen(dialog));
 
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
-            let args: any = [];
-
-            args = await Promise.all(
+            let args = await Promise.all(
                 consoleMessage.args()
                     .map(
                         async (m) => await m.jsonValue()
@@ -351,65 +359,13 @@ class Context extends Generic {
         });
 
         if (this.options?.supports?.portal != null) {
-            // await page.setRequestInterception(true);
-            // this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
-            //     // this.puth.logger.debug({method: request.method(), url: request.url(), data: request.postData(), isNavigationRequest: request.isNavigationRequest()}, 'request');
-            //     return this.handlePortalRequest(request, this.options?.supports?.portal?.urlPrefixes ?? []);
-            // });
-
-            let cdp = await this.cdps(page);
+            let cdp: CDPSession = await this.cdps(page);
             cdp.on('Fetch.requestPaused', event => {
                 let path = this.portalShouldHandleRequest(event);
                 if (path === false) {
                     return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
                 }
-
-                this.puth.logger.debug('[Portal][Intercepted] ' + event.request.url);
-                let psuri = this.portalSafeUniqueRequestId();
-                this.psuriCache.set(psuri, { page });
-
-                if (event.request.hasPostData) {
-                    if (event.request.postData === undefined) {
-                        this.puth.logger.debug('[Portal][Detour too large] ' + event.request.url);
-                        return this.portalRequestDetourToCatcher(psuri, event, path, cdp);
-                    }
-
-                    let contentType = '';
-                    for (let key of Object.keys(event.request.headers)) {
-                        if (key.toLowerCase() === 'content-type') {
-                            contentType = event.request.headers[key].trim();
-                        }
-                    }
-                    if (contentType.startsWith('multipart/')) {
-                        this.puth.logger.debug('[Portal][Detour multipart] ' + event.request.url);
-                        return this.portalRequestDetourToCatcher(psuri, event, path, cdp);
-                    }
-                }
-
-                this.setPsuriHandler(
-                    psuri,
-                    // TODO handle portal network error - Fetch.failRequest
-                    async (error, status, data, headers) =>
-                        cdp
-                            .send('Fetch.fulfillRequest', {
-                                requestId: event.requestId,
-                                body: btoa(data),
-                                responseCode: status,
-                                responseHeaders: headers,
-                            })
-                            .catch((error) => {
-                                if (error instanceof TargetCloseError) return;
-                                throw error;
-                            }),
-                );
-                this.handlePortalRequest({
-                    psuri,
-                    url: event.request.url,
-                    path,
-                    headers: event.request.headers,
-                    data: btoa(event.request.postData ?? ''),
-                    method: event.request.method.toUpperCase(),
-                });
+                stack.onPortalRequest(event, path, cdp);
             });
             await cdp.send('Fetch.enable');
         }
@@ -422,14 +378,6 @@ class Context extends Generic {
         }
 
         let url = request.url;
-        // TODO add option for clients ignore intercepted requests
-        // if (['Script', 'Stylesheet', 'Font'].includes(resourceType)
-        //     || !['Document', 'Other'].includes(resourceType)
-        //     || url.endsWith('.ico')) {
-        //     this.puth.logger.debug(`[Portal][Skip ${resourceType}] ${url.substring(0, 80)}`);
-        //     return false;
-        // }
-
         for (let prefix of prefixes) {
             if (url.startsWith(prefix)) {
                 return url.replace(prefix, '');
@@ -440,9 +388,15 @@ class Context extends Generic {
     }
 
     psuriCache: Map<string, {
-        page: Page;
+        stack: CallStack;
         handler?: PsuriResponseHandler;
     }> = new Map();
+    
+    portalRequestCounter = 0;
+    public portalSafeUniqueRequestId(): string {
+        this.portalRequestCounter++;
+        return this.portalRequestCounter.toString();
+    }
 
     public setPsuriHandler(psuri: string, handler: PsuriResponseHandler) {
         let cache = this.psuriCache.get(psuri);
@@ -454,43 +408,25 @@ class Context extends Generic {
         this.psuriCache.set(psuri, cache);
     }
 
-    public handlePortalRequest(
-        request: {
-            psuri: string;
-            url: string;
-            path: string;
-            headers: TODO;
-            data: string;
-            method: string;
+    public handlePortalRequest(request: PortalRequest) {
+        let psuri = this.psuriCache.get(request.psuri);
+        if (psuri == null) {
+            throw new Error('Received portal request but no stack found.');
         }
-    ) {
-        this.puth.logger.debug(`[handlePortalRequest] ${request.psuri} ${request.method} ${request.url}`);
-
-        if (this.portal.queue.active.length > 0) {
-            this.puth.logger.debug('-> add portal request to active queue');
-            this.portal.queue.active.push(request);
-            return;
-        }
-
-        if (this.lastCallerPromise == null) {
-            this.puth.logger.debug('-> add portal request to backlog queue');
-            this.portal.queue.backlog.push(request);
-            return;
-        }
-
-        this.portal.queue.active.push(request);
-        this.puth.logger.debug('-> add portal request to active queue');
-        if (this.portal.queue.active.length === 1) {
-            this.puth.logger.debug('-> sending portal request while client request active');
-            let lcp = this.lastCallerPromise;
-            this.lastCallerPromise = undefined;
-            return lcp.resolve(
-                this.createServerRequest(this.portal.queue.active[0])
-            );
-        }
+        
+        return psuri.stack.handlePortalRequest(request);
     }
-
-    private portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, path: string, cdp: CDPSession) {
+    
+    public async handlePortalResponse(data: {context: any, response: PortalResponse}, res) {
+        let psuri = this.psuriCache.get(data.response.psuri);
+        if (psuri == null) {
+            throw new Error('Received portal request but no stack found.');
+        }
+        
+        return psuri.stack.handlePortalResponse(data.response, res);
+    }
+    
+    public portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, path: string, cdp: CDPSession) {
         let headers: Protocol.Fetch.HeaderEntry[] = [];
         for (let key of Object.keys(request.headers)) {
             headers.push({name: key, value: request.headers[key]});
@@ -510,85 +446,6 @@ class Context extends Generic {
             url: join(addr, 'portal/detour'),
             headers,
         });
-    }
-
-    portalRequestCounter = 0;
-    private portalSafeUniqueRequestId(): string {
-        this.portalRequestCounter++;
-        return this.portalRequestCounter.toString();
-    }
-
-    portal: any = {
-        initial: {
-            call: null,
-        },
-        open: {
-            response: null,
-        },
-        waiting: {
-            response: null,
-            call: false,
-        },
-        queue: {
-            backlog: [
-                //{request: 'test', promise: {resolve: null, reject: null}}
-            ],
-            active: [],
-        },
-    }
-
-    public async handlePortalResponse(data, res) {
-        let body = atob(data.response.body);
-        this.puth.logger.debug({
-            status: data.response.status,
-            contentType: data.response.contentType,
-            headers: data.response.headers,
-            body: body.length > 500 ? body.length : body,
-        }, `[handlePortalResponse] ${data.response.psuri}`);
-
-        let current = this.portal.queue.active[0];
-
-        let cache = this.psuriCache.get(current.psuri);
-        if (cache == undefined) {
-            throw new Error('TODO');
-        }
-        if (cache.handler == undefined) {
-            throw new Error('TODO');
-        }
-        this.psuriCache.delete(current.psuri);
-
-        let headers: Protocol.Fetch.HeaderEntry[] = [];
-        for (let header of Object.keys(data.response.headers)) {
-            let values = data.response.headers[header];
-            if (!Array.isArray(values)) values =  [values];
-            values.forEach(value => headers.push({name: header, value}));
-        }
-        this.puth.logger.debug({cache, handler: cache?.handler.toString(), status: data?.response?.status, body: body.length, headers}, 'dbg portal before handler');
-        await cache.handler(undefined, data.response.status, body, headers);
-        this.puth.logger.debug('dbg portal after handler');
-
-        this.portal.queue.active.shift();
-        if (this.portal.queue.active.length !== 0) {
-            this.puth.logger.debug('dbg portal queue not empty - returning next active');
-            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
-        }
-        if (this.portal.waiting.response != null) {
-            this.puth.logger.debug('dbg waiting for response - resolving');
-            let waiting = this.portal.waiting.response;
-            this.portal.waiting.response = null;
-            return res.resolve(waiting);
-        }
-        if (this.portal.waiting.call) {
-            this.puth.logger.debug('dbg resetting waiting call');
-            return res.resolve(await new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject}));
-        }
-
-        this.puth.logger.debug('dbg executing initial call - skipping queue');
-        return this.call(this.portal.initial.call, res, true);
-    }
-
-    public createServerRequest(portalRequest) {
-        return Return.ServerRequest(portalRequest).serialize();
     }
 
     private pageCDPSessions: Map<Page, WeakRef<CDPSession>> = new Map();
@@ -724,21 +581,12 @@ class Context extends Generic {
     // public async callRace(calls) {
     //     return [await Promise.race(calls.map(call => this.call(call)))];
     // }
+    
+    callStacks: Map<Page, CallStack> = new Map<Page, CallStack>();
 
-    public async call(packet, res, skipQueue = false) {
+    public call(packet: any, response: PromiseWithResolvers<unknown>) {
         this.puth.logger.debug(packet, 'Context call');
         this._lastActivity = Date.now();
-
-        if (!skipQueue && this.portal.queue.backlog.length !== 0) {
-            this.puth.logger.debug('offsetting packet...');
-            this.portal.initial.call = packet;
-            this.portal.queue.active = this.portal.queue.backlog;
-            this.portal.queue.backlog = [];
-
-            return res.resolve(this.createServerRequest(this.portal.queue.active[0]));
-        }
-
-        this.portal.open.response = res;
 
         let on = this.resolveOn(packet);
         // it's hideous, but it's better than 3 deep ifs imho
@@ -751,13 +599,11 @@ class Context extends Generic {
                         ? on
                         : on?.frame?.page());
 
-        if (page && this.isPageBlockedByDialog(page) && (on instanceof Browser && !['assertDialogOpened', 'typeInDialog', 'acceptDialog', 'dismissDialog', 'waitForDialog'].includes(packet.function))) {
-            return Return.ExpectationFailed('The page has an open dialog that blocks all function calls except those that interact with it.').serialize();
-        }
-
         // Turn object representations into the actual object
         packet.parameters = packet.parameters ? packet.parameters.map((item) => this.resolveIfCached(item)) : [];
-
+        
+        let call: Call = new Call(packet, response, on);
+        
         let type = Utils.resolveConstructorName(on);
         if (type) {
             // check for extension
@@ -769,206 +615,167 @@ class Context extends Generic {
                     addition = {func: addition};
                 }
 
-                // Call extension function and pass object as first parameter
-                return res.resolve(await this.handleCallApply(
-                    packet,
-                    page,
-                    extension,
-                    addition.func,
-                    [on, ...packet.parameters],
-                    addition.expects,
-                ));
+                call.overwriteOn(extension);
+                call.overwriteFn(addition.func);
+                call.prependParameters(on);
+                call.setExpects(addition.expects);
+            }
+        } else {
+            if (! on[packet.function]) {
+                return call.resolve({
+                    type: 'error',
+                    code: 'FunctionNotFound',
+                    message: `Function "${packet.function}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
+                });
             }
         }
-
-        if (! on[packet.function]) {
-            return {
-                type: 'error',
-                code: 'FunctionNotFound',
-                message: `Function "${packet.function}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
-            };
+        
+        if (page != null) {
+            let parentPage = on instanceof Browser ? on.page : page;
+            
+            let stack = this.callStacks.get(parentPage);
+            if (stack == null) {
+                stack = new CallStack(this, parentPage);
+                this.callStacks.set(page, stack);
+            }
+            call.setStack(stack);
+            call.setPage(page);
+            
+            return stack.call(call);
         }
 
-        return res.resolve(await this.handleCallApply(packet, page, on, on[packet.function], packet.parameters));
+        return this.handleCallApply(call);
     }
 
     // TODO Cleanup parameters and maybe unify handling in special object
-    private async handleCallApply(packet, page, on, func, parameters, expects = null) {
-        const command = await this.createCommandInstance(packet, on);
+    public async handleCallApply(call: Call): Promise<void> {
+        const command = await this.createCommandInstance(call.packet, call.on);
+        call.setCommand(command);
+        
         if (this.caches.dialog.size === 0) {
             // await this.puth.snapshotHandler.createBefore(this, page, command);
         }
 
-        this.portal.initial.call = null;
-        this.portal.waiting.call = true;
-
-        let p = new Promise((resolve, reject) => this.lastCallerPromise = {resolve, reject});
-
-        this.emitAsync('call:apply:before', {command, page})
-            .then(async () => {
-                try {
-                    // @ts-ignore
-                    let returnValue = await Promise.try(func.bind(on, ...parameters))
-                        .catch((error) => {
-                            // TODO handle puppeteer errors - should also be used when snapshotting
-                            if (error instanceof TargetCloseError) {
-                                this.puth.logger.error('TargetCloseError');
-                                return;
-                            }
-                            if (error.message.includes('Attempted to use detached Frame')) {
-                                this.puth.logger.error('Attempted to use detached Frame');
-                                return;
-                            }
-                            if (error.message.includes('Execution context was destroyed')) {
-                                this.puth.logger.error('Execution context was destroyed');
-                                return;
-                            }
-
-                            // this.puth.logger.debug('handleCallApply throwing');
-                            // TODO test if try also catches promise errors without this throw
-                            throw error;
-                        });
-
-                    if (command) {
-                        command.time.finished = Date.now();
-                        command.time.took = command.time.finished - command.time.started;
+        await this.emitAsync('call:apply:before', {command, page: call.page});
+        
+        try {
+            // @ts-ignore
+            let returnValue = await Promise.try(call.fn)
+                .catch((error) => {
+                    // TODO handle puppeteer errors - should also be used when snapshotting
+                    if (error instanceof TargetCloseError) {
+                        this.puth.logger.error('TargetCloseError');
+                        return;
                     }
-
-                    let response = await this.handleCallApplyAfter(packet, page, command, returnValue, expects, on);
-
-                    if (this.portal.queue.active.length !== 0) {
-                        this.puth.logger.debug('set waiting response');
-                        this.portal.waiting.response = response;
-                        this.portal.waiting.call = false;
-
+                    if (error.message.includes('Attempted to use detached Frame')) {
+                        this.puth.logger.error('Attempted to use detached Frame');
+                        return;
+                    }
+                    if (error.message.includes('Execution context was destroyed')) {
+                        this.puth.logger.error('Execution context was destroyed');
                         return;
                     }
 
-                    if (this.lastCallerPromise == null) {
-                        if (this.skipRunningCallResponse) {
-                            this.skipRunningCallResponse = false;
-                            this.portal.waiting.call = false;
-                            return;
-                        }
+                    // this.puth.logger.debug('handleCallApply throwing');
+                    // TODO test if try also catches promise errors without this throw
+                    throw error;
+                });
 
-                        this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
-                        throw new Error('Unexpected empty lastCallerPromise');
+            if (command) {
+                command.time.finished = Date.now();
+                command.time.took = command.time.finished - command.time.started;
+            }
+            
+            this.puth.logger.debug({ packet: call.packet }, '[Call apply returnValue]');
+            return call.result(
+                await this.handleCallApplyAfter(call, returnValue)
+            );
+        } catch (error: any) {
+            this.puth.logger.debug({ error, packet: call.packet }, '[Call apply error]');
+            // call event before any pushToCache call
+            await this.emitAsync('call:apply:error', {error, command, page: call.page});
+
+            if (this.shouldSnapshot && command) {
+                command.time.finished = Date.now();
+                command.time.took = command.time.finished - command.time.started;
+
+                this.puth.snapshotHandler.error(this, call.page, command, {
+                    type: 'error',
+                    specific: 'apply',
+                    error: {
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack,
+                    },
+                    time: Date.now(),
+                });
+                this.puth.snapshotHandler.pushToCache(this, command);
+            }
+
+            return call.result(
+                error instanceof ExpectationFailed
+                    ? error.getReturnInstance().serialize()
+                    : {
+                        type: 'error',
+                        code: 'MethodException',
+                        message: `Function ${call.packet.function} threw error: ${error.message}`,
+                        error,
                     }
-                    let lcp = this.lastCallerPromise;
-                    this.lastCallerPromise = undefined;
-                    this.portal.waiting.call = false;
-                    lcp.resolve(response);
-                } catch (error: any) {
-                    this.puth.logger.debug(error, '[Call apply error]')
-                    // call event before any pushToCache call
-                    await this.emitAsync('call:apply:error', {error, command, page});
-
-                    if (this.shouldSnapshot && command) {
-                        command.time.finished = Date.now();
-                        command.time.took = command.time.finished - command.time.started;
-
-                        this.puth.snapshotHandler.error(this, page, command, {
-                            type: 'error',
-                            specific: 'apply',
-                            error: {
-                                message: error.message,
-                                name: error.name,
-                                stack: error.stack,
-                            },
-                            time: Date.now(),
-                        });
-                        this.puth.snapshotHandler.pushToCache(this, command);
-                    }
-
-                    let response =
-                        error instanceof ExpectationFailed
-                            ? error.getReturnInstance().serialize()
-                            : {
-                                  type: 'error',
-                                  code: 'MethodException',
-                                  message: `Function ${packet.function} threw error: ${error.message}`,
-                                  error,
-                              };
-                    if (this.portal.queue.active.length != 0) {
-                        this.puth.logger.debug('set waiting response');
-                        this.portal.waiting.response = response;
-                        this.portal.waiting.call = false;
-
-                        return;
-                    }
-
-                    if (this.lastCallerPromise == null) {
-                        if (this.skipRunningCallResponse) {
-                            this.skipRunningCallResponse = false;
-                            this.portal.waiting.call = false;
-                            return;
-                        }
-
-                        this.puth.logger.error(packet, 'Unexpected empty lastCallerPromise')
-                        throw new Error('Unexpected empty lastCallerPromise');
-                    }
-                    let lcp = this.lastCallerPromise;
-                    this.lastCallerPromise = undefined;
-                    this.portal.waiting.call = false;
-                    lcp.resolve(response);
-                }
-            });
-            // .finally(() => this.portal.waiting.call = false);
-
-        return p;
+            );
+        }
     }
 
-    private async handleCallApplyAfter(packet, page, command, returnValue, expectation, on) {
+    private async handleCallApplyAfter(call: Call, returnValue: any) {
         let beforeReturn = async () => {
-            await this.emitAsync('call:apply:after', {command, page});
+            await this.emitAsync('call:apply:after', {command: call.command, page: call.page});
 
             // TODO Implement this in events. Event: 'function:call:return'
-            this.puth.snapshotHandler.pushToCache(this, command);
+            this.puth.snapshotHandler.pushToCache(this, call.command);
         };
 
-        if (expectation != null) {
-            if (expectation.test && ! expectation.test(returnValue)) {
+        if (call.expects != null) {
+            if (call.expects.test && ! call.expects.test(returnValue)) {
                 // call event before any pushToCache call
-                await this.emit('call:expectation:error', {expectation, command, page});
+                await this.emit('call:expectation:error', {expectation: call.expects, command: call.command, page: call.page});
 
                 if (this.shouldSnapshot) {
-                    this.puth.snapshotHandler.error(this, page, command, {
+                    this.puth.snapshotHandler.error(this, call.page, call.command, {
                         type: 'expectation',
-                        expectation,
+                        expectation: call.expects,
                         time: Date.now(),
                     });
-                    this.puth.snapshotHandler.pushToCache(this, command);
+                    this.puth.snapshotHandler.pushToCache(this, call.command);
                 }
 
                 return {
                     type: 'error',
                     code: 'expectationFailed',
-                    message: expectation.message,
+                    message: call.expects.message,
                 };
             }
 
-            if ('return' in expectation) {
+            if ('return' in call.expects) {
                 await beforeReturn();
 
-                return expectation.return(returnValue);
+                return call.expects.return(returnValue);
             }
 
-            if (expectation.returns) {
+            if (call.expects.returns) {
                 await beforeReturn();
 
-                let {type, represents} = expectation.returns;
+                let {type, represents} = call.expects.returns;
                 return this.returnCached(returnValue, type, represents);
             }
         }
 
         await beforeReturn();
 
-        return this.resolveReturnValue(packet, returnValue, on);
+        return this.resolveReturnValue(call, returnValue);
     }
 
     // TODO add return value resolver structure
-    resolveReturnValue(action, returnValue, on) {
-        if (returnValue === on) {
+    resolveReturnValue(call: Call, returnValue: any) {
+        if (returnValue === call.on) {
             return Return.Self().serialize();
         }
         if (returnValue === null) {
@@ -993,7 +800,7 @@ class Context extends Generic {
                 return Return.Value(returnValue).serialize();
             }
 
-            return Return.Array(returnValue.map(rv => this.resolveReturnValue(action, rv, on))).serialize();
+            return Return.Array(returnValue.map(rv => this.resolveReturnValue(call, rv))).serialize();
         }
         if (this.isValueSerializable(returnValue)) {
             return Return.Value(returnValue).serialize();
@@ -1158,6 +965,10 @@ class Context extends Generic {
 
     get lastActivity() {
         return this._lastActivity;
+    }
+    
+    get logger() {
+        return this.puth.logger;
     }
 
     getGroup() {

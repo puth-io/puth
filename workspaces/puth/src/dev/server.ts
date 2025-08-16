@@ -2,7 +2,7 @@ import {Puth, usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveVi
 
 const stringifyBrowsers = browsers => browsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ');
 
-const logger = makeLogger(true);
+const logger = makeLogger(true, 'info');
 logger.debug(`All browsers: ${stringifyBrowsers(allBrowserInstallations)}`);
 logger.debug(`Unusable browsers: ${stringifyBrowsers(unusableBrowserInstallations)}`);
 logger.debug(`Usable browsers: ${stringifyBrowsers(usableBrowserInstallations)}`);

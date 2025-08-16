@@ -46,8 +46,8 @@ export class Puth {
     #logger: BaseLogger;
     #emitter: Emitter<PuthEvents>;
     #browserHandler: IBrowserHandler;
-    #websocketHandler;
-    #snapshotHandler;
+    #websocketHandler: WebsocketHandler;
+    #snapshotHandler: SnapshotHandler;
     #instancePlugins: PuthInstancePlugin[] = [];
     #contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
     #contexts: { [key: string]: Context } = {};
@@ -135,7 +135,11 @@ export class Puth {
         }
 
         const json = handler => event => event.req.json().then(handler);
-        const defer = handler => new Promise((resolve, reject) => handler({resolve, reject}));
+        const defer = handler => {
+            let resolvers = Promise.withResolvers();
+            handler(resolvers);
+            return resolvers.promise;
+        }
 
         h3.post('/context', json(data => this.contextCreate(data)));
         h3.patch('/context/call', json(data => defer(handle => this.contextCall(data, handle))));
@@ -342,15 +346,15 @@ export class Puth {
         return this.options?.installedBrowser;
     }
 
-    get browserHandler() {
+    get browserHandler(): IBrowserHandler {
         return this.#browserHandler;
     }
 
-    get websocketHandler() {
+    get websocketHandler(): WebsocketHandler {
         return this.#websocketHandler;
     }
 
-    get snapshotHandler() {
+    get snapshotHandler(): SnapshotHandler {
         return this.#snapshotHandler;
     }
 
