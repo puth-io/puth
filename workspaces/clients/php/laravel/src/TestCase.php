@@ -180,8 +180,6 @@ abstract class TestCase extends FoundationTestCase
         $kernel->terminate($request, $response);
 
         $testResponse = $this->createTestResponse($response, $request);
-
-        $body = '';
         if ($testResponse->baseResponse instanceof StreamedResponse
             || $testResponse->baseResponse instanceof StreamedJsonResponse) {
             $body = $testResponse->streamedContent();

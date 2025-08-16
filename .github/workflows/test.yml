@@ -40,58 +40,14 @@ jobs:
       - name: test
         run: npm run test --workspace workspaces/puth
 
-#  php-client:
-#    needs: [test-puth-node]
-#    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: true
-#      matrix:
-#        php: [ 8.2, 8.3, 8.4 ]
-#    name: PHP ${{ matrix.php }}
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: actions/setup-node@v3
-#        with:
-#          node-version: 24
-#      - id: cache-npm
-#        uses: actions/cache@v4
-#        with:
-#          key: node-${{ hashFiles('**/package-lock.json') }}
-#          path: |
-#            /home/runner/.npm
-#            workspaces/puth/.cache
-#      - id: cache-composer
-#        uses: actions/cache@v4
-#        with:
-#          key: composer-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/client/composer.json') }}
-#          path: /root/.cache/composer/files
-#      - name: setup php & composer
-#        uses: shivammathur/setup-php@v2
-#        with:
-#          php-version: ${{ matrix.php }}
-#          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
-#          tools: composer:v2
-#          coverage: none
-#      - name: composer update
-#        working-directory: workspaces/clients/php/client
-#        run: composer update --prefer-stable --no-interaction --no-suggest
-#      - name: install & build
-#        run: |
-#          npm ci
-#          npm run build --workspace workspaces/gui
-#          npm run build --workspace workspaces/puth
-#      - name: download browser
-#        run: npm run ci:browser:install --workspace workspaces/puth
-#      - name: test
-#        run: |
-#          cd workspaces/puth && bin/puth.js start &
-#          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-#          cd workspaces/clients/php/client && ./vendor/bin/phpunit
-
-  test-image:
-    #needs: [test-puth-node]
-    name: test image
+  php-client:
+    needs: [test-puth-node]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [ 8.2, 8.3, 8.4 ]
+    name: PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -104,40 +60,38 @@ jobs:
           path: |
             /home/runner/.npm
             workspaces/puth/.cache
-      - name: build
+      - id: cache-composer
+        uses: actions/cache@v4
+        with:
+          key: composer-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/client/composer.json') }}
+          path: /root/.cache/composer/files
+      - name: setup php & composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
+          tools: composer:v2
+          coverage: none
+      - name: composer update
+        working-directory: workspaces/clients/php/client
+        run: composer update --prefer-stable --no-interaction --no-suggest
+      - name: install & build
         run: |
           npm ci
-          npm run build
-          ./docker/pack.sh
+          npm run build --workspace workspaces/gui
+          npm run build --workspace workspaces/puth
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
-      - name: build image
-        run: docker build -f docker/Dockerfile -t puth-test-image .
-      - name: test image
+      - name: test
         run: |
-          docker run --name=puth --detach --network host puth-test-image
+          cd workspaces/puth && bin/puth.js start &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
-          docker stop puth
-      - name: container logs
-        if: ${{ failure() }}
-        run: docker logs puth
+          cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
-#  php-laravel:
+#  test-image:
 #    needs: [test-puth-node]
+#    name: test image
 #    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: true
-#      matrix:
-#        php: [8.2, 8.3, 8.4]
-#        laravel: [11, 12]
-#        phpunit: [11, 12]
-#        collision: [8]
-#        exclude:
-#          - php: 8.2
-#            phpunit: 12
-#
-#    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
 #    steps:
 #      - uses: actions/checkout@v4
 #      - uses: actions/setup-node@v3
@@ -150,57 +104,103 @@ jobs:
 #          path: |
 #            /home/runner/.npm
 #            workspaces/puth/.cache
-#      - id: cache-composer
-#        uses: actions/cache@v4
-#        with:
-#          key: composer-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/client/composer.json') }}
-#          path: /root/.cache/composer/files
-#      - name: setup php & composer
-#        uses: shivammathur/setup-php@v2
-#        with:
-#          php-version: ${{ matrix.php }}
-#          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
-#          tools: composer:v2
-#          coverage: none
-#      - name: composer install
-#        working-directory: workspaces/clients/php/workspaces/laravel
-#        run: |
-#          composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
-#          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
-#          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
-#          composer update --prefer-stable --no-interaction --no-suggest
-#      - name: npm install & build
+#      - name: build
 #        run: |
 #          npm ci
-#          npm run build --workspace workspaces/gui
-#          npm run build --workspace workspaces/puth
+#          npm run build
+#          ./docker/pack.sh
 #      - name: download browser
 #        run: npm run ci:browser:install --workspace workspaces/puth
-#      - name: test
+#      - name: build image
+#        run: docker build -f docker/Dockerfile -t puth-test-image .
+#      - name: test image
 #        run: |
-#          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
-#          cd workspaces/clients/php/workspaces/laravel
-#          cp .env.example .env
-#          php artisan serve > storage/logs/server.log 2>&1 &
+#          docker run --name=puth --detach --network host puth-test-image
 #          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-#          php artisan migrate --force
-#          php artisan test --without-tty
-#        env:
-#          RUNNING_IN_CI: true
-#      - name: Collect logs
-#        if: failure()
-#        run: |
-#          mv workspaces/clients/php/workspaces/laravel/storage/logs/server.log workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-#          mv workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-#          mv workspaces/puth/puth.log workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-#          mv workspaces/puth/puth.cdp.log workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-#      - name: Upload logs
-#        if: failure()
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: test-logs
-#          path: |
-#            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
-#            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
-#            workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
-#            workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+#          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
+#          docker stop puth
+#      - name: container logs
+#        if: ${{ failure() }}
+#        run: docker logs puth
+
+  php-laravel:
+    needs: [test-puth-node]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [8.2, 8.3, 8.4]
+        laravel: [11, 12]
+        phpunit: [11, 12]
+        collision: [8]
+        exclude:
+          - php: 8.2
+            phpunit: 12
+
+    name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 24
+      - id: cache-npm
+        uses: actions/cache@v4
+        with:
+          key: node-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            /home/runner/.npm
+            workspaces/puth/.cache
+      - id: cache-composer
+        uses: actions/cache@v4
+        with:
+          key: composer-php-${{ matrix.php }}-composer-${{ hashFiles('workspaces/clients/php/client/composer.json') }}
+          path: /root/.cache/composer/files
+      - name: setup php & composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
+          tools: composer:v2
+          coverage: none
+      - name: composer install
+        working-directory: workspaces/clients/php/workspaces/laravel
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
+          composer require "phpunit/phpunit:${{ matrix.phpunit }}.*" --no-interaction --no-update --dev
+          composer require "nunomaduro/collision:${{ matrix.collision }}.*" --no-interaction --no-update --dev
+          composer update --prefer-stable --no-interaction --no-suggest
+      - name: npm install & build
+        run: |
+          npm ci
+          npm run build --workspace workspaces/gui
+          npm run build --workspace workspaces/puth
+      - name: download browser
+        run: npm run ci:browser:install --workspace workspaces/puth
+      - name: test
+        run: |
+          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
+          cd workspaces/clients/php/workspaces/laravel
+          cp .env.example .env
+          php artisan serve > storage/logs/server.log 2>&1 &
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          php artisan migrate --force
+          php artisan test --without-tty
+        env:
+          RUNNING_IN_CI: true
+      - name: Collect logs
+        if: failure()
+        run: |
+          mv workspaces/clients/php/workspaces/laravel/storage/logs/server.log workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+          mv workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+          mv workspaces/puth/puth.log workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+          mv workspaces/puth/puth.cdp.log workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: |
+            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log

@@ -122,7 +122,7 @@ export class Browser {
         return new Browser(this.browserRefContext, site ?? this.site);
     }
 
-    private get page() {
+    public get page() {
         if (this.site instanceof Page) {
             return this.site;
         }
