@@ -15,7 +15,7 @@ jobs:
           token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: 'Make dev release'
         run: ./bin/make-laravel-release.js dev-master
       - name: 'Commit release'

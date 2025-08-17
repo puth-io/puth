@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: build image
         run: |
           docker build --file docker/Dockerfile.prod --build-arg TAG=$(echo $GITHUB_REF_NAME | cut -c6-) --tag puth-test-image .
@@ -51,7 +51,7 @@ jobs:
           token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: split
         run: ./bin/php-split.sh 'workspaces/clients/php/client' php
       - name: create tag
@@ -71,7 +71,7 @@ jobs:
           token: ${{ secrets.PUTH_SPLIT_PUTH_TOKEN }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: fix package composer.json
         run: ./bin/make-laravel-release.js version-from-package
       - name: commit release

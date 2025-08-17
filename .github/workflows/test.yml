@@ -21,7 +21,7 @@ jobs:
     name: puth | node ${{ matrix.node-version }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '${{ matrix.node-version }}'
       - id: cache
@@ -50,7 +50,7 @@ jobs:
     name: PHP ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
       - id: cache-npm
@@ -140,7 +140,7 @@ jobs:
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
       - id: cache-npm
