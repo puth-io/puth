@@ -17,7 +17,7 @@ export const envs: [string, () => [any, number?]][] = [
 
 export const testFn = env => testBase.extend({
     puth: async ({ task }, use) => {
-        let remoteInstance;
+        let remoteInstance: Puth;
         const config = env[1]();
         
         if (env[0] === 'remote' && !process.env.PUTH_URL) {
@@ -43,7 +43,7 @@ export const testFn = env => testBase.extend({
         
         await use({ remote, context, browser, page, assertHandleEquals });
         
-        if (env[0] === 'remote') {
+        if (env[0] === 'remote' && !process.env.PUTH_URL) {
             await remoteInstance.destroy();
         } else {
             await remote.destroy();
