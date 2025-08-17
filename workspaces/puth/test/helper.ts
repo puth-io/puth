@@ -45,7 +45,8 @@ export const testFn = env => testBase.extend({
         
         if (env[0] === 'remote' && !process.env.PUTH_URL) {
             await remoteInstance.destroy();
-        } else {
+        }
+        if (env[0] === 'local') {
             await remote.destroy();
         }
     },
