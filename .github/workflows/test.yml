@@ -88,40 +88,40 @@ jobs:
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
-#  test-image:
-#    needs: [test-puth-node]
-#    name: test image
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: actions/setup-node@v3
-#        with:
-#          node-version: 24
-#      - id: cache-npm
-#        uses: actions/cache@v4
-#        with:
-#          key: node-${{ hashFiles('**/package-lock.json') }}
-#          path: |
-#            /home/runner/.npm
-#            workspaces/puth/.cache
-#      - name: build
-#        run: |
-#          npm ci
-#          npm run build
-#          ./docker/pack.sh
-#      - name: download browser
-#        run: npm run ci:browser:install --workspace workspaces/puth
-#      - name: build image
-#        run: docker build -f docker/Dockerfile -t puth-test-image .
-#      - name: test image
-#        run: |
-#          docker run --name=puth --detach --network host puth-test-image
-#          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-#          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
-#          docker stop puth
-#      - name: container logs
-#        if: ${{ failure() }}
-#        run: docker logs puth
+  test-image:
+    needs: [test-puth-node]
+    name: test image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - id: cache-npm
+        uses: actions/cache@v4
+        with:
+          key: node-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            /home/runner/.npm
+            workspaces/puth/.cache
+      - name: build
+        run: |
+          npm ci
+          npm run build
+          ./docker/pack.sh
+      - name: download browser
+        run: npm run ci:browser:install --workspace workspaces/puth
+      - name: build image
+        run: docker build -f docker/Dockerfile -t puth-test-image .
+      - name: test image
+        run: |
+          docker run --name=puth --detach --network host puth-test-image
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
+          docker stop puth
+      - name: container logs
+        if: ${{ failure() }}
+        run: docker logs puth
 
   php-laravel:
     needs: [test-puth-node]
