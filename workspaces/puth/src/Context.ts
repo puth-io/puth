@@ -164,7 +164,7 @@ class Context extends Generic {
     }
 
     // @codegen
-    public async createBrowserShim(options = {}, shimOptions = {}): Promise<Browser> {
+    public async createBrowserShim(options: {} = {}, shimOptions: {} = {}): Promise<Browser> {
         return await this.createBrowserRef(options)
             .then(brc => brc.context.pages()
                 .then(pages => pages.length > 0 ? pages[0] : brc.context.newPage())

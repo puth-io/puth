@@ -1,6 +1,6 @@
 package io.puth;
 
-import java.util.ArrayList;
+import io.puth.remote.Browser;
 import java.util.Map;
 
 public class Main {
@@ -13,12 +13,13 @@ public class Main {
                 "debug", true
         ));
 
-        CdpBrowser browser = context.createBrowser();
-        ArrayList<RemoteObject> pages = (ArrayList<RemoteObject>) browser.callFunction("pages", new Object[]{});
-        RemoteObject page = pages.getFirst();
+        Browser browser = context.createBrowserShim();
 
-        page.callFunction("visit", new Object[]{"https://puth.io"});
+        browser.visit("https://puth.io")
+                .assertSee("Puth's playground")
+                .assertVisible("#querying-get");
 
-        System.out.println(page.callFunction("url", new Object[]{}));
+        System.out.println(browser.bounds());
+        System.out.println(browser.url());
     }
 }
