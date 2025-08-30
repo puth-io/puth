@@ -31,10 +31,18 @@ public class RemoteObject {
         this.context = context;
     }
 
-    protected Object callFunction(String function, Object[] parameters) {
+    protected Object callFunc(String function) {
+        return this.callFunc(function, new Object[]{});
+    }
+
+    protected Object callFunc(String function, Object[] parameters) {
         try {
             List<Object> serializedParameters = new ArrayList<>();
             for (Object param : parameters) {
+                if (param == null) {
+                    continue;
+                }
+                
                 if (param instanceof RemoteObject) {
                     serializedParameters.add(((RemoteObject) param).serialize());
                 } else {
@@ -48,12 +56,6 @@ public class RemoteObject {
             packet.put("id", this.id);
             packet.put("function", function);
             packet.put("parameters", serializedParameters);
-
-            if (context.isAccumulateCalls()) {
-                context.getAccumulatedCalls().add(packet);
-                return true;
-//                return new DontProxy(); // You need to implement DontProxy or adjust the logic
-            }
 
             if (context.isDebug()) {
                 log("call: " + function);
@@ -74,49 +76,6 @@ public class RemoteObject {
             });
         } catch (Exception e) {
             throw new RuntimeException("Error in callFunction: " + e.getMessage(), e);
-        }
-    }
-
-    public List<Object> sendAccumulatedCalls(String type) {
-        try {
-            if (context.isDebug()) {
-                log("call multiple");
-                log("with: " + objectMapper.writeValueAsString(context.getAccumulatedCalls()));
-            }
-
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("context", context.serialize());
-            requestBody.put("calls", context.getAccumulatedCalls());
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .uri(new URI(context.getBaseUrl() + "/context/call/" + type))
-                    .header("Content-Type", "application/json")
-                    .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
-                    .build();
-
-            HttpResponse<String> response = context.getClient().send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (context.isDebug()) {
-                log("return: " + response.body());
-            }
-
-            List<Map<String, Object>> parts = objectMapper.readValue(response.body(), new TypeReference<>() {});
-            List<Object> returnValues = new ArrayList<>();
-
-            for (int i = 0; i < parts.size(); i++) {
-                Map<String, Object> part = parts.get(i);
-                Map<String, Object> call = context.getAccumulatedCalls().get(i);
-
-                returnValues.add(parseGeneric(part, new Object[]{call.get("function"), call.get("parameters")}, (body, args) -> {
-                    throw new Exception("Error: " + body.get("message"));
-                }));
-            }
-
-            context.getAccumulatedCalls().clear();
-            return returnValues;
-        } catch (Exception e) {
-            throw new RuntimeException("Error in sendAccumulatedCalls: " + e.getMessage(), e);
         }
     }
 
@@ -227,7 +186,7 @@ public class RemoteObject {
         // Use reflection to instantiate the class based on the 'represents' string
         try {
             // Define the package where your binding classes are located
-            String packageName = "io.puth";
+            String packageName = "io.puth.remote";
             String className = packageName + "." + represents;
             log("Classpath " + className);
 
