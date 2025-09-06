@@ -1,4 +1,4 @@
-package io.puth;
+package io.puth.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +23,13 @@ public class RemoteObject {
     protected static final ObjectMapper objectMapper = new ObjectMapper();
     protected static final Logger logger = Logger.getLogger(RemoteObject.class.getName());
 
+    public interface PortalRequestHandler {
+        /**
+         * { "type":"PortalResponse", "status": 200, "headers": Map<String, String>, "body": String }
+         */
+        Map<String, Object> handlePortalRequest(Map<String, Object> request);
+    }
+
     public RemoteObject(String id, String type, String represents, RemoteObject parent, Context context) {
         this.id = id;
         this.type = type;
@@ -39,10 +46,7 @@ public class RemoteObject {
         try {
             List<Object> serializedParameters = new ArrayList<>();
             for (Object param : parameters) {
-                if (param == null) {
-                    continue;
-                }
-                
+                if (param == null) continue;
                 if (param instanceof RemoteObject) {
                     serializedParameters.add(((RemoteObject) param).serialize());
                 } else {
@@ -72,7 +76,7 @@ public class RemoteObject {
             HttpResponse<InputStream> response = context.getClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             return handleResponse(response, new Object[]{function, parameters}, (body, args) -> {
-                throw new Exception("Error: " + body.get("message"));
+                throw new Exception("[Server] " + String.valueOf(body.get("message")));
             });
         } catch (Exception e) {
             throw new RuntimeException("Error in callFunction: " + e.getMessage(), e);
@@ -94,7 +98,7 @@ public class RemoteObject {
                     .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
                     .build();
 
-            HttpResponse<String> response = context.getClient().send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<InputStream> response = context.getClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             log("get: " + property);
 
@@ -123,7 +127,8 @@ public class RemoteObject {
             }
 
             InputStream bodyStream = (InputStream) response.body();
-            Map<String, Object> body = objectMapper.readValue(bodyStream, new TypeReference<>() {});
+            Map<String, Object> body = objectMapper.readValue(bodyStream, new TypeReference<>() {
+            });
 
             if (body.isEmpty()) {
                 return this;
@@ -135,8 +140,28 @@ public class RemoteObject {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected Object parseGeneric(Map<String, Object> generic, Object[] arguments, ThrowingBiFunction<Map<String, Object>, Object[], Object> onError) throws Exception {
-        String type = (String) generic.get("type");
+        Object typeObj = generic.get("type");
+        if (typeObj == null) throw new RuntimeException("Server response: body.type not defined!");
+        String type = String.valueOf(typeObj);
+
+        // Handle meta.assertions (if provided) — no-op hook (kept for parity with PHP)
+        Map<String, Object> meta = (Map<String, Object>) generic.get("meta");
+        if (meta != null && meta.containsKey("assertions")) {
+            // If your test framework supports counting assertions, hook it up here.
+        }
+
+        if ("ServerRequest".equals(type)) {
+            return handlePortalRequestResponse(generic, arguments, onError);
+        }
+
+        if ("ExpectationFailed".equals(type)) {
+            handleExpectationFailed(generic, arguments);
+            return null; // never reached
+        } else if ("error".equals(type)) {
+            return onError.apply(generic, arguments);
+        }
 
         switch (type) {
             case "GenericValue":
@@ -144,67 +169,154 @@ public class RemoteObject {
                 return generic.get("value");
             case "GenericObject":
                 return resolveRemoteObject(generic);
-            case "GenericObjects":
+            case "GenericObjects": {
                 List<Map<String, Object>> values = (List<Map<String, Object>>) generic.get("value");
                 List<Object> objects = new ArrayList<>();
                 for (Map<String, Object> item : values) {
                     objects.add(resolveRemoteObject(item));
                 }
                 return objects;
-            case "GenericArray":
+            }
+            case "GenericArray": {
                 List<Map<String, Object>> arrayValues = (List<Map<String, Object>>) generic.get("value");
                 List<Object> arrayObjects = new ArrayList<>();
                 for (Map<String, Object> item : arrayValues) {
                     arrayObjects.add(parseGeneric(item, arguments, onError));
                 }
                 return arrayObjects;
+            }
             case "GenericNull":
                 return null;
             case "GenericSelf":
             case "GenericUndefined":
+            case "Dialog":
                 return this;
             case "PuthAssertion":
                 return generic;
-            case "error":
-                return onError.apply(generic, arguments);
             default:
-                return this;
+                throw new RuntimeException("Unexpected generic type " + type);
+        }
+    }
+
+    /**
+     * Throws an assertion-style exception if available (JUnit 5 or 4), otherwise a generic RuntimeException.
+     */
+    @SuppressWarnings("unchecked")
+    private void handleExpectationFailed(Map<String, Object> generic, Object[] arguments) {
+        String message = "Unknown error";
+        try {
+            Map<String, Object> value = (Map<String, Object>) generic.get("value");
+            if (value != null && value.get("message") != null) {
+                message = String.valueOf(value.get("message"));
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Prefer JUnit 5 if present
+        try {
+            Class<?> j5 = Class.forName("org.opentest4j.AssertionFailedError");
+            RuntimeException ex = (RuntimeException) j5.getConstructor(String.class).newInstance(message);
+            throw ex;
+        } catch (Throwable ignored) { /* fall through */ }
+
+        // Fallback: old JUnit
+        try {
+            Class<?> j4 = Class.forName("junit.framework.AssertionFailedError");
+            RuntimeException ex = (RuntimeException) j4.getConstructor(String.class).newInstance(message);
+            throw ex;
+        } catch (Throwable ignored) { /* fall through */ }
+
+        throw new RuntimeException(message);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object handlePortalRequestResponse(Map<String, Object> generic, Object[] arguments, ThrowingBiFunction<Map<String, Object>, Object[], Object> onError) throws Exception {
+        log("server-request: handling");
+
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("type", "PortalResponse");
+
+        try {
+            // Extract incoming portal request
+            Map<String, Object> value = (Map<String, Object>) generic.get("value");
+            Map<String, Object> request = value != null ? (Map<String, Object>) value.get("request") : null;
+
+            PortalRequestHandler handler = null;
+            // If Context provides a handler, use it
+            try {
+                handler = context.getPortalRequestHandler();
+            } catch (Throwable ignored) {
+                throw new RuntimeException("Portal requests not supported.");
+            }
+            if (handler == null) {
+                throw new RuntimeException("Portal requests not supported.");
+            }
+
+            if (request != null) {
+                responseMap = handler.handlePortalRequest(request);
+                if (responseMap == null) responseMap = new HashMap<>();
+            }
+
+            // Always include psuri from request for routing
+            if (request != null && request.get("psuri") != null) {
+                responseMap.put("psuri", request.get("psuri"));
+            }
+
+            if (context.isDebug()) {
+                Map<String, Object> debug = new HashMap<>();
+                debug.put("status", responseMap.get("status"));
+                debug.put("headers", responseMap.get("headers"));
+                Object body = responseMap.get("body");
+                String bodyPreview = body == null ? null : String.valueOf(body);
+                if (bodyPreview != null && bodyPreview.length() > 500) bodyPreview = bodyPreview.substring(0, 500);
+                debug.put("body", bodyPreview);
+                log("server-request: response: " + debug);
+            }
+
+            // Send response back to server
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("context", context.serialize());
+            payload.put("response", responseMap);
+
+            HttpRequest portalReq = HttpRequest.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .uri(new URI(context.getBaseUrl() + "/portal/response"))
+                    .header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                    .build();
+
+            HttpResponse<InputStream> portalRes = context.getClient().send(portalReq, HttpResponse.BodyHandlers.ofInputStream());
+
+            return handleResponse(portalRes, arguments, onError);
+        } catch (Throwable t) {
+            // Surface any error via onError path
+            Map<String, Object> err = new HashMap<>();
+            err.put("type", "error");
+            err.put("message", t.getMessage());
+            return onError.apply(err, arguments);
         }
     }
 
     /**
      * Resolves and creates the appropriate RemoteObject subclass based on the 'represents' value.
-     *
-     * @param generic The generic map containing object details.
-     * @return An instance of a subclass of RemoteObject.
      */
     private RemoteObject resolveRemoteObject(Map<String, Object> generic) {
-        String id = (String) generic.get("id");
-        String type = (String) generic.get("type");
-        String represents = (String) generic.get("represents");
+        String id = String.valueOf(generic.get("id"));
+        String type = String.valueOf(generic.get("type"));
+        String represents = String.valueOf(generic.get("represents"));
 
-        // Use reflection to instantiate the class based on the 'represents' string
         try {
-            // Define the package where your binding classes are located
-            String packageName = "io.puth.remote";
+            String packageName = "io.puth.client.remote";
             String className = packageName + "." + represents;
             log("Classpath " + className);
 
-            // Load the class
             Class<?> clazz = Class.forName(className);
-
-            // Ensure the class is a subclass of RemoteObject
             if (!RemoteObject.class.isAssignableFrom(clazz)) {
                 throw new RuntimeException("Class " + className + " does not extend RemoteObject");
             }
 
-            // Get the constructor that matches RemoteObject's constructor
             Constructor<?> constructor = clazz.getConstructor(String.class, String.class, String.class, RemoteObject.class, Context.class);
-
-            // Instantiate the class
-            RemoteObject obj = (RemoteObject) constructor.newInstance(id, type, represents, this, this.context);
-
-            return obj;
+            return (RemoteObject) constructor.newInstance(id, type, represents, this, this.context);
         } catch (ClassNotFoundException e) {
             logger.warning("Class not found for represents: " + represents + ". Falling back to RemoteObject.");
             return new RemoteObject(id, type, represents, this, context);

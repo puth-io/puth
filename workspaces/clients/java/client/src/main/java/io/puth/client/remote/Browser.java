@@ -1,13 +1,15 @@
-package io.puth.remote;
+package io.puth.client.remote;
 
-import io.puth.RemoteObject;
+import io.puth.client.RemoteObject;
+import io.puth.client.Context;
+
 import java.util.Map;
 
 /**
 
 */
 public class Browser extends RemoteObject {
-    public Browser(String id, String type, String represents, RemoteObject parent, io.puth.Context context) {
+    public Browser(String id, String type, String represents, RemoteObject parent, Context context) {
         super(id, type, represents, parent, context);
     }
 

@@ -1,6 +1,6 @@
-package io.puth;
+package io.puth.client;
 
-import io.puth.remote.Browser;
+import io.puth.client.remote.Browser;
 import java.util.Map;
 
 public class Main {

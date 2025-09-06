@@ -1,4 +1,4 @@
-package io.puth;
+package io.puth.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +8,7 @@ import java.net.http.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class Context extends io.puth.remote.Context {
+public class Context extends io.puth.client.remote.Context {
     private final String baseUrl;
     private final Map<String, Object> options;
 
@@ -37,7 +37,8 @@ public class Context extends io.puth.remote.Context {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                Map<String, Object> responseBody = objectMapper.readValue(response.body(), new TypeReference<>() {});
+                Map<String, Object> responseBody = objectMapper.readValue(response.body(), new TypeReference<>() {
+                });
 
                 this.id = (String) responseBody.get("id");
                 this.type = (String) responseBody.get("type");
@@ -51,6 +52,16 @@ public class Context extends io.puth.remote.Context {
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize Context: " + e.getMessage(), e);
         }
+    }
+
+    private RemoteObject.PortalRequestHandler portalRequestHandler;
+
+    public RemoteObject.PortalRequestHandler getPortalRequestHandler() {
+        return portalRequestHandler;
+    }
+
+    public void setPortalRequestHandler(RemoteObject.PortalRequestHandler h) {
+        this.portalRequestHandler = h;
     }
 
     public boolean destroy(Map<String, Object> options) {
