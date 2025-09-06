@@ -23,6 +23,14 @@ public class Context extends RemoteObject {
         return (Browser) this.callFunc("createBrowserShim", new Object[]{options, shimOptions});
     }
 
+    public boolean destroy() {
+        return this.destroy(Map.of());
+    }
+
+    public boolean destroy(Object options) {
+        return (boolean) this.callFunc("destroy", new Object[]{options});
+    }
+
     public Object[] getSnapshotsByType(Object type) {
         return (Object[]) this.callFunc("getSnapshotsByType", new Object[]{type});
     }
@@ -42,6 +50,5 @@ public class Context extends RemoteObject {
     public String saveTemporaryFile(Object name, Object content) {
         return (String) this.callFunc("saveTemporaryFile", new Object[]{name, content});
     }
-
 
 }

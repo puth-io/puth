@@ -108,7 +108,10 @@ export const NAME_TRANSLATION = {
         },
     },
     java: {
-        ignore: ['value'],
+        ignore: [
+            'value',
+            'evaluate',
+        ],
         classes: {
             Browser: {
                 appendMethods: [
@@ -123,6 +126,22 @@ export const NAME_TRANSLATION = {
                     '    public Browser keys(String selector, String keys) {',
                     '        return this.keys(selector, new String[]{keys});',
                     '    }',
+                    '',
+                    '   public Object evaluate(String pageFunction) {',
+                    '       return this.evaluate(pageFunction, new Object[]{});',
+                    '   }',
+                    '',
+                    '   public Object evaluate(String pageFunction, Object[] args) {',
+                    '       return (Object) this.callFunc("evaluate", new Object[]{pageFunction, args});',
+                    '   }',
+                    '',
+                    '   public Object[] evaluate(String[] pageFunction) {',
+                    '       return this.evaluate(pageFunction, new Object[]{});',
+                    '   }',
+                    '',
+                    '   public Object[] evaluate(String[] pageFunction, Object[] args) {',
+                    '       return (Object[]) this.callFunc("evaluate", new Object[]{pageFunction, args});',
+                    '   }',
                 ],
             },
         },
@@ -648,7 +667,7 @@ function emitPHPClass(cls) {
 
 import {generate as generateJava} from './codegen/java.js';
 
-// classes.forEach(c => emitPHPClass(c));
+classes.forEach(c => emitPHPClass(c));
 
 generateJava();
 

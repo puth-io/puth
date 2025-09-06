@@ -220,11 +220,15 @@ public class AllMethodsTest extends BaseTest {
     }
 
     @Test
-    void test_wip() {
-        browser.visit("https://playground.puth.dev/")
-                .assertSee("Puth's playground")
-                .evaluate("setTimeout(_ => window.location.href = \"https://puth.io\", 250)");
-        browser.assertUrlIs("https://puth.io/");
+    void test_wait_for_function_target_change() {
+        var first = "https://playground.puth.dev/first/second?param1=abc#starts-1234";
+        var second = "https://playground.puth.dev/";
+
+        browser.visit(first)
+                .assertUrlIs(first)
+                .evaluate(String.format("setTimeout(_ => window.location.href = '%s', 250)", second));
+        browser.assertUrlIs(second)
+                .assertSee("Puth's playground");
     }
 
     @Test

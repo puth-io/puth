@@ -23,7 +23,7 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "setTimeout"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter timeout {"type":"int","isOptional":false}
      */
     public function setTimeout(int $timeout): Browser
@@ -34,7 +34,7 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "setFunctionTimeoutMultiplier"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter timeout {"type":"int","isOptional":false}
      */
     public function setFunctionTimeoutMultiplier(int $timeout): Browser
@@ -331,6 +331,18 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "clickablePoint"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["object"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter offset {"type":"Offset","isOptional":true}
+     */
+    public function clickablePoint(string $selector, mixed $offset): mixed
+    {
+        return $this->callFunc('clickablePoint', [$selector, $offset]);
+    }
+
+    /**
      * Scroll screen to element at the given selector.
      * 
      * @debug-gen-original-name "scrollTo"
@@ -357,7 +369,7 @@ class Browser extends RemoteObject
 
     /**
      * @debug-gen-original-name "quit"
-     * @debug-gen-original-is-async false
+     * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["void"]
      */
     public function quit(): void
@@ -438,7 +450,7 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "viewport"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["Viewport","null"]
+     * @debug-gen-original-returns ["object"]
      */
     public function viewport(): mixed
     {
@@ -934,11 +946,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["void"]
      * @debug-gen-original-parameter pageFunction {"type":"any","isOptional":false}
-     * @debug-gen-original-parameter args {"type":"any[]","isOptional":false}
-     * @debug-gen-original-parameter message {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter args {"type":"any[]","isOptional":false,"initializer":{"type":"array","members":[]}}
+     * @debug-gen-original-parameter message {"type":"string|null","isOptional":false,"initializer":{"type":"null"}}
      * @debug-gen-original-parameter options {"type":"object","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function _waitUntil(mixed $pageFunction, array $args, string $message, mixed $options = []): void
+    public function _waitUntil(mixed $pageFunction, array $args = [], mixed $message = null, mixed $options = []): void
     {
         $this->callFunc('waitUntil', [$pageFunction, $args, $message, $options]);
     }

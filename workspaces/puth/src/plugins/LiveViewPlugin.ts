@@ -120,6 +120,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
                     index: 0,
                 },
                 frame,
+                initiator: 'lvp_psfa',
             });
         };
         client.on('Page.screencastFrame', handler);

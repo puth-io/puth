@@ -64,38 +64,34 @@ public class Context extends io.puth.client.remote.Context {
         this.portalRequestHandler = h;
     }
 
-    public boolean destroy() {
-        return this.destroy(Map.of());
-    }
-
-    public boolean destroy(Map<String, Object> options) {
-        try {
-            // Merge options with serialized context
-            Map<String, Object> requestBody = new HashMap<>(options);
-            requestBody.putAll(serialize());
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .uri(new URI(baseUrl + "/context"))
-                    .header("Content-Type", "application/json")
-                    // Java's HttpClient doesn't support DELETE with body directly, use method() instead
-                    .method("DELETE", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                log("destroyed");
-                return true;
-            } else if (response.statusCode() == 404) {
-                return true; // Already destroyed or not found
-            } else {
-                throw new RuntimeException("Failed to destroy context, status code: " + response.statusCode());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to destroy context: " + e.getMessage(), e);
-        }
-    }
+//    public boolean destroy(Map<String, Object> options) {
+//        try {
+//            // Merge options with serialized context
+//            Map<String, Object> requestBody = new HashMap<>(options);
+//            requestBody.putAll(serialize());
+//
+//            HttpRequest request = HttpRequest.newBuilder()
+//                    .version(HttpClient.Version.HTTP_1_1)
+//                    .uri(new URI(baseUrl + "/context"))
+//                    .header("Content-Type", "application/json")
+//                    // Java's HttpClient doesn't support DELETE with body directly, use method() instead
+//                    .method("DELETE", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
+//                    .build();
+//
+//            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+//
+//            if (response.statusCode() == 200) {
+//                log("destroyed");
+//                return true;
+//            } else if (response.statusCode() == 404) {
+//                return true; // Already destroyed or not found
+//            } else {
+//                throw new RuntimeException("Failed to destroy context, status code: " + response.statusCode());
+//            }
+//        } catch (Exception e) {
+//            throw new RuntimeException("Failed to destroy context: " + e.getMessage(), e);
+//        }
+//    }
 
     public boolean isDebug() {
         return debug;

@@ -24,6 +24,21 @@ class Context extends RemoteObject
     }
 
     /**
+     * when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
+     * this is to catch all screencast frames when the call ends too fast
+     * @codegen
+     * 
+     * @debug-gen-original-name "destroy"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["boolean"]
+     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function destroy(mixed $options = []): bool
+    {
+        return $this->callFunc('destroy', [$options]);
+    }
+
+    /**
      * @codegen
      * @gen-returns any[]
      * 

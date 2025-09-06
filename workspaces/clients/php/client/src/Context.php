@@ -45,24 +45,24 @@ class Context extends BaseContext
         );
     }
 
-    public function destroy($options = []): void
-    {
-        try {
-            $this->client->delete('context', [
-                'json' => array_merge(
-                    $options,
-                    $this->serialize()
-                ),
-            ]);
-            $this->log("destroyed");
-        } catch (ClientException $exception) {
-            if ($exception->getResponse()?->getStatusCode() === 404) {
-                return;
-            }
-            
-            throw $exception;
-        }
-    }
+//    public function destroy($options = []): bool
+//    {
+//        try {
+//            $this->client->delete('context', [
+//                'json' => array_merge(
+//                    $options,
+//                    $this->serialize()
+//                ),
+//            ]);
+//            $this->log("destroyed");
+//        } catch (ClientException $exception) {
+//            if ($exception->getResponse()?->getStatusCode() === 404) {
+//                return true;
+//            }
+//
+//            throw $exception;
+//        }
+//    }
     
     public function startAccumulatingCalls(): void
     {
