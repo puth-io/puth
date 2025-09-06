@@ -2,10 +2,10 @@ import path, {join} from "node:path";
 import fs from "node:fs";
 import {classes, isPrimitive, NAME_TRANSLATION, normalizeTypeName, resolveAliasName} from "../codegen-clients";
 
-const OUT_BASE = path.join(import.meta.dirname, '../../workspaces/clients/java/client/src/main/java/io/puth/remote');
+const OUT_BASE = path.join(import.meta.dirname, '../../workspaces/clients/java/client/src/main/java/io/puth/client/remote');
 
-const NS_INTERNAL = 'io.puth.remote';
-const NS_EXTERNAL = 'io.puth.remote.external';
+const NS_INTERNAL = 'io.puth.client.remote';
+const NS_EXTERNAL = 'io.puth.client.remote.external';
 
 export function generate() {
     classes.forEach(cls => generateClass(cls));
@@ -39,7 +39,7 @@ export function generateClass(cls) {
     const content = [
         `package ${ns};`,
         '',
-        'import io.puth.RemoteObject;',
+        'import io.puth.client.RemoteObject;',
         'import java.util.Map;',
         ...Array.from(uses).map(u => `use ${u};`),
         '',
@@ -47,11 +47,13 @@ export function generateClass(cls) {
         cls.comments.map(c => `* ${c ?? ''}`).join('\n'),
         '*/',
         `public class ${cls.name} extends RemoteObject {`,
-        `    public ${cls.name}(String id, String type, String represents, RemoteObject parent, io.puth.Context context) {`,
+        `    public ${cls.name}(String id, String type, String represents, RemoteObject parent, io.puth.client.Context context) {`,
         '        super(id, type, represents, parent, context);',
         '    }',
         '',
-        methodsArray.map(m => generateMethod(cls.name, m)).join('\n\n'),
+        methodsArray.map(m => generateMethod(cls.name, m)).filter(i => !!i).join('\n\n'),
+        '',
+        ...NAME_TRANSLATION.java?.classes?.[cls.name]?.appendMethods ?? [],
         '}',
         '',
     ].join('\n');
@@ -64,6 +66,9 @@ export function generateClass(cls) {
 
 function generateMethod(className, method, optionalIdx = null) {
     let {name, isAsync, parameters, returns, comments} = method;
+    if (NAME_TRANSLATION.java?.ignore?.includes(name)) {
+        return null;
+    }
     
     let extra = null;
     if (optionalIdx == null) {
@@ -103,8 +108,7 @@ function generateMethod(className, method, optionalIdx = null) {
     let argArray = `, new Object[]{${parameters.map(p => `${p.name}`).join(', ')}}`;
     let callLine = `${rtn === 'void' ? '' : `return (${rtn}) `}this.callFunc("${name}"${argArray});`;
     
-    let nameTranslated = NAME_TRANSLATION?.php?.default?.[className]?.[name] ?? name;
-    nameTranslated = NAME_TRANSLATION?.php?.laravel?.[className]?.[name] ?? nameTranslated;
+    let nameTranslated = NAME_TRANSLATION?.java?.default?.[className]?.[name] ?? name;
     
     console.log({parameters, params});
     

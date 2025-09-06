@@ -1,4 +1,4 @@
-import { BrowserContext, Dialog, ElementHandle, Frame, Page, TimeoutError, Viewport, WaitForOptions } from 'puppeteer-core';
+import { BrowserContext, Dialog, ElementHandle, Frame, Offset, Page, TimeoutError, WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
 import { PuthStandardPlugin } from '../index';
@@ -141,9 +141,19 @@ export class Browser {
     set timeout(timeout: int) {
         this.options.timeout = timeout;
     }
+    
+    public setTimeout(timeout: int): this {
+        this.timeout = timeout;
+        return this;
+    }
 
     set functionTimeoutMultiplier(timeout: int) {
         this.options.functionTimeoutMultiplier = timeout;
+    }
+    
+    public setFunctionTimeoutMultiplier(timeout: int): this {
+        this.functionTimeoutMultiplier = timeout;
+        return this;
     }
 
     public setResolverPrefix(prefix: string): this {
@@ -345,6 +355,11 @@ export class Browser {
             .then(this.self);
     }
 
+    public clickablePoint(selector: string, offset?: Offset): Promise<object> {
+        return this.firstOrFail(selector)
+            .then((element) => element.clickablePoint(offset ?? undefined));
+    }
+
     // Scroll screen to element at the given selector.
     public scrollTo(selector: string): Promise<this> {
         return this.scrollIntoView(selector);
@@ -402,11 +417,12 @@ export class Browser {
         return this.site.content();
     }
 
-    public viewport(): Viewport | null {
+    public viewport(): object {
         if (this.isFrame) {
             throw new UnsupportedException('Calling [viewport] on an iframe is not supported.');
         }
 
+        // @ts-ignore
         return this.page.viewport();
     }
 
@@ -782,12 +798,12 @@ export class Browser {
         return this._waitForTextIn(selector, text, { timeout: timeout, ignoreCase, missing: true });
     }
 
-    public waitUntil(pageFunction, args: any[], message: string, options: {} = {}) {
+    public waitUntil(pageFunction, args: any[] = [], message: string|null = null, options: {} = {}) {
         return this.site
             .waitForFunction(pageFunction, { ...options, timeout: this.resolveTimeout(options?.timeout) }, ...args)
             .catch((error) => {
                 if (error instanceof TimeoutError) {
-                    throw new ExpectationFailed(message);
+                    throw new ExpectationFailed(message ?? `Failed to wait for function to be truthy.`);
                 }
                 throw error;
             })

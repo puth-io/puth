@@ -800,7 +800,13 @@ class Context extends Generic {
                 return Return.Value(returnValue).serialize();
             }
 
-            return Return.Array(returnValue.map(rv => this.resolveReturnValue(call, rv))).serialize();
+            let values = returnValue.map(rv => this.resolveReturnValue(call, rv));
+            let mixed = values.some(value => value.type !== Generic.TYPES.GenericObject);
+            
+            if (!mixed) {
+                return Return.Objects(values).serialize();
+            }
+            return Return.Array(values).serialize();
         }
         if (this.isValueSerializable(returnValue)) {
             return Return.Value(returnValue).serialize();

@@ -1,15 +1,13 @@
 package io.puth.client.remote;
 
 import io.puth.client.RemoteObject;
-import io.puth.client.Context;
-
 import java.util.Map;
 
 /**
 
 */
 public class Browser extends RemoteObject {
-    public Browser(String id, String type, String represents, RemoteObject parent, Context context) {
+    public Browser(String id, String type, String represents, RemoteObject parent, io.puth.client.Context context) {
         super(id, type, represents, parent, context);
     }
 
@@ -21,6 +19,14 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("clone", new Object[]{site});
     }
 
+    public Browser setTimeout(int timeout) {
+        return (Browser) this.callFunc("setTimeout", new Object[]{timeout});
+    }
+
+    public Browser setFunctionTimeoutMultiplier(int timeout) {
+        return (Browser) this.callFunc("setFunctionTimeoutMultiplier", new Object[]{timeout});
+    }
+
     public Browser setResolverPrefix(String prefix) {
         return (Browser) this.callFunc("setResolverPrefix", new Object[]{prefix});
     }
@@ -29,7 +35,7 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("setResolverPageElements", new Object[]{pageElements});
     }
 
-    public Browser _withinIframe(String selector) {
+    public Browser withinIframe(String selector) {
         return (Browser) this.callFunc("withinIframe", new Object[]{selector});
     }
 
@@ -165,16 +171,32 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("scrollIntoView", new Object[]{selector});
     }
 
+    public Map<String, Object> clickablePoint(String selector) {
+        return this.clickablePoint(selector, null);
+    }
+
+    public Map<String, Object> clickablePoint(String selector, Object offset) {
+        return (Map<String, Object>) this.callFunc("clickablePoint", new Object[]{selector, offset});
+    }
+
     public Browser scrollTo(String selector) {
         return (Browser) this.callFunc("scrollTo", new Object[]{selector});
     }
 
-    public Object evaluate(Object pageFunction) {
+    public Object evaluate(String pageFunction) {
         return this.evaluate(pageFunction, new Object[]{});
     }
 
-    public Object evaluate(Object pageFunction, Object[] args) {
+    public Object evaluate(String pageFunction, Object[] args) {
         return (Object) this.callFunc("evaluate", new Object[]{pageFunction, args});
+    }
+
+    public Object[] evaluate(String[] pageFunction) {
+        return this.evaluate(pageFunction, new Object[]{});
+    }
+
+    public Object[] evaluate(String[] pageFunction, Object[] args) {
+        return (Object[]) this.callFunc("evaluate", new Object[]{pageFunction, args});
     }
 
     public void quit() {
@@ -209,8 +231,8 @@ public class Browser extends RemoteObject {
         return (String) this.callFunc("content", new Object[]{});
     }
 
-    public Object viewport() {
-        return (Object) this.callFunc("viewport", new Object[]{});
+    public Map<String, Object> viewport() {
+        return (Map<String, Object>) this.callFunc("viewport", new Object[]{});
     }
 
     public Object getCookieByName(String name) {
@@ -225,11 +247,11 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("deleteCookie", new Object[]{cookies});
     }
 
-    public Object _screenshot() {
-        return this._screenshot(Map.of());
+    public Object screenshot() {
+        return this.screenshot(Map.of());
     }
 
-    public Object _screenshot(Object options) {
+    public Object screenshot(Object options) {
         return (Object) this.callFunc("screenshot", new Object[]{options});
     }
 
@@ -243,14 +265,6 @@ public class Browser extends RemoteObject {
 
     public Browser enableFitOnFailure() {
         return (Browser) this.callFunc("enableFitOnFailure", new Object[]{});
-    }
-
-    public Object value(String selector) {
-        return this.value(selector, null);
-    }
-
-    public Object value(String selector, Object value) {
-        return (Object) this.callFunc("value", new Object[]{selector, value});
     }
 
     public String text(String selector) {
@@ -297,11 +311,11 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("clear", new Object[]{selector});
     }
 
-    public Browser _keys(String selector) {
-        return this._keys(selector, new String[]{});
+    public Browser keys(String selector) {
+        return this.keys(selector, new String[]{});
     }
 
-    public Browser _keys(String selector, String[] keys) {
+    public Browser keys(String selector, String[] keys) {
         return (Browser) this.callFunc("keys", new Object[]{selector, keys});
     }
 
@@ -481,11 +495,19 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("waitUntilMissingTextIn", new Object[]{selector, text, timeout, ignoreCase});
     }
 
-    public void _waitUntil(Object pageFunction, Object[] args, String message) {
-        this._waitUntil(pageFunction, args, message, Map.of());
+    public void waitUntil(Object pageFunction) {
+        this.waitUntil(pageFunction, new Object[]{}, null, Map.of());
     }
 
-    public void _waitUntil(Object pageFunction, Object[] args, String message, Map<String, Object> options) {
+    public void waitUntil(Object pageFunction, Object[] args) {
+        this.waitUntil(pageFunction, args, null, Map.of());
+    }
+
+    public void waitUntil(Object pageFunction, Object[] args, Object message) {
+        this.waitUntil(pageFunction, args, message, Map.of());
+    }
+
+    public void waitUntil(Object pageFunction, Object[] args, Object message, Map<String, Object> options) {
         this.callFunc("waitUntil", new Object[]{pageFunction, args, message, options});
     }
 
@@ -529,19 +551,19 @@ public class Browser extends RemoteObject {
         return (RemoteObject[]) this.callFunc("findAll", new Object[]{selector, options});
     }
 
-    public RemoteObject[] _findOrFail(Object selector) {
-        return this._findOrFail(selector, Map.of());
+    public RemoteObject[] findOrFail(Object selector) {
+        return this.findOrFail(selector, Map.of());
     }
 
-    public RemoteObject[] _findOrFail(Object selector, Map<String, Object> options) {
+    public RemoteObject[] findOrFail(Object selector, Map<String, Object> options) {
         return (RemoteObject[]) this.callFunc("findOrFail", new Object[]{selector, options});
     }
 
-    public RemoteObject _firstOrFail(Object selector) {
-        return this._firstOrFail(selector, Map.of());
+    public RemoteObject firstOrFail(Object selector) {
+        return this.firstOrFail(selector, Map.of());
     }
 
-    public RemoteObject _firstOrFail(Object selector, Map<String, Object> options) {
+    public RemoteObject firstOrFail(Object selector, Map<String, Object> options) {
         return (RemoteObject) this.callFunc("firstOrFail", new Object[]{selector, options});
     }
 
@@ -561,15 +583,15 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("assertTitleContains", new Object[]{title});
     }
 
-    public Browser _assertHasCookie(String name) {
+    public Browser assertHasCookie(String name) {
         return (Browser) this.callFunc("assertHasCookie", new Object[]{name});
     }
 
-    public Browser _assertCookieMissing(String name) {
+    public Browser assertCookieMissing(String name) {
         return (Browser) this.callFunc("assertCookieMissing", new Object[]{name});
     }
 
-    public Browser _assertCookieValue(String name, String value) {
+    public Browser assertCookieValue(String name, String value) {
         return (Browser) this.callFunc("assertCookieValue", new Object[]{name, value});
     }
 
@@ -1044,4 +1066,17 @@ public class Browser extends RemoteObject {
     public void isPage() {
         this.callFunc("isPage", new Object[]{});
     }
+
+    public Object value(String selector) {
+        return this.callFunc("value", new Object[]{selector});
+    }
+
+    public Browser value(String selector, Object value) {
+        return (Browser) this.callFunc("value", new Object[]{selector, value});
+    }
+
+    public Browser keys(String selector, String keys) {
+        return this.keys(selector, new String[]{keys});
+    }
+
 }

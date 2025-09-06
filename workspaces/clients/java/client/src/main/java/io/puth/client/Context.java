@@ -64,6 +64,10 @@ public class Context extends io.puth.client.remote.Context {
         this.portalRequestHandler = h;
     }
 
+    public boolean destroy() {
+        return this.destroy(Map.of());
+    }
+
     public boolean destroy(Map<String, Object> options) {
         try {
             // Merge options with serialized context

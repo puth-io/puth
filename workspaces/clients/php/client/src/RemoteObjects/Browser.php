@@ -21,6 +21,28 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @debug-gen-original-name "setTimeout"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter timeout {"type":"int","isOptional":false}
+     */
+    public function setTimeout(int $timeout): Browser
+    {
+        return $this->callFunc('setTimeout', [$timeout]);
+    }
+
+    /**
+     * @debug-gen-original-name "setFunctionTimeoutMultiplier"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter timeout {"type":"int","isOptional":false}
+     */
+    public function setFunctionTimeoutMultiplier(int $timeout): Browser
+    {
+        return $this->callFunc('setFunctionTimeoutMultiplier', [$timeout]);
+    }
+
+    /**
      * @debug-gen-original-name "setResolverPrefix"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
