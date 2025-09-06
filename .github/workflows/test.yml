@@ -38,7 +38,7 @@ jobs:
       - name: test
         run: npm run test --workspace workspaces/puth
 
-  php-client:
+  php:
     needs: [ test-puth-node ]
     runs-on: ubuntu-latest
     strategy:
@@ -139,7 +139,7 @@ jobs:
             workspaces/puth/puth.cdp.log
             workspaces/puth/storage
 
-  test-image:
+  docker:
     needs: [ test-puth-node ]
     name: test image
     runs-on: ubuntu-latest
@@ -174,7 +174,7 @@ jobs:
         if: ${{ failure() }}
         run: docker logs puth
 
-  php-laravel:
+  laravel:
     needs: [ test-puth-node ]
     runs-on: ubuntu-latest
     strategy:
@@ -241,7 +241,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: php-laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}
+          name: laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}
           path: |
             workspaces/clients/php/workspaces/laravel/storage/logs/server.log
             workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log
