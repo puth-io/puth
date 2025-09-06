@@ -117,7 +117,7 @@ class Context extends Generic {
         this._lastActivity = this._createdAt;
 
         this.options = options;
-        this.shouldSnapshot = this.options?.snapshot === true;
+        this.shouldSnapshot = this.options?.snapshot === true || this.debug;
 
         this.test.name = options?.test?.name ?? '';
 
@@ -203,6 +203,8 @@ class Context extends Generic {
         }
         if (options?.save) {
             await this.saveContextSnapshot(options.save);
+        } else if (this.debug) {
+            await this.saveContextSnapshot({to: 'file'});
         }
         // unregister all event listeners
         this.eventFunctions.forEach(([page, event, func]) => {
@@ -228,6 +230,29 @@ class Context extends Generic {
     public async destroyBrowserContext(brc: BrowserRefContext) {
         this.puth.logger.debug(`destroyBrowserContext`);
         return this.puth.browserHandler.destroy(brc);
+    }
+    
+    public async capturePageScreenshot(browser: Browser, initiator?: string) {
+        let screenshot = await browser.page.screenshot({type: 'jpeg', quality: 75});
+        
+        this.puth.snapshotHandler.pushToCache(this, {
+            id: v4(),
+            type: 'screencasts',
+            version: 1,
+            context: this.serialize(),
+            timestamp: Date.now(),
+            page: {
+                // index: pageIdx,
+                url: browser.page.url(),
+                viewport: browser.page.viewport(),
+            },
+            browser: {
+                // index: browserIdx,
+                index: 0,
+            },
+            frame: screenshot,
+            initiator,
+        });
     }
 
     // private removeBrowser(browser: PPTRBrowser) {
@@ -995,6 +1020,10 @@ class Context extends Generic {
         }
 
         return this.options?.timeouts?.command ?? 30 * 1000;
+    }
+    
+    get debug(): boolean {
+        return this.puth.debug;
     }
 
     on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;

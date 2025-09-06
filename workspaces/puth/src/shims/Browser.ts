@@ -373,7 +373,8 @@ export class Browser {
         return this.site.evaluate(pageFunction, ...args);
     }
 
-    public quit(): Promise<void> {
+    public async quit(): Promise<void> {
+        await this.context.capturePageScreenshot(this, 'browser_shim_quit');
         return this.context.destroyBrowserContext(this.browserRefContext);
     }
 
