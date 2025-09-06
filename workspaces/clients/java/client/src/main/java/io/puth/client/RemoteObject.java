@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.rmi.Remote;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -76,7 +78,7 @@ public class RemoteObject {
             HttpResponse<InputStream> response = context.getClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             return handleResponse(response, new Object[]{function, parameters}, (body, args) -> {
-                throw new Exception("[Server] " + String.valueOf(body.get("message")));
+                throw new Exception("[Server] " + body.get("message"));
             });
         } catch (Exception e) {
             throw new RuntimeException("Error in callFunction: " + e.getMessage(), e);
@@ -116,10 +118,6 @@ public class RemoteObject {
                 throw new Exception("Server returned status code: " + response.statusCode());
             }
 
-            if (context.isDebug()) {
-                log("return: " + response.body());
-            }
-
             // Check if binary response
             String contentType = response.headers().firstValue("Content-Type").orElse("");
             if (contentType.contains("application/octet-stream")) {
@@ -127,9 +125,11 @@ public class RemoteObject {
             }
 
             InputStream bodyStream = (InputStream) response.body();
-            Map<String, Object> body = objectMapper.readValue(bodyStream, new TypeReference<>() {
-            });
+            Map<String, Object> body = objectMapper.readValue(bodyStream, new TypeReference<>() {});
 
+            if (context.isDebug()) {
+                log("return: " + body);
+            }
             if (body.isEmpty()) {
                 return this;
             }
@@ -171,19 +171,24 @@ public class RemoteObject {
                 return resolveRemoteObject(generic);
             case "GenericObjects": {
                 List<Map<String, Object>> values = (List<Map<String, Object>>) generic.get("value");
-                List<Object> objects = new ArrayList<>();
-                for (Map<String, Object> item : values) {
-                    objects.add(resolveRemoteObject(item));
+                if (values.isEmpty()) {
+                    return new RemoteObject[]{};
                 }
-                return objects;
+                RemoteObject[] rtn = typedArray(resolveRemoteObject(values.get(0)).getClass(), values.size());
+                for (int i = 0; i < values.size(); i++) {
+                    rtn[i] = resolveRemoteObject(values.get(i));
+                }
+
+                return rtn;
             }
             case "GenericArray": {
-                List<Map<String, Object>> arrayValues = (List<Map<String, Object>>) generic.get("value");
-                List<Object> arrayObjects = new ArrayList<>();
-                for (Map<String, Object> item : arrayValues) {
-                    arrayObjects.add(parseGeneric(item, arguments, onError));
+                List<Map<String, Object>> values = (List<Map<String, Object>>) generic.get("value");
+                Object[] rtn = new Object[values.size()];
+                for (int i = 0; i < values.size(); i++) {
+                    rtn[i] = parseGeneric(values.get(i), arguments, onError);
                 }
-                return arrayObjects;
+
+                return rtn;
             }
             case "GenericNull":
                 return null;
@@ -196,6 +201,11 @@ public class RemoteObject {
             default:
                 throw new RuntimeException("Unexpected generic type " + type);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T[] typedArray(Class<T> cls, int size) {
+        return (T[]) Array.newInstance(cls, size);
     }
 
     /**
@@ -212,21 +222,39 @@ public class RemoteObject {
         } catch (Exception ignored) {
         }
 
-        // Prefer JUnit 5 if present
-        try {
-            Class<?> j5 = Class.forName("org.opentest4j.AssertionFailedError");
-            RuntimeException ex = (RuntimeException) j5.getConstructor(String.class).newInstance(message);
-            throw ex;
-        } catch (Throwable ignored) { /* fall through */ }
+        // Try JUnit
+        if (isClassPresent("org.opentest4j.AssertionFailedError")) {
+            try {
+                Class<?> j5 = Class.forName("org.opentest4j.AssertionFailedError");
+                throw (AssertionError) j5.getConstructor(String.class).newInstance(message);
+            } catch (AssertionError assertionError) {
+                throw assertionError;
+            } catch (Exception ignored) {
+            }
+        }
+        // Try TestNG
+        if (isClassPresent("org.testng.Assert")) {
+            throw new AssertionError("TestNG Assertion failed: " + message);
+        }
+        // Try AssertJ
+        if (isClassPresent("org.assertj.core.api.Assertions")) {
+            throw new AssertionError("AssertJ Assertion failed: " + message);
+        }
+        // Try Hamcrest
+        if (isClassPresent("org.hamcrest.MatcherAssert")) {
+            throw new AssertionError("Hamcrest Assertion failed: " + message);
+        }
+        // Fallback
+        throw new AssertionError("Assertion failed: " + message);
+    }
 
-        // Fallback: old JUnit
+    private static boolean isClassPresent(String className) {
         try {
-            Class<?> j4 = Class.forName("junit.framework.AssertionFailedError");
-            RuntimeException ex = (RuntimeException) j4.getConstructor(String.class).newInstance(message);
-            throw ex;
-        } catch (Throwable ignored) { /* fall through */ }
-
-        throw new RuntimeException(message);
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -329,7 +357,7 @@ public class RemoteObject {
         }
     }
 
-    public Object getPropertyValue(String property) {
+    public Object getPropertyValue(String property) throws Throwable {
         return getProperty(property);
     }
 

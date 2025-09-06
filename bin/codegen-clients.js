@@ -107,6 +107,26 @@ export const NAME_TRANSLATION = {
             },
         },
     },
+    java: {
+        ignore: ['value'],
+        classes: {
+            Browser: {
+                appendMethods: [
+                    '    public Object value(String selector) {',
+                    '        return this.callFunc("value", new Object[]{selector});',
+                    '    }',
+                    '',
+                    '    public Browser value(String selector, Object value) {',
+                    '        return (Browser) this.callFunc("value", new Object[]{selector, value});',
+                    '    }',
+                    '',
+                    '    public Browser keys(String selector, String keys) {',
+                    '        return this.keys(selector, new String[]{keys});',
+                    '    }',
+                ],
+            },
+        },
+    },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -628,7 +648,7 @@ function emitPHPClass(cls) {
 
 import {generate as generateJava} from './codegen/java.js';
 
-classes.forEach(c => emitPHPClass(c));
+// classes.forEach(c => emitPHPClass(c));
 
 generateJava();
 
