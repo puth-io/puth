@@ -1,5 +1,16 @@
 import {v4} from 'uuid';
-import {Dialog, Page, Target, ConsoleMessage, Browser as PPTRBrowser, BrowserContext, TargetCloseError, CDPSession} from 'puppeteer-core';
+import {
+    Dialog,
+    Page,
+    Target,
+    ConsoleMessage,
+    Browser as PPTRBrowser,
+    BrowserContext,
+    TargetCloseError,
+    CDPSession,
+    HTTPRequest,
+    HTTPResponse,
+} from 'puppeteer-core';
 import Generic from './Generic';
 import * as Utils from './Utils';
 import { Puth } from './Puth';
@@ -117,7 +128,7 @@ class Context extends Generic {
         this._lastActivity = this._createdAt;
 
         this.options = options;
-        this.shouldSnapshot = this.options?.snapshot === true;
+        this.shouldSnapshot = this.options?.snapshot === true || this.debug;
 
         this.test.name = options?.test?.name ?? '';
 
@@ -172,15 +183,16 @@ class Context extends Generic {
             );
     }
 
-    // // @codegen
     // public async createBrowserShimForPage(page: Page): Promise<Browser> {
     //     return new Browser(this, page);
     // }
-
+    
+    destroyingTimeout?: NodeJS.Timeout;
+    
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
-    destroyingTimeout?: NodeJS.Timeout;
-    public async destroy(options: any = {}) {
+    // @codegen
+    public async destroy(options: any = {}): Promise<boolean> {
         if (! options?.immediately) {
             if (options == null) {
                 options = {};
@@ -194,7 +206,7 @@ class Context extends Generic {
         
         clearTimeout(this.destroyingTimeout);
         if (this.destroying) {
-            return Promise.resolve();
+            return Promise.resolve(true);
         }
         this.destroying = true;
 
@@ -203,6 +215,8 @@ class Context extends Generic {
         }
         if (options?.save) {
             await this.saveContextSnapshot(options.save);
+        } else if (this.debug) {
+            await this.saveContextSnapshot({to: 'file'});
         }
         // unregister all event listeners
         this.eventFunctions.forEach(([page, event, func]) => {
@@ -228,6 +242,29 @@ class Context extends Generic {
     public async destroyBrowserContext(brc: BrowserRefContext) {
         this.puth.logger.debug(`destroyBrowserContext`);
         return this.puth.browserHandler.destroy(brc);
+    }
+    
+    public async capturePageScreenshot(browser: Browser, initiator?: string) {
+        let screenshot = await browser.page.screenshot({type: 'jpeg', quality: 75});
+        
+        this.puth.snapshotHandler.pushToCache(this, {
+            id: v4(),
+            type: 'screencasts',
+            version: 1,
+            context: this.serialize(),
+            timestamp: Date.now(),
+            page: {
+                // index: pageIdx,
+                url: browser.page.url(),
+                viewport: browser.page.viewport(),
+            },
+            browser: {
+                // index: browserIdx,
+                index: 0,
+            },
+            frame: screenshot,
+            initiator,
+        });
     }
 
     // private removeBrowser(browser: PPTRBrowser) {
@@ -368,6 +405,68 @@ class Context extends Generic {
                 stack.onPortalRequest(event, path, cdp);
             });
             await cdp.send('Fetch.enable');
+        }
+        
+        if (this.debug) {
+            let trackable = (request: HTTPRequest) => ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr', 'fetch'].includes(request.resourceType());
+            
+            this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
+                if (trackable(request)) {
+                    this.puth.snapshotHandler.pushToCache(this, {
+                        id: v4(),
+                        type: 'request',
+                        context: this.serialize(),
+                        // @ts-ignore
+                        time: Date.now(),
+                        isNavigationRequest: request.isNavigationRequest(),
+                        url: request.url(),
+                        resourceType: request.resourceType(),
+                        method: request.method(),
+                        headers: request.headers(),
+                        status: 'pending',
+                    });
+                }
+            });
+            
+            this.registerEventListenerOn(page, 'requestfailed', async (request: HTTPRequest) => {
+                if (trackable(request)) {
+                    this.puth.snapshotHandler.pushToCache(this, {
+                        id: v4(),
+                        type: 'update',
+                        specific: 'request.failed',
+                        status: 'failed',
+                        context: this.serialize(),
+                        // @ts-ignore
+                        url: request.url(),
+                        time: Date.now(),
+                    });
+                }
+            });
+            
+            this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
+                if (trackable(response.request())) {
+                    this.puth.snapshotHandler.pushToCache(this, {
+                        id: v4(),
+                        type: 'response',
+                        context: this.serialize(),
+                        // @ts-ignore
+                        time: {
+                            elapsed: Date.now() - this.createdAt,
+                            finished: Date.now(),
+                        },
+                        status: response.status(),
+                        url: response.request().url(),
+                        resourceType: response.request().resourceType(),
+                        method: response.request().method(),
+                        headers: response.headers(),
+                        content: await response.buffer().catch((err) => {
+                            // Error occurs only when page is navigating. So if the response is coming in after page is already
+                            // navigating to somewhere else, then chrome deletes the data.
+                            return Buffer.alloc(0);
+                        }),
+                    });
+                }
+            });
         }
     }
 
@@ -995,6 +1094,10 @@ class Context extends Generic {
         }
 
         return this.options?.timeouts?.command ?? 30 * 1000;
+    }
+    
+    get debug(): boolean {
+        return this.puth.debug;
     }
 
     on<Key extends keyof ContextEvents>(type: Key, handler: Handler<ContextEvents[Key]>): void;

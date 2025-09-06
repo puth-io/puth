@@ -373,7 +373,8 @@ export class Browser {
         return this.site.evaluate(pageFunction, ...args);
     }
 
-    public quit(): Promise<void> {
+    public async quit(): Promise<void> {
+        await this.context.capturePageScreenshot(this, 'browser_shim_quit');
         return this.context.destroyBrowserContext(this.browserRefContext);
     }
 
@@ -1647,12 +1648,11 @@ export class Browser {
             options,
             (u) => {
                 let _url = new URL(window.location.href);
-                let url =
-                    _url.protocol === 'about:'
-                        ? _url.protocol + _url.pathname
-                        : `${_url.protocol}//${_url.hostname}${_url.port ? ':' + _url.port : ''}${_url.pathname}`;
+                let url = (_url.protocol === 'about:') ?
+                    (_url.protocol + _url.pathname)
+                    : `${_url.protocol}//${_url.hostname}${_url.port ? (':' + _url.port) : ''}${_url.pathname}`;
 
-                return new RegExp('^' + u.replace(/\*/g, '.*') + '$').test(url);
+                return u == url || u == window.location.toString();
             },
             url,
         )

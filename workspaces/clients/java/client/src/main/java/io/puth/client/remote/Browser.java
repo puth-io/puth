@@ -183,22 +183,6 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("scrollTo", new Object[]{selector});
     }
 
-    public Object evaluate(String pageFunction) {
-        return this.evaluate(pageFunction, new Object[]{});
-    }
-
-    public Object evaluate(String pageFunction, Object[] args) {
-        return (Object) this.callFunc("evaluate", new Object[]{pageFunction, args});
-    }
-
-    public Object[] evaluate(String[] pageFunction) {
-        return this.evaluate(pageFunction, new Object[]{});
-    }
-
-    public Object[] evaluate(String[] pageFunction, Object[] args) {
-        return (Object[]) this.callFunc("evaluate", new Object[]{pageFunction, args});
-    }
-
     public void quit() {
         this.callFunc("quit", new Object[]{});
     }
@@ -1079,4 +1063,19 @@ public class Browser extends RemoteObject {
         return this.keys(selector, new String[]{keys});
     }
 
+   public Object evaluate(String pageFunction) {
+       return this.evaluate(pageFunction, new Object[]{});
+   }
+
+   public Object evaluate(String pageFunction, Object[] args) {
+       return (Object) this.callFunc("evaluate", new Object[]{pageFunction, args});
+   }
+
+   public Object[] evaluate(String[] pageFunction) {
+       return this.evaluate(pageFunction, new Object[]{});
+   }
+
+   public Object[] evaluate(String[] pageFunction, Object[] args) {
+       return (Object[]) this.callFunc("evaluate", new Object[]{pageFunction, args});
+   }
 }

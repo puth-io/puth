@@ -357,7 +357,7 @@ public class RemoteObject {
         }
     }
 
-    public Object getPropertyValue(String property) throws Throwable {
+    public Object getPropertyValue(String property) {
         return getProperty(property);
     }
 

@@ -1,4 +1,4 @@
-import {Puth, usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin, allBrowserInstallations, unusableBrowserInstallations} from '../';
+import {Puth, usableBrowserInstallations, makeLogger, PuthStandardPlugin, LiveViewContextPlugin, LiveViewSnapshotPlugin, allBrowserInstallations, unusableBrowserInstallations} from '../index';
 
 const stringifyBrowsers = browsers => browsers.map(i => `${i.browser} ${i.buildId} (${i.platform})`).join(', ');
 

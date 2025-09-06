@@ -10,7 +10,6 @@ on:
       - master
 
 jobs:
-
   test-puth-node:
     runs-on: ubuntu-latest
     strategy:
@@ -40,7 +39,7 @@ jobs:
         run: npm run test --workspace workspaces/puth
 
   php-client:
-    needs: [test-puth-node]
+    needs: [ test-puth-node ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -87,9 +86,18 @@ jobs:
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
-  java-client:
-    needs: [test-puth-node]
+  java:
+    name: ${{ matrix.name }}
+    needs: [ test-puth-node ]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: java-client
+            client_dir: workspaces/clients/java/client
+#          - name: java-spring
+#            client_dir: workspaces/clients/java/workspaces/spring
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -115,15 +123,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-          cache-dependency-path: 'workspaces/clients/java/client/pom.xml'
+          cache-dependency-path: ${{ matrix.client_dir }}/pom.xml
       - name: test
         run: |
-          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
+          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start --debug > puth.log 2> puth.cdp.log &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          cd workspaces/clients/java/client && mvn --batch-mode --no-transfer-progress test
+          cd ${{ matrix.client_dir }} && mvn --batch-mode --no-transfer-progress test
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            workspaces/puth/puth.log
+            workspaces/puth/puth.cdp.log
+            workspaces/puth/storage
 
   test-image:
-    needs: [test-puth-node]
+    needs: [ test-puth-node ]
     name: test image
     runs-on: ubuntu-latest
     steps:
@@ -158,19 +175,18 @@ jobs:
         run: docker logs puth
 
   php-laravel:
-    needs: [test-puth-node]
+    needs: [ test-puth-node ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        php: [8.2, 8.3, 8.4]
-        laravel: [11, 12]
-        phpunit: [11, 12]
-        collision: [8]
+        php: [ 8.2, 8.3, 8.4 ]
+        laravel: [ 11, 12 ]
+        phpunit: [ 11, 12 ]
+        collision: [ 8 ]
         exclude:
           - php: 8.2
             phpunit: 12
-
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
       - uses: actions/checkout@v4
@@ -221,20 +237,13 @@ jobs:
           php artisan test --without-tty
         env:
           RUNNING_IN_CI: true
-      - name: Collect logs
-        if: failure()
-        run: |
-          mv workspaces/clients/php/workspaces/laravel/storage/logs/server.log workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-          mv workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-          mv workspaces/puth/puth.log workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-          mv workspaces/puth/puth.cdp.log workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log || true
-      - name: Upload logs
+      - name: Upload artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs
+          name: php-laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}
           path: |
-            workspaces/clients/php/workspaces/laravel/storage/logs/server-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
-            workspaces/clients/php/workspaces/laravel/storage/logs/laravel-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
-            workspaces/puth/puth-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
-            workspaces/puth/puth-cdp-${{ matrix.php }}-${{ matrix.laravel }}-${{ matrix.phpunit }}-${{ matrix.collision }}.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/server.log
+            workspaces/clients/php/workspaces/laravel/storage/logs/laravel.log
+            workspaces/puth/puth.log
+            workspaces/puth/puth.cdp.log

@@ -213,7 +213,7 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
-                ->assertUrlIs('https://playground.puth.dev/first/second')
+                ->assertUrlIs('https://playground.puth.dev/first/second?param1=abc#starts-1234')
                 ->assertSchemeIs('https')
                 ->assertSchemeIsNot('http')
                 ->assertHostIs('playground.puth.dev')
