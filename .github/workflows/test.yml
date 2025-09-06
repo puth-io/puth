@@ -5,13 +5,12 @@ on:
   push:
     branches:
       - master
-      - wip
   pull_request:
     branches:
       - master
-      - wip
 
 jobs:
+
   test-puth-node:
     runs-on: ubuntu-latest
     strategy:
@@ -87,6 +86,41 @@ jobs:
           cd workspaces/puth && bin/puth.js start &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
+
+  java-client:
+    needs: [test-puth-node]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - id: cache-npm
+        uses: actions/cache@v4
+        with:
+          key: node-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            /home/runner/.npm
+            workspaces/puth/.cache
+      - name: npm install & build
+        run: |
+          npm ci
+          npm run build --workspace workspaces/gui
+          npm run build --workspace workspaces/puth
+      - name: download browser
+        run: npm run ci:browser:install --workspace workspaces/puth
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+          cache-dependency-path: 'workspaces/clients/java/client/pom.xml'
+      - name: test
+        run: |
+          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
+          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          cd workspaces/clients/java/client && mvn --batch-mode --no-transfer-progress test
 
   test-image:
     needs: [test-puth-node]

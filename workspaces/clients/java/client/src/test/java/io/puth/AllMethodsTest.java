@@ -221,7 +221,8 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_wip() {
-        browser.visit("https://playground.puth.dev/first/second?param1=abc#starts-1234")
+        browser.visit("https://playground.puth.dev/")
+                .assertSee("Puth's playground")
                 .evaluate("setTimeout(_ => window.location.href = \"https://puth.io\", 250)");
         browser.assertUrlIs("https://puth.io/");
     }

@@ -16,8 +16,8 @@ public class BaseTest {
     void setUp(TestInfo testInfo) {
         context = new Context("http://127.0.0.1:7345", Map.of(
                 "test", Map.of("name", testInfo.getDisplayName(), "group", testInfo.getClass().getName()),
-                "snapshot", true,
-                "debug", true
+                "snapshot", false,
+                "debug", false
         ));
         browser = context.createBrowserShim();
     }
