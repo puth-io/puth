@@ -1,3 +1,4 @@
+// @ts-ignore
 import { CDPSession, Dialog, Page, TargetCloseError } from 'puppeteer-core';
 import Context from '../Context';
 import { Return } from '../context/Return';

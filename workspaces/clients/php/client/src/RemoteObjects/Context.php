@@ -15,30 +15,12 @@ class Context extends RemoteObject
      * @debug-gen-original-name "createBrowserShim"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["Browser"]
-     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
-     * @debug-gen-original-parameter shimOptions {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter options {"type":"object","isOptional":false,"initializer":{"type":"object","members":[]}}
+     * @debug-gen-original-parameter shimOptions {"type":"object","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
     public function createBrowserShim(mixed $options = [], mixed $shimOptions = []): Browser
     {
         return $this->callFunc('createBrowserShim', [$options, $shimOptions]);
-    }
-
-    /**
-     * // @codegen
-     * public async createBrowserShimForPage(page: Page): Promise<Browser> {
-     * return new Browser(this, page);
-     * }
-     * when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
-     * this is to catch all screencast frames when the call ends too fast
-     * 
-     * @debug-gen-original-name "destroy"
-     * @debug-gen-original-is-async true
-     * @debug-gen-original-returns ["void"]
-     * @debug-gen-original-parameter options {"type":"any","isOptional":false,"initializer":{"type":"object","members":[]}}
-     */
-    public function destroy(mixed $options = []): void
-    {
-        $this->callFunc('destroy', [$options]);
     }
 
     /**

@@ -1,4 +1,4 @@
-package io.puth;
+package io.puth.client;
 
 @FunctionalInterface
 public interface ThrowingBiFunction<T, U, R> {

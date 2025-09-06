@@ -110,48 +110,6 @@ class BrowserTest extends PuthTestCase
         });
     }
     
-//    function test_parallel_all()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $site = $browser->site;
-//
-//            $browser->visit(new Playground)
-//                ->all(fn() => [
-//                    $site->waitForNavigation(),
-//                    $site->click('a[href="https://puth.io/docs/0_x"]'),
-//                ])
-//                ->assertUrlIs('https://puth.io/docs/0_x');
-//        });
-//    }
-//
-//    function test_parallel_any()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                ->any(fn() => [
-//                    $browser->waitForDialog(),
-//                    $browser->click('#dialog-prompt'),
-//                ], function ($dialog) {
-//                    $dialog->accept('1234');
-//                })
-//                ->assertSeeIn('#dialog-prompt-result', '1234');
-//        });
-//    }
-//
-//    function test_parallel_race()
-//    {
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                ->race(fn($site) => [
-//                    $site->waitForDialog(),
-//                    $site->click('#dialog-prompt'),
-//                ], function ($dialog) {
-//                    $dialog->accept('1234');
-//                })
-//                ->assertSeeIn('#dialog-prompt-result', '1234');
-//        });
-//    }
-
 //    function test_file_chooser_multiple()
 //    {
 //        $this->browse(function (Browser $browser) {
@@ -167,18 +125,6 @@ class BrowserTest extends PuthTestCase
 //                })
 //                ->waitForTextIn('#file-attach-preview', 'test.txt content' . 'test2.txt content')
 //                ->assertSeeIn('#file-attach-preview', 'test.txt content' . 'test2.txt content');
-//        });
-//    }
-
-//    function test_unreachable_action_exception()
-//    {
-//        $this->expectException(UnreachableActionException::class);
-//
-//        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
-//                ->all(fn($site) => [
-//                    $site->click('')->unreachable(),
-//                ]);
 //        });
 //    }
 }

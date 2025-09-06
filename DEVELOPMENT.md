@@ -30,3 +30,7 @@ bun run dev:client
 ```bash
 cd workspaces/clients/php/workspaces/laravel/ && php artisan serve
 ```
+
+### Java
+
+Open `workspaces/clients/java/client` and `workspaces/clients/java/workspaces/spring` in your IDE and add client as a dependency for the spring project. Run the spring tests.

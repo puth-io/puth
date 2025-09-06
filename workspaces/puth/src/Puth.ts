@@ -55,6 +55,11 @@ export class Puth {
     private options: PuthOptions;
 
     constructor(options?) {
+        // @ts-ignore
+        if (Promise.try == null) {
+            throw new Error('Puth requires Promise.try. Please upgrade your Node.js installation.');
+        }
+        
         this.#emitter = mitt<PuthEvents>();
         this.options = options;
         this.#logger = options?.logger ?? false;

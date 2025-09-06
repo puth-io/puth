@@ -37,7 +37,7 @@ const checker = program.getTypeChecker();
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** @type {{name:string,isExternal:boolean,methods:Array}} */
-const classes = [];
+export const classes = [];
 const visitedNames = new Set();          // class/interface name guard
 const visitedSymbols = new Set();        // symbol‑level guard (alias safe)
 
@@ -51,7 +51,7 @@ const PRIMITIVES = new Set([
     'int',
 ]);
 
-function isPrimitive(txt) {return PRIMITIVES.has(txt);} // simple check — arrays handled later
+export function isPrimitive(txt) {return PRIMITIVES.has(txt);} // simple check — arrays handled later
 
 function sourceIsExternal(sf) {
     return !path.resolve(sf.fileName).startsWith(PROJECT_SRC);
@@ -63,7 +63,7 @@ function hasCodegen(node) {
     return ranges.some(r => src.slice(r.pos, r.end).includes('@codegen'));
 }
 
-function normalizeTypeName(txt) {
+export function normalizeTypeName(txt) {
     let out = txt.trim();
     out = out.replace(/^Array<(.+)>$/u, '$1');
     out = out.replace(/\[\]$/u, '');
@@ -77,9 +77,9 @@ const aliasMap = new Map();
 
 function recordAlias(id, origSym) {if (id && origSym && id.text !== origSym.getName()) {aliasMap.set(id.text, origSym.getName());}}
 
-function resolveAliasName(n) {return aliasMap.get(n) || n;}
+export function resolveAliasName(n) {return aliasMap.get(n) || n;}
 
-const NAME_TRANSLATION = {
+export const NAME_TRANSLATION = {
     php: {
         default: {
             Browser: {
@@ -104,6 +104,26 @@ const NAME_TRANSLATION = {
                 waitUntil: '_waitUntil',
                 format: '_format',
                 withinIframe: '_withinIframe',
+            },
+        },
+    },
+    java: {
+        ignore: ['value'],
+        classes: {
+            Browser: {
+                appendMethods: [
+                    '    public Object value(String selector) {',
+                    '        return this.callFunc("value", new Object[]{selector});',
+                    '    }',
+                    '',
+                    '    public Browser value(String selector, Object value) {',
+                    '        return (Browser) this.callFunc("value", new Object[]{selector, value});',
+                    '    }',
+                    '',
+                    '    public Browser keys(String selector, String keys) {',
+                    '        return this.keys(selector, new String[]{keys});',
+                    '    }',
+                ],
             },
         },
     },
@@ -187,6 +207,15 @@ function extractParameters(params) {
             type: p.type ? p.type.getFullText(p.getSourceFile()).trim() : 'any',
             isOptional: p?.questionToken != null,
         };
+        
+        if (p?.type?.kind === ts.SyntaxKind.TypeLiteral) {
+            param.type = 'object';
+        }
+        
+        if (param.type === '{}') {
+            console.log(p.type);
+            process.exit(0);
+        }
 
         if (p?.initializer?.kind === ts.SyntaxKind.ObjectLiteralExpression) {
             let members = [];
@@ -197,10 +226,10 @@ function extractParameters(params) {
                     key,
                     type: initializer.kind === ts.SyntaxKind.NumericLiteral ? 'numeric'
                         : (initializer.kind === ts.SyntaxKind.StringLiteral ? 'string'
-                            : (initializer.kind === ts.SyntaxKind.FalseKeyword ? 'false'
-                            : (initializer.kind === ts.SyntaxKind.TrueKeyword ? 'true'
-                            : (initializer.kind === ts.SyntaxKind.NullKeyword ? 'null'
-                                : 'unsupported')))),
+                        : (initializer.kind === ts.SyntaxKind.FalseKeyword ? 'false'
+                        : (initializer.kind === ts.SyntaxKind.TrueKeyword ? 'true'
+                        : (initializer.kind === ts.SyntaxKind.NullKeyword ? 'null'
+                        : 'unsupported')))),
                     value: initializer?.text,
                 });
             });
@@ -617,6 +646,10 @@ function emitPHPClass(cls) {
     fs.writeFileSync(path.join(dir, `${cls.name}.php`), content, 'utf8');
 }
 
-classes.forEach(c => emitPHPClass(c));
+import {generate as generateJava} from './codegen/java.js';
+
+// classes.forEach(c => emitPHPClass(c));
+
+generateJava();
 
 console.log(`Generated ${classes.length} PHP shim classes.`);

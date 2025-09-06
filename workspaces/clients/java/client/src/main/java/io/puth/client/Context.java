@@ -1,4 +1,4 @@
-package io.puth;
+package io.puth.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,17 +8,13 @@ import java.net.http.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class Context extends RemoteObject {
-    private String baseUrl;
-    private Map<String, Object> options;
+public class Context extends io.puth.client.remote.Context {
+    private final String baseUrl;
+    private final Map<String, Object> options;
 
-    private HttpClient client;
+    private final HttpClient client;
 
-    private boolean accumulateCalls = false;
-    private List<Map<String, Object>> accumulatedCalls = new ArrayList<>();
-
-    private boolean dev;
-    private boolean debug;
+    private boolean debug = false;
 
     protected static final Logger logger = Logger.getLogger(Context.class.getName());
     protected static final ObjectMapper objectMapper = new ObjectMapper();
@@ -27,10 +23,7 @@ public class Context extends RemoteObject {
         super(null, null, null, null, null); // Initialize parent class with placeholders
         this.baseUrl = baseUrl;
         this.options = options;
-
-        this.dev = (Boolean) options.getOrDefault("dev", false);
         this.debug = (Boolean) options.getOrDefault("debug", false);
-
         this.client = HttpClient.newBuilder().build();
 
         try {
@@ -44,7 +37,8 @@ public class Context extends RemoteObject {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                Map<String, Object> responseBody = objectMapper.readValue(response.body(), new TypeReference<>() {});
+                Map<String, Object> responseBody = objectMapper.readValue(response.body(), new TypeReference<>() {
+                });
 
                 this.id = (String) responseBody.get("id");
                 this.type = (String) responseBody.get("type");
@@ -58,6 +52,20 @@ public class Context extends RemoteObject {
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize Context: " + e.getMessage(), e);
         }
+    }
+
+    private RemoteObject.PortalRequestHandler portalRequestHandler;
+
+    public RemoteObject.PortalRequestHandler getPortalRequestHandler() {
+        return portalRequestHandler;
+    }
+
+    public void setPortalRequestHandler(RemoteObject.PortalRequestHandler h) {
+        this.portalRequestHandler = h;
+    }
+
+    public boolean destroy() {
+        return this.destroy(Map.of());
     }
 
     public boolean destroy(Map<String, Object> options) {
@@ -87,26 +95,6 @@ public class Context extends RemoteObject {
         } catch (Exception e) {
             throw new RuntimeException("Failed to destroy context: " + e.getMessage(), e);
         }
-    }
-
-    public CdpBrowser createBrowser(Object... parameters) {
-        return (CdpBrowser) this.callFunction("createBrowser", parameters);
-    }
-
-    public void startAccumulatingCalls() {
-        this.accumulateCalls = true;
-    }
-
-    public void stopAccumulatingCalls() {
-        this.accumulateCalls = false;
-    }
-
-    public boolean isAccumulateCalls() {
-        return accumulateCalls;
-    }
-
-    public List<Map<String, Object>> getAccumulatedCalls() {
-        return accumulatedCalls;
     }
 
     public boolean isDebug() {
