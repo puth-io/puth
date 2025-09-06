@@ -1,13 +1,13 @@
-package io.puth.remote;
+package io.puth.client.remote;
 
-import io.puth.RemoteObject;
+import io.puth.client.RemoteObject;
 import java.util.Map;
 
 /**
 * @codegen
 */
 public class Context extends RemoteObject {
-    public Context(String id, String type, String represents, RemoteObject parent, io.puth.Context context) {
+    public Context(String id, String type, String represents, RemoteObject parent, io.puth.client.Context context) {
         super(id, type, represents, parent, context);
     }
 

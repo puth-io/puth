@@ -1,6 +1,8 @@
 package io.puth;
 
-import io.puth.remote.Browser;
+import io.puth.client.Context;
+import io.puth.client.RemoteObject;
+import io.puth.client.remote.Browser;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
