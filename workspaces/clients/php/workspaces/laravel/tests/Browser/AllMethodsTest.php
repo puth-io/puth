@@ -16,12 +16,12 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            
+
             Assert::assertCount(2, $browser->elements('.querying-get'));
             Assert::assertCount(1, $browser->elements('#querying-get'));
         });
     }
-    
+
     function test_press()
     {
         $this->browse(function (Browser $browser) {
@@ -32,7 +32,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertButtonEnabled('click and wait');
         });
     }
-    
+
     function test_select()
     {
         $this->browse(function (Browser $browser) {
@@ -44,19 +44,19 @@ class AllMethodsTest extends PuthTestCase
                 ->assertSelected('#actions-select', '')
                 ->select('#actions-select', 'orange')
                 ->assertSelected('#actions-select', 'orange');
-            
+
             $browser->visit(new Playground)
                 ->select('#actions-select-multiple');
             Assert::assertNotEmpty($browser->element('#actions-select-multiple')->value);
         });
     }
-    
+
     function test_navigation()
     {
         $this->browse(function (Browser $browser) {
             $next = 'https://puth.io/';
             $playground = 'https://playground.puth.dev/';
-            
+
             $browser->visit($playground)
                 ->assertUrlIs($playground)
                 ->visit($next)
@@ -69,30 +69,30 @@ class AllMethodsTest extends PuthTestCase
                 ->assertUrlIs($next);
         });
     }
-    
+
     function test_resize()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            
+
             $browser->resize(300, 400);
             $viewport = $browser->viewport();
-            
+
             static::assertEquals([300, 400], [
                 $viewport->width,
                 $viewport->height,
             ]);
-            
+
             $browser->resize(600, 800);
             $viewport = $browser->viewport();
-            
+
             static::assertEquals([600, 800], [
                 $viewport->width,
                 $viewport->height,
             ]);
         });
     }
-    
+
     function test_interacts_with_cookies()
     {
         $this->browse(function (Browser $browser) {
@@ -186,7 +186,7 @@ class AllMethodsTest extends PuthTestCase
 
             $browser->visit(new Playground);
             $browser->timeout = 500;
-            $browser->functionTimeoutMultiplier = 1;
+            $browser->timeoutMultiplier = 1;
 
             $inverse('Did not see expected text [This text does not exists] within element [.querying-get]', fn() => $browser->assertSeeIn('.querying-get', 'This text does not exists'));
             $inverse('Saw unexpected text [Div] within element [.querying-get]', fn() => $browser->assertDontSeeIn('.querying-get', 'Div'));
@@ -203,12 +203,12 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            
+
             $this->expectException('PHPUnit\Framework\ExpectationFailedException');
             $browser->assertSeeAnythingIn('#querying-empty-div');
         });
     }
-    
+
     function test_concern_makes_url_assertions()
     {
         $this->browse(function (Browser $browser) {
@@ -253,7 +253,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertAttributeMissing('#actions-focus', 'missing-attribute')
                 ->assertAttributeContains('#actions-focus', 'type', 'xt')
                 ->assertAttributeDoesntContain('#actions-focus', 'type', 'wrong-value');
-            
+
             static::assertEquals('test-1234', $browser->value('#actions-type input'));
             static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
             static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));

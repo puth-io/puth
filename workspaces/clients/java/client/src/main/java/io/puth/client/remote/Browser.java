@@ -12,19 +12,23 @@ public class Browser extends RemoteObject {
     }
 
     public Browser clone() {
-        return this.clone(null);
+        return this.clone(null, Map.of());
     }
 
     public Browser clone(Object site) {
-        return (Browser) this.callFunc("clone", new Object[]{site});
+        return this.clone(site, Map.of());
+    }
+
+    public Browser clone(Object site, Map<String, Object> options) {
+        return (Browser) this.callFunc("clone", new Object[]{site, options});
     }
 
     public Browser setTimeout(int timeout) {
         return (Browser) this.callFunc("setTimeout", new Object[]{timeout});
     }
 
-    public Browser setFunctionTimeoutMultiplier(int timeout) {
-        return (Browser) this.callFunc("setFunctionTimeoutMultiplier", new Object[]{timeout});
+    public Browser setTimeoutMultiplier(int timeout) {
+        return (Browser) this.callFunc("setTimeoutMultiplier", new Object[]{timeout});
     }
 
     public Browser setResolverPrefix(String prefix) {

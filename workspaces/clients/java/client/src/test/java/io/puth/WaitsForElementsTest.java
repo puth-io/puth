@@ -45,7 +45,7 @@ public class WaitsForElementsTest extends BaseTest {
     @Test
     void test_wait_for_event_timeout() {
         browser.visit(playground());
-        browser.setFunctionTimeoutMultiplier(1);
+        browser.setTimeoutMultiplier(1);
 
         long firstStart = System.currentTimeMillis();
         browser.waitForEvent("test-event", "#wait-for-event-element", 100);

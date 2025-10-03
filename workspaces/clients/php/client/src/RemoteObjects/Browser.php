@@ -14,10 +14,11 @@ class Browser extends RemoteObject
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["Browser"]
      * @debug-gen-original-parameter site {"type":"Page | Frame | null","isOptional":false,"initializer":{"type":"null"}}
+     * @debug-gen-original-parameter options {"type":"object","isOptional":false,"initializer":{"type":"object","members":[]}}
      */
-    public function clone(mixed $site = null): Browser
+    public function clone(mixed $site = null, mixed $options = []): Browser
     {
-        return $this->callFunc('clone', [$site]);
+        return $this->callFunc('clone', [$site, $options]);
     }
 
     /**
@@ -32,14 +33,14 @@ class Browser extends RemoteObject
     }
 
     /**
-     * @debug-gen-original-name "setFunctionTimeoutMultiplier"
+     * @debug-gen-original-name "setTimeoutMultiplier"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter timeout {"type":"int","isOptional":false}
      */
-    public function setFunctionTimeoutMultiplier(int $timeout): Browser
+    public function setTimeoutMultiplier(int $timeout): Browser
     {
-        return $this->callFunc('setFunctionTimeoutMultiplier', [$timeout]);
+        return $this->callFunc('setTimeoutMultiplier', [$timeout]);
     }
 
     /**

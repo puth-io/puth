@@ -19,7 +19,7 @@ class WaitsForElementsTest extends PuthTestCase
                 ->waitUntil('(window.count === undefined ? window.count = 1 : true) && window.count++ && window.count >= 3');
         });
     }
-    
+
     function test_wait_for_location()
     {
         $this->browse(function (Browser $browser) {
@@ -28,22 +28,22 @@ class WaitsForElementsTest extends PuthTestCase
                 ->assertUrlIs('https://puth.io/');
         });
     }
-    
+
     function test_wait_for_route()
     {
         $playground = new Playground;
-        
+
         URL::shouldReceive('route')
             ->once()
             ->andReturn($playground->url());
-        
+
         $this->browse(function (Browser $browser) use ($playground) {
             $browser->evaluate("window.location = '{$playground->url()}'");
             $browser->waitForRoute('mocked return')
                 ->assertUrlIs($playground->url());
         });
     }
-    
+
     function test_wait_for_reload()
     {
         $this->browse(function (Browser $browser) {
@@ -51,21 +51,21 @@ class WaitsForElementsTest extends PuthTestCase
                 ->waitForReload(function (Browser $browser) {
                     $browser->refresh();
                 });
-            
+
             (new Playground)->assert($browser);
         });
     }
-    
+
     function test_click_and_wait_for_reload()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->clickAndWaitForReload('#actions-click-reload');
-            
+
             (new Playground)->assert($browser);
         });
     }
-    
+
     function test_wait_until_missing_exception()
     {
         $this->browse(function (Browser $browser) {
@@ -73,7 +73,7 @@ class WaitsForElementsTest extends PuthTestCase
             $browser->waitUntilMissing('body', 1);
         });
     }
-    
+
     function test_wait_for_link()
     {
         $this->browse(function (Browser $browser) {
@@ -82,7 +82,7 @@ class WaitsForElementsTest extends PuthTestCase
                 ->waitForInput('properties-value-input');
         });
     }
-    
+
     function test_wait_for_event()
     {
         $this->browse(function (Browser $browser) {
@@ -93,36 +93,36 @@ class WaitsForElementsTest extends PuthTestCase
                 ->waitForEvent('test-event', '#wait-for-event-element');
         });
     }
-    
+
     function test_wait_for_event_timeout()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            $browser->functionTimeoutMultiplier = 1;
+            $browser->timeoutMultiplier = 1;
 
             $first = now();
             $browser->waitForEvent('test-event', '#wait-for-event-element', 100);
             Assert::assertLessThan(500, now()->diffInMilliseconds($first, true));
-            
+
             $second = now();
             $browser->waitForEvent('test-event', 'document', 100);
             Assert::assertLessThan(500, now()->diffInMilliseconds($second, true));
             Assert::assertGreaterThan(200, now()->diffInMilliseconds($first, true));
         });
     }
-    
+
     function test_when_available()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->whenAvailable('#querying-contains', function (Browser $browser) {
                     $browser->assertMissing('Puth');
-                    
+
                     Assert::assertCount(2, $browser->elements('div'));
                 });
         });
     }
-    
+
     function test_wait_until_vue()
     {
         $this->browse(function (Browser $browser) {

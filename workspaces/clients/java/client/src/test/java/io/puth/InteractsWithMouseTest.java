@@ -53,7 +53,7 @@ public class InteractsWithMouseTest extends BaseTest {
     void test_mouse_click_exception() {
         assertThrows(AssertionError.class, () -> {
             browser.setTimeout(250);
-            browser.setFunctionTimeoutMultiplier(1);
+            browser.setTimeoutMultiplier(1);
 
             browser.visit(playground())
                     .click("not-an-element");

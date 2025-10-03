@@ -86,7 +86,7 @@ export class Browser {
 
     public options = {
         timeout: 3000,
-        functionTimeoutMultiplier: 1,
+        timeoutMultiplier: 1,
         resolver: {
             prefix: 'body',
             finder: 'puth',
@@ -118,8 +118,12 @@ export class Browser {
         return this.browserRefContext.context;
     }
 
-    public clone(site: Page | Frame | null = null): Browser {
-        return new Browser(this.browserRefContext, site ?? this.site);
+    public clone(site: Page | Frame | null = null, options: {} = {}): Browser {
+        return new Browser(this.browserRefContext, site ?? this.site, {
+            timeout: this.options.timeout,
+            timeoutMultiplier: this.options.timeoutMultiplier,
+            ...options,
+        });
     }
 
     public get page() {
@@ -147,12 +151,12 @@ export class Browser {
         return this;
     }
 
-    set functionTimeoutMultiplier(timeout: int) {
-        this.options.functionTimeoutMultiplier = timeout;
+    set timeoutMultiplier(timeout: int) {
+        this.options.timeoutMultiplier = timeout;
     }
     
-    public setFunctionTimeoutMultiplier(timeout: int): this {
-        this.functionTimeoutMultiplier = timeout;
+    public setTimeoutMultiplier(timeout: int): this {
+        this.timeoutMultiplier = timeout;
         return this;
     }
 
@@ -172,7 +176,7 @@ export class Browser {
             if (frame == null) {
                 throw new ExpectationFailed(`Element [${selector} has no frame attached (is this an iframe?).]`);
             }
-
+            
             return this.clone(frame);
         });
     }
@@ -1237,7 +1241,7 @@ export class Browser {
     }
 
     private resolveTimeout(timeout?: int|null) {
-        return timeout != null ? timeout * this.options.functionTimeoutMultiplier : this.timeout;
+        return (timeout ?? this.timeout) * this.options.timeoutMultiplier;
     }
 
     public inputValue(field: any): string {
@@ -2019,7 +2023,7 @@ export class Browser {
 
     private expectsHandleFunction(evalFn, handle, expected, message, ...args) {
         return this.site
-            .waitForFunction(evalFn, { timeout: this.timeout, polling: 'mutation' }, handle, expected, ...args)
+            .waitForFunction(evalFn, { timeout: this.resolveTimeout(), polling: 'mutation' }, handle, expected, ...args)
             .catch(async (error) => {
                 throw new ExpectationFailed(
                     await resolveValue(message, { expected, actual: undefined, element: handle }),
@@ -2036,7 +2040,7 @@ export class Browser {
     private eW(options, evalFn, ...args) {
         return this.site.waitForFunction(
             evalFn,
-            { polling: 'mutation', ...options, timeout: options?.timeout ?? this.timeout },
+            { polling: 'mutation', ...options, timeout: this.resolveTimeout(options?.timeout) },
             ...args,
         );
     }

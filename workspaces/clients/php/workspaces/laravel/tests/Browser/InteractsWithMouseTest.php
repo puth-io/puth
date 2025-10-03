@@ -18,7 +18,7 @@ class InteractsWithMouseTest extends PuthTestCase
                 ->assertSeeIn('#result', '1');
         });
     }
-    
+
     function test_mouse_click_without_selector()
     {
         $this->browse(function (Browser $browser) {
@@ -35,33 +35,33 @@ class InteractsWithMouseTest extends PuthTestCase
                 ->assertSeeIn('#result', '6');
         });
     }
-    
+
     function test_mouse_click_at_point()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
-            
+
             $element = $browser->_firstOrFail('#actions-click > button');
             $element->scrollIntoView();
             $point = $element->clickablePoint();
-            
+
             $browser->clickAtPoint($point->x, $point->y)
                 ->assertSeeIn('#actions-click', 'clicked button');
         });
     }
-    
+
     function test_mouse_click_exception()
     {
         $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
         $this->browse(function (Browser $browser) {
             $browser->timeout = 250;
-            $browser->functionTimeoutMultiplier = 1;
+            $browser->timeoutMultiplier = 1;
 
             $browser->visit(new Playground)
                 ->click('not-an-element');
         });
     }
-    
+
     function test_concern_interacts_with_mouse()
     {
         $this->browse(function (Browser $browser) {
@@ -74,7 +74,7 @@ class InteractsWithMouseTest extends PuthTestCase
                 ->assertSeeIn('#actions-click-mousedown-verify', 'mousedown: 3')
                 ->mouseover('#actions-hover')
                 ->assertSeeIn('#actions-hover', 'hovering');
-            
+
             $browser->visit(new Playground)
                 ->clickAtXPath('//*[@id="actions-click"]/*')
                 ->assertSeeIn('#actions-click', 'clicked button');
