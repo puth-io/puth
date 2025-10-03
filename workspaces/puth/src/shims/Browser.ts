@@ -1651,12 +1651,16 @@ export class Browser {
         return this.eW(
             options,
             (u) => {
-                let _url = new URL(window.location.href);
-                let url = (_url.protocol === 'about:') ?
-                    (_url.protocol + _url.pathname)
-                    : `${_url.protocol}//${_url.hostname}${_url.port ? (':' + _url.port) : ''}${_url.pathname}`;
-
-                return u == url || u == window.location.toString();
+                if (u.startsWith('http://') || u.startsWith('https://')) {
+                    let _url = new URL(window.location.href);
+                    let url = (_url.protocol === 'about:') ?
+                        (_url.protocol + _url.pathname)
+                        : `${_url.protocol}//${_url.hostname}${_url.port ? (':' + _url.port) : ''}${_url.pathname}`;
+                    
+                    return u == url || u == window.location.toString();
+                }
+                
+                return window.location.pathname == u;
             },
             url,
         )
