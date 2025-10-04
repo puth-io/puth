@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - feat/pkgroll
   pull_request:
     branches:
       - master
@@ -76,13 +77,12 @@ jobs:
       - name: install & build
         run: |
           npm ci
-          npm run build --workspace workspaces/gui
-          npm run build --workspace workspaces/puth
+          npm run build
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
-          cd workspaces/puth && bin/puth.js start &
+          npm -w puth run ci:server &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
 
@@ -113,8 +113,7 @@ jobs:
       - name: npm install & build
         run: |
           npm ci
-          npm run build --workspace workspaces/gui
-          npm run build --workspace workspaces/puth
+          npm run build
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: Set up JDK 17
@@ -126,7 +125,7 @@ jobs:
           cache-dependency-path: ${{ matrix.client_dir }}/pom.xml
       - name: test
         run: |
-          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start --debug > puth.log 2> puth.cdp.log &
+          npm -w puth run ci:server &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd ${{ matrix.client_dir }} && mvn --batch-mode --no-transfer-progress test
       - name: Upload artifacts
@@ -222,13 +221,12 @@ jobs:
       - name: npm install & build
         run: |
           npm ci
-          npm run build --workspace workspaces/gui
-          npm run build --workspace workspaces/puth
+          npm run build
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
-          cd workspaces/puth && DEBUG="puppeteer:*" bin/puth.js start > puth.log 2> puth.cdp.log &
+          npm -w puth run ci:server &
           cd workspaces/clients/php/workspaces/laravel
           cp .env.example .env
           php artisan serve > storage/logs/server.log 2>&1 &

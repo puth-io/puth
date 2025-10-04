@@ -1,4 +1,4 @@
-import Constructors from './context/Constructors';
+import { Constructors } from '@puth/core';
 
 export async function getAbsolutePaths(on: any): Promise<[[string, number][] | string][]> {
   if (!Array.isArray(on)) {

@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "declaration": true,
+    "target": "ESNext",
+    "moduleDetection": "force",
+    "module": "Preserve",
+    "resolveJsonModule": true,
     "strict": true,
-    "incremental": true,
+    "noEmit": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "rootDir": "./src",
-    "outDir": "./lib",
-    "composite": true
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
   }
 }

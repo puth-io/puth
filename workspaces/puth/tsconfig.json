@@ -1,43 +1,13 @@
 {
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  },
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "ESNext.Promise",
-      "dom"
-    ],
-    "declaration": true,
-    "noImplicitAny": false,
-    "removeComments": true,
-    "inlineSourceMap": true,
-    "moduleResolution": "node",
-    "outDir": "./lib",
-    "strict": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "paths": {
-      "@puth/*": [
-        "../*"
-      ]
+    "compilerOptions": {
+        "target": "ESNext",
+        "moduleDetection": "force",
+        "module": "Preserve",
+        "resolveJsonModule": true,
+        "strict": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "verbatimModuleSyntax": true,
+        "skipLibCheck": true
     }
-  },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules"
-  ],
-  "references": [
-    {
-      "path": "../core"
-    },
-    {
-      "path": "../clients/js/client"
-    }
-  ]
 }

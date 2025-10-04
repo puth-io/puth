@@ -6,29 +6,29 @@ import {
     ConsoleMessage,
     Browser as PPTRBrowser,
     BrowserContext,
-    TargetCloseError,
     CDPSession,
     HTTPRequest,
     HTTPResponse,
     ConnectionClosedError,
+    Protocol,
+    // @ts-ignore
+    TargetCloseError,
 } from 'puppeteer-core';
 import Generic from './Generic';
 import * as Utils from './Utils';
 import { Puth } from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './handlers/WebsocketHandler';
-import mitt, {Emitter, Handler, WildcardHandler} from './utils/Emitter';
+import mitt, {type Emitter, type Handler, type WildcardHandler} from './utils/Emitter';
 import path, { join } from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import { Return } from './context/Return';
-import Constructors, {ConstructorValues} from './context/Constructors';
+import {ContextStatus, Constructors, ConstructorValues, type IExpectation, type ICommand} from '@puth/core';
 import {tmpdir} from 'node:os';
-import {ContextStatus, ICommand, IExpectation} from '@puth/core';
 import { Browser, ExpectationFailed } from './shims/Browser';
-import { BrowserRefContext } from './handlers/BrowserHandler';
-import {Protocol} from 'devtools-protocol';
-import { CallStack, PortalRequest, PortalResponse } from './utils/CallStack';
+import { type BrowserRefContext } from './handlers/BrowserHandler';
+import { CallStack, type PortalRequest, type PortalResponse } from './utils/CallStack';
 import { Call } from './utils/Call';
 
 const {writeFile, mkdtemp} = fsPromise;
@@ -38,7 +38,7 @@ type ContextEvents = {
     'get': any,
     'set': any,
     'delete': any,
-    'destroying',
+    'destroying': any,
     'browser:connected': {browser: PPTRBrowser},
     'browser:disconnected': {browser: PPTRBrowser},
     'page:created': {browser?: PPTRBrowser, browserContext: BrowserContext, page: Page},
@@ -280,44 +280,12 @@ class Context extends Generic {
         resolve: (value: Dialog) => Promise<void>;
         reject: (reason?: any) => void;
     }[] = [];
-
     isPageBlockedByDialog(page: Page): false|Dialog {
         let dialog = this.caches.dialog.get(page);
         if (dialog === undefined) {
             return false;
         }
         return dialog;
-    }
-
-    skipRunningCallResponse = false;
-    skipCallResponses = [];
-    async pageOnDialog(page, dialog) {
-        this.caches.dialog.set(page, dialog);
-
-        let waiters = this.waitingForDialog.filter(i => i.page == page);
-        this.waitingForDialog = this.waitingForDialog.filter(i => i.page != page);
-
-        // this.puth.logger.error(waiters, 'waiters');
-
-        if (waiters.length === 0) {
-            if (this.lastCallerPromise) {
-                this.puth.logger.debug('Resolved active request because dialog opened on page.');
-                let lcp = this.lastCallerPromise;
-                this.lastCallerPromise = undefined;
-                this.skipRunningCallResponse = true;
-
-                lcp.resolve(Return.Dialog({
-                    message: dialog.message(),
-                    defaultValue: dialog.defaultValue(),
-                    type: dialog.type(),
-                }).serialize());
-            }
-        } else {
-            for (let waiter of waiters) {
-                waiter.resolve(dialog);
-                // TODO possible race condition? await waiter.promise?
-            }
-        }
     }
 
     private async trackBrowser(browserContext: BrowserContext) {
@@ -363,7 +331,7 @@ class Context extends Generic {
         
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         page.on('close', () => this.removeEventListenersFrom(page));
-        page.on('dialog', (dialog: Dialog) => stack.omDialogOpen(dialog));
+        page.on('dialog', (dialog: Dialog) => stack.onDialogOpen(dialog));
 
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
             let args = await Promise.all(
@@ -720,14 +688,14 @@ class Context extends Generic {
                 call.prependParameters(on);
                 call.setExpects(addition.expects);
             }
-        } else {
-            if (! on[packet.function]) {
-                return call.resolve({
-                    type: 'error',
-                    code: 'FunctionNotFound',
-                    message: `Function "${packet.function}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
-                });
-            }
+        }
+        
+        if (!call.valid) {
+            return call.resolve({
+                type: 'error',
+                code: 'FunctionNotFound',
+                message: `Function "${packet.function}" not found on ${on.constructor ? on.constructor.name : 'object'}`,
+            });
         }
         
         if (page != null) {

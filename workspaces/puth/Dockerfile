@@ -48,10 +48,10 @@ COPY . .
 # the npm registry but that package does not exist. You have to love npm.
 RUN npm pkg delete devDependencies
 RUN npm install --omit=dev
-RUN if [ ! -d .cache/puth ]; then ./bin/puth.js browser install cwd --cleanup-other-installs ; fi
+RUN npm -w puth run ci:browser:install
 
 EXPOSE 7345
 
-ENTRYPOINT ["/usr/local/bin/node", "bin/puth.js"]
+ENTRYPOINT ["/usr/local/bin/node", "dist/cli.mjs"]
 
 CMD ["start", "--port", "7345", "--address", "0.0.0.0", "--disable-cors"]

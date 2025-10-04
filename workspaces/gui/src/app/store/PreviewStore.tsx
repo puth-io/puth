@@ -1,6 +1,6 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import Events from '../Events';
-import {ICommand, SnapshotMode, SnapshotState} from '@puth/core/src/Types';
+import {ICommand, SnapshotMode, SnapshotState} from '@puth/core';
 import ContextStore from '@/app/store/ContextStore';
 
 class PreviewStore {

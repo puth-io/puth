@@ -1,19 +1,29 @@
 {
   "name": "@puth/client",
-  "author": "puth.io",
-  "type": "commonjs",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
   "version": "0.0.0",
+  "author": {
+    "name": "Sebastian Uehlin",
+    "email": "s.uehlin@proton.me"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    "require": {
+      "types": "./dist/index.d.cts",
+      "default": "./dist/index.cjs"
+    },
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
   "scripts": {
-    "build": "tsc --build --noCheck",
+    "build": "pkgroll --clean-dist",
     "prepublishOnly": "npm run build"
   },
   "files": [
-    "lib/",
+    "dist/",
     "LICENCE"
-  ],
-  "devDependencies": {
-    "@types/node": "^22.5.0"
-  }
+  ]
 }

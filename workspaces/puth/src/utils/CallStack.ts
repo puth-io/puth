@@ -1,9 +1,8 @@
 // @ts-ignore
-import { CDPSession, ConnectionClosedError, Dialog, Page, TargetCloseError } from 'puppeteer-core';
+import { CDPSession, ConnectionClosedError, Dialog, Page, Protocol, TargetCloseError } from 'puppeteer-core';
 import Context from '../Context';
 import { Return } from '../context/Return';
 import { Call } from './Call';
-import { Protocol } from 'devtools-protocol';
 
 const dialogFunctions = ['assertDialogOpened', 'typeInDialog', 'acceptDialog', 'dismissDialog', 'waitForDialog'];
 
@@ -245,7 +244,7 @@ export class CallStack {
         for (let header of Object.keys(response.headers)) {
             let values = response.headers[header];
             if (!Array.isArray(values)) values = [values];
-            values.forEach((value) => headers.push({ name: header, value }));
+            values.forEach((value: string) => headers.push({ name: header, value }));
         }
         this.logger.debug(
             { handler: cache?.handler.toString(), status: response?.status, body: body.length, headers },
@@ -288,11 +287,11 @@ export class CallStack {
         return this.call(this.portal.initial.call, true);
     }
 
-    public createServerRequest(portalRequest) {
+    public createServerRequest(portalRequest: TODO) {
         return Return.ServerRequest(portalRequest).serialize();
     }
 
-    async omDialogOpen(dialog: Dialog) {
+    async onDialogOpen(dialog: Dialog) {
         this.context.caches.dialog.set(this.page, dialog);
         
         if (this.activeCall == undefined) {
