@@ -1,8 +1,19 @@
 import Events from '../Events';
 import { makeAutoObservable } from 'mobx';
+import {logData} from "../util/Debugging.ts";
 
 // tslint:disable-next-line:no-empty
 export let DebugStoreClass: (func: any) => any = () => {};
+
+export function debugPacket(data: any) {
+  DebugStoreClass(() => {
+    console.group('Packet received');
+    console.groupCollapsed('Events', Array.isArray(data) ? data.length : 1);
+    logData(data);
+    console.groupEnd();
+    console.groupEnd();
+  });
+}
 
 class DevStoreClass {
   private _debug: boolean = false;

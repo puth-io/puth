@@ -185,9 +185,10 @@ export function logCommand(packet) {
   let kbBlock = ['color: #18c0d1', 'kb', 'color: #d2d3d3'];
 
   console.groupCollapsed(
-    '%s %s %c%s %c%s%c%s%c [%s%c%s%c, %s%c%s%c, %s%c%s%c] %s',
+    '%s %s %s %c%s %c%s%c%s%c [%s%c%s%c, %s%c%s%c, %s%c%s%c] %s',
     packet.context.id,
     packet.type,
+    packet.func.padEnd(10),
     'color: #bada55',
     has.length === 0 ? '-' : has,
     'color: #d2d3d3',
@@ -235,10 +236,9 @@ export function logSnapshot(type, snapshot) {
 export function logRequest(packet: any) {
   console.groupCollapsed(
     packet.context.id,
-    packet.type,
-    '#' + packet.requestId,
-    packet.resourceType,
-    packet.method,
+    packet.type.substring(0, 3),
+    packet.resourceType.padEnd(10),
+    packet.method.padEnd(6),
     packet.url.length > 64 ? packet.url.substring(0, 60) + '...' : packet.url,
   );
   console.log('Headers');
@@ -250,8 +250,10 @@ export function logRequest(packet: any) {
 export function logResponse(packet: any) {
   console.groupCollapsed(
     packet.context.id,
-    packet.type,
-    '#' + packet.requestId,
+    packet.type.substring(0, 3),
+    packet.resourceType.padEnd(10),
+    packet.method.padEnd(6),
+    packet.url.length > 64 ? packet.url.substring(0, 60) + '...' : packet.url,
     (packet.content.length / 1000).toFixed(2),
     'kb',
   );
