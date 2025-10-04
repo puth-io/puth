@@ -10,6 +10,7 @@ import {
     CDPSession,
     HTTPRequest,
     HTTPResponse,
+    ConnectionClosedError,
 } from 'puppeteer-core';
 import Generic from './Generic';
 import * as Utils from './Utils';
@@ -764,6 +765,10 @@ class Context extends Generic {
                     // TODO handle puppeteer errors - should also be used when snapshotting
                     if (error instanceof TargetCloseError) {
                         this.puth.logger.error('TargetCloseError');
+                        return;
+                    }
+                    if (error instanceof ConnectionClosedError) {
+                        this.puth.logger.error('ConnectionClosedError');
                         return;
                     }
                     if (error.message.includes('Attempted to use detached Frame')) {
