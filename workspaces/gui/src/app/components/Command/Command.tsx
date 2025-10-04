@@ -2,7 +2,7 @@ import {FunctionComponent, useCallback, useContext} from 'react';
 import './Command.scss';
 import { ICommand } from '../../Types';
 import { observer } from 'mobx-react-lite';
-import Constructors from 'puth/src/context/Constructors';
+import {Constructors} from '@puth/core';
 import {AppContext} from '../../../shared/Contexts';
 import {Icon} from "../../../components/icon.tsx";
 import {StatusIcon} from "../Context.tsx";

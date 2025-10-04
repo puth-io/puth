@@ -1,10 +1,10 @@
-import { BrowserContext, Dialog, ElementHandle, Frame, Offset, Page, TimeoutError, WaitForOptions } from 'puppeteer-core';
+import { BrowserContext, Dialog, ElementHandle, Frame, Page, TimeoutError, type Offset, type WaitForOptions } from 'puppeteer-core';
 import Context from '../Context';
 import { getWindowBounds, maximize, move, setWindowBounds } from '../plugins/Std/PuthBrowserExtensions';
-import { PuthStandardPlugin } from '../index';
+import { PuthStandardPlugin } from '../plugins/PuthStandardPlugin';
 import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
-import { BrowserRef, BrowserRefContext } from '../handlers/BrowserHandler';
+import { type BrowserRef, type BrowserRefContext } from '../handlers/BrowserHandler';
 
 // TODO
 // @gen-class ElementHandle
@@ -1651,7 +1651,7 @@ export class Browser {
         return this.eW(
             options,
             (u) => {
-                if (u.startsWith('http://') || u.startsWith('https://')) {
+                if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('about:')) {
                     let _url = new URL(window.location.href);
                     let url = (_url.protocol === 'about:') ?
                         (_url.protocol + _url.pathname)

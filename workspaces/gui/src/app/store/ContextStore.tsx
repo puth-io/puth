@@ -1,5 +1,5 @@
 import {action, computed, makeObservable, observable, toJS} from 'mobx';
-import Constructors from 'puth/src/context/Constructors';
+import {Constructors} from '@puth/core';
 import {encode} from '@msgpack/msgpack';
 import {Connection, PUTH_EXTENSION_CODEC} from './ConnectionStore';
 import PreviewStore from '@/app/store/PreviewStore';

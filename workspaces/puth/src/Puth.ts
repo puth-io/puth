@@ -1,18 +1,19 @@
 import path, { join } from 'node:path';
 import { stat, readFile } from "node:fs/promises";
 import { createReadStream } from 'node:fs';
-import { BaseLogger } from 'pino';
-import { Server } from "srvx";
+import { type BaseLogger } from 'pino';
+import { type Server } from "srvx";
 import * as H3 from 'h3';
 import { plugin as ws } from "crossws/server";
-import mitt, { Emitter, Handler, WildcardHandler } from 'mitt';
+import mitt, { type Emitter, type Handler, type WildcardHandler } from 'mitt';
 import Context from './Context';
-import { PuthPlugin, PuthPluginGeneric, PuthPluginType } from './PuthPluginGeneric';
+import { PuthPlugin, PuthPluginType, type PuthPluginGeneric } from './PuthPluginGeneric';
 import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
-import { BrowserHandler, IBrowserHandler } from './handlers/BrowserHandler';
+import { BrowserHandler, type IBrowserHandler } from './handlers/BrowserHandler';
 import { WebsocketHandler } from './handlers/WebsocketHandler';
 import { SnapshotHandler } from './handlers/SnapshotHandler';
+import { createRequire } from 'node:module';
 
 declare global {
     type TODO = any;
@@ -237,10 +238,11 @@ export class Puth {
         )
 
         // GUI
-        h3.get('/', (event) => createReadStream(guiIndexFilePath));
+        // @ts-ignore
+        const guiIndex = createRequire(import.meta.url).resolve('@puth/gui/dist/index.html');
+        h3.get('/', (event) => createReadStream(guiIndex));
 
-        const guiIndexFilePath = require.resolve('@puth/gui/dist/index.html');
-        const staticDir = this.options?.staticDir ?? path.dirname(guiIndexFilePath);
+        const staticDir = this.options?.staticDir ?? path.dirname(guiIndex);
         this.logger.debug(`Serving static files from ${staticDir}`);
         h3.get('/**', (event) => H3.serveStatic(event, {
             indexNames: [],

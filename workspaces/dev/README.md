@@ -1,1 +1,0 @@
-You can use this directory for local test code.

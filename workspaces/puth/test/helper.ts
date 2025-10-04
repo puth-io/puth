@@ -1,8 +1,8 @@
 import { assert } from 'vitest';
 import { Puth, usableBrowserInstallations, PuthStandardPlugin } from '../';
-import { LocalPuthClient } from './client/LocalPuthClient';
-import { RemotePuthClient } from './client/RemotePuthClient';
 import { test as testBase } from '@vitest/runner';
+import { RemotePuthClient } from '@puth/client';
+import { LocalPuthClient } from '../src/LocalPuthClient';
 
 export const envs: [string, () => [any, number?]][] = [
     ['local', () => [() => makeLocalPuthClient()]],
@@ -15,49 +15,58 @@ export const envs: [string, () => [any, number?]][] = [
     ],
 ];
 
-export const testFn = env => testBase.extend({
-    puth: async ({ task }, use) => {
-        let remoteInstance: Puth;
-        const config = env[1]();
-        
-        if (env[0] === 'remote' && !process.env.PUTH_URL) {
-            remoteInstance = makePuthServer(config[1], '127.0.0.1');
-        }
-        let remote = config[0]();
-        if (env[0] === 'local') {
-            remote.use(PuthStandardPlugin);
-        }
-        let context = await remote.contextCreate({
-            snapshot: true,
-        });
-        let browser = await context.createBrowser();
-        let page = (await browser.pages())[0];
-        
-        const assertHandleEquals = async (handle1, handle2) => {
-            let response = await context.assertStrictEqual(
-                await handle1.getRepresentation(),
-                await handle2.getRepresentation(),
-            );
-            return assert.ok(response.result, 'handle1 and handle2 are not equal');
-        }
-        
-        await use({ remote, context, browser, page, assertHandleEquals });
-        
-        if (env[0] === 'remote' && !process.env.PUTH_URL) {
-            await remoteInstance.destroy();
-        }
-        if (env[0] === 'local') {
-            await remote.destroy();
-        }
-    },
-});
+export const testFn = (env) =>
+    testBase.extend({
+        puth: async ({ task }, use) => {
+            let remoteInstance: Puth;
+            const config = env[1]();
+
+            if (env[0] === 'remote' && !process.env.PUTH_URL) {
+                remoteInstance = makePuthServer(config[1], '127.0.0.1');
+            }
+            let remote = config[0]();
+            if (env[0] === 'local') {
+                remote.use(PuthStandardPlugin);
+            }
+            let context = await remote.contextCreate({
+                snapshot: true,
+            });
+            let browser = await context.createBrowser();
+            let page = (await browser.pages())[0];
+
+            const assertHandleEquals = async (handle1, handle2) => {
+                let response = await context.assertStrictEqual(
+                    await handle1.getRepresentation(),
+                    await handle2.getRepresentation(),
+                );
+                return assert.ok(response.result, 'handle1 and handle2 are not equal');
+            };
+
+            await use({ remote, context, browser, page, assertHandleEquals });
+
+            if (env[0] === 'remote' && !process.env.PUTH_URL) {
+                await remoteInstance.destroy();
+            }
+            if (env[0] === 'local') {
+                await remote.destroy();
+            }
+        },
+    });
 
 export const testLocal = testFn(envs[0]);
 
 export const installedBrowser = usableBrowserInstallations[0];
 
 export function makeLocalPuthClient() {
-    return new LocalPuthClient({ installedBrowser });
+    return new LocalPuthClient({
+        installedBrowser,
+        logger: {
+            info: () => {},
+            error: () => {},
+            warn: () => {},
+            debug: () => {},
+        },
+    });
 }
 
 export function makePuthServer(port, address) {

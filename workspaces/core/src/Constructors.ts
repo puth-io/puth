@@ -1,4 +1,4 @@
-const Constructors = {
+export const Constructors = {
     Page: 'CdpPage',
     Frame: 'CdpFrame',
     Browser: 'CdpBrowser',
@@ -15,7 +15,5 @@ const Constructors = {
     Target: 'CdpTarget',
     Context: 'Context',
 };
-
-export default Constructors;
 
 export const ConstructorValues = Object.values(Constructors);

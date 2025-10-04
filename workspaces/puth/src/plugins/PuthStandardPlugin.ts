@@ -4,7 +4,7 @@ import { Assertion, PuthAssert } from '../PuthAssert';
 import { retryFor } from '../Utils';
 import { ElementHandle, Page } from 'puppeteer-core';
 import { Return } from '../context/Return';
-import Constructors from '../context/Constructors';
+import { Constructors } from '@puth/core';
 import {SpecialKeysMap, type} from './utils/cy';
 import {bounds, maximize, move} from './Std/PuthBrowserExtensions';
 

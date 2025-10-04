@@ -17,8 +17,10 @@ const channel = Browser.CHROME;
 const cacheRootHome = path.join(homedir(), '/.cache/puth');
 const cacheRootCwd = path.join(cwd, '/.cache/puppeteer');
 
+const CI = (process.argv[2] ?? null) === 'ci';
+
 (async () => {
-    let cache = await select({
+    let cache = CI ? cacheRootCwd : await select({
         message: 'Select download location',
         choices: [
             {name: `home dir (${cacheRootHome})`, value: cacheRootHome},

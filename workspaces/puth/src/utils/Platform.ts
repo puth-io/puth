@@ -1,15 +1,15 @@
-// @ts-nocheck
 import process from 'node:process';
 import fs from 'node:fs';
 import {homedir} from "os";
 import path from "path";
-import {PUPPETEER_REVISIONS} from 'puppeteer-core';
 import {Cache} from '@puppeteer/browsers';
+// @ts-ignore
+import {PUPPETEER_REVISIONS} from 'puppeteer-core';
 
 const browserCacheCWD = new Cache(path.join(process.cwd(), '.cache/puppeteer'));
 const browserCacheHomedir = new Cache(path.join(homedir(), '.cache/puth'));
 
-function checkInstalledBrowsers(browsers) {
+function checkInstalledBrowsers(browsers: any) {
     const checked = [];
     for (let browser of browsers) {
         if (fs.existsSync(browser.executablePath)) {

@@ -1,4 +1,4 @@
-import pino, {Logger} from 'pino';
+import pino, {type Logger} from 'pino';
 
 export function makeLogger(pretty: boolean = false, level?: string) {
     let conf: any = {

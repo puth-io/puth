@@ -1,4 +1,4 @@
-import { Puth } from '@puth/puth';
+import { Puth } from '../Puth';
 
 export class BaseHandler {
     #puth: Puth;

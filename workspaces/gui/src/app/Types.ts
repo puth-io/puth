@@ -1,4 +1,4 @@
-import {IPacket as IPacketBase, ICommand as ICommandBase} from '@puth/core/src/Types';
+import {IPacket as IPacketBase, ICommand as ICommandBase} from '@puth/core';
 import ContextStore from "@/app/store/ContextStore";
 
 /**

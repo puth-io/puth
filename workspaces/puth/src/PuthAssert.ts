@@ -1,5 +1,5 @@
 import * as Utils from './Utils';
-import Constructors from './context/Constructors';
+import { Constructors } from '@puth/core';
 
 export const Assertion = (name, actual, expected, result, message) => {
   return {

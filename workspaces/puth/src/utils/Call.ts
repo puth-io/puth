@@ -55,9 +55,17 @@ export class Call {
 
         return [...this.prepend.parameters, ...this.packet.parameters, ...this.append.parameters];
     }
+    
+    get unboundFn() {
+        return this.overwrite?.fn ?? this.on[this.packet.function];
+    }
 
     get fn() {
-        return (this.overwrite?.fn ?? this.on[this.packet.function]).bind(this.on, ...this.parameters);
+        return this.unboundFn.bind(this.on, ...this.parameters);
+    }
+    
+    get valid() {
+        return this.unboundFn != null;
     }
 
     get on() {

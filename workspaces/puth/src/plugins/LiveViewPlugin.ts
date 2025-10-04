@@ -4,7 +4,7 @@ import Context from "../Context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
 import { Puth } from '../Puth';
 import PuthContextPlugin from "../PuthContextPlugin";
-import Constructors from "../context/Constructors";
+import { Constructors } from '@puth/core';
 import sharp from "sharp";
 import {setWindowBounds} from './Std/PuthBrowserExtensions';
 

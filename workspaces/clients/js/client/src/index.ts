@@ -1,3 +1,2 @@
-export * from './LocalPuthClient';
-export * from './RemoteObject';
+export * from './Remote';
 export * from './RemotePuthClient';

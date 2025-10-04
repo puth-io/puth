@@ -1,6 +1,6 @@
 import { describe, assert, expect } from 'vitest';
 import { envs, testFn } from './helper';
-import Constructors from '../src/context/Constructors';
+import { Constructors } from '@puth/core';
 import { sleep } from '../src/Utils';
 
 if (process.env.TEST_ONLY_REMOTE) {

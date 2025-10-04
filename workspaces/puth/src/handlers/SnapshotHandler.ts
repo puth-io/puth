@@ -1,4 +1,4 @@
-import {ICommand, ICommandError, IPacket} from '@puth/core';
+import {type ICommand, type ICommandError, type IPacket} from '@puth/core';
 import { BaseHandler } from './BaseHandler';
 import Context from '../Context';
 import {Page} from 'puppeteer-core';

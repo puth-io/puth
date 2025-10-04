@@ -1,5 +1,4 @@
-import { Page, CDPSession } from 'puppeteer-core';
-import { Protocol } from 'devtools-protocol/types/protocol';
+import {Page, CDPSession, Protocol} from 'puppeteer-core';
 import { Return } from '../../context/Return';
 
 export async function maximize(page: Page) {

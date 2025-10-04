@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import * as Utils from './Utils';
+import {resolveConstructorName} from "./Utils";
 
 export default class Generic {
   private cache: { [key: string]: { [key: string]: any } } = {};
@@ -40,7 +40,7 @@ export default class Generic {
         return {
           id,
           type,
-          represents: Utils.resolveConstructorName(object),
+          represents: resolveConstructorName(object),
         };
       }
     }
