@@ -1,6 +1,6 @@
 import { BaseHandler } from './BaseHandler';
 import {Encoder as BaseEncoder, Decoder as BaseDecoder, ExtensionCodec} from '@msgpack/msgpack';
-import { Peer } from 'crossws';
+import { type Peer } from 'crossws';
 
 export const PUTH_EXTENSION_CODEC = new ExtensionCodec();
 

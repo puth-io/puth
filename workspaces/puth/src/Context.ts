@@ -10,7 +10,7 @@ import {
     HTTPRequest,
     HTTPResponse,
     ConnectionClosedError,
-    Protocol,
+    type Protocol,
     // @ts-ignore
     TargetCloseError,
 } from 'puppeteer-core';
