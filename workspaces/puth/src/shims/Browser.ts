@@ -805,7 +805,7 @@ export class Browser {
 
     public waitUntil(pageFunction, args: any[] = [], message: string|null = null, options: {} = {}) {
         return this.site
-            .waitForFunction(pageFunction, { ...options, timeout: this.resolveTimeout(options?.timeout) }, ...args)
+            .waitForFunction(pageFunction, options, ...args)
             .catch((error) => {
                 if (error instanceof TimeoutError) {
                     throw new ExpectationFailed(message ?? `Failed to wait for function to be truthy.`);
@@ -819,6 +819,7 @@ export class Browser {
         if (!Array.isArray(value)) {
             value = [value];
         }
+        options.timeout = this.resolveTimeout(options.timeout);
 
         return this._waitFor(selector, options).then((_) =>
             this.waitUntil(

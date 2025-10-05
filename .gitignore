@@ -306,3 +306,4 @@ Temporary Items
 workspaces/puth/static/gui
 
 dist/
+*.large.binary
