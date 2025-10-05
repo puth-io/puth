@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Puth Api",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

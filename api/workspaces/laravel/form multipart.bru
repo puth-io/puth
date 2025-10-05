@@ -1,0 +1,20 @@
+meta {
+  name: form multipart
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  form-single: @file(fixtures/test.txt)
+  form-multiple[]: @file(fixtures/test.txt)
+}
+
+settings {
+  encodeUrl: true
+}
