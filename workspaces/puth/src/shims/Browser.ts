@@ -1241,7 +1241,7 @@ export class Browser {
     }
 
     private resolveTimeout(timeout?: int|null) {
-        return (timeout ?? this.timeout) * this.options.timeoutMultiplier;
+        return timeout ? (timeout * this.options.timeoutMultiplier) : this.timeout;
     }
 
     public inputValue(field: any): string {

@@ -8,7 +8,7 @@ use Tests\PuthTestCase;
 
 class InteractsWithMouseTest extends PuthTestCase
 {
-    public static bool $debug = false;
+    public static bool $debug = true;
 
     function test_mouse_control_click()
     {
@@ -78,6 +78,9 @@ class InteractsWithMouseTest extends PuthTestCase
             $browser->visit(new Playground)
                 ->clickAtXPath('//*[@id="actions-click"]/*')
                 ->assertSeeIn('#actions-click', 'clicked button');
+            
+            $browser->timeout = 50;
+            $browser->timeoutMultiplier = 1;
             $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
             $browser->clickAtXPath('//*[@id="non-existing-element-id"]');
         });
