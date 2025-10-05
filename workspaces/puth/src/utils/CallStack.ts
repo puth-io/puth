@@ -1,5 +1,5 @@
 // @ts-ignore
-import { CDPSession, ConnectionClosedError, Dialog, Page, Protocol, TargetCloseError } from 'puppeteer-core';
+import { CDPSession, ConnectionClosedError, Dialog, Page, type Protocol, TargetCloseError } from 'puppeteer-core';
 import Context from '../Context';
 import { Return } from '../context/Return';
 import { Call } from './Call';
