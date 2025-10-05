@@ -8,7 +8,7 @@ use Tests\PuthTestCase;
 
 class InteractsWithMouseTest extends PuthTestCase
 {
-    public static bool $debug = true;
+    public static bool $debug = false;
 
     function test_mouse_control_click()
     {
