@@ -20,8 +20,8 @@
   },
   "scripts": {
     "build": "npm -w @puth/core run build && npm -w @puth/gui run build && npm -w @puth/client run build && npm -w puth run build",
-    "dev:client": "bun --filter=@puth/gui dev",
-    "dev:server": "bun --filter=puth dev",
+    "dev:client": "npm -w @puth/gui run dev",
+    "dev:server": "npm -w puth run dev",
     "dev": "bunx concurrently \"bun run dev:server\" \"bun run dev:client\"",
     "release": "changeset publish"
   },

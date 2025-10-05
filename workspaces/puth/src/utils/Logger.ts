@@ -1,4 +1,5 @@
 import pino, {type Logger} from 'pino';
+import {runtime} from "./Platform";
 
 export function makeLogger(pretty: boolean = false, level?: string) {
     let conf: any = {
@@ -15,7 +16,7 @@ export function makeLogger(pretty: boolean = false, level?: string) {
     }
     
     const logger = pino(conf);
-    logger.debug({environment: process.env.NODE_ENV ?? 'undefined', node: process.versions.node});
+    logger.debug({environment: process.env.NODE_ENV ?? 'undefined', node: process.versions.node, runtime});
     return logger
 }
 
