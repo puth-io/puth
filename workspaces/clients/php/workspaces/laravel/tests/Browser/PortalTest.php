@@ -40,7 +40,7 @@ class PortalTest extends PuthTestCase
 
     function test_portal_form_multipart()
     {
-        $this->markTestSkipped('multipart fails due to regression in cdp');
+        $this->markTestSkipped('multipart fails after moving from ts compile to tsx');
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
                 <form action="http://127.0.0.1:8000/?queryTest=1234" method="post" enctype="multipart/form-data">
@@ -53,7 +53,7 @@ class PortalTest extends PuthTestCase
                 ->pause(1000)
                 ->attach('form-single', __DIR__ . '/files/test.txt')
                 ->attach('form-multiple[]', [
-//                    __DIR__ . '/files/random.large.binary',
+                    __DIR__ . '/files/random.large.binary',
                     __DIR__ . '/files/test2.txt',
                 ])
                 ->click('button')
