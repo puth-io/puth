@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
+import fs from 'node:fs';
 
 let args = process.argv.slice(2, process.argv.length);
 if (args.length !== 1) {
@@ -23,5 +23,5 @@ delete composer.repositories;
 
 fs.writeFileSync(
     'workspaces/clients/php/laravel/composer.json',
-    JSON.stringify(composer, null, 4),
+    JSON.stringify(composer, null, 4) + "\n",
 );
