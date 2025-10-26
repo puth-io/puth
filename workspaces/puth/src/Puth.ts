@@ -184,7 +184,14 @@ export class Puth {
 
             // @ts-ignore
             let bytes = await event.req.bytes();
-            let data = process.versions.bun ? bytes.toBase64() : bytes.toString('base64');
+            let data;
+            if (process.versions.bun) {
+                data = bytes.toBase64();
+            } else if (bytes instanceof Uint8Array) {
+                data = Buffer.from(bytes).toString('base64');
+            } else {
+                data = bytes.toString('base64');
+            }
 
             return defer(async handle => {
                 context.setPsuriHandler(
