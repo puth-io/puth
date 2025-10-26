@@ -118,50 +118,53 @@ export class CallStack {
         this.logger.debug('[Portal][Intercepted] ' + event.request.url);
         let psuri = this.context.portalSafeUniqueRequestId();
         this.context.psuriCache.set(psuri, { stack: this });
+        
+        this.logger.debug('[Portal][Detour] ' + event.request.url);
+        return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
 
-        if (event.request.hasPostData) {
-            if (event.request.postData === undefined) {
-                this.logger.debug('[Portal][Detour too large] ' + event.request.url);
-                return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
-            }
-
-            let contentType = '';
-            for (let key of Object.keys(event.request.headers)) {
-                if (key.toLowerCase() === 'content-type') {
-                    contentType = event.request.headers[key].trim();
-                }
-            }
-            if (contentType.startsWith('multipart/')) {
-                this.logger.debug('[Portal][Detour multipart] ' + event.request.url);
-                return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
-            }
-        }
-
-        this.context.setPsuriHandler(
-            psuri,
-            // TODO handle portal network error - Fetch.failRequest
-            async (error, status, data, headers) =>
-                cdp
-                    .send('Fetch.fulfillRequest', {
-                        requestId: event.requestId,
-                        body: btoa(data),
-                        responseCode: status,
-                        responseHeaders: headers,
-                    })
-                    .catch((error) => {
-                        if (error instanceof TargetCloseError) return;
-                        if (error instanceof ConnectionClosedError) return;
-                        throw error;
-                    }),
-        );
-        await this.handlePortalRequest({
-            psuri,
-            url: event.request.url,
-            path,
-            headers: event.request.headers,
-            data: btoa(event.request.postData ?? ''),
-            method: event.request.method.toUpperCase(),
-        });
+        // if (event.request.hasPostData) {
+        //     if (event.request.postData === undefined) {
+        //         this.logger.debug('[Portal][Detour too large] ' + event.request.url);
+        //         return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
+        //     }
+        //
+        //     let contentType = '';
+        //     for (let key of Object.keys(event.request.headers)) {
+        //         if (key.toLowerCase() === 'content-type') {
+        //             contentType = event.request.headers[key].trim();
+        //         }
+        //     }
+        //     if (contentType.startsWith('multipart/')) {
+        //         this.logger.debug('[Portal][Detour multipart] ' + event.request.url);
+        //         return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
+        //     }
+        // }
+        //
+        // this.context.setPsuriHandler(
+        //     psuri,
+        //     // TODO handle portal network error - Fetch.failRequest
+        //     async (error, status, data, headers) =>
+        //         cdp
+        //             .send('Fetch.fulfillRequest', {
+        //                 requestId: event.requestId,
+        //                 body: data,
+        //                 responseCode: status,
+        //                 responseHeaders: headers,
+        //             })
+        //             .catch((error) => {
+        //                 if (error instanceof TargetCloseError) return;
+        //                 if (error instanceof ConnectionClosedError) return;
+        //                 throw error;
+        //             }),
+        // );
+        // await this.handlePortalRequest({
+        //     psuri,
+        //     url: event.request.url,
+        //     path,
+        //     headers: event.request.headers,
+        //     data: btoa(event.request.postData ?? ''),
+        //     method: event.request.method.toUpperCase(),
+        // });
     }
 
     portal: any = {
@@ -219,12 +222,12 @@ export class CallStack {
     }
 
     public async handlePortalResponse(response: PortalResponse, res: any) {
-        let body = atob(response.body);
+        let body = response.body;
         this.logger.debug(
             {
                 status: response.status,
                 headers: response.headers,
-                body: body.length > 500 ? body.length : body,
+                body_length: body.length,
             },
             `[handlePortalResponse] ${response.psuri}`,
         );

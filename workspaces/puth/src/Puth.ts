@@ -156,7 +156,7 @@ export class Puth {
         h3.delete('/context', json(data => this.contextDestroy(data)));
 
         h3.patch('/portal/response', json(data => defer(handle => this.portalResponse(data, handle))));
-        h3.post('/portal/detour/**', async (event) => {
+        h3.all('/portal/detour/**', async (event) => {
             let cid = event.req.headers.get('puth-portal-context-id');
             let psuri = event.req.headers.get('puth-portal-psuri');
             let url = event.req.headers.get('puth-portal-url');
@@ -191,7 +191,7 @@ export class Puth {
                     psuri,
                     // TODO handle portal network error - Fetch.failRequest
                     (error, status, data, headers) => handle.resolve(
-                        new Response(data, {
+                        new Response(Uint8Array.from(atob(data), c => c.charCodeAt(0)), {
                             status,
                             headers: headers.map((header): [string, string] => [header.name, header.value]),
                         }),
