@@ -511,7 +511,7 @@ class Context extends Generic {
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            url: join(addr, 'portal/detour'),
+            url: join(addr, 'portal/detour/', this.id, requestId),
             headers,
         });
     }
