@@ -13,6 +13,7 @@ use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
 use Puth\Utils\MimeType;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -183,6 +184,8 @@ abstract class TestCase extends FoundationTestCase
         if ($testResponse->baseResponse instanceof StreamedResponse
             || $testResponse->baseResponse instanceof StreamedJsonResponse) {
             $body = $testResponse->streamedContent();
+        } else if ($testResponse->baseResponse instanceof BinaryFileResponse) {
+            $body = $testResponse->baseResponse?->getFile()?->getContent() ?? '';
         } else {
             $body = $testResponse->content();
         }
@@ -199,20 +202,21 @@ abstract class TestCase extends FoundationTestCase
         $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
         $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
         $server['REQUEST_URI'] = $portalRequest->url;
-
-        $cookies = $this->prepareCookiesForRequest();
+        $server['REMOTE_ADDR'] = $portalRequest?->ip ?? '127.0.0.1';
 
         $url = parse_url($portalRequest->url);
         $queryParams = [];
         if (isset($url['query'])) {
             parse_str($url['query'], $queryParams);
         }
-        $server['HTTP_HOST'] = "{$url['host']}:{$url['port']}";
+        $server['HTTP_HOST'] = "{$url['host']}:" . ($url['port'] ?? '80');
 
-        $cookies = [];
+        $parsedCookies = [];
         if (isset($headers['cookie'])) {
             parse_str(str_replace('; ', '&', $headers['cookie']), $cookies);
         }
+        $cookies = $this->prepareCookiesForRequest();
+        array_push($cookies, ...$parsedCookies);
 
         $request = new Request(
             $queryParams, // GET
