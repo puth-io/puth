@@ -202,6 +202,7 @@ export class Puth {
                     psuri,
                     url: decodeURI(url),
                     path: decodeURI(path ?? ''),
+                    ip: event.req.ip,
                     headers: event.req.headers,
                     // @ts-ignore
                     data,

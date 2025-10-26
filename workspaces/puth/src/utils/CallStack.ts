@@ -8,6 +8,7 @@ const dialogFunctions = ['assertDialogOpened', 'typeInDialog', 'acceptDialog', '
 
 export type PortalRequest = {
     psuri: string;
+    ip: string|undefined;
     url: string;
     path: string;
     headers: TODO;
