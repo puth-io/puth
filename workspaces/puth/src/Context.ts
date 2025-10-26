@@ -30,6 +30,7 @@ import { Browser, ExpectationFailed } from './shims/Browser';
 import { type BrowserRefContext } from './handlers/BrowserHandler';
 import { CallStack, type PortalRequest, type PortalResponse } from './utils/CallStack';
 import { Call } from './utils/Call';
+import { createHash } from "node:crypto";
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -511,9 +512,13 @@ class Context extends Generic {
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            url: join(addr, 'portal/detour/', this.id, requestId),
+            url: join(addr, 'portal/detour/', this.id, this.hash(request.url), this.hash(path)),
             headers,
         });
+    }
+    
+    public hash(data: string) {
+        return createHash('sha256').update(data).digest('base64url'); 
     }
 
     private pageCDPSessions: Map<Page, WeakRef<CDPSession>> = new Map();
