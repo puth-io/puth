@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+import {sleep} from "../../Utils";
+
 /**
  * Keyboard Layout
  * https://github.com/puppeteer/puppeteer/blob/main/src/common/USKeyboardLayout.ts
@@ -47,11 +49,17 @@ export async function type(element, chars, options: {delay?, parseSpecialCharSeq
     let parseSpecialCharSequences = options?.parseSpecialCharSequences ?? true;
     if (!parseSpecialCharSequences) {
         await element.type(chars, options);
+        if (options?.delay) {
+            await sleep(options.delay);
+        }
         
         return;
     }
     if (!/{(.+?)}/.test(chars)) { // no special characters in chars
         await element.type(chars, options);
+        if (options?.delay) {
+            await sleep(options.delay);
+        }
         
         return;
     }
@@ -64,29 +72,36 @@ export async function type(element, chars, options: {delay?, parseSpecialCharSeq
         
         if (specialKey) {
             let key = SpecialKeysMap[specialKey[1].toLowerCase()] ?? specialKey[1];
-            
             if (typeof key === 'function') {
                 await key(element, options);
             } else {
+                console.debug('special', key);
                 await element.frame.page().keyboard.down(key);
                 release.push(key);
+            }
+            if (options?.delay) {
+                await sleep(options.delay);
             }
         } else {
             for (let ch of chs.split('')) {
                 await element.frame.page().keyboard.down(ch);
+                if (options?.delay) {
+                    await sleep(options.delay);
+                }
                 await element.frame.page().keyboard.up(ch);
+                if (options?.delay) {
+                    await sleep(options.delay);
+                }
             }
         }
     }
     
-    await Promise.all(
-        release.map(async (key) => {
-            if (options?.delay) {
-                await element.frame.page().waitForTimeout(options?.delay);
-            }
-            await element.frame.page().keyboard.up(key);
-        }),
-    );
+    for (let key of release) {
+        await element.frame.page().keyboard.up(key);
+        if (options?.delay) {
+            await sleep(options.delay);
+        }
+    }
 }
 
 export const SpecialKeysMap = {
