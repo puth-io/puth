@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates \
         fonts-liberation \
         libappindicator3-1 \
-        libasound2 \
+        libasound2t64 \
         libatk-bridge2.0-0 \
         libatk1.0-0 \
         libc6 \
@@ -39,5 +39,3 @@ RUN apt-get update && \
         lsb-release \
         wget \
         xdg-utils
-
-RUN wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet

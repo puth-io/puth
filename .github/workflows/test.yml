@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - feat/java
   pull_request:
     branches:
       - master
@@ -93,8 +94,38 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: java-client
+          - name: java-client | Temurin | JDK 8
             client_dir: workspaces/clients/java/client
+            java-version: '8'
+            distribution: temurin
+          - name: java-client | Temurin | JDK 11
+            client_dir: workspaces/clients/java/client
+            java-version: '11'
+            distribution: temurin
+          - name: java-client | Temurin | JDK 17
+            client_dir: workspaces/clients/java/client
+            java-version: '17'
+            distribution: temurin
+          - name: java-client | Temurin | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: temurin
+          - name: java-client | Corretto | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: corretto
+          - name: java-client | Liberica | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: liberica
+          - name: java-client | Microsoft | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: microsoft
+          - name: java-client | Zulu | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: zulu
 #          - name: java-spring
 #            client_dir: workspaces/clients/java/workspaces/spring
     steps:
@@ -115,11 +146,11 @@ jobs:
           npm run build
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ matrix.java-version }} (${{ matrix.distribution }})
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: '${{ matrix.java-version }}'
+          distribution: '${{ matrix.distribution }}'
           cache: maven
           cache-dependency-path: ${{ matrix.client_dir }}/pom.xml
       - name: test
