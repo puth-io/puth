@@ -1,0 +1,10 @@
+services:
+    node:
+        image: node:lts-alpine
+        command: npm run dev -- --host 0.0.0.0
+        user: "1000"
+        working_dir: /app
+        ports:
+            - 127.0.0.1:5173:5173
+        volumes:
+            - ./:/app

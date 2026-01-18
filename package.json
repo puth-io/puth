@@ -9,6 +9,7 @@
     "workspaces/core",
     "workspaces/puth",
     "workspaces/gui",
+    "workspaces/website",
     "workspaces/clients/js/client",
     "workspaces/clients/java/client",
     "workspaces/clients/php/client",

@@ -1,0 +1,11 @@
+services:
+    website:
+        image: node:lts
+        entrypoint: ""
+        command: npm -w website run dev -- --host 0.0.0.0
+        user: 1000
+        working_dir: /app
+        volumes:
+            - "./:/app"
+        ports:
+            - "127.0.0.1:5100:5173"
