@@ -1,0 +1,76 @@
+---
+title: Cookies and URLs
+description: Cookie helpers and URL parts.
+---
+
+## Cookies
+
+- `getCookieByName(name)` returns a cookie object or null.
+- `setCookie(cookies)` sets one or more cookies.
+- `deleteCookie(cookiesOrName)` deletes by name or list.
+
+Cookie helpers only work on pages (not iframes).
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .setCookie([{ name: 'session', value: 'abc', path: '/' }])
+  .assertHasCookie('session');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->setCookie([['name' => 'session', 'value' => 'abc', 'path' => '/']])
+    ->assertHasCookie('session');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->setCookie([['name' => 'session', 'value' => 'abc', 'path' => '/']])
+    ->assertHasCookie('session');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.setCookie(List.of(Map.of("name", "session", "value", "abc", "path", "/")))
+    .assertHasCookie("session");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.
+    SetCookie([]map[string]any{{"name": "session", "value": "abc", "path": "/"}}).
+    AssertHasCookie("session")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## URL parts
+
+These return the current page parts:
+
+- `url()` full URL string.
+- `scheme()` http/https.
+- `host()` domain.
+- `path()` path part.
+- `port()` port or default.

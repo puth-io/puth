@@ -1,0 +1,63 @@
+---
+title: Screenshots and Debugging
+description: Capture output when tests fail.
+---
+
+## Screenshots
+
+- `screenshot(options?)` returns image bytes.
+- `fitContent()` resizes the viewport to the full page size.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+const png = await browser.screenshot({ fullPage: true });
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$png = $browser->screenshot(['fullPage' => true]);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$png = $browser->screenshot(['fullPage' => true]);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+byte[] png = browser.screenshot(Map.of("fullPage", true));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+png, _ := browser.Screenshot(map[string]any{"fullPage": true})
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+`screenshot` is not supported on iframes.
+
+## Fit on failure
+
+Puth can auto-fit the window before error snapshots:
+
+- `enableFitOnFailure()`
+- `disableFitOnFailure()`

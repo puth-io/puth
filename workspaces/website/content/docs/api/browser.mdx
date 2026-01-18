@@ -1,0 +1,193 @@
+---
+title: Browser
+description: Full Browser method reference.
+---
+
+All clients expose the same Browser methods. Methods prefixed with `_` are public but mainly used internally.
+
+## Setup and context
+
+- `clone(site?, options?)` duplicate the Browser with a new target.
+- `withinIframe(selector)` switch to the iframe at `selector`.
+- `setTimeout(ms)` set base timeout.
+- `setTimeoutMultiplier(factor)` scale timeouts.
+- `setResolverPrefix(prefix)` set selector scope.
+- `setResolverPageElements(map)` define selector aliases.
+
+## Navigation and page
+
+- `visit(url)` navigate to a URL.
+- `setContent(html, options?)` set document HTML.
+- `blank()` load `about:blank`.
+- `refresh(options?)` reload page.
+- `back(options?)` and `forward(options?)` history navigation.
+- `evaluate(pageFunction, args?)` run JS in page.
+- `quit()` close browser context.
+
+## Window and viewport
+
+- `maximize()` enlarge window.
+- `bounds()` read window size/position.
+- `setBounds(bounds)` update window size/position.
+- `resize(width, height)` change viewport size.
+- `move(x, y)` move window.
+- `viewport()` read viewport info.
+
+## Page data
+
+- `url()` full URL.
+- `scheme()` http/https.
+- `host()`, `path()`, `port()`.
+- `title()` page title.
+- `content()` page HTML.
+
+## Cookies
+
+- `getCookieByName(name)` get a cookie.
+- `setCookie(cookies)` set cookies.
+- `deleteCookie(cookiesOrName)` delete cookies.
+
+## Screenshots
+
+- `screenshot(options?)` capture a screenshot.
+- `fitContent()` resize viewport to full page.
+- `enableFitOnFailure()` / `disableFitOnFailure()`.
+
+## Clicking and mouse
+
+- `click(selector?)` click element or current position.
+- `clickLink(text, element? = 'a')` click link by `href`.
+- `clickAtPoint(x, y)` click absolute coordinates.
+- `clickAtXPath(expression)` click with XPath.
+- `clickAndHold(selector?)` press mouse button.
+- `doubleClick(selector?)`, `rightClick(selector?)`, `controlClick(selector?)`.
+- `releaseMouse()` release mouse button.
+- `moveMouse(xOffset, yOffset)` unsupported.
+- `mouseover(selector)` hover.
+- `scrollIntoView(selector)` / `scrollTo(selector)`.
+- `clickablePoint(selector, offset?)` get coordinates.
+
+## Typing and values
+
+- `value(selector, value?)` get or set value.
+- `text(selector)` get text.
+- `attribute(selector, attribute)` get attribute.
+- `_type(selector, value, options?)` internal typing helper.
+- `type(selector, value)` clear then type.
+- `typeSlowly(selector, value, pause?)` type with delay.
+- `append(selector, value)` append text.
+- `appendSlowly(selector, value, pause?)` append with delay.
+- `clear(selector)` clear input.
+- `keys(selector, keys[])` send key combos.
+
+## Forms and buttons
+
+- `select(selector, value?)` select option(s).
+- `radio(selector, value)` select radio.
+- `_check(shouldBeChecked, selector, value?)` internal check helper.
+- `check(selector, value?)` / `uncheck(selector, value?)`.
+- `press(textOrName)` click a button by label/name.
+- `pressAndWaitFor(textOrName)` click and wait for enabled.
+
+## Drag helpers
+
+- `drag(from, to)` drag element to target.
+- `dragOffset(selector, x, y)` drag by offset.
+- `dragUp/dragDown/dragLeft/dragRight(selector, offset)`.
+
+## Waiting
+
+- `_waitFor(selector, options?)` internal wait helper.
+- `waitFor(selector, timeout?)` wait for visible.
+- `waitUntilMissing(selector, timeout?)` wait for hidden.
+- `waitForLink(text, timeout?)` wait for link.
+- `waitForInput(name, timeout?)` wait for input by name.
+- `waitForLocation(url, timeout?)` wait for URL.
+- `waitForEvent(type, target?, timeout?)` wait for DOM event.
+- `waitForNotPresent(selector, options?)` wait for removal.
+- `waitForText(text, timeout?, ignoreCase?)` wait for text.
+- `waitUntilMissingText(text, timeout?, ignoreCase?)` wait for text to disappear.
+- `waitForTextIn(selector, text, timeout?, ignoreCase?)` wait for text in selector.
+- `waitUntilMissingTextIn(selector, text, timeout?, ignoreCase?)`.
+- `waitUntil(pageFunction, args?, message?, options?)` custom wait.
+- `waitUntilAttribute(selector, attribute, value, message, options?)`.
+- `waitUntilEnabled(selector, options?)`.
+- `waitUntilDisabled(selector, options?)`.
+
+## Finding elements
+
+- `find(selector, options?)` first match or null.
+- `findAll(selector, options?)` all matches.
+- `findOrFail(selector, options?)` all matches or throw.
+- `firstOrFail(selector, options?)` first match or throw.
+
+## Assertions
+
+- `assertTitle(title)`.
+- `assertTitleContains(text)`.
+- `assertHasCookie(name)` / `assertCookieMissing(name)` / `assertCookieValue(name, value)`.
+- `assertSee(text, ignoreCase?)` / `assertDontSee(text, ignoreCase?)`.
+- `assertSeeIn(selector, text, ignoreCase?)` / `assertDontSeeIn(selector, text, ignoreCase?)`.
+- `assertSeeAnythingIn(selector)` / `assertSeeNothingIn(selector)`.
+- `assertScript(expression, expected?)`.
+- `assertSourceHas(code)` / `assertSourceMissing(code)`.
+- `assertSeeLink(link, selector?, options?)` / `assertDontSeeLink(link, selector?, options?)`.
+- `assertInputValue(field, value)` / `assertInputValueIsNot(field, value)`.
+- `assertInputPresent(field, timeout?)` / `assertInputMissing(field, timeout?)`.
+- `assertChecked(field, value?)` / `assertNotChecked(field, value?)` / `assertIndeterminate(field, value?)`.
+- `assertRadioSelected(field, value)` / `assertRadioNotSelected(field, value?)`.
+- `assertSelected(field, value)` / `assertNotSelected(field, value)`.
+- `assertSelectHasOptions(field, values)` / `assertSelectMissingOptions(field, values)`.
+- `assertSelectHasOption(field, value)` / `assertSelectMissingOption(field, value)`.
+- `assertValue(selector, value)` / `assertValueIsNot(selector, value)`.
+- `assertAttribute(selector, attribute, value)`.
+- `assertAttributeMissing(selector, attribute)`.
+- `assertAttributeContains(selector, attribute, value)`.
+- `assertAttributeDoesntContain(selector, attribute, value)`.
+- `assertAriaAttribute(selector, attribute, value)`.
+- `assertDataAttribute(selector, attribute, value)`.
+- `assertVisible(selector, options?)`.
+- `assertMissing(selector, options?)`.
+- `assertPresent(selector, options?)`.
+- `assertNotPresent(selector, options?)`.
+- `assertEnabled(field)` / `assertDisabled(field)`.
+- `assertButtonEnabled(button)` / `assertButtonDisabled(button)`.
+- `assertFocused(field)` / `assertNotFocused(field)`.
+- `assertVue(key, value, componentSelector?)`.
+- `assertVueIsNot(key, value, componentSelector?)`.
+- `assertVueContains(key, value, componentSelector?)`.
+- `assertVueDoesntContain/DoesNotContain(key, value, componentSelector?)`.
+- `assertUrlIs(url, options?)`.
+- `assertSchemeIs/IsNot(scheme)`.
+- `assertPathIs/IsNot(path)`.
+- `assertHostIs/IsNot(host)`.
+- `assertPortIs/IsNot(port)`.
+- `assertPathBeginsWith/EndsWith/Contains(path)`.
+- `assertQueryStringHas(name, value?)` / `assertQueryStringMissing(name)`.
+- `assertFragmentIs/IsNot(fragment)`.
+- `assertFragmentBeginsWith(fragment)`.
+
+## Dialogs
+
+- `waitForDialog()`.
+- `assertDialogOpened(message)`.
+- `typeInDialog(value)`.
+- `acceptDialog(value?)`.
+- `dismissDialog()`.
+
+## Resolver helpers
+
+- `resolver(selector)` resolve a selector.
+- `resolveForTyping(selector)`.
+- `resolveForChecking(field, value?)`.
+- `resolveForRadioSelection(field, value?)`.
+- `resolveForSelection(field)`.
+- `resolveSelectOptions(field)`.
+- `resolveForField(field)`.
+- `resolveForButtonPress(field)`.
+
+## Misc
+
+- `vueAttribute(componentSelector, key)` read Vue state.
+- `inputValue(field)` get value for field.
+- `isPage()` true if current site is a page.

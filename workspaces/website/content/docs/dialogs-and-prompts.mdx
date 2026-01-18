@@ -1,0 +1,128 @@
+---
+title: Dialogs and Prompts
+description: Handling alerts, confirms, and prompts.
+---
+
+Puth exposes dialogs through a small set of helpers.
+
+## Basics
+
+- `waitForDialog()` waits for any dialog to open.
+- `assertDialogOpened(message)` asserts the dialog message.
+- `acceptDialog(value?)` accepts a dialog (and fills a prompt).
+- `dismissDialog()` dismisses a dialog.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .click('#delete')
+  .assertDialogOpened('Are you sure?')
+  .acceptDialog();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->click('#delete')
+    ->assertDialogOpened('Are you sure?')
+    ->acceptDialog();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->click('#delete')
+    ->assertDialogOpened('Are you sure?')
+    ->acceptDialog();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.click("#delete")
+    .assertDialogOpened("Are you sure?")
+    .acceptDialog();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Click("#delete").AssertDialogOpened("Are you sure?").AcceptDialog()
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Prompt input
+
+You can type into a prompt two ways:
+
+- `typeInDialog(value)` queues input until accept.
+- `acceptDialog(value)` accepts and supplies the input in one step.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .click('#rename')
+  .acceptDialog('New name');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->click('#rename')
+    ->acceptDialog('New name');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->click('#rename')
+    ->acceptDialog('New name');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.click("#rename")
+    .acceptDialog("New name");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Click("#rename").AcceptDialog("New name")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>

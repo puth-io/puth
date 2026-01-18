@@ -1,0 +1,21 @@
+{
+    "root": true,
+    "pages": [
+        "---Introduction---",
+        "index",
+        "getting-started",
+        "migration-from-dusk",
+        "---Concepts---",
+        "browser-basics",
+        "selectors-and-resolvers",
+        "interacting-with-elements",
+        "waiting-and-sync",
+        "assertions",
+        "dialogs-and-prompts",
+        "cookies-and-storage",
+        "screenshots-and-debugging",
+        "---API---",
+        "api/browser",
+        "api/context"
+    ]
+}

@@ -1,0 +1,199 @@
+---
+title: Browser Basics
+description: Core navigation and browser lifecycle methods.
+---
+
+## Creating and reusing browsers
+
+A Browser instance wraps a page or a frame. Most clients create one per test, but you can reuse it:
+
+- `clone(site?, options?)` duplicates the browser with a new page or frame while keeping timeouts and resolver config.
+- `withinIframe(selector)` scopes the Browser to the iframe found at `selector`.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .withinIframe('#checkout-frame')
+  .then((frameBrowser) => frameBrowser.click('@pay'));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->_withinIframe('#checkout-frame')
+    ->click('@pay');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->_withinIframe('#checkout-frame')
+    ->click('@pay');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.withinIframe("#checkout-frame")
+    .click("@pay");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.WithinIframe("#checkout-frame").Click("@pay")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Navigation
+
+Use these for page navigation and reloads:
+
+- `visit(url)` loads a URL.
+- `refresh(options?)` reloads the page.
+- `back(options?)` and `forward(options?)` navigate history.
+- `blank()` visits `about:blank`.
+- `setContent(html, options?)` replaces the document HTML.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .visit('https://app.test')
+  .refresh();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->visit('https://app.test')
+    ->refresh();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->visit('https://app.test')
+    ->refresh();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.visit("https://app.test")
+    .refresh();
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Visit("https://app.test").Refresh()
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Window and viewport
+
+These are page-only (not frames):
+
+- `maximize()` expands the window.
+- `bounds()` reads window size/position.
+- `setBounds(bounds)` updates window size/position.
+- `resize(width, height)` sets viewport size.
+- `move(x, y)` moves the window.
+- `viewport()` returns current viewport info.
+
+## URLs and page data
+
+Quick accessors for URL parts and page state:
+
+- `url()` full URL string.
+- `scheme()` http/https.
+- `host()`, `path()`, `port()`.
+- `title()` document title.
+- `content()` page HTML.
+
+## JavaScript
+
+Run code in the page context:
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+const count = await browser.evaluate('document.querySelectorAll(".item").length');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$count = $browser->evaluate('document.querySelectorAll(".item").length');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$count = $browser->evaluate('document.querySelectorAll(".item").length');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+Object count = browser.evaluate("document.querySelectorAll(\".item\").length");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+count, _ := browser.Evaluate("document.querySelectorAll(\".item\").length")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Cleanup
+
+Call `quit()` to close the browser context when your test is done.

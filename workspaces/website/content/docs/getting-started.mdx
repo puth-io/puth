@@ -1,0 +1,94 @@
+---
+title: Getting Started
+description: Install Puth, run the server, and connect a client.
+---
+
+## 1) Run the Puth server
+
+Run Puth locally using Docker or npm.
+
+Docker:
+`docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1`
+
+npm:
+`npm install --global puth` then `puth start`
+
+## 2) Point your client at Puth
+
+Configure your client to use the Puth server URL, usually:
+
+`http://127.0.0.1:7345`
+
+## 3) Write a first test
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .visit('https://app.test')
+  .type('email', 'you@example.com')
+  .type('password', 'secret')
+  .press('Login')
+  .assertSee('Welcome');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->visit('https://app.test')
+    ->type('email', 'you@example.com')
+    ->type('password', 'secret')
+    ->press('Login')
+    ->assertSee('Welcome');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->visit('https://app.test')
+    ->type('email', 'you@example.com')
+    ->type('password', 'secret')
+    ->press('Login')
+    ->assertSee('Welcome');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.visit("https://app.test")
+    .type("email", "you@example.com")
+    .type("password", "secret")
+    .press("Login")
+    .assertSee("Welcome");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Visit("https://app.test").
+    Type("email", "you@example.com").
+    Type("password", "secret").
+    Press("Login").
+    AssertSee("Welcome")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## 4) Run tests in CI
+
+Start the Puth server in your CI job and run your client tests as usual. Keep Puth on a private network only.

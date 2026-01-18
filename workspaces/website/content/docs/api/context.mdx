@@ -1,0 +1,25 @@
+---
+title: Context
+description: Context lifecycle and server helpers.
+---
+
+The Context object manages the browser session lifecycle and server-side helpers.
+
+## Browser lifecycle
+
+- `createBrowserShim(options?, shimOptions?)` create a Browser instance.
+- `destroy(options?)` tear down the context (supports delayed destroy).
+
+## Test status
+
+- `testFailed()` mark the test as failed.
+- `testSuccess()` mark the test as success.
+- `testSucceeded()` alias for success.
+
+## Snapshots
+
+- `getSnapshotsByType(type)` return snapshots for a given type.
+
+## Temporary files
+
+- `saveTemporaryFile(name, content)` upload a temp file for browser access.

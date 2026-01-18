@@ -1,0 +1,205 @@
+---
+title: Interacting With Elements
+description: Click, type, select, drag, and hover.
+---
+
+## Clicking
+
+- `click(selector?)` clicks the element or the current mouse position.
+- `clickLink(text, element? = 'a')` clicks a link by `href` value.
+- `clickAtPoint(x, y)` clicks absolute coordinates.
+- `clickAtXPath(expression)` clicks using XPath.
+- `clickAndHold(selector?)`, `doubleClick(selector?)`, `rightClick(selector?)`, `controlClick(selector?)`.
+- `releaseMouse()` releases the mouse button.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .click('@save')
+  .rightClick('#menu');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->click('@save')
+    ->rightClick('#menu');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->click('@save')
+    ->rightClick('#menu');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.click("@save")
+    .rightClick("#menu");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Click("@save").RightClick("#menu")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+`moveMouse(xOffset, yOffset)` is not supported.
+
+## Typing and values
+
+Use these for inputs and content:
+
+- `type(selector, value)` clears and types.
+- `typeSlowly(selector, value, pause?)` types with delay.
+- `append(selector, value)` types without clearing.
+- `appendSlowly(selector, value, pause?)` appends with delay.
+- `clear(selector)` clears an input.
+- `keys(selector, keys[])` sends key combos.
+- `value(selector, value?)` gets or sets the value.
+- `text(selector)` returns `innerText`.
+- `attribute(selector, attribute)` reads an attribute.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .type('email', 'you@example.com')
+  .keys('password', ['Control+A', 'Backspace']);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->type('email', 'you@example.com')
+    ->keys('password', ['Control+A', 'Backspace']);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->type('email', 'you@example.com')
+    ->keys('password', ['Control+A', 'Backspace']);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.type("email", "you@example.com")
+    .keys("password", List.of("Control+A", "Backspace"));
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Type("email", "you@example.com").Keys("password", []string{"Control+A", "Backspace"})
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Forms
+
+- `select(selector, value?)` selects one or more options.
+- `radio(selector, value)` selects a radio input.
+- `check(selector, value?)` / `uncheck(selector, value?)` toggles checkboxes.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .select('country', 'US')
+  .check('terms');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->select('country', 'US')
+    ->check('terms');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->select('country', 'US')
+    ->check('terms');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.select("country", "US")
+    .check("terms");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Select("country", "US").Check("terms")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Buttons
+
+- `press(textOrName)` clicks a button by label or name.
+- `pressAndWaitFor(textOrName)` clicks and waits for it to be enabled.
+
+## Mouse and drag
+
+- `mouseover(selector)` hovers an element.
+- `scrollIntoView(selector)` / `scrollTo(selector)`.
+- `clickablePoint(selector, offset?)` returns coordinates.
+- `drag(from, to)` drags one element onto another.
+- `dragOffset(selector, x, y)` drags by offset.
+- `dragUp/dragDown/dragLeft/dragRight(selector, offset)` convenience methods.

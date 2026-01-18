@@ -1,0 +1,130 @@
+---
+title: Assertions
+description: Built-in assert helpers.
+---
+
+Assertions return a result with assertion metadata, so they still chain like other Browser calls.
+
+## Page and URL
+
+- `assertTitle(title)` exact title match.
+- `assertTitleContains(text)` partial title match.
+- `assertUrlIs(url)` matches full URL or path.
+- `assertSchemeIs/IsNot(scheme)`.
+- `assertHostIs/IsNot(host)`.
+- `assertPortIs/IsNot(port)`.
+- `assertPathIs/IsNot(path)`.
+- `assertPathBeginsWith/EndsWith/Contains(path)`.
+- `assertQueryStringHas(name, value?)`.
+- `assertQueryStringMissing(name)`.
+- `assertFragmentIs/IsNot(fragment)`.
+- `assertFragmentBeginsWith(fragment)`.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .assertTitleContains('Dashboard')
+  .assertPathIs('/settings');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->assertTitleContains('Dashboard')
+    ->assertPathIs('/settings');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->assertTitleContains('Dashboard')
+    ->assertPathIs('/settings');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.assertTitleContains("Dashboard")
+    .assertPathIs("/settings");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.AssertTitleContains("Dashboard").AssertPathIs("/settings")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Text and source
+
+- `assertSee(text, ignoreCase?)` / `assertDontSee(text, ignoreCase?)`.
+- `assertSeeIn(selector, text, ignoreCase?)` / `assertDontSeeIn(selector, text, ignoreCase?)`.
+- `assertSeeAnythingIn(selector)` / `assertSeeNothingIn(selector)`.
+- `assertSourceHas(code)` / `assertSourceMissing(code)`.
+- `assertScript(expression, expected?)` runs JS and compares.
+
+## Links
+
+- `assertSeeLink(link, selector? = 'a', options?)` matches `href`.
+- `assertDontSeeLink(link, selector? = 'a', options?)`.
+
+## Cookies
+
+- `assertHasCookie(name)`
+- `assertCookieMissing(name)`
+- `assertCookieValue(name, value)`
+
+## Inputs and forms
+
+- `assertInputPresent(name, timeout?)` / `assertInputMissing(name, timeout?)`.
+- `assertInputValue(field, value)` / `assertInputValueIsNot(field, value)`.
+- `assertChecked(field, value?)` / `assertNotChecked(field, value?)`.
+- `assertIndeterminate(field, value?)`.
+- `assertRadioSelected(field, value)` / `assertRadioNotSelected(field, value?)`.
+- `assertSelected(field, value)` / `assertNotSelected(field, value)`.
+- `assertSelectHasOptions(field, values)` / `assertSelectMissingOptions(field, values)`.
+- `assertSelectHasOption(field, value)` / `assertSelectMissingOption(field, value)`.
+- `assertValue(selector, value)` / `assertValueIsNot(selector, value)`.
+
+## Attributes and visibility
+
+- `assertAttribute(selector, attribute, value)`
+- `assertAttributeMissing(selector, attribute)`
+- `assertAttributeContains(selector, attribute, value)`
+- `assertAttributeDoesntContain(selector, attribute, value)`
+- `assertAriaAttribute(selector, attribute, value)`
+- `assertDataAttribute(selector, attribute, value)`
+- `assertVisible(selector, options?)`
+- `assertMissing(selector, options?)`
+- `assertPresent(selector, options?)`
+- `assertNotPresent(selector, options?)`
+
+## Buttons and focus
+
+- `assertEnabled(field)` / `assertDisabled(field)`.
+- `assertButtonEnabled(button)` / `assertButtonDisabled(button)`.
+- `assertFocused(field)` / `assertNotFocused(field)`.
+
+## Vue helpers
+
+- `assertVue(key, value, componentSelector?)`.
+- `assertVueIsNot(key, value, componentSelector?)`.
+- `assertVueContains(key, value, componentSelector?)`.
+- `assertVueDoesntContain/DoesNotContain(key, value, componentSelector?)`.

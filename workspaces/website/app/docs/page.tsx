@@ -6,6 +6,7 @@ import defaultMdxComponents from 'fumadocs-ui/mdx';
 import browserCollections from 'fumadocs-mdx:collections/browser';
 import { baseOptions } from '@/lib/layout.shared';
 import { useFumadocsLoader } from 'fumadocs-core/source/client';
+import DocsLanguageSwitcher from '@/components/docs-language-switcher';
 
 export async function loader({ params }: Route.LoaderArgs) {
   const slugs = params['*'].split('/').filter((v) => v.length > 0);
@@ -39,7 +40,13 @@ export default function Page({ loaderData }: Route.ComponentProps) {
   const { pageTree } = useFumadocsLoader(loaderData);
 
   return (
-    <DocsLayout {...baseOptions()} tree={pageTree}>
+    <DocsLayout
+      {...baseOptions()}
+      tree={pageTree}
+      sidebar={{
+        banner: <DocsLanguageSwitcher />,
+      }}
+    >
       <Content />
     </DocsLayout>
   );

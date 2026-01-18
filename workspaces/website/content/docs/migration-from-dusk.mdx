@@ -1,0 +1,25 @@
+---
+title: Migration From Dusk
+description: Key differences when moving from Laravel Dusk.
+---
+
+Puth mirrors most of the Dusk Browser API, but a few behaviors differ.
+
+## Server lifecycle
+
+- Dusk starts ChromeDriver for you. Puth does not.
+- Run the Puth server separately and configure your client to connect.
+
+## Unsupported
+
+- `moveMouse(xOffset, yOffset)` is not supported.
+- Several window and cookie helpers do not work on iframes.
+
+## API differences
+
+- `keys()` uses the Puppeteer keymap.
+- For dialogs, prefer `acceptDialog(value)` instead of `typeInDialog(value)`.
+- Some assertion error messages are phrased differently.
+- Console output format is different from Dusk.
+
+If you see a failing Dusk test, start by checking selectors and waits. Puth is stricter about visibility and timing by default.

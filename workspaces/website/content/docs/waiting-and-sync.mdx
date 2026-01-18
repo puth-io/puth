@@ -1,0 +1,249 @@
+---
+title: Waiting and Sync
+description: Timeouts and wait helpers.
+---
+
+## Timeouts
+
+- `setTimeout(ms)` sets the base timeout used by wait helpers.
+- `setTimeoutMultiplier(factor)` scales timeouts globally.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+browser.setTimeout(5000).setTimeoutMultiplier(2);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser->setTimeout(5000)->setTimeoutMultiplier(2);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser->setTimeout(5000)->setTimeoutMultiplier(2);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.setTimeout(5000).setTimeoutMultiplier(2);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.SetTimeout(5000).SetTimeoutMultiplier(2)
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Element waits
+
+- `waitFor(selector, timeout?)` waits for visible.
+- `waitUntilMissing(selector, timeout?)` waits for hidden.
+- `waitForNotPresent(selector, options?)` waits until not in DOM.
+- `waitForText(text, timeout?, ignoreCase?)` waits for text anywhere.
+- `waitForTextIn(selector, text, timeout?, ignoreCase?)` waits for text in a selector.
+- `waitUntilMissingText(text, timeout?, ignoreCase?)` waits for text to disappear.
+- `waitUntilMissingTextIn(selector, text, timeout?, ignoreCase?)` waits for text to disappear in a selector.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .waitFor('@toast')
+  .waitUntilMissing('@toast');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->waitFor('@toast')
+    ->waitUntilMissing('@toast');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->waitFor('@toast')
+    ->waitUntilMissing('@toast');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.waitFor("@toast")
+    .waitUntilMissing("@toast");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.WaitFor("@toast").WaitUntilMissing("@toast")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Other waits
+
+- `waitForLink(text, timeout?)` waits for a link with matching `href`.
+- `waitForInput(name, timeout?)` waits for input/select/textarea by name.
+- `waitForLocation(url, timeout?)` waits until the URL matches.
+- `waitForEvent(type, target?, timeout?)` waits for a DOM event.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser.waitForLocation('/checkout');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser->waitForLocation('/checkout');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser->waitForLocation('/checkout');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.waitForLocation("/checkout");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.WaitForLocation("/checkout")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Custom waits
+
+`waitUntil` runs a function in the page and waits for truthy:
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser.waitUntil(
+  () => window.__booted === true,
+  [],
+  'App did not boot in time',
+  { timeout: 5000 },
+);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser->waitUntil(
+    '() => window.__booted === true',
+    [],
+    'App did not boot in time',
+    ['timeout' => 5000],
+);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser->waitUntil(
+    '() => window.__booted === true',
+    [],
+    'App did not boot in time',
+    ['timeout' => 5000],
+);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.waitUntil(
+    "() => window.__booted === true",
+    List.of(),
+    "App did not boot in time",
+    Map.of("timeout", 5000)
+);
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.WaitUntil(
+    "() => window.__booted === true",
+    []any{},
+    "App did not boot in time",
+    map[string]any{"timeout": 5000},
+)
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+Other helpers:
+
+- `waitUntil(pageFunction, args?, message?, options?)`
+- `waitUntilAttribute(selector, attribute, value, message, options?)`
+- `waitUntilEnabled(selector, options?)`
+- `waitUntilDisabled(selector, options?)`

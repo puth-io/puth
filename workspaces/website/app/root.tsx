@@ -10,6 +10,7 @@ import { RootProvider } from 'fumadocs-ui/provider/react-router';
 import type { Route } from './+types/root';
 import './app.css';
 import SearchDialog from '@/components/search';
+import { SdkLanguageProvider } from '@/lib/sdk-language';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -34,7 +35,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="flex flex-col min-h-screen">
-        <RootProvider search={{ SearchDialog }}>{children}</RootProvider>
+        <RootProvider search={{ SearchDialog }}>
+          <SdkLanguageProvider>{children}</SdkLanguageProvider>
+        </RootProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

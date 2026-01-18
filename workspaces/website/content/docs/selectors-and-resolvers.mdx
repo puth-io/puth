@@ -1,0 +1,155 @@
+---
+title: Selectors and Resolvers
+description: How Puth resolves selectors before querying the page.
+---
+
+Selectors are CSS by default. Before any lookup, Puth runs them through the resolver so you can keep tests tidy and stable.
+
+## Resolver basics
+
+- Default prefix: `body` (selectors are scoped under body).
+- Default finder: `puth` (used by `@` shortcuts).
+
+`@name` expands to `[puth="name"]`.
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser.click('@save');
+// resolves to: body [puth="save"]
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser->click('@save');
+// resolves to: body [puth="save"]
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser->click('@save');
+// resolves to: body [puth="save"]
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.click("@save");
+// resolves to: body [puth="save"]
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.Click("@save")
+// resolves to: body [puth="save"]
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Prefix and page elements
+
+You can change the prefix and define reusable selectors:
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="javascript">
+
+```js
+await browser
+  .setResolverPrefix('#app')
+  .setResolverPageElements({
+    '@nav': 'nav[role="navigation"]',
+    '@save': 'button[type="submit"]',
+  })
+  .click('@save');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-laravel">
+
+```php
+$browser
+    ->setResolverPrefix('#app')
+    ->setResolverPageElements([
+        '@nav' => 'nav[role="navigation"]',
+        '@save' => 'button[type="submit"]',
+    ])
+    ->click('@save');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="php-symfony">
+
+```php
+$browser
+    ->setResolverPrefix('#app')
+    ->setResolverPageElements([
+        '@nav' => 'nav[role="navigation"]',
+        '@save' => 'button[type="submit"]',
+    ])
+    ->click('@save');
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+browser.setResolverPrefix("#app")
+    .setResolverPageElements(Map.of(
+        "@nav", "nav[role=\"navigation\"]",
+        "@save", "button[type=\"submit\"]"
+    ))
+    .click("@save");
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+browser.
+    SetResolverPrefix("#app").
+    SetResolverPageElements(map[string]string{
+        "@nav": "nav[role=\"navigation\"]",
+        "@save": "button[type=\"submit\"]",
+    }).
+    Click("@save")
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Special cases
+
+- `xpath//...` uses XPath selectors.
+- Selectors ending with `[]` are invalid.
+- When running on Bun, XPath is only supported on the root document.
+
+## Finder helpers
+
+- `resolver(selector)` returns the resolved selector string.
+- `find(selector)` returns the first match or null.
+- `findAll(selector)` returns all matches.
+- `findOrFail(selector)` throws if nothing matches.
+- `firstOrFail(selector)` returns the first match or throws.
