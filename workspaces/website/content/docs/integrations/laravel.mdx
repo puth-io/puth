@@ -1,0 +1,91 @@
+---
+title: Laravel Integration
+description: Drop-in replacement for Laravel Dusk.
+---
+
+Puth has a native Laravel package that is a drop-in replacement for Laravel Dusk. It provides a client only, so you still need a running Puth server.
+
+## Installation
+
+Requires Laravel 9+.
+
+```sh
+composer require --dev puth/laravel
+php artisan puth:install
+```
+
+This publishes config and creates `tests/PuthTestCase.php`. Configure the Puth server URL in `config/puth.php`.
+
+## Running tests
+
+Add `tests/Browser` to `phpunit.xml` so `php artisan test` runs browser tests. If you already have Dusk tests in `tests/Browser`, create a new directory (e.g. `tests/Puth`) and add that instead.
+
+```sh
+php artisan test
+```
+
+## Example test
+
+<CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="php">
+  <CodeBlockTabsList>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
+  </CodeBlockTabsList>
+  <CodeBlockTab value="php">
+
+```php
+use Puth\Laravel\Browser;
+use Tests\PuthTestCase;
+
+class ExampleBrowserTest extends PuthTestCase
+{
+    function test_visit_website()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('https://playground.puth.dev')
+                ->assertSee('Puth');
+        });
+    }
+}
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="javascript">
+
+```js
+// Laravel integration is PHP-only.
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="java">
+
+```java
+// Laravel integration is PHP-only.
+```
+
+  </CodeBlockTab>
+  <CodeBlockTab value="go">
+
+```go
+// Laravel integration is PHP-only.
+```
+
+  </CodeBlockTab>
+</CodeBlockTabs>
+
+## Differences to Laravel Dusk
+
+### Changed functions
+
+- `keys()` uses the Puppeteer keymap and is case sensitive.
+- `typeInDialog(value)` is replaced by `acceptDialog(value)`.
+
+### Unsupported functions
+
+- `moveMouse(xOffset, yOffset)` is not supported.
+
+### Dialogs
+
+If you want Dusk-style dialog helpers, add the `LegacyBrowserHandling` trait when using `PuthDuskTestCase`. There is no `typeInDialog('...')`; provide the prompt text via `acceptDialog('...')`.

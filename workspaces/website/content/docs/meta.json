@@ -2,9 +2,12 @@
     "root": true,
     "pages": [
         "---Introduction---",
-        "index",
         "getting-started",
         "migration-from-dusk",
+        "ci-cd",
+        "roadmap",
+        "---Integrations---",
+        "integrations/laravel",
         "---Concepts---",
         "browser-basics",
         "selectors-and-resolvers",

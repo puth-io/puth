@@ -1,17 +1,75 @@
 ---
 title: Getting Started
-description: Install Puth, run the server, and connect a client.
+description: What Puth is, how the server works, and how to connect a client.
 ---
+
+## Introduction
+
+Puth is a browser testing tool focused on stability, performance, and rich feedback. The docs are client-agnostic: the API is the same whether you use PHP, JavaScript, Java, or Go.
+
+**Security note:** Puth is meant for local dev and CI. Do not expose it publicly.
+
+### Start here
+
+<Cards>
+  <Card title="Browser basics" href="/docs/browser-basics" />
+  <Card title="Browser API" href="/docs/api/browser" />
+  <Card title="CI/CD" href="/docs/ci-cd" />
+</Cards>
+
+### Core topics
+
+<Cards>
+  <Card title="Selectors and resolvers" href="/docs/selectors-and-resolvers" />
+  <Card title="Interacting with elements" href="/docs/interacting-with-elements" />
+  <Card title="Waiting and sync" href="/docs/waiting-and-sync" />
+  <Card title="Assertions" href="/docs/assertions" />
+</Cards>
+
+### Migration
+
+<Cards>
+  <Card title="From Laravel Dusk" href="/docs/migration-from-dusk" />
+  <Card title="Laravel integration" href="/docs/integrations/laravel" />
+</Cards>
+
+## What is Puth?
+
+Puth is a browser testing framework built on top of Puppeteer. It is a client/server system: you run a Puth server that drives the browser, then connect a client SDK to it.
 
 ## 1) Run the Puth server
 
 Run Puth locally using Docker or npm.
 
-Docker:
+### Npm package
+
+You can install Puth globally or inside your project. The package is small, but Chrome is not. Puth checks for a compatible Chrome in:
+
+- `~/.cache/puth`
+- `$(pwd)/.cache/puppeteer`
+
+If none is found, it will download Chrome and ask where to store it. Using the home directory avoids multiple copies.
+
+`npm install --global puth` then `puth start`
+
+### Docker/Podman
+
+The OCI image ships with Chrome pre-installed.
+
 `docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1`
 
-npm:
-`npm install --global puth` then `puth start`
+### Docker Compose
+
+```yaml
+services:
+  puth:
+    image: puthio/puth:0.7.1
+    ports:
+      - 127.0.0.1:7345:7345
+    # Mount a folder for snapshots if you want to export them as artifacts
+    # volumes:
+    #   - ./puth/snapshots:/puth/storage/snapshots
+```
 
 ## 2) Point your client at Puth
 
@@ -75,6 +133,14 @@ browser.Visit("https://app.test").
 
   </CodeBlockTab>
 </CodeBlockTabs>
+
+## GUI
+
+The Puth GUI is built into the server. Open the server URL in a browser to view it.
+
+## Clients and integrations
+
+Currently, the only framework integration is Laravel. The core client SDKs are language-agnostic.
 
 ## 4) Run tests in CI
 

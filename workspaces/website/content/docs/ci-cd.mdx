@@ -1,0 +1,22 @@
+---
+title: CI/CD
+description: Running Puth in CI and collecting artifacts.
+---
+
+## Recommended setup
+
+Run Puth via Docker/Podman in CI. If you run the npm package, cache these directories:
+
+- `$(pwd)/.cache/puppeteer`
+- your npm cache directory
+
+## Failed tests and snapshots
+
+The `puth/laravel` package detects CI via the `CI` environment variable and enables snapshot saving on failures.
+
+Snapshots are stored in:
+
+- Docker image: `/puth/storage/snapshots`
+- npm install: `$(pwd)/.storage/snapshots`
+
+Add the snapshots directory as a CI artifact.
