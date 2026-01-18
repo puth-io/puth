@@ -13,8 +13,7 @@ A Browser instance wraps a page or a frame. Most clients create one per test, bu
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -27,16 +26,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->_withinIframe('#checkout-frame')
-    ->click('@pay');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser
@@ -75,8 +65,7 @@ Use these for page navigation and reloads:
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -89,16 +78,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->visit('https://app.test')
-    ->refresh();
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser
@@ -152,8 +132,7 @@ Run code in the page context:
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -164,14 +143,7 @@ const count = await browser.evaluate('document.querySelectorAll(".item").length'
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$count = $browser->evaluate('document.querySelectorAll(".item").length');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $count = $browser->evaluate('document.querySelectorAll(".item").length');

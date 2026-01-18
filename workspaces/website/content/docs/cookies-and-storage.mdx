@@ -14,8 +14,7 @@ Cookie helpers only work on pages (not iframes).
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -28,16 +27,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->setCookie([['name' => 'session', 'value' => 'abc', 'path' => '/']])
-    ->assertHasCookie('session');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser

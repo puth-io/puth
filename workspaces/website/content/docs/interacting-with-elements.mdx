@@ -15,8 +15,7 @@ description: Click, type, select, drag, and hover.
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -29,16 +28,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->click('@save')
-    ->rightClick('#menu');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser
@@ -83,8 +73,7 @@ Use these for inputs and content:
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -97,16 +86,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->type('email', 'you@example.com')
-    ->keys('password', ['Control+A', 'Backspace']);
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser
@@ -141,8 +121,7 @@ browser.Type("email", "you@example.com").Keys("password", []string{"Control+A", 
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -155,16 +134,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->select('country', 'US')
-    ->check('terms');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser

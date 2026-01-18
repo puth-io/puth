@@ -7,6 +7,7 @@ import browserCollections from 'fumadocs-mdx:collections/browser';
 import { baseOptions } from '@/lib/layout.shared';
 import { useFumadocsLoader } from 'fumadocs-core/source/client';
 import DocsLanguageSwitcher from '@/components/docs-language-switcher';
+import SdkCodeBlockTabs from '@/components/sdk-code-block-tabs';
 
 export async function loader({ params }: Route.LoaderArgs) {
   const slugs = params['*'].split('/').filter((v) => v.length > 0);
@@ -28,7 +29,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
         <DocsTitle>{frontmatter.title}</DocsTitle>
         <DocsDescription>{frontmatter.description}</DocsDescription>
         <DocsBody>
-          <Mdx components={{ ...defaultMdxComponents }} />
+          <Mdx components={{ ...defaultMdxComponents, CodeBlockTabs: SdkCodeBlockTabs }} />
         </DocsBody>
       </DocsPage>
     );

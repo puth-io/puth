@@ -15,8 +15,7 @@ Puth exposes dialogs through a small set of helpers.
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -30,17 +29,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->click('#delete')
-    ->assertDialogOpened('Are you sure?')
-    ->acceptDialog();
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser
@@ -78,8 +67,7 @@ You can type into a prompt two ways:
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -92,16 +80,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->click('#rename')
-    ->acceptDialog('New name');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser

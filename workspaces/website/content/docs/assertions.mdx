@@ -23,8 +23,7 @@ Assertions return a result with assertion metadata, so they still chain like oth
 <CodeBlockTabs groupId="puth-sdk-language" persist defaultValue="javascript">
   <CodeBlockTabsList>
     <CodeBlockTabsTrigger value="javascript">JavaScript</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-laravel">PHP (Laravel)</CodeBlockTabsTrigger>
-    <CodeBlockTabsTrigger value="php-symfony">PHP (Symfony)</CodeBlockTabsTrigger>
+    <CodeBlockTabsTrigger value="php">PHP</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="java">Java</CodeBlockTabsTrigger>
     <CodeBlockTabsTrigger value="go">Go</CodeBlockTabsTrigger>
   </CodeBlockTabsList>
@@ -37,16 +36,7 @@ await browser
 ```
 
   </CodeBlockTab>
-  <CodeBlockTab value="php-laravel">
-
-```php
-$browser
-    ->assertTitleContains('Dashboard')
-    ->assertPathIs('/settings');
-```
-
-  </CodeBlockTab>
-  <CodeBlockTab value="php-symfony">
+  <CodeBlockTab value="php">
 
 ```php
 $browser

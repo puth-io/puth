@@ -8,8 +8,7 @@ export type SdkLanguageOption = {
 const STORAGE_KEY = 'puth-sdk-language';
 
 const SDK_LANGUAGE_OPTIONS: SdkLanguageOption[] = [
-  { id: 'php-laravel', label: 'PHP (Laravel)' },
-  { id: 'php-symfony', label: 'PHP (Symfony)' },
+  { id: 'php', label: 'PHP' },
   { id: 'javascript', label: 'JavaScript' },
   { id: 'java', label: 'Java' },
   { id: 'go', label: 'Go' },
