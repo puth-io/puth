@@ -1,0 +1,5 @@
+---
+"puth": minor
+---
+
+release autogen
