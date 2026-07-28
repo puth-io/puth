@@ -1,5 +1,11 @@
 # puth
 
+## 0.8.0
+
+### Minor Changes
+
+- 8917b3c: release autogen
+
 ## 0.7.2
 
 ### Patch Changes
