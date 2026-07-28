@@ -59,7 +59,7 @@
     "dev:server": "npm run dev",
     "dev:server:debug": "DEBUG=\"puppeteer:*\" NODE_ENV=development tsx watch --clear-screen=false src/dev/server.ts > puth.log 2> puth.cdp.log",
     "test": "vitest run",
-    "test:only:remote": "TEST_ONLY_REMOTE=true vitest test/api.test.ts",
+    "test:only:remote": "TEST_ONLY_REMOTE=true vitest run test/api.test.ts",
     "test:only:plugins": "vitest 'tst/plugins/**/*.ts",
     "test:only:translation": "vitest test/translation/**/*.ts",
     "test:api": "vitest test/api.test.ts",
