@@ -175,16 +175,27 @@ jobs:
   laravel:
     needs: [ test-puth-node ]
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: true
       matrix:
         php: [ 8.2, 8.3, 8.4 ]
-        laravel: [ 11, 12 ]
+        laravel: [ 12, 13 ]
         phpunit: [ 11, 12 ]
         collision: [ 8 ]
+        experimental: [ false ]
         exclude:
           - php: 8.2
             phpunit: 12
+          - php: 8.2
+            laravel: 13
+        include:
+          # Track Laravel's development branch for the next major release.
+          - php: 8.4
+            laravel: dev-master
+            phpunit: 12
+            collision: 8
+            experimental: true
     name: PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }}, Phpunit ${{ matrix.phpunit }}, Collision ${{ matrix.collision }}
     steps:
       - uses: actions/checkout@v4
