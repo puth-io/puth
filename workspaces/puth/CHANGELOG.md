@@ -1,5 +1,15 @@
 # puth
 
+## 0.8.1
+
+### Patch Changes
+
+- c26b29f: Publish the ESM core build required by puth at runtime.
+- Updated dependencies [c26b29f]
+- Updated dependencies [c26b29f]
+  - @puth/core@0.0.1
+  - @puth/client@0.0.1
+
 ## 0.8.0
 
 ### Minor Changes
