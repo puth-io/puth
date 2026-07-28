@@ -1,5 +1,11 @@
 # @puth/client-laravel
 
+## 0.9.0
+
+### Minor Changes
+
+- 1a08f69: change dependencies to not be restricted from newer package versions
+
 ## 0.8.0
 
 ### Minor Changes
