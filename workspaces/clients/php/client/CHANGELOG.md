@@ -1,5 +1,11 @@
 # @puth/client-php
 
+## 0.8.0
+
+### Minor Changes
+
+- 2821c7d: release autogen RemoteObjects
+
 ## 0.7.2
 
 ### Patch Changes

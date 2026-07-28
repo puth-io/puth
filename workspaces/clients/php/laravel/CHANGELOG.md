@@ -1,5 +1,12 @@
 # @puth/client-laravel
 
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [2821c7d]
+  - @puth/client-php@0.8.0
+
 ## 0.9.0
 
 ### Minor Changes
