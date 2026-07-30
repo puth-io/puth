@@ -270,6 +270,9 @@ export class Puth {
         });
 
         this.logger.info(`Server listening at http://${hostname}:${port}`);
+        if (this.options?.cors?.enabled !== false) {
+            this.logger.info(`CORS enabled. Allowed origins: ${cors.origin.join(', ')}`);
+        }
 
         return this.#http;
     }

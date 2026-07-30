@@ -86,7 +86,7 @@ let puthConfig = {
     port: flags.port,
     debug: flags.debug,
     cors: {
-        enabled: flags.disableCors !== false,
+        enabled: flags.disableCors !== true,
     },
     logger,
 };
