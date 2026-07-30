@@ -1,5 +1,4 @@
 import {RemoteContext} from './Remote';
-import path from 'node:path';
 
 const catchBrokenPipe = (error) => {
     if (error instanceof SyntaxError && error.message.includes('Unexpected end of JSON input')) {
@@ -65,7 +64,7 @@ export class RemotePuthClient {
     }
     
     request(method, url, data = {}) {
-        return fetch(path.join(this.externalUri, url), {
+        return fetch(new URL(url, this.externalUri), {
             method: method,
             body: JSON.stringify(data),
             headers: {

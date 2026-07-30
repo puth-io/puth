@@ -20,7 +20,7 @@ import { Puth } from './Puth';
 import PuthContextPlugin from './PuthContextPlugin';
 import {PUTH_EXTENSION_CODEC} from './handlers/WebsocketHandler';
 import mitt, {type Emitter, type Handler, type WildcardHandler} from './utils/Emitter';
-import path, { join } from 'node:path';
+import path from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import { Return } from './context/Return';
@@ -51,6 +51,8 @@ type ContextEvents = {
 
 type ContextOptions = {
     debug: boolean|undefined;
+    detour: boolean|undefined;
+    portal: boolean|undefined;
     snapshot: boolean|undefined;
     test: {
         name: undefined|string;
@@ -364,7 +366,7 @@ class Context extends Generic {
             });
         });
 
-        if (this.options?.supports?.portal != null) {
+        if (this.options?.supports?.portal != null && this.isPortalEnabled) {
             let cdp: CDPSession = await this.cdps(page);
             cdp.on('Fetch.requestPaused', event => {
                 let path = this.portalShouldHandleRequest(event);
@@ -511,9 +513,37 @@ class Context extends Generic {
 
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            url: join(addr, 'portal/detour'),
+            url: new URL('portal/detour', addr).toString(),
             headers,
         });
+    }
+
+    // @codegen
+    public enableDetour() {
+        this.options.detour = true;
+    }
+
+    // @codegen
+    public disableDetour() {
+        this.options.detour = false;
+    }
+
+    public get isDetourEnabled(): boolean {
+        return this.options.detour !== false;
+    }
+
+    // @codegen
+    public enablePortal() {
+        this.options.portal = true;
+    }
+
+    // @codegen
+    public disablePortal() {
+        this.options.portal = false;
+    }
+
+    public get isPortalEnabled(): boolean {
+        return this.options.portal !== false;
     }
 
     private pageCDPSessions: Map<Page, WeakRef<CDPSession>> = new Map();

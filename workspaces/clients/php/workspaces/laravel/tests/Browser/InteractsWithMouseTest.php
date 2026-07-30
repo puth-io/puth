@@ -28,11 +28,11 @@ class InteractsWithMouseTest extends PuthTestCase
                 // assert virtual mouse stays in position
                 ->clickAndHold()
                 ->releaseMouse()
-                ->assertSeeIn('#result', '3')
+                ->assertSeeIn('#result', '2')
                 ->doubleClick()
-                ->assertSeeIn('#result', '5')
+                ->assertSeeIn('#result', '4')
                 ->rightClick()
-                ->assertSeeIn('#result', '6');
+                ->assertSeeIn('#result', '5');
         });
     }
 

@@ -21,17 +21,17 @@ abstract class TestCase extends FoundationTestCase
 {
     use ProvidesBrowser;
     use PuthAssertions;
-    
+
     public Context $context;
-    
+
     public static bool $debug = false;
-    
+
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         static::$debug = static::$debug ?: config('puth.debug', false);
-    
+
         $this->context = new Context(Puth::instanceUrl(), array_merge([
             'test' => [
                 'name' => $this->getPhpunitTestName(),
@@ -39,6 +39,8 @@ abstract class TestCase extends FoundationTestCase
             ],
             'snapshot' => true,
             'debug' => static::$debug,
+            'detour' => false,
+            'portal' => false,
             'supports' => [
                 'portal' => [
                     'urlPrefixes' => $this->requestInterceptionUrlPrefixes(),
@@ -55,80 +57,80 @@ abstract class TestCase extends FoundationTestCase
         Browser::$userResolver = function () {
             return $this->user();
         };
-        
+
         BackTrace::$debug = static::$debug;
-    
+
         if ($this->shouldTrackLog()) {
             Puth::captureLog();
         }
     }
-    
+
     public function getContextOptions(): array
     {
         return [];
     }
-    
+
     protected function tearDown(): void
     {
         Puth::releaseLog();
         Puth::clearLog();
-    
+
         $destroyOptions = [];
 
         if ($this->hasPhpunitTestFailed()) {
             $this->context->testFailed();
-    
+
             if ($this->shouldSaveSnapshotOnFailure()) {
                 $destroyOptions['save'] = ['to' => 'file'];
             }
         }
-        
+
         static::closeAll();
-    
+
         foreach (static::$afterClassCallbacks as $callback) {
             $callback();
         }
-    
+
         $this->context->destroy(['options' => $destroyOptions]);
-    
+
         parent::tearDown();
     }
-    
+
     public function shouldTrackLog(): bool
     {
         return true;
     }
-    
+
     public function shouldSaveSnapshotOnFailure()
     {
         if (isset($this->saveSnapshotOnFailure)) {
             return $this->saveSnapshotOnFailure;
         }
-        
+
         $ci = env('CI');
         if ($ci === true || $ci === '1' || $ci === 'true') {
             return true;
         }
-        
+
         return false;
     }
-    
+
     private function isPhpVersion10()
     {
         return intval(explode('.', Version::id())[0]) > 9;
     }
-    
+
     public function getPhpunitTestName()
     {
         return $this->isPhpVersion10() ? $this->name() : $this->getName();
     }
-    
+
     public function hasPhpunitTestFailed()
     {
         if (!$this->isPhpVersion10()) {
             return $this->hasFailed();
         }
-        
+
         return $this->status()->isFailure() || $this->status()->isError();
     }
 
@@ -136,7 +138,7 @@ abstract class TestCase extends FoundationTestCase
     {
         return [$this->baseUrl()];
     }
-    
+
     /**
      * Determine the application's base URL.
      *
@@ -146,7 +148,7 @@ abstract class TestCase extends FoundationTestCase
     {
         return rtrim(config('app.url'), '/');
     }
-    
+
     /**
      * Return the default user to authenticate.
      *
@@ -199,20 +201,21 @@ abstract class TestCase extends FoundationTestCase
         $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
         $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
         $server['REQUEST_URI'] = $portalRequest->url;
-
-        $cookies = $this->prepareCookiesForRequest();
+        $server['REMOTE_ADDR'] = $portalRequest?->ip ?? '127.0.0.1';
 
         $url = parse_url($portalRequest->url);
         $queryParams = [];
         if (isset($url['query'])) {
             parse_str($url['query'], $queryParams);
         }
-        $server['HTTP_HOST'] = "{$url['host']}:{$url['port']}";
+        $server['HTTP_HOST'] = "{$url['host']}:" . ($url['port'] ?? '80');
 
-        $cookies = [];
+        $parsedCookies = [];
         if (isset($headers['cookie'])) {
             parse_str(str_replace('; ', '&', $headers['cookie']), $cookies);
         }
+        $cookies = $this->prepareCookiesForRequest();
+        array_push($cookies, ...$parsedCookies);
 
         $request = new Request(
             $queryParams, // GET
