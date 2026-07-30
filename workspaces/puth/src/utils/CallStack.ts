@@ -8,6 +8,7 @@ const dialogFunctions = ['assertDialogOpened', 'typeInDialog', 'acceptDialog', '
 
 export type PortalRequest = {
     psuri: string;
+    ip: string|undefined;
     url: string;
     path: string;
     headers: TODO;
@@ -120,7 +121,7 @@ export class CallStack {
         this.context.psuriCache.set(psuri, { stack: this });
 
         if (event.request.hasPostData) {
-            if (event.request.postData === undefined) {
+            if (event.request.postData === undefined && this.context.isDetourEnabled) {
                 this.logger.debug('[Portal][Detour too large] ' + event.request.url);
                 return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
             }
@@ -131,7 +132,7 @@ export class CallStack {
                     contentType = event.request.headers[key].trim();
                 }
             }
-            if (contentType.startsWith('multipart/')) {
+            if (contentType.startsWith('multipart/') && this.context.isDetourEnabled) {
                 this.logger.debug('[Portal][Detour multipart] ' + event.request.url);
                 return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
             }

@@ -26,6 +26,13 @@ const isNotNull  = (actual: any, _: any) => actual != null;
 const isEmpty    = (actual: any, _: any) => actual == null || actual == '';
 const isNotEmpty = (actual: any, _: any) => actual != null && actual != '';
 
+function xpathLiteral(value: string): string {
+    if (!value.includes("'")) return `'${value}'`;
+    if (!value.includes('"')) return `"${value}"`;
+
+    return `concat(${value.split("'").map(part => `'${part}'`).join(', "\'", ')})`;
+}
+
 export async function expects(
     actual: any,
     compareFn: (actual: any, expected: any) => boolean,
@@ -198,8 +205,10 @@ export class Browser {
             .then(this.self);
     }
 
-    public clickLink(selector: string, element: string = 'a'): Promise<this> {
-        return this.firstOrFail(element + `[href='${selector}']`)
+    public clickLink(linkText: string, element: string = 'a'): Promise<this> {
+        const text = xpathLiteral(linkText.trim().replace(/\s+/g, ' '));
+
+        return this.firstOrFail(`xpath////${element}[normalize-space(.) = ${text}]`)
             .then((element) => element.click())
             .then(this.self);
     }
@@ -221,10 +230,7 @@ export class Browser {
             let element = await this.firstOrFail(selector);
             await element.scrollIntoView();
             let point = await element.clickablePoint();
-            await this.page.mouse.click(point.x, point.y);
-        } else {
-            await this.page.mouse.down();
-            await this.page.mouse.up();
+            await this.page.mouse.move(point.x, point.y);
         }
         await this.page.mouse.down();
 
@@ -259,8 +265,11 @@ export class Browser {
 
     public async controlClick(selector: string | null = null): Promise<this> {
         await this.page.keyboard.down('Control');
-        await this.click(selector);
-        await this.page.keyboard.up('Control');
+        try {
+            await this.click(selector);
+        } finally {
+            await this.page.keyboard.up('Control');
+        }
 
         return this.self();
     }
@@ -566,10 +575,9 @@ export class Browser {
         value = value === null ? null : (!Array.isArray(value) ? [value] : value);
 
         let select = (await PuthStandardPlugin.its(element, 'tagName') === 'SELECT') ? element : null;
-        let isMultiple = false;
+        let isMultiple = Boolean(await PuthStandardPlugin.its(element, 'multiple'));
 
         if (select !== null) {
-            isMultiple = await PuthStandardPlugin.its(element, 'multiple');
             if (isMultiple) {
                 await PuthStandardPlugin.deselectAll(select);
             }
@@ -586,20 +594,19 @@ export class Browser {
             if (value == null) {
                 await options[Math.floor(Math.random() * options.length)].click();
             } else {
+                const controlPressed = value.length > 1 && isMultiple;
                 try {
-                    if (value.length > 1) await this.page.keyboard.down('Control');
+                    if (controlPressed) await this.page.keyboard.down('Control');
                     for (let option of options) {
                         if (value.includes(await PuthStandardPlugin.its(option, 'value'))) {
                             await option.click();
                             if (!isMultiple) {
-                                console.error('break not multiple');
                                 break;
                             }
                         }
                     }
-                } catch (e) {
-                    if (value.length > 1) await this.page.keyboard.up('Control');
-                    throw e;
+                } finally {
+                    if (controlPressed) await this.page.keyboard.up('Control');
                 }
             }
         }
@@ -732,14 +739,50 @@ export class Browser {
     }
 
     public async waitForEvent(type: string, target: string = '', timeout: int|null = null): Promise<this> {
-        let timeoutFunc = `setTimeout(resolve, ${this.resolveTimeout(timeout)});`;
-        if (target !== 'document' && target !== 'window') {
-            // wait for the given target to be available
-            await this.firstOrFail(target);
-            target = `document.querySelector('${this.resolver(target)}')`;
-        } else {
+        const timeoutInMs = this.resolveTimeout(timeout);
+        const waitForEvent = (target: EventTarget, type: string, timeoutInMs: number) => new Promise<void>((resolve, reject) => {
+            const onEvent = () => {
+                clearTimeout(timer);
+                resolve();
+            };
+            const timer = setTimeout(() => {
+                target.removeEventListener(type, onEvent);
+                reject(new Error(`Timed out waiting for event [${type}].`));
+            }, timeoutInMs);
+
+            target.addEventListener(type, onEvent, { once: true });
+        });
+
+        try {
+            if (target !== 'document' && target !== 'window') {
+                // wait for the given target to be available
+                const element = await this.firstOrFail(target);
+                await this.site.evaluate(waitForEvent, element, type, timeoutInMs);
+            } else {
+                await this.site.evaluate(
+                    (target, type, timeoutInMs) => {
+                        const eventTarget = target === 'document' ? document : window;
+                        return new Promise<void>((resolve, reject) => {
+                            const onEvent = () => {
+                                clearTimeout(timer);
+                                resolve();
+                            };
+                            const timer = setTimeout(() => {
+                                eventTarget.removeEventListener(type, onEvent);
+                                reject(new Error(`Timed out waiting for event [${type}].`));
+                            }, timeoutInMs);
+
+                            eventTarget.addEventListener(type, onEvent, { once: true });
+                        });
+                    },
+                    target,
+                    type,
+                    timeoutInMs,
+                );
+            }
+        } catch (error) {
+            throw new ExpectationFailed(`Waited ${timeoutInMs}ms for event [${type}].`);
         }
-        await this.site.evaluate(`(new Promise(function (resolve, reject) { ${timeoutFunc} ${target}.addEventListener('${type}', resolve, { once: true }); }))`);
 
         return this.self();
     }
@@ -767,7 +810,7 @@ export class Browser {
 
         return this.waitUntil(
             (t, s, ic, m) => {
-                let innerText = document.querySelector(s)?.innerText;
+                let innerText = document.querySelector(s)?.innerText ?? '';
                 if (ic) {
                     innerText = innerText?.toLowerCase();
                     t = t.map((_t) => _t?.toLowerCase());
@@ -819,8 +862,6 @@ export class Browser {
         if (!Array.isArray(value)) {
             value = [value];
         }
-        options.timeout = this.resolveTimeout(options.timeout);
-
         return this._waitFor(selector, options).then((_) =>
             this.waitUntil(
                 (s, a, v) => v.includes(document.querySelector(s)?.[a]),
@@ -1252,12 +1293,12 @@ export class Browser {
     public assertInputPresent(field: string, timeout: int|null = null): Promise<Return<this>> {
         return this.assertPresent(
             `input[name='${field}'], textarea[name='${field}'], select[name='${field}']`,
-            this.resolveTimeout(timeout),
+            { timeout },
         );
     }
 
     public assertInputMissing(field: string, timeout: int|null = null): Promise<Return<this>> {
-        return this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, this.resolveTimeout(timeout));
+        return this.assertMissing(`input[name='${field}'], textarea[name='${field}'], select[name='${field}']`, { timeout });
     }
 
     private _assertProperty(element: Promise<ElementHandle>, property, compareFn, expected, message) {
@@ -1509,7 +1550,7 @@ export class Browser {
     }
 
     public assertNotPresent(selector: string, options: {} = {}): Promise<Return<this>> {
-        return this.waitForNotPresent(this.resolver(selector)).then(this.selfWithAsserts());
+        return this.waitForNotPresent(selector, options).then(this.selfWithAsserts());
     }
 
     // public async assertDialogOpened(message: string): Promise<Return<this>> {

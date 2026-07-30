@@ -1,6 +1,6 @@
 import path, {join} from "node:path";
 import fs from "node:fs";
-import {classes, isPrimitive, NAME_TRANSLATION, normalizeTypeName, resolveAliasName} from "../codegen-clients";
+import {classes, isPrimitive, NAME_TRANSLATION, normalizeTypeName, resolveAliasName} from "../codegen-clients.js";
 
 const OUT_BASE = path.join(import.meta.dirname, '../../workspaces/clients/java/client/src/main/java/io/puth/client/remote');
 

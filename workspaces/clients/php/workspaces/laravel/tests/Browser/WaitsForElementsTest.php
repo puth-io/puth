@@ -96,18 +96,14 @@ class WaitsForElementsTest extends PuthTestCase
 
     function test_wait_for_event_timeout()
     {
+        $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
+
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground);
             $browser->timeoutMultiplier = 1;
 
             $first = now();
             $browser->waitForEvent('test-event', '#wait-for-event-element', 100);
-            Assert::assertLessThan(500, now()->diffInMilliseconds($first, true));
-
-            $second = now();
-            $browser->waitForEvent('test-event', 'document', 100);
-            Assert::assertLessThan(500, now()->diffInMilliseconds($second, true));
-            Assert::assertGreaterThan(200, now()->diffInMilliseconds($first, true));
         });
     }
 
