@@ -199,7 +199,7 @@ export class Browser {
     }
 
     public clickLink(selector: string, element: string = 'a'): Promise<this> {
-        return this.firstOrFail(element + `[href='${selector}']`)
+        return this.firstOrFail(element + `::-p-text("${selector.replaceAll('"', '\\\\"')}")`)
             .then((element) => element.click())
             .then(this.self);
     }
