@@ -490,7 +490,7 @@ class Context extends Generic {
     public async handlePortalResponse(data: {context: any, response: PortalResponse}, res) {
         let psuri = this.psuriCache.get(data.response.psuri);
         if (psuri == null) {
-            throw new Error('Received portal request but no stack found.');
+            throw new Error('Received portal response but no stack found.');
         }
         
         return psuri.stack.handlePortalResponse(data.response, res);

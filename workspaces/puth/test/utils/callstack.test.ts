@@ -131,4 +131,29 @@ describe('CallStack', () => {
         expect(cdp.send).toHaveBeenCalledWith('Network.getRequestPostData', { requestId: 'network-1' });
         expect(Buffer.from(handle.mock.calls[0][0].data, 'base64').toString('utf8')).toBe('large request body');
     });
+
+    it('rejects a portal response that does not match the active request', async () => {
+        const { context, stack } = makeStack();
+        const activeHandler = vi.fn();
+        const otherHandler = vi.fn();
+        const activeRequest = { psuri: '1' };
+        stack.activeCall = makeCall();
+        stack.portal.queue.active.push(activeRequest);
+        context.psuriCache.set('1', { stack, handler: activeHandler });
+        context.psuriCache.set('2', { stack, handler: otherHandler });
+
+        await expect(stack.handlePortalResponse({
+            psuri: '2',
+            type: 'PortalResponse',
+            headers: {},
+            body: btoa('wrong response'),
+            status: 200,
+        }, { resolve: vi.fn() })).rejects.toThrow(/does not match/);
+
+        expect(stack.portal.queue.active).toEqual([activeRequest]);
+        expect(activeHandler).not.toHaveBeenCalled();
+        expect(otherHandler).not.toHaveBeenCalled();
+        expect(context.psuriCache.has('1')).toBe(true);
+        expect(context.psuriCache.has('2')).toBe(true);
+    });
 });
