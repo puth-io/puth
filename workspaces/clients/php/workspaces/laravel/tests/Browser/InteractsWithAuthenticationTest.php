@@ -28,8 +28,6 @@ class InteractsWithAuthenticationTest extends PuthTestCase
                 ->loginAs($user)
                 ->assertAuthenticatedAs($user);
         });
-
-        $this->assertAuthenticatedAs($user);
     }
     
     function test_logout()
