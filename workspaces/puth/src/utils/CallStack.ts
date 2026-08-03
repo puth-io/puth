@@ -68,13 +68,6 @@ export class CallStack {
 
     conclude(call: Call | undefined, result: any, force = false) {
         this.logger.debug(call?.packet, 'conclude');
-        if (call != undefined && !force && this.portal.queue.active.length !== 0) {
-            this.logger.debug('set waiting response');
-            this.portal.waiting.response = result;
-            // this.portal.waiting.call = false;
-
-            return;
-        }
         if (call == undefined) {
             this.logger.error({ result }, 'Unhandled call result');
             throw new Error('Unhandled call result');
@@ -91,6 +84,12 @@ export class CallStack {
                 'Tried to call conclude with call that is not currently active',
             );
             throw new Error('Tried to call conclude with call that is not currently active');
+        }
+        if (this.portal.queue.active.length !== 0) {
+            this.logger.debug('set waiting response');
+            this.portal.waiting.response = result;
+
+            return;
         }
         
         this.logger.debug(this.activeCall.packet, 'unset active call');
