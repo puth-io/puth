@@ -119,10 +119,18 @@ export class CallStack {
         let psuri = this.context.portalSafeUniqueRequestId();
         this.context.psuriCache.set(psuri, { stack: this });
 
+        let postData = event.request.postData;
         if (event.request.hasPostData) {
-            if (event.request.postData === undefined && this.context.isDetourEnabled) {
-                this.logger.debug('[Portal][Detour too large] ' + event.request.url);
-                return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
+            if (postData === undefined) {
+                if (this.context.isDetourEnabled) {
+                    this.logger.debug('[Portal][Detour too large] ' + event.request.url);
+                    return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
+                }
+                if (event.networkId === undefined) {
+                    throw new Error('Portal request body is unavailable and detour handling is disabled.');
+                }
+
+                postData = (await cdp.send('Network.getRequestPostData', { requestId: event.networkId })).postData;
             }
 
             let contentType = '';
@@ -159,7 +167,7 @@ export class CallStack {
             url: event.request.url,
             path,
             headers: event.request.headers,
-            data: btoa(event.request.postData ?? ''),
+            data: Buffer.from(postData ?? '', 'utf8').toString('base64'),
             method: event.request.method.toUpperCase(),
         });
     }

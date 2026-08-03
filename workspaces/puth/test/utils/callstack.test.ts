@@ -11,12 +11,19 @@ const logger = {
     warn: () => {},
 };
 
-function makeStack() {
+function makeStack(overrides: Record<string, unknown> = {}) {
     const page = {};
     const context = {
         caches: { dialog: new Map() },
         waitingForDialog: [],
         puth: { logger },
+        psuriCache: new Map(),
+        isDetourEnabled: false,
+        portalSafeUniqueRequestId: () => '1',
+        setPsuriHandler(psuri, handler) {
+            this.psuriCache.get(psuri).handler = handler;
+        },
+        ...overrides,
     };
 
     return {
@@ -81,5 +88,47 @@ describe('CallStack', () => {
         expect(call).toHaveBeenCalledOnce();
 
         call.mockRestore();
+    });
+
+    it('encodes direct portal request bodies as UTF-8', async () => {
+        const { stack } = makeStack();
+        const handle = vi.spyOn(stack, 'handlePortalRequest').mockImplementation(() => {});
+        const cdp = { send: vi.fn() };
+        const postData = JSON.stringify({ message: 'Grüße 👋' });
+
+        await stack.onPortalRequest({
+            requestId: 'fetch-1',
+            request: {
+                url: 'https://example.test/action',
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                hasPostData: true,
+                postData,
+            },
+        } as any, '/action', cdp as any);
+
+        expect(Buffer.from(handle.mock.calls[0][0].data, 'base64').toString('utf8')).toBe(postData);
+    });
+
+    it('retrieves omitted portal request bodies when detours are disabled', async () => {
+        const { stack } = makeStack();
+        const handle = vi.spyOn(stack, 'handlePortalRequest').mockImplementation(() => {});
+        const cdp = {
+            send: vi.fn().mockResolvedValue({ postData: 'large request body' }),
+        };
+
+        await stack.onPortalRequest({
+            requestId: 'fetch-1',
+            networkId: 'network-1',
+            request: {
+                url: 'https://example.test/action',
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                hasPostData: true,
+            },
+        } as any, '/action', cdp as any);
+
+        expect(cdp.send).toHaveBeenCalledWith('Network.getRequestPostData', { requestId: 'network-1' });
+        expect(Buffer.from(handle.mock.calls[0][0].data, 'base64').toString('utf8')).toBe('large request body');
     });
 });
