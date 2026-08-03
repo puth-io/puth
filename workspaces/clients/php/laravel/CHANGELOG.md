@@ -1,5 +1,21 @@
 # @puth/client-laravel
 
+## 0.10.0
+
+### Minor Changes
+
+- 4bd0efc: Add a `PuthEnablePortal` test trait for opting into portal and detour request handling.
+
+### Patch Changes
+
+- 7eadda5: Add a Docker Compose development stack for Puth, the GUI, Laravel, and on-demand Java tests.
+- 23a5aee: Fix browser event waits so listeners remain active until their event is observed.
+- 6f02f05: Keep browser authentication assertions within the browser session.
+- 9a24b5c: Give the local file-upload test fixture the field name used by Laravel's attachment resolver.
+- ef32905: Set a loopback remote address for portal requests so Laravel's trusted-proxy check does not receive a null IP address.
+- 3998e65: Use deterministic local previews when testing file uploads.
+- 0fd0cca: Verify that portal-backed browser authentication updates the test application's session.
+
 ## 0.9.1
 
 ### Patch Changes

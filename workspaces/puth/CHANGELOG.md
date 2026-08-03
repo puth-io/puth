@@ -1,5 +1,27 @@
 # puth
 
+## 0.8.2
+
+### Patch Changes
+
+- 7eadda5: Add a Docker Compose development stack for Puth, the GUI, Laravel, and on-demand Java tests.
+- af2c35a: Release call stacks, CDP sessions, listeners, dialogs, and portal state when pages close.
+- ef32905: Add per-context controls for portal request handling and detours.
+- 23a5aee: Fix browser event waits so listeners remain active until their event is observed.
+- ef32905: Fix browser interaction state leaks and honour timeouts consistently for event waits and element assertions.
+- b97ad4f: Fix the `--disable-cors` option so Docker's default configuration permits GUI WebSocket connections. Log CORS allowlisted origins on startup when CORS is enabled. Fix portal and JavaScript client URL construction so HTTP URLs retain their protocol separator. Make `clickLink` select links by visible text.
+- ef32905: Keep text waits polling while a navigation temporarily replaces the document.
+- f05ebd2: Continue portal response queues when Chrome cancels an intercepted request before its response arrives.
+- a745c61: Fail paused browser requests cleanly when asynchronous portal interception fails.
+- 86bdfca: Preserve dialog responses when a browser call is interrupted by portal request handling.
+- 049245a: Preserve UTF-8 and omitted POST data when forwarding portal requests without detours.
+- a92b484: Keep portal and detour controls as context creation options instead of runtime APIs.
+- a72fdbd: Store iframe browser call stacks under their parent page consistently.
+- 8ad8d25: Reject portal responses that do not match the active intercepted request.
+- Updated dependencies [e87f57e]
+- Updated dependencies [b97ad4f]
+  - @puth/client@0.0.2
+
 ## 0.8.1
 
 ### Patch Changes
