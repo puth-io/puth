@@ -1,0 +1,68 @@
+name: puth-dev
+
+services:
+  puth:
+    build:
+      context: .
+      dockerfile: docker/dev/puth.Dockerfile
+    working_dir: /workspace
+    command: npm -w puth run dev
+    environment:
+      PUTH_ADDRESS: 0.0.0.0
+      PUTH_BROWSER_CACHE: "true"
+    ports:
+      - "7345:7345"
+    volumes:
+      - .:/workspace
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('node:net').connect(7345, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  gui:
+    build:
+      context: .
+      dockerfile: docker/dev/puth.Dockerfile
+    working_dir: /workspace
+    command: npm -w @puth/gui run dev -- --host 0.0.0.0
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+
+  laravel:
+    build:
+      context: .
+      dockerfile: docker/dev/laravel.Dockerfile
+      args:
+        USER_ID: ${LOCAL_UID:-1000}
+        GROUP_ID: ${LOCAL_GID:-1000}
+    working_dir: /workspace/workspaces/clients/php/workspaces/laravel
+    environment:
+      APP_ENV: testing
+      APP_URL: http://laravel:8080
+      PUTH_INSTANCE_URL: http://puth:7345
+      PHP_OPCACHE_ENABLE: "0"
+    ports:
+      - "8000:8080"
+    volumes:
+      - .:/workspace
+    depends_on:
+      puth:
+        condition: service_healthy
+
+  java-test:
+    image: maven:3.9-eclipse-temurin-17
+    profiles: ["test"]
+    working_dir: /workspace/workspaces/clients/java/client
+    command: mvn --batch-mode --no-transfer-progress test
+    environment:
+      PUTH_INSTANCE_URL: http://puth:7345
+    volumes:
+      - .:/workspace
+    depends_on:
+      puth:
+        condition: service_healthy

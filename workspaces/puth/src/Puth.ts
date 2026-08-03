@@ -32,7 +32,7 @@ export type PuthOptions = {
     debug?: boolean;
     plugins?: string[];
     dev?: boolean;
-    staticDir?: string;
+    staticDir?: string | false;
     cors?: {
         enabled: boolean,
         allow: string[];
@@ -247,28 +247,30 @@ export class Puth {
             }),
         )
 
-        // GUI
-        // @ts-ignore
-        const guiIndex = createRequire(import.meta.url).resolve('@puth/gui/dist/index.html');
-        h3.get('/', (event) => createReadStream(guiIndex));
+        if (this.options?.staticDir !== false) {
+            // GUI
+            // @ts-ignore
+            const guiIndex = createRequire(import.meta.url).resolve('@puth/gui/dist/index.html');
+            h3.get('/', (event) => createReadStream(guiIndex));
 
-        const staticDir = this.options?.staticDir ?? path.dirname(guiIndex);
-        this.logger.debug(`Serving static files from ${staticDir}`);
-        h3.get('/**', (event) => H3.serveStatic(event, {
-            indexNames: [],
-            getContents: (id) => {
-                return readFile(join(staticDir, id === '/' ? 'index.html' : id));
-            },
-            getMeta: async (id) => {
-                const stats = await stat(join(staticDir, id === '/' ? 'index.html' : id)).catch(() => {});
-                if (stats?.isFile()) {
-                    return {
-                        size: stats.size,
-                        mtime: stats.mtimeMs,
-                    };
-                }
-            },
-        }));
+            const staticDir = this.options?.staticDir ?? path.dirname(guiIndex);
+            this.logger.debug(`Serving static files from ${staticDir}`);
+            h3.get('/**', (event) => H3.serveStatic(event, {
+                indexNames: [],
+                getContents: (id) => {
+                    return readFile(join(staticDir, id === '/' ? 'index.html' : id));
+                },
+                getMeta: async (id) => {
+                    const stats = await stat(join(staticDir, id === '/' ? 'index.html' : id)).catch(() => {});
+                    if (stats?.isFile()) {
+                        return {
+                            size: stats.size,
+                            mtime: stats.mtimeMs,
+                        };
+                    }
+                },
+            }));
+        }
 
         this.#http = H3.serve(h3, {
             hostname,

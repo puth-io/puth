@@ -55,7 +55,7 @@
   "scripts": {
     "build": "pkgroll --clean-dist",
     "dev": "NODE_ENV=development tsx watch --clear-screen=false src/dev/server.ts",
-    "dev:browser:install": "node src/dev/browser-install.ts",
+    "dev:browser:install": "tsx src/dev/browser-install.ts",
     "dev:server": "npm run dev",
     "dev:server:debug": "DEBUG=\"puppeteer:*\" NODE_ENV=development tsx watch --clear-screen=false src/dev/server.ts > puth.log 2> puth.cdp.log",
     "test": "vitest run",
