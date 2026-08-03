@@ -46,7 +46,20 @@ Some exception messages changed, mostly the ones thrown by assert functions, e.g
 
 ### Portal
 
-- Portal routes all requests through the testcase process, therefore every browser request that goes to the application will act on the currently authenticated user. E.g. if you call $this->actingAs(), your browser requests will also be authenticated as that user. 
+- Portal routes all requests through the testcase process, therefore every browser request that goes to the application will act on the currently authenticated user. E.g. if you call `$this->actingAs()`, your browser requests will also be authenticated as that user.
+- Portal and detour handling are disabled by default. Enable both for a test case with the `PuthEnablePortal` trait:
+
+```php
+use Puth\Laravel\PuthEnablePortal;
+use Tests\PuthTestCase;
+
+class ExampleBrowserTest extends PuthTestCase
+{
+    use PuthEnablePortal;
+}
+```
+
+Values returned by `getContextOptions()` can still override the `portal` or `detour` context option individually.
 
 ### Changes
 

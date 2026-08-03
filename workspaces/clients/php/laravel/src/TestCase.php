@@ -32,6 +32,8 @@ abstract class TestCase extends FoundationTestCase
 
         static::$debug = static::$debug ?: config('puth.debug', false);
 
+        $puthFeaturePortalEnabled = $this->puthFeaturePortalEnabled ?? false;
+
         $this->context = new Context(Puth::instanceUrl(), array_merge([
             'test' => [
                 'name' => $this->getPhpunitTestName(),
@@ -39,8 +41,8 @@ abstract class TestCase extends FoundationTestCase
             ],
             'snapshot' => true,
             'debug' => static::$debug,
-            'detour' => false,
-            'portal' => false,
+            'detour' => $puthFeaturePortalEnabled,
+            'portal' => $puthFeaturePortalEnabled,
             'supports' => [
                 'portal' => [
                     'urlPrefixes' => $this->requestInterceptionUrlPrefixes(),
