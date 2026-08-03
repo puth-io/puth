@@ -31,22 +31,6 @@ public class Context extends RemoteObject {
         return (boolean) this.callFunc("destroy", new Object[]{options});
     }
 
-    public void enableDetour() {
-        this.callFunc("enableDetour", new Object[]{});
-    }
-
-    public void disableDetour() {
-        this.callFunc("disableDetour", new Object[]{});
-    }
-
-    public void enablePortal() {
-        this.callFunc("enablePortal", new Object[]{});
-    }
-
-    public void disablePortal() {
-        this.callFunc("disablePortal", new Object[]{});
-    }
-
     public Object[] getSnapshotsByType(Object type) {
         return (Object[]) this.callFunc("getSnapshotsByType", new Object[]{type});
     }

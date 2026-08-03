@@ -40,54 +40,6 @@ class Context extends RemoteObject
 
     /**
      * @codegen
-     *
-     * @debug-gen-original-name "enableDetour"
-     * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
-     */
-    public function enableDetour(): void
-    {
-        $this->callFunc('enableDetour');
-    }
-
-    /**
-     * @codegen
-     *
-     * @debug-gen-original-name "disableDetour"
-     * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
-     */
-    public function disableDetour(): void
-    {
-        $this->callFunc('disableDetour');
-    }
-
-    /**
-     * @codegen
-     *
-     * @debug-gen-original-name "enablePortal"
-     * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
-     */
-    public function enablePortal(): void
-    {
-        $this->callFunc('enablePortal');
-    }
-
-    /**
-     * @codegen
-     *
-     * @debug-gen-original-name "disablePortal"
-     * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
-     */
-    public function disablePortal(): void
-    {
-        $this->callFunc('disablePortal');
-    }
-
-    /**
-     * @codegen
      * @gen-returns any[]
      * 
      * @debug-gen-original-name "getSnapshotsByType"
