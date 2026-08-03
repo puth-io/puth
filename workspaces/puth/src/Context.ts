@@ -518,28 +518,8 @@ class Context extends Generic {
         });
     }
 
-    // @codegen
-    public enableDetour() {
-        this.options.detour = true;
-    }
-
-    // @codegen
-    public disableDetour() {
-        this.options.detour = false;
-    }
-
     public get isDetourEnabled(): boolean {
         return this.options.detour !== false;
-    }
-
-    // @codegen
-    public enablePortal() {
-        this.options.portal = true;
-    }
-
-    // @codegen
-    public disablePortal() {
-        this.options.portal = false;
     }
 
     public get isPortalEnabled(): boolean {
