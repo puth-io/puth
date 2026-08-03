@@ -41,6 +41,25 @@ function makeCall(functionName = 'click') {
     );
 }
 
+function makeEventTarget(properties: Record<string, unknown> = {}) {
+    const listeners = new Map<string, Set<(...args: any[]) => void>>();
+
+    return {
+        ...properties,
+        listeners,
+        on: vi.fn((event: string, listener: (...args: any[]) => void) => {
+            if (!listeners.has(event)) listeners.set(event, new Set());
+            listeners.get(event).add(listener);
+        }),
+        off: vi.fn((event: string, listener: (...args: any[]) => void) => {
+            listeners.get(event)?.delete(listener);
+        }),
+        emit(event: string, ...args: any[]) {
+            for (const listener of [...(listeners.get(event) ?? [])]) listener(...args);
+        },
+    };
+}
+
 describe('CallStack', () => {
     it('keeps a dialog result when the interrupted call finishes during a portal request', async () => {
         const { context, stack } = makeStack();
@@ -196,5 +215,34 @@ describe('CallStack', () => {
         } as any, '/action', cdp as any)).rejects.toThrow('body unavailable');
 
         expect(context.psuriCache.has('1')).toBe(false);
+    });
+
+    it('releases page, CDP, dialog, waiter, and portal state when a page closes', async () => {
+        const cdp = makeEventTarget({ send: vi.fn().mockResolvedValue(undefined) });
+        const page = makeEventTarget({
+            emulateMediaFeatures: vi.fn().mockResolvedValue(undefined),
+            createCDPSession: vi.fn().mockResolvedValue(cdp),
+        });
+        const context = new Context({ logger } as any, {
+            supports: { portal: { urlPrefixes: ['https://example.test'] } },
+        });
+        const reject = vi.fn();
+
+        await context['trackPage'](page as any);
+        const stack = context.callStacks.get(page as any);
+        context.caches.dialog.set(page as any, {} as any);
+        context.waitingForDialog.push({ page: page as any, resolve: vi.fn(), reject });
+        context.psuriCache.set('1', { stack });
+
+        page.emit('close');
+
+        expect(context.callStacks.has(page as any)).toBe(false);
+        expect(context['pageCDPSessions'].has(page as any)).toBe(false);
+        expect(context.caches.dialog.has(page as any)).toBe(false);
+        expect(context.waitingForDialog).toHaveLength(0);
+        expect(reject).toHaveBeenCalledOnce();
+        expect(context.psuriCache.has('1')).toBe(false);
+        expect(page.listeners.get('dialog')).toHaveLength(0);
+        expect(cdp.listeners.get('Fetch.requestPaused')).toHaveLength(0);
     });
 });
