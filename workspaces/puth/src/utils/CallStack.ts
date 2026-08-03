@@ -227,6 +227,16 @@ export class CallStack {
     }
 
     public async handlePortalResponse(response: PortalResponse, res: any) {
+        let current = this.portal.queue.active[0];
+        if (current === undefined) {
+            throw new Error(`Received portal response [${response.psuri}] but there is no active portal request.`);
+        }
+        if (current.psuri !== response.psuri) {
+            throw new Error(
+                `Portal response [${response.psuri}] does not match the active portal request [${current.psuri}].`,
+            );
+        }
+
         let body = atob(response.body);
         this.logger.debug(
             {
@@ -236,8 +246,6 @@ export class CallStack {
             },
             `[handlePortalResponse] ${response.psuri}`,
         );
-        
-        let current = this.portal.queue.active[0];
         
         let cache = this.context.psuriCache.get(current.psuri);
         if (cache == undefined) {
