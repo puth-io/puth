@@ -2,6 +2,7 @@
 
 namespace Browser;
 
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\ExpectationFailedException;
 use Puth\Laravel\Browser;
 use Tests\Browser\Pages\Playground;
@@ -14,15 +15,7 @@ class InteractsWithElementsTest extends PuthTestCase
     private function fileAttachmentPage(): string
     {
         return <<<'HTML'
-<input id="file-test-input" type="file" multiple>
-<div id="file-attach-preview"></div>
-<script>
-document.querySelector('#file-test-input').addEventListener('change', async ({ target }) => {
-    document.querySelector('#file-attach-preview').textContent = (await Promise.all(
-        Array.from(target.files, (file) => file.text())
-    )).join('');
-});
-</script>
+<input id="file-test-input" name="file-test-input" type="file" multiple>
 HTML;
     }
 
@@ -40,10 +33,11 @@ HTML;
         $this->browse(function (Browser $browser) {
             $content = file_get_contents(__DIR__ . '/files/test.txt');
 
-            $browser->setContent($this->fileAttachmentPage())
+            $attachedContent = $browser->setContent($this->fileAttachmentPage())
                 ->attach('file-test-input', __DIR__ . '/files/test.txt')
-                ->waitForTextIn('#file-attach-preview', $content)
-                ->assertSeeIn('#file-attach-preview', $content);
+                ->evaluate("document.querySelector('#file-test-input').files[0].text()");
+
+            Assert::assertSame($content, $attachedContent);
         });
     }
     
@@ -52,13 +46,14 @@ HTML;
         $this->browse(function (Browser $browser) {
             $content = file_get_contents(__DIR__ . '/files/test.txt') . file_get_contents(__DIR__ . '/files/test2.txt');
 
-            $browser->setContent($this->fileAttachmentPage())
+            $attachedContent = $browser->setContent($this->fileAttachmentPage())
                 ->attach('file-test-input', [
                     __DIR__ . '/files/test.txt',
                     __DIR__ . '/files/test2.txt',
                 ])
-                ->waitForTextIn('#file-attach-preview', $content)
-                ->assertSeeIn('#file-attach-preview', $content);
+                ->evaluate("Promise.all(Array.from(document.querySelector('#file-test-input').files, file => file.text())).then(files => files.join(''))");
+
+            Assert::assertSame($content, $attachedContent);
         });
     }
     
