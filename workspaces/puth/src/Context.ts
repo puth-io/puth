@@ -368,13 +368,7 @@ class Context extends Generic {
 
         if (this.options?.supports?.portal != null && this.isPortalEnabled) {
             let cdp: CDPSession = await this.cdps(page);
-            cdp.on('Fetch.requestPaused', event => {
-                let path = this.portalShouldHandleRequest(event);
-                if (path === false) {
-                    return cdp.send('Fetch.continueRequest', {requestId: event.requestId});
-                }
-                stack.onPortalRequest(event, path, cdp);
-            });
+            cdp.on('Fetch.requestPaused', event => void this.handleRequestPaused(stack, event, cdp));
             await cdp.send('Fetch.enable');
         }
         
@@ -437,6 +431,41 @@ class Context extends Generic {
                         }),
                     });
                 }
+            });
+        }
+    }
+
+    private async handleRequestPaused(
+        stack: CallStack,
+        event: Protocol.Fetch.RequestPausedEvent,
+        cdp: CDPSession,
+    ): Promise<void> {
+        try {
+            let path = this.portalShouldHandleRequest(event);
+            if (path === false) {
+                await cdp.send('Fetch.continueRequest', { requestId: event.requestId });
+                return;
+            }
+
+            await stack.onPortalRequest(event, path, cdp);
+        } catch (error) {
+            if (error instanceof TargetCloseError || error instanceof ConnectionClosedError) {
+                return;
+            }
+
+            this.puth.logger.error({ error, request: event.request }, 'Portal request interception failed');
+            await cdp.send('Fetch.failRequest', {
+                requestId: event.requestId,
+                errorReason: 'Failed',
+            }).catch((failError) => {
+                if (failError instanceof TargetCloseError || failError instanceof ConnectionClosedError) {
+                    return;
+                }
+
+                this.puth.logger.error(
+                    { error: failError, request: event.request },
+                    'Could not fail intercepted portal request',
+                );
             });
         }
     }
