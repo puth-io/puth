@@ -11,6 +11,21 @@ class InteractsWithElementsTest extends PuthTestCase
 {
     public static bool $debug = false;
 
+    private function fileAttachmentPage(): string
+    {
+        return <<<'HTML'
+<input id="file-test-input" type="file" multiple>
+<div id="file-attach-preview"></div>
+<script>
+document.querySelector('#file-test-input').addEventListener('change', async ({ target }) => {
+    document.querySelector('#file-attach-preview').textContent = (await Promise.all(
+        Array.from(target.files, (file) => file.text())
+    )).join('');
+});
+</script>
+HTML;
+    }
+
     function test_click_link()
     {
         $this->browse(function (Browser $browser) {
@@ -23,24 +38,27 @@ class InteractsWithElementsTest extends PuthTestCase
     function test_attach()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $content = file_get_contents(__DIR__ . '/files/test.txt');
+
+            $browser->setContent($this->fileAttachmentPage())
                 ->attach('file-test-input', __DIR__ . '/files/test.txt')
-                ->assertSeeIn('#file-attach-preview', file_get_contents(__DIR__ . '/files/test.txt'));
+                ->waitForTextIn('#file-attach-preview', $content)
+                ->assertSeeIn('#file-attach-preview', $content);
         });
     }
     
     function test_attach_multiple()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $content = file_get_contents(__DIR__ . '/files/test.txt') . file_get_contents(__DIR__ . '/files/test2.txt');
+
+            $browser->setContent($this->fileAttachmentPage())
                 ->attach('file-test-input', [
                     __DIR__ . '/files/test.txt',
                     __DIR__ . '/files/test2.txt',
                 ])
-                ->assertSeeIn(
-                    '#file-attach-preview',
-                    file_get_contents(__DIR__ . '/files/test.txt') . file_get_contents(__DIR__ . '/files/test2.txt'),
-                );
+                ->waitForTextIn('#file-attach-preview', $content)
+                ->assertSeeIn('#file-attach-preview', $content);
         });
     }
     
