@@ -740,48 +740,38 @@ export class Browser {
 
     public async waitForEvent(type: string, target: string = '', timeout: int|null = null): Promise<this> {
         const timeoutInMs = this.resolveTimeout(timeout);
-        const waitForEvent = (target: EventTarget, type: string, timeoutInMs: number) => new Promise<void>((resolve, reject) => {
-            const onEvent = () => {
-                clearTimeout(timer);
-                resolve();
-            };
-            const timer = setTimeout(() => {
-                target.removeEventListener(type, onEvent);
-                reject(new Error(`Timed out waiting for event [${type}].`));
-            }, timeoutInMs);
-
-            target.addEventListener(type, onEvent, { once: true });
-        });
+        const marker = `__puthEvent_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
         try {
+            let eventTarget: EventTarget|string;
+
             if (target !== 'document' && target !== 'window') {
                 // wait for the given target to be available
-                const element = await this.firstOrFail(target);
-                await this.site.evaluate(waitForEvent, element, type, timeoutInMs);
+                eventTarget = await this.firstOrFail(target);
             } else {
-                await this.site.evaluate(
-                    (target, type, timeoutInMs) => {
-                        const eventTarget = target === 'document' ? document : window;
-                        return new Promise<void>((resolve, reject) => {
-                            const onEvent = () => {
-                                clearTimeout(timer);
-                                resolve();
-                            };
-                            const timer = setTimeout(() => {
-                                eventTarget.removeEventListener(type, onEvent);
-                                reject(new Error(`Timed out waiting for event [${type}].`));
-                            }, timeoutInMs);
-
-                            eventTarget.addEventListener(type, onEvent, { once: true });
-                        });
-                    },
-                    target,
-                    type,
-                    timeoutInMs,
-                );
+                eventTarget = target;
             }
+
+            await this.site.evaluate((eventTarget, type, marker) => {
+                const target = typeof eventTarget === 'string'
+                    ? eventTarget === 'document' ? document : window
+                    : eventTarget;
+
+                (globalThis as Record<string, boolean>)[marker] = false;
+                target.addEventListener(type, () => {
+                    (globalThis as Record<string, boolean>)[marker] = true;
+                }, {once: true});
+            }, eventTarget, type, marker);
+
+            await this.site.waitForFunction(
+                (marker) => (globalThis as Record<string, boolean>)[marker] === true,
+                {timeout: timeoutInMs},
+                marker,
+            );
         } catch (error) {
             throw new ExpectationFailed(`Waited ${timeoutInMs}ms for event [${type}].`);
+        } finally {
+            await this.site.evaluate((marker) => delete (globalThis as Record<string, boolean>)[marker], marker).catch(() => undefined);
         }
 
         return this.self();
