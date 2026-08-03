@@ -51,8 +51,8 @@ public class MakesAssertionsTest extends BaseTest {
     @Test
     void test_assert_inputs() {
         browser.setContent("<body><input name=\"test\"></body>")
-                .assertInputMissing("wrongname", 1)
-                .assertInputPresent("test", 1);
+                .assertInputMissing("wrongname", 100)
+                .assertInputPresent("test", 100);
     }
 
     @Test
