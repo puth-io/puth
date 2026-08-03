@@ -86,11 +86,11 @@ class WaitsForElementsTest extends PuthTestCase
     function test_wait_for_event()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->click('#wait-for-event-document')
-                ->waitForEvent('test-event', 'document')
-                ->click('#wait-for-event-element')
-                ->waitForEvent('test-event', '#wait-for-event-element');
+            $browser->visit(new Playground);
+            $browser->evaluate("setTimeout(() => document.dispatchEvent(new Event('test-event')), 1000)");
+            $browser->waitForEvent('test-event', 'document');
+            $browser->evaluate("setTimeout(() => document.querySelector('#wait-for-event-element').dispatchEvent(new Event('test-event')), 1000)");
+            $browser->waitForEvent('test-event', '#wait-for-event-element');
         });
     }
 
