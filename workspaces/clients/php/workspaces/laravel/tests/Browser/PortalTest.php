@@ -42,7 +42,7 @@ class PortalTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->setContent('<html><body>
-                <form action="http://127.0.0.1:8000/?queryTest=1234" method="post">
+                <form action="' . config('app.url') . '/?queryTest=1234" method="post">
                     <input type="text" name="form-test" value="1234">
                     <button>submit</button>
                 </form>

@@ -14,6 +14,7 @@ if (usableBrowserInstallations.length === 0) {
 const instance = new Puth({
     debug: true,
     cors: { enabled: false },
+    staticDir: false,
     installedBrowser: usableBrowserInstallations[0],
     logger,
 });
@@ -22,4 +23,4 @@ instance.use(PuthStandardPlugin);
 instance.use(LiveViewContextPlugin);
 instance.use(LiveViewSnapshotPlugin);
 
-instance.serve(7345, '127.0.0.1');
+instance.serve(7345, process.env.PUTH_ADDRESS ?? '127.0.0.1');

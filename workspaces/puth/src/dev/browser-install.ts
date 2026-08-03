@@ -3,7 +3,7 @@ import {homedir} from 'os';
 import {select} from '@inquirer/prompts';
 import fs from 'fs';
 import {canDownload, detectBrowserPlatform, install, Browser} from '@puppeteer/browsers';
-import {makeLogger} from 'puth';
+import {makeLogger} from '../utils/Logger';
 // @ts-ignore
 import { PUPPETEER_REVISIONS } from 'puppeteer-core';
 

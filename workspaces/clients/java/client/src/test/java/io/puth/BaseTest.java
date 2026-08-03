@@ -9,12 +9,14 @@ import org.junit.jupiter.api.TestInfo;
 import java.util.Map;
 
 public class BaseTest {
+    private static final String PUTH_INSTANCE_URL = System.getenv().getOrDefault("PUTH_INSTANCE_URL", "http://127.0.0.1:7345");
+
     Context context;
     Browser browser;
 
     @BeforeEach
     void setUp(TestInfo testInfo) {
-        context = new Context("http://127.0.0.1:7345", Map.of(
+        context = new Context(PUTH_INSTANCE_URL, Map.of(
                 "test", Map.of("name", testInfo.getDisplayName(), "group", testInfo.getClass().getName()),
                 "snapshot", false,
                 "debug", false
