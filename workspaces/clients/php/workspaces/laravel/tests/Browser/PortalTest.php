@@ -2,6 +2,7 @@
 
 namespace tests\Browser;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Puth\Laravel\Browser;
 use Puth\Laravel\PuthEnablePortal;
@@ -13,6 +14,19 @@ class PortalTest extends PuthTestCase
     use PuthEnablePortal;
 
     public static bool $debug = false;
+
+    function test_portal_login_updates_test_authentication()
+    {
+        $user = User::factory()->create();
+
+        $this->browse(function (Browser $browser) use ($user) {
+            $browser->visit('/')
+                ->loginAs($user)
+                ->assertAuthenticatedAs($user);
+        });
+
+        $this->assertAuthenticatedAs($user);
+    }
 
     function test_portal_facade_fake()
     {
