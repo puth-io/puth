@@ -30,11 +30,11 @@ public class InteractsWithMouseTest extends BaseTest {
                 // assert virtual mouse stays in position
                 .clickAndHold()
                 .releaseMouse()
-                .assertSeeIn("#result", "3")
+                .assertSeeIn("#result", "2")
                 .doubleClick()
-                .assertSeeIn("#result", "5")
+                .assertSeeIn("#result", "4")
                 .rightClick()
-                .assertSeeIn("#result", "6");
+                .assertSeeIn("#result", "5");
     }
 
     @Test

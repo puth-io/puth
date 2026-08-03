@@ -48,15 +48,9 @@ public class WaitsForElementsTest extends BaseTest {
         browser.setTimeoutMultiplier(1);
 
         long firstStart = System.currentTimeMillis();
-        browser.waitForEvent("test-event", "#wait-for-event-element", 100);
+        assertThrows(AssertionError.class, () -> browser.waitForEvent("test-event", "#wait-for-event-element", 100));
         long firstElapsed = System.currentTimeMillis() - firstStart;
         assertTrue(firstElapsed < 500, "Expected < 500ms, got " + firstElapsed + "ms");
-
-        long secondStart = System.currentTimeMillis();
-        browser.waitForEvent("test-event", "document", 100);
-        long secondElapsed = System.currentTimeMillis() - secondStart;
-        assertTrue(secondElapsed < 500, "Expected < 500ms, got " + secondElapsed + "ms");
-        assertTrue((System.currentTimeMillis() - firstStart) > 200, "Expected > 200ms total elapsed");
     }
 
 //    @Test

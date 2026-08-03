@@ -12,10 +12,9 @@ public class InteractsWithElementsTest extends BaseTest {
 
     @Test
     void test_click_link() {
-        browser.visit(playground())
-                .clickLink("https://puth.io/docs/0_x")
-                .waitForLocation("https://puth.io/docs/0_x")
-                .assertUrlIs("https://puth.io/docs/0_x");
+        browser.setContent("<a href=\"#destination\" onclick=\"document.querySelector('#result').textContent = 'clicked'; return false;\">Read the docs</a><div id=\"result\"></div>")
+                .clickLink("Read the docs")
+                .assertSee("clicked");
     }
 
 //    TODO implement attach functions
