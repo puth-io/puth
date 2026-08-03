@@ -156,4 +156,45 @@ describe('CallStack', () => {
         expect(context.psuriCache.has('1')).toBe(true);
         expect(context.psuriCache.has('2')).toBe(true);
     });
+
+    it('fails a paused request when portal interception throws', async () => {
+        const error = vi.fn();
+        const context = new Context({ logger: { ...logger, error } } as any, {
+            supports: { portal: { urlPrefixes: ['https://example.test'] } },
+        });
+        const stack = {
+            onPortalRequest: vi.fn().mockRejectedValue(new Error('interception failed')),
+        };
+        const cdp = { send: vi.fn().mockResolvedValue(undefined) };
+        const event = {
+            requestId: 'fetch-1',
+            request: { url: 'https://example.test/action' },
+        };
+
+        await context['handleRequestPaused'](stack as any, event as any, cdp as any);
+
+        expect(cdp.send).toHaveBeenCalledWith('Fetch.failRequest', {
+            requestId: 'fetch-1',
+            errorReason: 'Failed',
+        });
+        expect(error).toHaveBeenCalled();
+    });
+
+    it('removes portal request cache entries when interception setup fails', async () => {
+        const { context, stack } = makeStack();
+        const cdp = { send: vi.fn().mockRejectedValue(new Error('body unavailable')) };
+
+        await expect(stack.onPortalRequest({
+            requestId: 'fetch-1',
+            networkId: 'network-1',
+            request: {
+                url: 'https://example.test/action',
+                method: 'POST',
+                headers: {},
+                hasPostData: true,
+            },
+        } as any, '/action', cdp as any)).rejects.toThrow('body unavailable');
+
+        expect(context.psuriCache.has('1')).toBe(false);
+    });
 });

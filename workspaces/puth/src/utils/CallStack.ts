@@ -119,6 +119,20 @@ export class CallStack {
         let psuri = this.context.portalSafeUniqueRequestId();
         this.context.psuriCache.set(psuri, { stack: this });
 
+        try {
+            return await this.preparePortalRequest(psuri, event, path, cdp);
+        } catch (error) {
+            this.context.psuriCache.delete(psuri);
+            throw error;
+        }
+    }
+
+    private async preparePortalRequest(
+        psuri: string,
+        event: Protocol.Fetch.RequestPausedEvent,
+        path: string,
+        cdp: CDPSession,
+    ) {
         let postData = event.request.postData;
         if (event.request.hasPostData) {
             if (postData === undefined) {
