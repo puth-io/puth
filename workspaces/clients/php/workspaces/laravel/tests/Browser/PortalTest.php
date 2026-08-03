@@ -4,11 +4,14 @@ namespace tests\Browser;
 
 use Illuminate\Support\Facades\Mail;
 use Puth\Laravel\Browser;
+use Puth\Laravel\PuthEnablePortal;
 use Tests\PuthTestCase;
 use PHPUnit\Framework\Assert;
 
 class PortalTest extends PuthTestCase
 {
+    use PuthEnablePortal;
+
     public static bool $debug = false;
 
     function test_portal_facade_fake()
