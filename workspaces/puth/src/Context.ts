@@ -221,10 +221,13 @@ class Context extends Generic {
         } else if (this.debug) {
             await this.saveContextSnapshot({to: 'file'});
         }
-        // unregister all event listeners
-        this.eventFunctions.forEach(([page, event, func]) => {
-            page.off(event, func);
+        for (let page of [...this.callStacks.keys()]) {
+            this.untrackPage(page);
+        }
+        this.eventFunctions.forEach(([object, event, func]) => {
+            object.off(event, func);
         });
+        this.eventFunctions = [];
 
         this.puth.logger.debug(options, `context destroy`);
         return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv)))
@@ -332,8 +335,8 @@ class Context extends Generic {
         }
         
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-        page.on('close', () => this.removeEventListenersFrom(page));
-        page.on('dialog', (dialog: Dialog) => stack.onDialogOpen(dialog));
+        this.registerEventListenerOn(page, 'close', () => this.untrackPage(page));
+        this.registerEventListenerOn(page, 'dialog', (dialog: Dialog) => stack.onDialogOpen(dialog));
 
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
             let args = await Promise.all(
@@ -368,7 +371,11 @@ class Context extends Generic {
 
         if (this.options?.supports?.portal != null && this.isPortalEnabled) {
             let cdp: CDPSession = await this.cdps(page);
-            cdp.on('Fetch.requestPaused', event => void this.handleRequestPaused(stack, event, cdp));
+            this.registerEventListenerOn(
+                cdp,
+                'Fetch.requestPaused',
+                event => void this.handleRequestPaused(stack, event, cdp),
+            );
             await cdp.send('Fetch.enable');
         }
         
@@ -432,6 +439,32 @@ class Context extends Generic {
                     });
                 }
             });
+        }
+    }
+
+    private untrackPage(page: Page): void {
+        const stack = this.callStacks.get(page);
+        const cdp = this.pageCDPSessions.get(page)?.deref();
+
+        this.removeEventListenersFrom(page);
+        if (cdp !== undefined) {
+            this.removeEventListenersFrom(cdp);
+        }
+
+        this.callStacks.delete(page);
+        this.pageCDPSessions.delete(page);
+        this.caches.dialog.delete(page);
+
+        const waiters = this.waitingForDialog.filter((waiter) => waiter.page === page);
+        this.waitingForDialog = this.waitingForDialog.filter((waiter) => waiter.page !== page);
+        waiters.forEach((waiter) => waiter.reject(new Error('Page closed while waiting for a dialog.')));
+
+        if (stack !== undefined) {
+            for (const [psuri, cached] of this.psuriCache) {
+                if (cached.stack === stack) {
+                    this.psuriCache.delete(psuri);
+                }
+            }
         }
     }
 
