@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ProtocolError } from 'puppeteer-core';
 import Context from '../../src/Context';
 import { Return } from '../../src/context/Return';
 import { Browser } from '../../src/shims/Browser';
@@ -244,5 +245,37 @@ describe('CallStack', () => {
         expect(context.psuriCache.has('1')).toBe(false);
         expect(page.listeners.get('dialog')).toHaveLength(0);
         expect(cdp.listeners.get('Fetch.requestPaused')).toHaveLength(0);
+    });
+
+    it('continues the portal queue when Chrome already canceled the intercepted request', async () => {
+        const { stack } = makeStack();
+        const call = makeCall();
+        const protocolError = new ProtocolError();
+        protocolError.originalMessage = 'Invalid InterceptionId.';
+        const cdp = { send: vi.fn().mockRejectedValue(protocolError) };
+        const response = { resolve: vi.fn() };
+
+        stack.activeCall = call;
+        await stack.onPortalRequest({
+            requestId: 'fetch-1',
+            request: {
+                url: 'https://example.test/app.css',
+                method: 'GET',
+                headers: {},
+                hasPostData: false,
+            },
+        } as any, '/app.css', cdp as any);
+        stack.portal.waiting.response = Return.Self().serialize();
+
+        await stack.handlePortalResponse({
+            psuri: '1',
+            type: 'PortalResponse',
+            headers: { 'Content-Type': 'text/css' },
+            body: btoa('body {}'),
+            status: 200,
+        }, response);
+
+        expect(stack.portal.queue.active).toHaveLength(0);
+        expect(response.resolve).toHaveBeenCalledWith(Return.Self().serialize());
     });
 });

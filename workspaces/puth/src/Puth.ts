@@ -143,7 +143,9 @@ export class Puth {
         const json = handler => event => event.req.json().then(handler);
         const defer = handler => {
             let resolvers = Promise.withResolvers();
-            handler(resolvers);
+            Promise.resolve()
+                .then(() => handler(resolvers))
+                .catch(resolvers.reject);
             return resolvers.promise;
         }
 

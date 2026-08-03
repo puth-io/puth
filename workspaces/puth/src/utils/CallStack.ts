@@ -1,5 +1,13 @@
 // @ts-ignore
-import { CDPSession, ConnectionClosedError, Dialog, Page, type Protocol, TargetCloseError } from 'puppeteer-core';
+import {
+    CDPSession,
+    ConnectionClosedError,
+    Dialog,
+    Page,
+    type Protocol,
+    ProtocolError,
+    TargetCloseError,
+} from 'puppeteer-core';
 import Context from '../Context';
 import { Return } from '../context/Return';
 import { Call } from './Call';
@@ -173,6 +181,16 @@ export class CallStack {
                     .catch((error) => {
                         if (error instanceof TargetCloseError) return;
                         if (error instanceof ConnectionClosedError) return;
+                        if (
+                            error instanceof ProtocolError
+                            && error.originalMessage.includes('Invalid InterceptionId')
+                        ) {
+                            this.logger.debug(
+                                { psuri, url: event.request.url },
+                                '[Portal][Canceled before response]',
+                            );
+                            return;
+                        }
                         throw error;
                     }),
         );
