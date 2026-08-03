@@ -714,7 +714,7 @@ class Context extends Generic {
             let stack = this.callStacks.get(parentPage);
             if (stack == null) {
                 stack = new CallStack(this, parentPage);
-                this.callStacks.set(page, stack);
+                this.callStacks.set(parentPage, stack);
             }
             call.setStack(stack);
             call.setPage(page);
