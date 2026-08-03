@@ -241,6 +241,12 @@ export function genericGet(on, context, representation, property) {
             return handleResponse(await context.set(representation, name, value));
         };
     }
+
+    if (property === '_deleteProperty') {
+        return async function (name) {
+            return handleResponse(await context.delete(representation, name));
+        };
+    }
     
     return async function (...args) {
         return await handleResponse(await context.call(representation, property, args));

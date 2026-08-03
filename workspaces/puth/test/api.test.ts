@@ -1,7 +1,6 @@
 import { describe, assert, expect } from 'vitest';
 import { envs, testFn } from './helper';
 import { Constructors } from '@puth/core';
-import { sleep } from '../src/Utils';
 
 if (process.env.TEST_ONLY_REMOTE) {
     puthContextTests(envs[1]);
@@ -40,16 +39,14 @@ function puthContextTests(env) {
 
         describe('RemoteContext', () => {
             test.concurrent('can set and get property', async ({ puth: { page } }) => {
-                page.___set_test = true;
-                await sleep(500);
+                await page._setProperty('___set_test', true);
                 await expect(page._getProperty('___set_test')).resolves.toBeTruthy();
             });
             
             test.concurrent('can delete property', async ({ puth: { page } }) => {
-                page.___delete_test = true;
+                await page._setProperty('___delete_test', true);
                 await expect(page._getProperty('___delete_test')).resolves.toBeTruthy();
-                delete page.___delete_test;
-                await sleep(500);
+                await page._deleteProperty('___delete_test');
                 await expect(page._getProperty('___delete_test')).rejects.toThrowError();
             });
         });
