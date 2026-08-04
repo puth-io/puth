@@ -1,5 +1,11 @@
 # @puth/client-laravel
 
+## 0.10.2
+
+### Patch Changes
+
+- bf7884d: Restore Laravel Dusk's `script()` browser method as a deprecated alias for `evaluate()`.
+
 ## 0.10.1
 
 ### Patch Changes

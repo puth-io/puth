@@ -1,5 +1,11 @@
 # @puth/gui
 
+## 0.1.3
+
+### Patch Changes
+
+- de2f1f5: Deduplicate identical recorded response bodies in snapshots, resolve their references in the GUI, and add Laravel Dusk-compatible `assertCount` support.
+
 ## 0.1.2
 
 ### Patch Changes
