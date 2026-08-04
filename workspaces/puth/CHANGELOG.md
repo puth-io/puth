@@ -1,5 +1,15 @@
 # puth
 
+## 0.8.3
+
+### Patch Changes
+
+- de2f1f5: Deduplicate identical recorded response bodies in snapshots, resolve their references in the GUI, and add Laravel Dusk-compatible `assertCount` support.
+- 1e10c04: Return `unknown error` for calls that reject without an error value.
+- Updated dependencies [de2f1f5]
+  - @puth/core@0.0.2
+  - @puth/gui@0.1.3
+
 ## 0.8.2
 
 ### Patch Changes
