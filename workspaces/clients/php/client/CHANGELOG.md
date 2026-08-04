@@ -1,5 +1,11 @@
 # @puth/client-php
 
+## 0.8.1
+
+### Patch Changes
+
+- 153ebd4: fix(laravel): BinaryFileResponse content handling
+
 ## 0.8.0
 
 ### Minor Changes
