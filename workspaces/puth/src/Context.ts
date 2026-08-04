@@ -811,11 +811,11 @@ class Context extends Generic {
                         this.puth.logger.error('ConnectionClosedError');
                         return;
                     }
-                    if (error.message.includes('Attempted to use detached Frame')) {
+                    if (error?.message?.includes('Attempted to use detached Frame')) {
                         this.puth.logger.error('Attempted to use detached Frame');
                         return;
                     }
-                    if (error.message.includes('Execution context was destroyed')) {
+                    if (error?.message?.includes('Execution context was destroyed')) {
                         this.puth.logger.error('Execution context was destroyed');
                         return;
                     }
@@ -835,6 +835,7 @@ class Context extends Generic {
                 await this.handleCallApplyAfter(call, returnValue)
             );
         } catch (error: any) {
+            error ??= new Error('unknown error');
             this.puth.logger.debug({ error, packet: call.packet }, '[Call apply error]');
             // call event before any pushToCache call
             await this.emitAsync('call:apply:error', {error, command, page: call.page});

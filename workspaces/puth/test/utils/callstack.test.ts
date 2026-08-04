@@ -62,6 +62,24 @@ function makeEventTarget(properties: Record<string, unknown> = {}) {
 }
 
 describe('CallStack', () => {
+    it('returns an unknown error when a call rejects without a reason', async () => {
+        const context = new Context({ logger, debug: false } as any);
+        const call = new Call(
+            { function: 'reject', parameters: [] },
+            Promise.withResolvers<unknown>(),
+            { reject: () => Promise.reject() },
+        );
+
+        await context.handleCallApply(call);
+
+        await expect(call.response.promise).resolves.toMatchObject({
+            type: 'error',
+            code: 'MethodException',
+            message: 'Function reject threw error: unknown error',
+            error: expect.objectContaining({ message: 'unknown error' }),
+        });
+    });
+
     it('keeps a dialog result when the interrupted call finishes during a portal request', async () => {
         const { context, stack } = makeStack();
         const call = makeCall();
