@@ -13,6 +13,7 @@ use Puth\Laravel\Facades\Puth;
 use Puth\Traits\PuthAssertions;
 use Puth\Utils\BackTrace;
 use Puth\Utils\MimeType;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -187,6 +188,8 @@ abstract class TestCase extends FoundationTestCase
         if ($testResponse->baseResponse instanceof StreamedResponse
             || $testResponse->baseResponse instanceof StreamedJsonResponse) {
             $body = $testResponse->streamedContent();
+        } else if ($testResponse->baseResponse instanceof BinaryFileResponse) {
+            $body = $testResponse->baseResponse?->getFile()?->getContent() ?? '';
         } else {
             $body = $testResponse->content();
         }

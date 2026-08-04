@@ -105,12 +105,12 @@ class Browser extends RemoteObject
      * @debug-gen-original-name "clickLink"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]
-     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter linkText {"type":"string","isOptional":false}
      * @debug-gen-original-parameter element {"type":"string","isOptional":false,"initializer":{"type":"string","value":"a"}}
      */
-    public function clickLink(string $selector, string $element = 'a'): Browser
+    public function clickLink(string $linkText, string $element = 'a'): Browser
     {
-        return $this->callFunc('clickLink', [$selector, $element]);
+        return $this->callFunc('clickLink', [$linkText, $element]);
     }
 
     /**
@@ -2108,12 +2108,12 @@ class Browser extends RemoteObject
     /**
      * @debug-gen-original-name "resolver"
      * @debug-gen-original-is-async false
-     * @debug-gen-original-returns ["void"]
+     * @debug-gen-original-returns ["string"]
      * @debug-gen-original-parameter selector {"type":"string[] | string | null","isOptional":false}
      */
-    public function resolver(mixed $selector): void
+    public function resolver(mixed $selector): string
     {
-        $this->callFunc('resolver', [$selector]);
+        return $this->callFunc('resolver', [$selector]);
     }
 
     /**

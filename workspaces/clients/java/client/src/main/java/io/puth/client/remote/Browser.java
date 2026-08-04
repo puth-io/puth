@@ -59,12 +59,12 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("click", new Object[]{selector, options});
     }
 
-    public Browser clickLink(String selector) {
-        return this.clickLink(selector, "a");
+    public Browser clickLink(String linkText) {
+        return this.clickLink(linkText, "a");
     }
 
-    public Browser clickLink(String selector, String element) {
-        return (Browser) this.callFunc("clickLink", new Object[]{selector, element});
+    public Browser clickLink(String linkText, String element) {
+        return (Browser) this.callFunc("clickLink", new Object[]{linkText, element});
     }
 
     public Browser clickAtPoint(int x, int y) {
@@ -1019,8 +1019,8 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("assertFragmentIsNot", new Object[]{fragment});
     }
 
-    public void resolver(Object selector) {
-        this.callFunc("resolver", new Object[]{selector});
+    public String resolver(Object selector) {
+        return (String) this.callFunc("resolver", new Object[]{selector});
     }
 
     public Browser waitForDialog() {

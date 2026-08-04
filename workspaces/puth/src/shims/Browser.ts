@@ -1943,7 +1943,7 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
-    public resolver(selector: string[] | string | null) {
+    public resolver(selector: string[] | string | null): string {
         if (Array.isArray(selector)) {
             return selector
                 .map((s) => {
