@@ -1,5 +1,11 @@
 # @puth/gui
 
+## 0.1.4
+
+### Patch Changes
+
+- c9ce01c: Build the GUI without requiring Core's generated runtime entry point during publishing, and release Puth so its Docker image includes the GUI update.
+
 ## 0.1.3
 
 ### Patch Changes
