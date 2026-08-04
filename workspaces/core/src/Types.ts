@@ -103,7 +103,14 @@ export type IResponse = IPacket & {
     headers: {
         [key: string]: string;
     };
-    content: Uint8Array;
+    /** The response body, present on the first occurrence of a payload. */
+    content?: Uint8Array;
+    /** SHA-256 hash of the uncompressed response body. */
+    contentHash?: string;
+    /** Packet id containing the body when this response duplicates an earlier one. */
+    contentReference?: string;
+    /** Size of the uncompressed response body, including when it is referenced. */
+    contentLength?: number;
 };
 
 export type ILogLocation = {

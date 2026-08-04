@@ -1074,6 +1074,17 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
+    // @codegen
+    public assertCount(selector: string, count: int): Promise<Return<this>> {
+        return expects(
+            this.site.$$(this.resolver(selector)).then((elements) => elements.length),
+            isEqualTo,
+            count,
+            ({ expected, actual }) =>
+                `Expected [${expected}] elements matching selector [${selector}], but found [${actual}].`,
+        ).then(this.selfWithAsserts());
+    }
+
     public async assertScript(expression: string, expected: any = true): Promise<Return<this>> {
         return expects(
             this.site.evaluate(expression),

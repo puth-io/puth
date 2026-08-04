@@ -13,6 +13,7 @@ export default class ContextStore {
     screencasts: any[] = [];
     unspecific: any[] = [];
     renderedEvents: any[] = [];
+    private responseContentByPacketId = new Map<string, Uint8Array>();
     
     group: string = '';
     test: {
@@ -102,6 +103,7 @@ export default class ContextStore {
     
     received(packet: any) {
         packet.context = this;
+        this.registerResponseContent(packet);
         
         if (packet.type === 'command') {
             this.commands.push(packet);
@@ -171,6 +173,31 @@ export default class ContextStore {
         }
         
         return packets;
+    }
+
+    /**
+     * Resolves a deduplicated response body without expanding it in the stored
+     * packet. Keeping the packet as a reference preserves compact exports.
+     */
+    responseContent(packet: {id: string, content?: Uint8Array, contentReference?: string}): Uint8Array|undefined {
+        return packet.content ?? (packet.contentReference == null
+            ? undefined
+            : this.responseContentByPacketId.get(packet.contentReference));
+    }
+
+    private registerResponseContent(packet: any): void {
+        if (packet.type !== 'response') {
+            return;
+        }
+
+        if (packet.content instanceof Uint8Array) {
+            this.responseContentByPacketId.set(packet.id, packet.content);
+            return;
+        }
+
+        if (packet.contentReference != null && ! this.responseContentByPacketId.has(packet.contentReference)) {
+            console.warn('Response content reference could not be resolved', packet);
+        }
     }
     
     blob() {

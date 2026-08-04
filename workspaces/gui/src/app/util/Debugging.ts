@@ -248,13 +248,14 @@ export function logRequest(packet: any) {
 }
 
 export function logResponse(packet: any) {
+  let contentLength = packet.content?.byteLength ?? packet.contentLength ?? 0;
   console.groupCollapsed(
     packet.context.id,
     packet.type.substring(0, 3),
     packet.resourceType.padEnd(10),
     packet.method.padEnd(6),
     packet.url.length > 64 ? packet.url.substring(0, 60) + '...' : packet.url,
-    (packet.content.length / 1000).toFixed(2),
+    (contentLength / 1000).toFixed(2),
     'kb',
   );
   console.log('Headers');

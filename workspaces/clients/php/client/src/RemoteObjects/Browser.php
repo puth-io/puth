@@ -1218,6 +1218,20 @@ class Browser extends RemoteObject
     }
 
     /**
+     * @codegen
+     * 
+     * @debug-gen-original-name "assertCount"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter count {"type":"int","isOptional":false}
+     */
+    public function assertCount(string $selector, int $count): Browser
+    {
+        return $this->callFunc('assertCount', [$selector, $count]);
+    }
+
+    /**
      * @debug-gen-original-name "assertScript"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]

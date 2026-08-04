@@ -623,6 +623,10 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("assertSeeNothingIn", new Object[]{selector});
     }
 
+    public Browser assertCount(String selector, int count) {
+        return (Browser) this.callFunc("assertCount", new Object[]{selector, count});
+    }
+
     public Browser assertScript(String expression) {
         return this.assertScript(expression, true);
     }
