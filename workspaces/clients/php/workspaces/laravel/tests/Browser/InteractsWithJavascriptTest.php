@@ -15,7 +15,7 @@ class InteractsWithJavascriptTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $response = $browser->visit(new Playground)
-                ->evaluate([
+                ->script([
                     '1 + 1',
                     'window.document.location.href',
                 ]);
