@@ -94,7 +94,7 @@ abstract class TestCase extends FoundationTestCase
             $callback();
         }
 
-        $this->context->destroy(['options' => $destroyOptions]);
+        $this->context->destroy($destroyOptions);
 
         parent::tearDown();
     }

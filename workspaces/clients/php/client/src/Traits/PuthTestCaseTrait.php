@@ -108,7 +108,7 @@ trait PuthTestCaseTrait
             }
         }
     
-        $this->context->destroy(['options' => $destroyOptions]);
+        $this->context->destroy($destroyOptions);
     }
 
     public function getPuthInstanceUrl(): string
