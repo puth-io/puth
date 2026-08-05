@@ -1,5 +1,12 @@
 # @puth/client-php
 
+## 0.8.2
+
+### Patch Changes
+
+- 8dd2876: Persist snapshots after failed tests when failure snapshot saving is enabled.
+- 8dd2876: Add `assertCount` support.
+
 ## 0.8.1
 
 ### Patch Changes

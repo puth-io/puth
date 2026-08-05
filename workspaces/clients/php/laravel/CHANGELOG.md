@@ -1,5 +1,14 @@
 # @puth/client-laravel
 
+## 0.10.3
+
+### Patch Changes
+
+- 8dd2876: Persist snapshots after failed tests when failure snapshot saving is enabled.
+- Updated dependencies [8dd2876]
+- Updated dependencies [8dd2876]
+  - @puth/client-php@0.8.2
+
 ## 0.10.2
 
 ### Patch Changes
