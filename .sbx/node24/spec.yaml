@@ -1,0 +1,36 @@
+schemaVersion: "2"
+kind: mixin
+name: puth-node24
+displayName: Puth Node.js 24
+description: Install Node.js 24.22.0 and its bundled npm.
+
+permissions:
+  network:
+    allow:
+      - nodejs.org
+      - registry.npmjs.org
+
+setup:
+  install:
+    - description: Install Node.js 24.22.0 with SHA256 verification
+      user: "0"
+      command: |
+        set -eu
+        case "$(uname -m)" in
+          x86_64)
+            node_arch=x64
+            node_sha256=28ea0a438de9a13bd7891fd758eee6c7819ee8af5442dfd8d45bd65e56d4228c
+            ;;
+          aarch64|arm64)
+            node_arch=arm64
+            node_sha256=b7e7991d5407815adfa74a2a9cd4db683552c8ce32ff4a295c22e972849c3f5d
+            ;;
+          *) echo "Unsupported Node.js architecture" >&2; exit 1 ;;
+        esac
+        node_setup_dir=$(mktemp -d)
+        trap 'rm -rf "$node_setup_dir"' EXIT
+        curl -fsSL "https://nodejs.org/dist/v24.22.0/node-v24.22.0-linux-${node_arch}.tar.gz" -o "$node_setup_dir/node.tar.gz"
+        echo "$node_sha256  $node_setup_dir/node.tar.gz" | sha256sum --check
+        tar -xzf "$node_setup_dir/node.tar.gz" -C /usr/local --strip-components=1
+        /usr/local/bin/node --version
+        /usr/local/bin/npm --version
