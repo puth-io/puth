@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vitepress dev --host 0.0.0.0 --port 5174 --strictPort",
     "build": "vitepress build",
-    "preview": "vitepress preview"
+    "preview": "vitepress preview",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"

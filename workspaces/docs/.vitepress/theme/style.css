@@ -50,6 +50,9 @@
 .puth-section h2 span { color: var(--vp-c-brand-1); }
 .puth-section p { color: var(--vp-c-text-2); font-size: 18px; line-height: 1.8; }
 .puth-section a { font-weight: 600; }
+@media (min-width: 960px) {
+  .puth-preview > img { transform: scale(1.08); }
+}
 @media (min-width: 960px) { .VPHome .vp-doc { padding: 0 64px; } }
 @media (max-width: 767px) {
   .puth-preview, .puth-section { grid-template-columns: 1fr; gap: 24px; }

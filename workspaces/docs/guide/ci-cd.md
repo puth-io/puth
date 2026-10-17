@@ -4,19 +4,45 @@ Run Puth alongside your application and test runner in CI. Docker or Podman incl
 
 ## Run the tests
 
-Start the Puth server, configure its URL in your application's `config/puth.php`, and run your Laravel tests with `CI=true`:
+Start the Puth server and your application, then run your project's test command. Saving a `.puth` snapshot requires a context with snapshot recording enabled.
 
-```sh
-CI=true php artisan test
+<SdkContent sdk="laravel">
+
+The Laravel test case enables snapshot recording and can save failures automatically. See [Laravel test artifacts](./laravel-debugging#failed-test-snapshots-in-ci) for `CI=true` configuration.
+
+</SdkContent>
+
+<SdkContent sdk="php">
+
+Enable snapshot recording when creating the context. Your test runner must report failures and request a saved snapshot before cleanup:
+
+```php
+$context = new \Puth\Context('http://127.0.0.1:7345', ['snapshot' => true]);
+$cleanup = ['immediately' => true];
+try {
+    $browser = $context->createBrowserShim();
+    $browser->visit('https://playground.puth.dev');
+    if (!str_contains($browser->text('body'), 'Puth')) {
+        throw new \RuntimeException('Expected Puth on the page.');
+    }
+} catch (\Throwable $error) {
+    $context->testFailed();
+    $cleanup['save'] = ['to' => 'file'];
+    throw $error;
+} finally {
+    $context->destroy($cleanup);
+}
 ```
 
-The Laravel integration enables saving snapshots for failed tests when `CI` is `true` or `1`. Register your browser test directory in `phpunit.xml` as described in the [Laravel guide](./laravel#run-tests).
+Unlike the Laravel test case, the standalone PHP client does not interpret the `CI` variable to save failures automatically.
+
+</SdkContent>
 
 If you install Puth with npm, cache the browser download directory between jobs. Puth checks `~/.cache/puth` and `.cache/puppeteer` relative to the server's working directory.
 
 ## Preserve failed test snapshots
 
-Snapshot files are written by the **Puth server**, so collect artifacts from the machine or container running it. The default location in the current server is `storage/snapshots` relative to its working directory. Container images may configure their own working directory; mount the corresponding directory to persist those files after the container exits.
+Snapshot files are written by the **Puth server**, so collect artifacts from the machine or container running it. The default location is `storage/snapshots` relative to the server’s working directory. In the Puth Docker image this is `/puth/storage/snapshots`. The [Compose example](./getting-started#docker-compose) mounts that directory to `./puth/snapshots` on the host.
 
 Configure your CI provider to upload the snapshot directory even when the test step fails. If you override the snapshot location, collect that directory instead.
 
