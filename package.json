@@ -12,7 +12,8 @@
     "workspaces/clients/js/client",
     "workspaces/clients/java/client",
     "workspaces/clients/php/client",
-    "workspaces/clients/php/laravel"
+    "workspaces/clients/php/laravel",
+    "workspaces/docs"
   ],
   "dependencies": {
     "@changesets/cli": "^2.29.4",
@@ -23,7 +24,10 @@
     "dev:client": "npm -w @puth/gui run dev",
     "dev:server": "npm -w puth run dev",
     "dev": "bunx concurrently \"bun run dev:server\" \"bun run dev:client\"",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "docs:dev": "npm -w @puth/docs run dev",
+    "docs:build": "npm -w @puth/docs run build",
+    "docs:preview": "npm -w @puth/docs run preview"
   },
   "license": "SEE LICENSE IN LICENCE",
   "devDependencies": {
