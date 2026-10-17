@@ -13,11 +13,26 @@ The equivalent workspace commands are `npm -w @puth/docs run dev`, `build`, and 
 
 Edit Markdown pages here and navigation in `.vitepress/config.ts`. Local search is generated during the production build. VitePress checks internal links during the build.
 
-Deploy `.vitepress/dist` to a static host after running `npm run docs:build`. The site assumes it is hosted at the domain root; configure VitePress `base` before hosting under a subdirectory. With `cleanUrls` enabled, configure the host to serve extensionless page URLs from their corresponding HTML files.
+The site is deployed to `https://puth.io` using GitHub Pages. It uses the domain root and clean URLs, which GitHub Pages serves from the corresponding HTML files.
 
 This workspace replaces the puth.io landing page and documentation. Its homepage uses the existing site's branding and image assets, copied into `public/assets/image` so the build has no dependency on the old site. Theme overrides live in `.vitepress/theme/style.css`.
 
 The guide covers installation, Laravel, CI snapshots, portal settings, browser testing concepts and roadmap context, with Browser and Context API references under `/api/`. Content from the former site and the manual migration on the `docs` branch is adapted to the current repository where behavior has changed. The SDK selector changes examples, API signatures and client-specific explanations for Laravel or standalone PHP. Legacy URL compatibility is intentionally omitted; guide navigation uses `/guide/` routes.
+
+## Deployment
+
+The `Docs` workflow in `.github/workflows/docs.yml` runs only on pushes to `master` that change `workspaces/docs/**`, the root `package.json` or `package-lock.json`, or the workflow itself. It installs dependencies with Node 24, runs the docs tests, builds the site, and deploys `workspaces/docs/.vitepress/dist` using the GitHub Pages artifact actions. Deployments use the `github-pages` environment and are serialized without cancelling an active deployment. Pull requests do not run this workflow.
+
+Docs deployment is independent of Changesets and package publishing. This private workspace does not need a Changeset for documentation or deployment changes. The workflow uses the repository's built-in `GITHUB_TOKEN`; no deployment secret is needed.
+
+To enable hosting or move the domain from another host:
+
+1. Inspect the repository's existing **Settings → Pages** configuration. Set **Build and deployment → Source** to **GitHub Actions**, and set the custom domain to `puth.io`. The tracked `public/CNAME` is also copied into the build; with an Actions deployment, configure the custom domain in Pages settings explicitly.
+2. Replace the existing apex (`@`) web-hosting records with these GitHub Pages A records: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, and `185.199.111.153`. Remove old apex AAAA records so IPv6 traffic cannot reach the previous host. Preserve unrelated DNS records, including mail and domain-verification records. Configuring `www.puth.io` is outside this setup.
+3. Allow GitHub to validate DNS and provision the certificate, then enable **Enforce HTTPS** in Pages settings. Ensure any `github-pages` environment deployment rules allow `master`.
+4. Merge the deployment configuration into `master` to trigger the first build. After DNS propagation and deployment, check the homepage, direct guide/API URLs and refreshes, search, SDK selection, assets, `.well-known/security.txt`, and an unknown URL's 404 page over HTTPS.
+
+For local validation, run `npm -w @puth/docs run test` and `npm run docs:build`. The output should include `index.html`, guide/API HTML, assets, `404.html`, `CNAME`, and `.well-known` files. To redeploy without a new commit, rerun a previous `Docs` workflow run in GitHub Actions.
 
 ## SDK-aware content
 
