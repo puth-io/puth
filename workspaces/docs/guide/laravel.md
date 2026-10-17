@@ -11,14 +11,28 @@ php artisan puth:install
 
 Configure the integration in `config/puth.php`. Start the [Puth server](./getting-started#start-the-server) separately and point the client to that instance.
 
+## Configure the server and application URLs
+
+Set `PUTH_INSTANCE_URL` in your test environment to the address the PHP test process uses to reach Puth:
+
+```dotenv
+PUTH_INSTANCE_URL=http://127.0.0.1:7345
+APP_URL=http://127.0.0.1:8000
+```
+
+`APP_URL` is your application address, used for relative visits such as `$browser->visit('/login')`. With portal disabled, run your application server separately and make sure the browser on the Puth server can reach that address. When Puth runs in Docker, a host application's address will typically use `host.docker.internal` instead of `127.0.0.1`; see [Docker setup](./getting-started#docker).
+
 ## Run tests
 
 Add your browser test directory to `phpunit.xml` so Laravel's normal test runner discovers it:
 
 ```xml
-<testsuite name="Browser">
-    <directory>tests/Browser</directory>
-</testsuite>
+<testsuites>
+    <!-- Keep your existing test suites here. -->
+    <testsuite name="Browser">
+        <directory>tests/Browser</directory>
+    </testsuite>
+</testsuites>
 ```
 
 Run the tests with:
@@ -31,6 +45,8 @@ If you already have Dusk tests in `tests/Browser`, use a separate directory such
 
 ## Write a browser test
 
+Save a test such as `tests/Browser/ExampleBrowserTest.php`, extending the `Tests\PuthTestCase` created by `puth:install`:
+
 ```php
 use Tests\PuthTestCase;
 use Puth\Laravel\Browser;
@@ -40,8 +56,8 @@ class ExampleBrowserTest extends PuthTestCase
     public function test_visit_website()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('https://playground.puth.dev')
-                ->assertSee('Puth');
+            $browser->visit('https://playground.puth.dev');
+            $browser->assertSee('Puth');
         });
     }
 }
@@ -65,15 +81,8 @@ class ExampleBrowserTest extends PuthTestCase
 }
 ```
 
-Options returned by `getContextOptions()` can override these settings individually. See [portal and detours](./portal) for details.
+Options returned by `$this->getContextOptions()` can override these settings individually. See [portal and detours](./portal) for details.
 
 ## Moving from Dusk
 
-Puth provides a Dusk replacement, with some differences:
-
-- Start the Puth server separately; the integration does not launch the browser process.
-- `keys()` uses the [Puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput).
-- Replace `typeInDialog(selector, value)` with `acceptDialog(value)`.
-- Replace `$this->driver->executeScript()` with `$this->evaluate()`.
-- Console logs and some assertion error messages have different formats.
-- `moveMouse($xOffset, $yOffset)` is unsupported.
+You can keep Dusk and Puth installed while moving tests to a separate test directory. Follow [migrating from Dusk](./migration-from-dusk) for the server lifecycle, keyboard and dialog differences. The [Browser reference](/api/browser) distinguishes server method names from Laravel wrappers.

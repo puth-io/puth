@@ -26,8 +26,8 @@ class ExampleBrowserTest extends PuthTestCase
     public function test_visit_website()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('https://playground.puth.dev')
-                ->assertSee('Puth');
+            $browser->visit('https://playground.puth.dev');
+            $browser->assertSee('Puth');
         });
     }
 }
