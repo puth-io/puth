@@ -50,3 +50,7 @@ Puth has a Laravel integration package. You can find more information in the [do
 ### PHP
 
 Puth has a client package for PHP. Currently undocumented.
+
+## Documentation development
+
+The VitePress site lives in [`workspaces/docs`](workspaces/docs). Run `npm run docs:dev` to start it, `npm run docs:build` to build static files, and `npm run docs:preview` to preview the build.
