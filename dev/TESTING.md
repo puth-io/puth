@@ -1,8 +1,13 @@
 # Running tests with Compose
 
 Run commands from the repository root. Docker Engine and Docker Compose are the
-only host prerequisites; Node, Chrome libraries, PHP, Composer, and Maven run in
-containers. On Linux, if your user/group IDs differ from 1000, export `LOCAL_UID`
+only host prerequisites for the full runner; Node, Chrome libraries, PHP, Composer,
+and Maven run in containers. npm builds and tests may also run directly on the host
+when a compatible Node version and the required dependencies are available. For
+example, run `npm -w puth run test -- test/utils/cy.test.ts`. Browser tests also
+require a usable Chrome installation and its system libraries; use Compose when
+these are unavailable instead of installing Chrome system libraries on the host.
+On Linux, if your user/group IDs differ from 1000, export `LOCAL_UID`
 and `LOCAL_GID` with the output of `id -u` and `id -g` before building.
 
 ## Full run

@@ -12,18 +12,24 @@ This is a Bun/Node monorepo. The server is `workspaces/puth`; shared code is in
 
 ## Test environment
 
-Use `compose.yml` for dependency installation, builds, browsers, and tests. Do not
-install PHP, Maven, or Chrome system libraries on the host to run this repository's
-tests. The host only needs Docker with Compose.
+Use `compose.yml` for the complete test environment. npm builds and tests may also
+run directly on the host when a compatible Node version and the required
+dependencies are available. Browser tests additionally need a usable Chrome
+installation and its system libraries; use Compose when these are unavailable.
+Do not install PHP, Maven, or Chrome system libraries on the host to run this
+repository's tests. Docker with Compose remains sufficient for the full suite.
 
 - Full active test suites: `./docker/dev/test.sh`.
 - Setup or restart the test environment: `docker compose up --build --wait puth laravel`.
 - Run a focused suite with `docker compose run --rm --no-deps <suite> ...` after setup.
+- For direct npm tests, use root workspace commands, for example
+  `npm -w puth run test -- test/utils/cy.test.ts`.
 - Read [dev/TESTING.md](dev/TESTING.md) for suite names, filters, prerequisites,
   logs, and cleanup. Keep that guide and Compose services in sync when changing
   the test environment.
 - If container setup fails, diagnose and fix the Compose environment instead of
-  switching to custom host installations. Report network-policy blockers without
+  installing host tools to bypass it. Direct npm tests are still allowed when their
+  prerequisites are already available. Report network-policy blockers without
   weakening TLS verification or changing unrelated worktree files.
 
 ## Releases
