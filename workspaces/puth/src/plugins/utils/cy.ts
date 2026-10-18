@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+import { sleep } from '../../Utils';
+
 /**
  * Keyboard Layout
  * https://github.com/puppeteer/puppeteer/blob/main/src/common/USKeyboardLayout.ts
@@ -71,22 +73,29 @@ export async function type(element, chars, options: {delay?, parseSpecialCharSeq
                 await element.frame.page().keyboard.down(key);
                 release.push(key);
             }
+            if (options?.delay) {
+                await sleep(options.delay);
+            }
         } else {
             for (let ch of chs.split('')) {
                 await element.frame.page().keyboard.down(ch);
+                if (options?.delay) {
+                    await sleep(options.delay);
+                }
                 await element.frame.page().keyboard.up(ch);
+                if (options?.delay) {
+                    await sleep(options.delay);
+                }
             }
         }
     }
     
-    await Promise.all(
-        release.map(async (key) => {
-            if (options?.delay) {
-                await element.frame.page().waitForTimeout(options?.delay);
-            }
-            await element.frame.page().keyboard.up(key);
-        }),
-    );
+    for (let key of release) {
+        await element.frame.page().keyboard.up(key);
+        if (options?.delay) {
+            await sleep(options.delay);
+        }
+    }
 }
 
 export const SpecialKeysMap = {
@@ -110,7 +119,7 @@ export const SpecialKeysMap = {
         await page.keyboard.down('Control');
         await page.keyboard.press('a', options);
         if (options?.delay) {
-            await page.waitForTimeout(options?.delay);
+            await sleep(options.delay);
         }
         await page.keyboard.up('Control');
     },
