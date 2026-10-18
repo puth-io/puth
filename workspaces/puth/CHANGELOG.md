@@ -1,5 +1,13 @@
 # puth
 
+## 0.8.5
+
+### Patch Changes
+
+- e30d9eb: Give portal detours distinct browser cache identities per context, original URL, and portal path, while retaining stable URLs for repeated requests.
+- cad1f02: Preserve base64 response bodies until portal fulfillment so detoured requests return the original bytes without double decoding.
+- b47444a: Honor typing delays in mixed text and special-key sequences, and replace removed Puppeteer timeout calls when releasing keys and selecting all.
+
 ## 0.8.4
 
 ### Patch Changes
