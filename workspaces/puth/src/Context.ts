@@ -30,6 +30,7 @@ import { Browser, ExpectationFailed } from './shims/Browser';
 import { type BrowserRefContext } from './handlers/BrowserHandler';
 import { CallStack, type PortalRequest, type PortalResponse } from './utils/CallStack';
 import { Call } from './utils/Call';
+import { createHash } from 'node:crypto';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -573,9 +574,15 @@ class Context extends Generic {
             throw new Error('Unreachable');
         }
 
+        // Keep cache identities stable for the same source, but separate
+        // unrelated URLs, portal paths, and contexts.
+        const detourPath = ['portal/detour', this.id, ...[request.url, path].map(
+            value => createHash('sha256').update(value).digest('base64url'),
+        )].join('/');
+
         return cdp.send('Fetch.continueRequest', {
             requestId,
-            url: new URL('portal/detour', addr).toString(),
+            url: new URL(detourPath, addr).toString(),
             headers,
         });
     }
