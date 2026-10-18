@@ -1,16 +1,9 @@
-# Docker Sandboxes: preview with `sbx env plan`, start with `sbx env run`.
-# Run without an explicit path to inherit ~/.sbxenv.yaml user defaults.
-# Requires Node.js >=24 inside the sandbox. From the repository root, run:
-#   npm ci
-#   npm run build
-#   npm -w puth run ci:browser:install
-# Start the server and GUI in separate sandbox terminals:
-#   npm run dev:server
-#   npm run dev:client -- --host 0.0.0.0
-# Run server tests with `npm -w puth run test`.
 schemaVersion: "1"
 
 name: puth
+
+kits:
+  - ./.sbx/node24
 
 lifecycle:
   postCreate:
@@ -18,6 +11,10 @@ lifecycle:
       command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.io
     - name: Allow sandbox access to puth.io
       command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.io"
+    - name: Allow sandbox access to puth.dev
+      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.dev
+    - name: Allow sandbox access to puth.dev
+      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.dev"
     - name: Set default npm configuration
       command: sbx exec "$SBX_SANDBOX_NAME" sh -c 'printf "%s\n" "ignore-scripts=true" "min-release-age=7" > "$HOME/.npmrc"'
     - name: Install Codex globally
