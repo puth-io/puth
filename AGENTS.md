@@ -10,6 +10,22 @@ This is a Bun/Node monorepo. The server is `workspaces/puth`; shared code is in
 - Keep changes scoped to the affected package and update its tests/documentation when relevant.
 - Do not modify unrelated or untracked worktree files.
 
+## Test environment
+
+Use `compose.yml` for dependency installation, builds, browsers, and tests. Do not
+install PHP, Maven, or Chrome system libraries on the host to run this repository's
+tests. The host only needs Docker with Compose.
+
+- Full active test suites: `./docker/dev/test.sh`.
+- Setup or restart the test environment: `docker compose up --build --wait puth laravel`.
+- Run a focused suite with `docker compose run --rm --no-deps <suite> ...` after setup.
+- Read [dev/TESTING.md](dev/TESTING.md) for suite names, filters, prerequisites,
+  logs, and cleanup. Keep that guide and Compose services in sync when changing
+  the test environment.
+- If container setup fails, diagnose and fix the Compose environment instead of
+  switching to custom host installations. Report network-policy blockers without
+  weakening TLS verification or changing unrelated worktree files.
+
 ## Releases
 
 Releases use Changesets. For every user-facing change to a publishable package,

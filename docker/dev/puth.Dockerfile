@@ -1,6 +1,9 @@
 FROM node:24-slim
 
-RUN apt-get update \
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN apt-get update -o APT::Update::Error-Mode=any \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         fonts-liberation \
@@ -34,6 +37,9 @@ RUN apt-get update \
         libxss1 \
         libxtst6 \
         xdg-utils \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && groupmod -g "$GROUP_ID" node \
+    && usermod -u "$USER_ID" -g "$GROUP_ID" node \
+    && chown -R node:node /home/node
 
 WORKDIR /workspace

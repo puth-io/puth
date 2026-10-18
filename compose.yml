@@ -1,19 +1,65 @@
 name: puth-dev
 
+x-node: &node
+  image: puth-dev-node
+  build:
+    context: .
+    dockerfile: docker/dev/puth.Dockerfile
+    args:
+      USER_ID: ${LOCAL_UID:-1000}
+      GROUP_ID: ${LOCAL_GID:-1000}
+  user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+  working_dir: /workspace
+  environment: &node-environment
+    npm_config_cache: /tmp/npm-cache
+  volumes:
+    - .:/workspace
+    - node-modules:/workspace/node_modules
+    - puth-node-modules:/workspace/workspaces/puth/node_modules
+    - gui-node-modules:/workspace/workspaces/gui/node_modules
+    - docs-node-modules:/workspace/workspaces/docs/node_modules
+    - npm-cache:/tmp/npm-cache
+  init: true
+  shm_size: 1gb
+
+x-php: &php
+  image: puth-dev-php
+  build:
+    context: .
+    dockerfile: docker/dev/laravel.Dockerfile
+    args:
+      USER_ID: ${LOCAL_UID:-1000}
+      GROUP_ID: ${LOCAL_GID:-1000}
+  volumes:
+    - .:/workspace
+
+x-laravel-environment: &laravel-environment
+  APP_ENV: testing
+  APP_URL: http://laravel:8080
+  DB_CONNECTION: sqlite
+  DB_DATABASE: /workspace/workspaces/clients/php/workspaces/laravel/database/database.sqlite
+  PUTH_INSTANCE_URL: http://puth:7345
+  PHP_OPCACHE_ENABLE: "0"
+
 services:
+  setup:
+    <<: *node
+    user: root
+    command: sh docker/dev/node-setup.sh
+
   puth:
-    build:
-      context: .
-      dockerfile: docker/dev/puth.Dockerfile
-    working_dir: /workspace
-    command: npm -w puth run dev
+    <<: *node
+    working_dir: /workspace/workspaces/puth
+    command: npm run dev
     environment:
+      <<: *node-environment
       PUTH_ADDRESS: 0.0.0.0
       PUTH_BROWSER_CACHE: "true"
     ports:
       - "7345:7345"
-    volumes:
-      - .:/workspace
+    depends_on:
+      setup:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('node:net').connect(7345, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
       interval: 5s
@@ -21,35 +67,88 @@ services:
       retries: 20
 
   gui:
-    build:
-      context: .
-      dockerfile: docker/dev/puth.Dockerfile
-    working_dir: /workspace
+    <<: *node
     command: npm -w @puth/gui run dev -- --host 0.0.0.0
     environment:
+      <<: *node-environment
       CHOKIDAR_USEPOLLING: "true"
     ports:
       - "5173:5173"
-    volumes:
-      - .:/workspace
+    depends_on:
+      setup:
+        condition: service_completed_successfully
 
   laravel:
-    build:
-      context: .
-      dockerfile: docker/dev/laravel.Dockerfile
-      args:
-        USER_ID: ${LOCAL_UID:-1000}
-        GROUP_ID: ${LOCAL_GID:-1000}
+    <<: *php
+    volumes: &laravel-volumes
+      - .:/workspace
+      - type: volume
+        source: laravel-console
+        target: /workspace/workspaces/clients/php/workspaces/laravel/tests/Browser/console
+        volume:
+          nocopy: true
+      - type: volume
+        source: laravel-screenshots
+        target: /workspace/workspaces/clients/php/workspaces/laravel/tests/Browser/screenshots
+        volume:
+          nocopy: true
+      - type: volume
+        source: laravel-source
+        target: /workspace/workspaces/clients/php/workspaces/laravel/tests/Browser/source
+        volume:
+          nocopy: true
     working_dir: /workspace/workspaces/clients/php/workspaces/laravel
-    environment:
-      APP_ENV: testing
-      APP_URL: http://laravel:8080
-      PUTH_INSTANCE_URL: http://puth:7345
-      PHP_OPCACHE_ENABLE: "0"
+    environment: *laravel-environment
     ports:
       - "8000:8080"
-    volumes:
-      - .:/workspace
+    depends_on:
+      puth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8080) ? 0 : 1);"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  node-test:
+    <<: *node
+    profiles: ["test"]
+    command: npm -w puth run test
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+  docs-test:
+    <<: *node
+    profiles: ["test"]
+    command: npm -w @puth/docs run test
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
+  laravel-test:
+    <<: *php
+    volumes: *laravel-volumes
+    profiles: ["test"]
+    user: www-data
+    entrypoint: []
+    working_dir: /workspace/workspaces/clients/php/workspaces/laravel
+    environment: *laravel-environment
+    command: php artisan test --without-tty --cache-directory=/tmp/phpunit-cache
+    depends_on:
+      laravel:
+        condition: service_healthy
+
+  php-test:
+    <<: *php
+    profiles: ["test"]
+    user: www-data
+    entrypoint: []
+    working_dir: /workspace/workspaces/clients/php/client
+    # The standalone PHP test case connects to 127.0.0.1:7345.
+    network_mode: service:puth
+    command: ["sh", "-ec", "composer install --no-interaction && ./vendor/bin/phpunit"]
     depends_on:
       puth:
         condition: service_healthy
@@ -63,6 +162,18 @@ services:
       PUTH_INSTANCE_URL: http://puth:7345
     volumes:
       - .:/workspace
+      - maven-cache:/root/.m2
     depends_on:
       puth:
         condition: service_healthy
+
+volumes:
+  node-modules:
+  puth-node-modules:
+  gui-node-modules:
+  docs-node-modules:
+  npm-cache:
+  maven-cache:
+  laravel-console:
+  laravel-screenshots:
+  laravel-source:
