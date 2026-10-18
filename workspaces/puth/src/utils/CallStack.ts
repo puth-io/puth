@@ -174,7 +174,7 @@ export class CallStack {
                 cdp
                     .send('Fetch.fulfillRequest', {
                         requestId: event.requestId,
-                        body: btoa(data),
+                        body: data,
                         responseCode: status,
                         responseHeaders: headers,
                     })
@@ -269,7 +269,7 @@ export class CallStack {
             );
         }
 
-        let body = atob(response.body);
+        let body = response.body;
         this.logger.debug(
             {
                 status: response.status,
