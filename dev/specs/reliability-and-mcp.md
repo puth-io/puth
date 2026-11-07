@@ -1,17 +1,18 @@
 # Puth reliability and agent workflows
 
-Status: in progress. Unchecked items are planned work, not completed capabilities.
+Status: implemented. Unchecked items are planned work, not completed capabilities.
 
 ## Goals and delivery order
 
 Make Puth dependable for development and CI, then expose the same testing
-environment to Codex and other MCP clients for validation and test authoring.
+environment to Claude Code, Codex and other MCP clients for validation and test
+authoring.
 
 - [x] Deliver the reliability foundation: local fixtures, context isolation,
   portal failures, snapshot replay coverage, and recording limits.
 - [x] Deliver an MCP server for browser exploration, validation, and PHP/Laravel
   test authoring.
-- [ ] Configure the project MCP connection to use the Puth instance used by its
+- [x] Configure the project MCP connection to use the Puth instance used by its
   development tests, and document the complete workflow.
 
 MCP v1 helps agents inspect applications and produce test code. Agents write
@@ -184,69 +185,71 @@ Use explicit schemas and bounded responses for the following tools:
 
 ### Connect to the project's development instance
 
-- [ ] Add `.codex/config.toml` with a stdio MCP server entry invoking the locally
-  built package through a root npm script.
-- [ ] Use `PUTH_INSTANCE_URL` for the endpoint, defaulting to
+- [x] Add `.mcp.json` for Claude Code, the primary client, with a stdio MCP server
+  entry invoking the locally built package through a root npm script.
+- [x] Add `.codex/config.toml` with the same entry for Codex.
+- [x] Use `PUTH_INSTANCE_URL` for the endpoint, defaulting to
   `http://127.0.0.1:7345`.
-- [ ] Provide a container execution example using `http://puth:7345`.
-- [ ] Supply the application's browser-reachable base URL separately. Use
+- [x] Provide a container execution example using `http://puth:7345`.
+- [x] Supply the application's browser-reachable base URL separately. Use
   `http://laravel:8080` for this repository's Compose Laravel application.
-- [ ] Accept environment overrides for endpoint, application URL, and artifact
+- [x] Accept environment overrides for endpoint, application URL, and artifact
   directory. Keep secrets out of committed configuration.
-- [ ] Store agent artifacts under ignored `.puth/agent-artifacts/`, partitioned
+- [x] Store agent artifacts under ignored `.puth/agent-artifacts/`, partitioned
   by session.
-- [ ] Report both Puth endpoint and application URL through `puth_status`.
+- [x] Report both Puth endpoint and application URL through `puth_status`.
   Explain that the application URL is resolved from the browser's environment.
-- [ ] Verify connectivity through `/health`. If unavailable, report the expected
+- [x] Verify connectivity through `/health`. If unavailable, report the expected
   startup command without launching another server.
-- [ ] Document equivalent configuration for other MCP clients.
+- [x] Document equivalent configuration for other MCP clients.
 
-Project-scoped Codex configuration follows the
-[official MCP documentation](https://developers.openai.com/codex/mcp/) and applies
-to trusted projects.
+Project-scoped configuration follows the MCP documentation of
+[Claude Code](https://code.claude.com/docs/en/mcp) and
+[Codex](https://developers.openai.com/codex/mcp/), and needs approval or a trusted
+project before it applies.
 
 ### Agent workflow guidance
 
-- [ ] Document starting the existing Compose development environment.
-- [ ] Document checking the MCP connection with `puth_status`.
-- [ ] Document exploration and validation in an isolated session.
-- [ ] Document exporting a PHP or Laravel draft and writing it with normal
+- [x] Document starting the existing Compose development environment.
+- [x] Document checking the MCP connection with `puth_status`.
+- [x] Document exploration and validation in an isolated session.
+- [x] Document exporting a PHP or Laravel draft and writing it with normal
   editor tools.
-- [ ] Document running the relevant repository suite and inspecting failures
+- [x] Document running the relevant repository suite and inspecting failures
   through Puth artifacts.
 
 ### Onboarding and project documentation
 
-- [ ] Publish a runnable Laravel/PHP example demonstrating failure capture, MCP
+- [x] Publish a runnable Laravel/PHP example demonstrating failure capture, MCP
   exploration, test authoring, and CI artifact collection.
-- [ ] Document MCP tools, lifecycle, configuration, artifact paths, supported
+- [x] Document MCP tools, lifecycle, configuration, artifact paths, supported
   operations, and browser-network addressing.
-- [ ] Replace the placeholder public roadmap with these milestones.
-- [ ] Publish a client support matrix based on actual test coverage, clarifying
+- [x] Replace the placeholder public roadmap with these milestones.
+- [x] Publish a client support matrix based on actual test coverage, clarifying
   PHP, Laravel, Java, and JavaScript readiness.
-- [ ] Update `dev/TESTING.md` and Compose services together whenever changing the
+- [x] Update `dev/TESTING.md` and Compose services together whenever changing the
   test environment.
 
 ## Verification and release checklist
 
-- [ ] Run active suites through the documented Compose environment. Direct host
+- [x] Run active suites through the documented Compose environment. Direct host
   checks remain allowed when prerequisites are already available, as described
   in `AGENTS.md` and `dev/TESTING.md`.
-- [ ] Add stdio MCP integration coverage for initialization, discovery,
+- [x] Add stdio MCP integration coverage for initialization, discovery,
   structured results, image output, errors, shutdown, and stdout purity.
-- [ ] Run MCP and a Laravel test concurrently against one Puth instance. Assert
+- [x] Run MCP and a Laravel test concurrently against one Puth instance. Assert
   matching instance IDs, separate contexts, and uninterrupted recording when
   either context closes.
-- [ ] Exercise navigation, inspection, actions, waits, assertions, screenshots,
+- [x] Exercise navigation, inspection, actions, waits, assertions, screenshots,
   event pagination, and snapshot export against local fixtures.
-- [ ] Export PHP and Laravel drafts from known workflows, execute them through
+- [x] Export PHP and Laravel drafts from known workflows, execute them through
   real test runners, and verify an intentionally incorrect assertion fails.
-- [ ] Import MCP-exported snapshots into the GUI and inspect the captured
+- [x] Import MCP-exported snapshots into the GUI and inspect the captured
   failure.
-- [ ] Cover disconnected servers, server restarts, stale session IDs, operation
+- [x] Cover disconnected servers, server restarts, stale session IDs, operation
   timeouts, recording truncation, and invalid inputs.
-- [ ] Add Changesets for user-facing changes to publishable packages.
-- [ ] Regenerate PHP, Java, and TypeScript clients whenever a server change
+- [x] Add Changesets for user-facing changes to publishable packages.
+- [x] Regenerate PHP, Java, and TypeScript clients whenever a server change
   affects a `@codegen` API, and inspect generated diffs.
 - [ ] Publish packages only when publishing is explicitly intended.
 

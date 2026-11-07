@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "puth": {
+      "type": "stdio",
+      "command": "npm",
+      "args": ["--silent", "--prefix", "${CLAUDE_PROJECT_DIR:-.}", "run", "mcp"],
+      "env": {
+        "PUTH_INSTANCE_URL": "${PUTH_INSTANCE_URL:-http://127.0.0.1:7345}",
+        "PUTH_APP_URL": "${PUTH_APP_URL:-http://laravel:8080}",
+        "PUTH_ARTIFACT_DIR": "${PUTH_ARTIFACT_DIR:-.puth/agent-artifacts}"
+      }
+    }
+  }
+}

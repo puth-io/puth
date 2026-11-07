@@ -1,0 +1,6 @@
+# Connects Codex to the Puth instance used by this repository's tests. Build first with `npm run build`, and start the
+# instance with `docker compose up --build --wait puth laravel`. See workspaces/docs/guide/mcp.md.
+[mcp_servers.puth]
+command = "npm"
+args = ["--silent", "run", "mcp"]
+env_vars = ["PUTH_INSTANCE_URL", "PUTH_APP_URL", "PUTH_ARTIFACT_DIR"]
