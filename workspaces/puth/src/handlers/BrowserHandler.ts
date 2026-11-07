@@ -11,6 +11,7 @@ export type IBrowserHandler = {
     // connect: (options: any) => Promise<Browser>;
     destroy: (brc: BrowserRefContext) => Promise<void>;
     shutdown: () => Promise<void>;
+    stats: () => { pooled: number; unused: number; contexts: number };
 };
 
 export type BrowserRef = {
@@ -139,6 +140,14 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
         if (ref.contexts.length === 0) {
             await this.cleanupUnused();
         }
+    }
+
+    stats() {
+        return {
+            pooled: this.#refs.length,
+            unused: this.allUnusedBrowsers().length,
+            contexts: this.#refs.reduce((count, ref) => count + ref.contexts.length, 0),
+        };
     }
 
     async shutdown() {

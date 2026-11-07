@@ -35,8 +35,8 @@ export class WebsocketHandler extends BaseHandler {
         this.peers.splice(index, 1);
     }
 
-    broadcast(message: string|object|object[]) {
-        let data = this.serializeSharedRef(message);
+    broadcast(message: string|object|object[], encoded?: Uint8Array) {
+        let data = encoded ?? this.serializeSharedRef(message);
 
         for (let peer of this.peers) {
             peer.send(data);

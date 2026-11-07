@@ -63,12 +63,12 @@ terminal tools.
   selection, frames, console output, and errors.
 - [ ] Cover repeated response-content references, malformed imports, and
   unsupported snapshot versions with useful errors.
-- [ ] Add configurable recording budgets, defaulting to 256 MiB per context and
+- [x] Add configurable recording budgets, defaulting to 256 MiB per context and
   1 GiB across the instance, measured from encoded packet sizes.
-- [ ] Stop recording an affected context when a budget would be exceeded and
+- [x] Stop recording an affected context when a budget would be exceeded and
   emit one truncation warning. Keep retained packets intact so content references
   remain valid; browser operations continue.
-- [ ] Expose recording size, truncation status, active contexts, and pooled
+- [x] Expose recording size, truncation status, active contexts, and pooled
   browsers for diagnostics.
 - [ ] Establish repeatable benchmarks for long runs and concurrent contexts.
   Report memory, recording size, and command latency before and after changes.
