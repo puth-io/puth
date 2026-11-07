@@ -204,6 +204,7 @@ describe('puth_status', () => {
         assert.include(text, instance.health().instanceId.slice(0, 8));
         assert.include(text, `app ${fixtureUrl().replace(/\/$/, '')}`);
         assert.include(text, 'opened by the browser');
+        assert.include(text, 'relative URLs resolve against it, not the current page');
         assert.include(text, `session ${sessionId}`);
     }, 20000);
 
@@ -339,7 +340,7 @@ describe('puth_run', () => {
         const { text } = await run(sessionId, { op: 'visit', url: fixtureUrl() });
 
         assert.notInclude(text, '+ ');
-        assert.match(text, /… \d+ more, puth_inspect cursor=15/);
+        assert.match(text, /… \d+ more, puth_inspect cursor=15\nkinds: .*button/);
     }, 20000);
 
     it('stops at the first failure and says where', async () => {
@@ -491,7 +492,8 @@ describe('puth_inspect', () => {
         const next = Number(first.text.match(/cursor=(\d+)/)![1]);
         const second = await tool('puth_inspect', { sessionId, limit: 5, cursor: next });
 
-        assert.lengthOf(first.text.split('\n'), 7);
+        assert.lengthOf(first.text.split('\n'), 8);
+        assert.match(first.text.split('\n').at(-1), /^kinds: \d+ heading, .*\d+ button.*, filter with kind=$/);
         assert.notStrictEqual(first.text, second.text);
     }, 20000);
 
@@ -521,6 +523,13 @@ describe('puth_inspect', () => {
         const sessionId = await session({ url: `data:text/html,${encodeURIComponent('<div id="status"><span>Saved</span></div>')}` });
 
         assert.deepEqual((await tool('puth_inspect', { sessionId, kind: 'text' })).text.split('\n').slice(1), ['"Saved" in #status']);
+    }, 20000);
+
+    it('does not count kinds when nothing was cut off', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        assert.notInclude((await tool('puth_inspect', { sessionId })).text, 'kinds:');
     }, 20000);
 
     it('searches the visible text', async () => {

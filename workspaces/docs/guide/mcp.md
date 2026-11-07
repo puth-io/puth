@@ -16,7 +16,7 @@ Start Puth, then point your MCP client at the server over stdio.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PUTH_INSTANCE_URL` | `http://127.0.0.1:7345` | Puth instance to connect to |
-| `PUTH_APP_URL` | none | Base for relative URLs |
+| `PUTH_APP_URL` | none | Base for relative URLs, which never resolve against the current page |
 | `PUTH_ARTIFACT_DIR` | `.puth/agent-artifacts` | Screenshots and snapshots, in one folder per session |
 
 Keep secrets out of committed configuration. Add the artifact directory to your `.gitignore`.
@@ -160,7 +160,7 @@ at http://laravel:8080/dashboard "Dashboard"
 - input:email "Email" #email
 ```
 
-`+` and `-` lines use the format of `puth_inspect` and report what appeared and disappeared on the page, with other visible text in quotes, so inspecting again is rarely needed. After a navigation, the result shows the start of the new page. `!` lines are warnings, such as an open dialog.
+`+` and `-` lines use the format of `puth_inspect` and report what appeared and disappeared on the page, with other visible text in quotes, so inspecting again is rarely needed. After a navigation, the result shows the start of the new page. When output is cut off, a `kinds:` line counts what was left out, so you can filter with `kind`. `!` lines are warnings, such as an open dialog.
 
 `puth_inspect` lists headings (`#`), alerts (`!`) and interactive elements as `kind "label" selector =value flags`. `find` searches them and the visible text, and `kind` keeps only one kind, such as `button` or `text`. Text lines say where the text is, like `"Saved" in #status`, using the nearest stable selector. A selector starting with `~` depends on the position in the page, so avoid it in tests.
 

@@ -37,6 +37,16 @@ const KIND_PREFIXES: Record<string, RegExp> = {
     select: /^select /,
 };
 
+// Shown when an outline is cut off, so an agent can pick a kind instead of reading on.
+const kindCounts = (lines: string[]) => {
+    const counts = Object.entries(KIND_PREFIXES)
+        .map(([kind, prefix]) => [kind, lines.filter(line => prefix.test(line)).length] as const)
+        .filter(([, count]) => count > 0)
+        .map(([kind, count]) => `${count} ${kind}`);
+
+    return counts.length === 0 ? undefined : `kinds: ${counts.join(', ')}, filter with kind=`;
+};
+
 const sessionId = z.string();
 
 const bound = (value: string, limit = MAX_VALUE) => value.length > limit ? `${value.slice(0, limit)}… [${value.length - limit} more]` : value;
@@ -111,7 +121,7 @@ export function createServer(config: Config) {
             // On a new page everything is new, so its start says more than a list of changes.
             if (navigated) {
                 const { items, more } = page<string>(outline.lines, 0, MAX_CHANGES);
-                lines.push(...items, ...(more === undefined ? [] : [more.replace('more,', 'more, puth_inspect')]));
+                lines.push(...items, ...(more === undefined ? [] : [more.replace('more,', 'more, puth_inspect'), kindCounts(observable)!]));
             } else {
                 lines.push(...outlineChanges(known.lines, observable));
             }
@@ -184,7 +194,7 @@ export function createServer(config: Config) {
 
             return reply(
                 `connected ${config.instanceUrl} puth ${health.version} instance ${health.instanceId.slice(0, 8)}`,
-                `app ${config.appUrl ?? 'not configured'} (opened by the browser, so it has to be reachable from where Puth runs Chrome)`,
+                `app ${config.appUrl ?? 'not configured'} (relative URLs resolve against it, not the current page; opened by the browser, so it has to be reachable from where Puth runs Chrome)`,
                 `artifacts ${config.artifactDirectory}`,
                 ...sessions.list().map(({ id, journal }) => `session ${id} ${journal.length} steps`),
                 ...waiting.map(({ id, name, handoff }) => `handoff ${id.slice(0, 8)} "${handoff?.name || name}"`),
@@ -299,7 +309,7 @@ export function createServer(config: Config) {
                     .filter((line: string) => prefix === undefined || prefix.test(line));
                 const { items, more } = page<string>(matching, cursor, limit);
 
-                return reply(`at ${outline.url} "${outline.title}"`, ...items, more);
+                return reply(`at ${outline.url} "${outline.title}"`, ...items, more, more === undefined ? undefined : kindCounts(matching));
             });
         },
     );
