@@ -12,6 +12,7 @@ import { PUTH_EXTENSION_CODEC } from '../../src/handlers/WebsocketHandler';
 // Puth tests its own GUI: one instance serves the GUI and records, a second one drives it in a browser.
 
 const cleanups: (() => unknown)[] = [];
+const requestedUrls: string[] = [];
 let directory: string;
 
 beforeEach(() => {
@@ -43,13 +44,7 @@ async function openGui(instance) {
     await client.contextCreate();
 
     const gui = await context.createBrowserShim();
-
-    // The GUI loads its fonts from Google, and browser suites stay off public websites.
-    await gui.page.setRequestInterception(true);
-    gui.page.on('request', (request) => {
-        const { protocol, hostname } = new URL(request.url());
-        return protocol.startsWith('http') && hostname !== '127.0.0.1' ? request.abort() : request.continue();
-    });
+    gui.page.on('request', (request) => requestedUrls.push(request.url()));
 
     await gui.visit(instance.http.url);
 
@@ -84,7 +79,7 @@ async function recordFailedRun(instance) {
         await paint(browser, color * 40);
         await new Promise((resolve) => setTimeout(resolve, 50));
     }
-    await browser.click('#does-not-exist');
+    await browser.click('#does-not-exist').catch(() => {});
     await context.testFailed();
     await context.destroy({ immediately: true });
 }
@@ -107,7 +102,7 @@ async function exportActiveContext(gui): Promise<Uint8Array> {
         };
     })()`);
 
-    await gui.press('download');
+    await gui.click('[puth="export-snapshot"]');
     await gui.waitUntil(() => (window as any).exportedSnapshot !== undefined);
 
     return Buffer.from(await gui.evaluate(`
@@ -128,6 +123,18 @@ const contextPacket = (extra = {}) => ({
 });
 
 describe('Snapshot replay', () => {
+    it('loads nothing from other hosts', async () => {
+        requestedUrls.length = 0;
+        const instance = await startInstance();
+
+        await openGui(instance);
+
+        const { host } = new URL(instance.http.url);
+        const external = requestedUrls.filter((url) => url.startsWith('http') && new URL(url).host !== host);
+        assert.isNotEmpty(requestedUrls);
+        assert.deepEqual(external, []);
+    }, 30000);
+
     it('shows a failed run after exporting and importing it', async () => {
         const instance = await startInstance();
         await recordFailedRun(instance);

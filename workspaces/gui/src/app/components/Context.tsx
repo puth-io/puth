@@ -8,7 +8,7 @@ import Log from './Log/Log';
 import Request from './Request/Request';
 
 export function StatusIcon({status, className, ...rest}: any) {
-    let icon = 'pending';
+    let icon: IconName = 'pending';
     if (status === 'failed') {
         icon = 'error';
         className = 'text-red-500 ' + className;
@@ -36,7 +36,7 @@ export function DownloadHandler({resolver, name}: any) {
     
     return (
         <>
-            <Button variant={'ghost'} size={'icon-xs'} onClick={download}>
+            <Button {...{puth: 'export-snapshot'}} aria-label={'Export snapshot'} variant={'ghost'} size={'icon-xs'} onClick={download}>
                 <Icon name={'download'}/>
             </Button>
             <a href="" style={{display: 'none'}} ref={ref}></a>
