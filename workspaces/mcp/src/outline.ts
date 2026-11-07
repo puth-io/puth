@@ -97,13 +97,27 @@ export const outlineScript = (scope: string|null) => `(() => {
             .filter((element) => element.checkVisibility())
             .map(lineOf)
             .filter((line, index, lines) => lines.indexOf(line) === index),
+        texts: (document.body?.innerText ?? '').split('\\n')
+            .map((text) => clean(text, 120))
+            .filter((text, index, texts) => text !== '' && texts.indexOf(text) === index)
+            .slice(0, 500),
     });
 })()`;
 
 export const textScript = (scope: string|null) =>
     `(${scope === null ? 'document.body' : `document.querySelector(${JSON.stringify(scope)})`})?.innerText ?? ''`;
 
-const MAX_CHANGES = 15;
+export const MAX_CHANGES = 15;
+
+type Outline = { lines: string[], texts: string[] };
+
+/**
+ * Everything on a page whose appearance is worth reporting: the outline, and visible text that is not part of it.
+ */
+export const observableLines = ({ lines, texts }: Outline) => [
+    ...lines,
+    ...texts.filter(text => ! lines.some(line => line.includes(text))).map(text => JSON.stringify(text)),
+];
 
 /**
  * Lines that appeared and disappeared. This is usually all an agent needs to know after acting on a page.

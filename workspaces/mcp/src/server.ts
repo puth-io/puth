@@ -5,12 +5,12 @@ import { type Config } from './config';
 import { createDraft } from './drafts';
 import { type ErrorCode, ToolError, toToolError } from './errors';
 import { DEFAULT_TIMEOUT, type OperationKind, operationKind, operationSummary, runOperation, type Step, stepSchema, validateStep } from './operations';
-import { outlineChanges, outlineScript, textScript } from './outline';
+import { MAX_CHANGES, observableLines, outlineChanges, outlineScript, textScript } from './outline';
 import { commandLine, decodeRecording, failedRequestLine, frameOf, logLine, parseRecording, readRecording, responseLine, summarize } from './recordings';
 import { type Session, SessionManager } from './sessions';
 
 const INSTRUCTIONS = `Puth drives a real browser for testing. Start with puth_status.
-Results are compact: "+"/"-" lines say what appeared or disappeared on the page, so inspect only when you need more.
+Results are compact: "+"/"-" lines say what appeared or disappeared on the page, including text in quotes, so inspect only when you need more.
 Selectors starting with ~ are position based, avoid them in tests.
 To use an application behind a login or with test data: write a test that sets this up and calls $browser->handoff(), run it in the background, then claim it with puth_session_create handoff=<id from puth_contexts>. Closing the session lets the test continue.
 puth_contexts and puth_context show any test that ran on this instance, also why it failed. After writing a test, run it and read its context there.
@@ -90,15 +90,26 @@ export function createServer(config: Config) {
             const outline = JSON.parse(await session.browser.evaluate(outlineScript(null)));
             const known = session.known;
             const navigated = outline.url !== known.url;
+            const observable = observableLines(outline);
 
             if (navigated || outline.title !== known.title) {
                 lines.push(`at ${outline.url} "${outline.title}"`);
             }
-            lines.push(...outlineChanges(known.lines, outline.lines));
-            session.known = outline;
+
+            // On a new page everything is new, so its start says more than a list of changes.
+            if (navigated) {
+                const { items, more } = page<string>(outline.lines, 0, MAX_CHANGES);
+                lines.push(...items, ...(more === undefined ? [] : [more.replace('more,', 'more, puth_inspect')]));
+            } else {
+                lines.push(...outlineChanges(known.lines, observable));
+            }
+
+            session.known = { url: outline.url, title: outline.title, lines: observable };
         } catch (error) {
-            const code = toToolError(error, config.instanceUrl).code;
-            lines.push(code === 'DIALOG_OPEN' ? '! a dialog is open, answer it with the dialog operation' : `! page not readable (${code})`);
+            const toolError = toToolError(error, config.instanceUrl);
+            lines.push(toolError.code === 'DIALOG_OPEN'
+                ? '! a dialog is open, answer it with the dialog operation'
+                : `! could not report page changes: ${bound(toolError.message, 200)}`);
         }
 
         const diagnostics = await sessions.diagnostics().catch(() => undefined);
@@ -237,31 +248,40 @@ export function createServer(config: Config) {
 
     tool(
         'puth_inspect',
-        'Outline the selected page in document order: headings (#), alerts (!), and interactive elements as: kind "label" selector =value flags. Use selector to look at a part of the page, text for its visible text.',
+        'Outline the selected page in document order: headings (#), alerts (!), and interactive elements as: kind "label" selector =value flags. Use selector to look at a part of the page, find to search it, text for its visible text.',
         {
             sessionId,
             selector: z.string().max(1000).optional().describe('Limit to this element'),
             text: z.boolean().default(false).describe('Return the visible text instead'),
+            find: z.string().max(200).optional().describe('Only lines containing this, ignoring case'),
             cursor: z.number().int().min(0).default(0),
             limit: z.number().int().min(1).max(300).default(60),
         },
-        async ({ sessionId, selector, text, cursor, limit }) => {
+        async ({ sessionId, selector, text, find, cursor, limit }) => {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
                 if (text) {
-                    return reply(bound(String(await session.browser.evaluate(textScript(selector ?? null))), 8000));
+                    const visible = String(await session.browser.evaluate(textScript(selector ?? null)));
+                    const searched = find === undefined
+                        ? visible
+                        : visible.split('\n').filter(line => line.toLowerCase().includes(find.toLowerCase())).join('\n');
+
+                    return reply(bound(searched, 8000) || 'none');
                 }
 
                 const outline = JSON.parse(await session.browser.evaluate(outlineScript(selector ?? null)));
                 if (outline.missing) {
                     throw new ToolError('INVALID_REQUEST', `Nothing matches [${selector}].`);
                 }
+                const observable = observableLines(outline);
                 if (selector === undefined) {
-                    session.known = outline;
+                    session.known = { url: outline.url, title: outline.title, lines: observable };
                 }
 
-                const { items, more } = page<string>(outline.lines, cursor, limit);
+                const needle = find?.toLowerCase();
+                const matching = needle === undefined ? outline.lines : observable.filter(line => line.toLowerCase().includes(needle));
+                const { items, more } = page<string>(matching, cursor, limit);
 
                 return reply(`at ${outline.url} "${outline.title}"`, ...items, more);
             });

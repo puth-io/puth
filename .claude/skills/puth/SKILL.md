@@ -10,9 +10,9 @@ Start with `puth_status`. If no instance answers, run the command it reports. Do
 ## Explore or check something
 
 1. `puth_session_create` with a `url`. Relative URLs use the application URL.
-2. `puth_inspect` once to learn the page. Use `selector` to look at a part of it.
+2. `puth_inspect` once to learn the page. Use `selector` for a part of it, and `find` to search it.
 3. `puth_run` with all steps you can already name. Assertions retry and actions wait, so do not add waits or sleeps out of caution.
-4. Read the `+` and `-` lines of the result. They say what changed, so inspect again only if you need more.
+4. Read the `+` and `-` lines of the result. They say what changed, including text in quotes, so inspect again only if you need more.
 5. Close the session with `puth_session_close`.
 
 Prefer `press` and `clickLink` with visible text while exploring, and selectors that do not start with `~` in tests. A `~` selector depends on the position in the page.

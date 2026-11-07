@@ -105,7 +105,7 @@ export function createDraft({ target, name, steps, appUrl, artifacts, sessionId,
         `// Session: ${sessionId}`,
         ...artifacts.map(file => `// Evidence: ${file}`),
         ...[...new Set(unresolved)].map(item => `// TODO: ${item}`),
-        ...selectorWarnings.map(({ selector, strength }) => `// TODO: ${selector} is a ${strength} selector, prefer a puth attribute.`),
+        ...selectorWarnings.map(({ selector, strength }) => `// TODO: ${selector} is a ${strength} selector. Add puth="name" to the element and use [puth="name"].`),
     ];
     const indented = (indent: string) => notes.map(note => indent + note).join('\n');
 

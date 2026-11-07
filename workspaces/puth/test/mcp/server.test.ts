@@ -323,6 +323,25 @@ describe('puth_run', () => {
         assert.isBelow(text.split('\n').length, 5);
     }, 20000);
 
+    it('reports text that appeared', async () => {
+        const { session, run } = await start();
+        const sessionId = await session();
+
+        const { text } = await run(sessionId, { op: 'click', selector: '#actions-click-button' });
+
+        assert.include(text, '+ "clicked button"');
+    }, 20000);
+
+    it('shows the start of a new page and how to read on', async () => {
+        const { session, run } = await start();
+        const sessionId = await session({ url: fixtureAltUrl() });
+
+        const { text } = await run(sessionId, { op: 'visit', url: fixtureUrl() });
+
+        assert.notInclude(text, '+ ');
+        assert.match(text, /… \d+ more, puth_inspect cursor=15/);
+    }, 20000);
+
     it('stops at the first failure and says where', async () => {
         const { session, run, tool } = await start();
         const sessionId = await session();
@@ -474,6 +493,23 @@ describe('puth_inspect', () => {
 
         assert.lengthOf(first.text.split('\n'), 7);
         assert.notStrictEqual(first.text, second.text);
+    }, 20000);
+
+    it('searches the outline and the visible text', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        const { text } = await tool('puth_inspect', { sessionId, find: 'wrong' });
+
+        assert.deepEqual(text.split('\n').slice(1), ['! Wrong password']);
+    }, 20000);
+
+    it('searches the visible text', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        assert.strictEqual((await tool('puth_inspect', { sessionId, text: true, find: 'WRONG' })).text, 'Wrong password');
+        assert.strictEqual((await tool('puth_inspect', { sessionId, text: true, find: 'absent' })).text, 'none');
     }, 20000);
 
     it('returns the visible text on request', async () => {
