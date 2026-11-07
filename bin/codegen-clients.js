@@ -666,9 +666,11 @@ function emitPHPClass(cls) {
 }
 
 import {generate as generateJava} from './codegen/java.js';
+import {generate as generateTypeScript} from './codegen/typescript.js';
 
 classes.forEach(c => emitPHPClass(c));
 
 generateJava();
+generateTypeScript();
 
 console.log(`Generated ${classes.length} PHP shim classes.`);

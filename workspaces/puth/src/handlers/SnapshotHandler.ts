@@ -50,7 +50,11 @@ export class SnapshotHandler extends BaseHandler {
         item.cached = true;
 
         // Sizes are measured on the bytes that get sent, so a packet is only encoded once.
-        const encoded = Encoder.encodeSharedRef(item);
+        const encoded = this.encode(item);
+        if (encoded === undefined) {
+            return;
+        }
+
         const exceeded = alwaysRecorded ? undefined : this.exceededBudget(context, recording, encoded.byteLength);
         if (exceeded !== undefined) {
             this.truncate(context, recording, exceeded);
@@ -58,6 +62,20 @@ export class SnapshotHandler extends BaseHandler {
         }
 
         this.store(recording, item, encoded, broadcast);
+    }
+
+    // Pages decide what ends up in packets, like circular objects in console messages, which must never break recording.
+    private encode(item: any): Uint8Array|undefined {
+        try {
+            return Encoder.encodeSharedRef(item);
+        } catch (error) {
+            if (item.type === 'log' && item.args?.[0] !== item.text) {
+                item.args = [item.text];
+                return this.encode(item);
+            }
+
+            this.logger?.warn({error, type: item.type}, 'Could not record packet');
+        }
     }
 
     private recordingOf(context: Context): Recording {

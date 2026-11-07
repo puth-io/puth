@@ -40,6 +40,34 @@ describe('SnapshotHandler response deduplication', () => {
     });
 });
 
+describe('SnapshotHandler packets it can not encode', () => {
+    const circular = () => {
+        const object: any = {};
+        object.self = object;
+        return object;
+    };
+
+    it('keeps the text of a console message', () => {
+        const handler = new SnapshotHandler({websocketHandler: {broadcast: vi.fn()}} as any);
+        const context = {} as any;
+
+        handler.pushToCache(context, {type: 'log', text: 'printed', args: [circular()]});
+
+        expect(handler.getAllCachedItemsFrom(context)).toMatchObject([{type: 'log', args: ['printed']}]);
+    });
+
+    it('drops other packets without throwing', () => {
+        const logger = {warn: vi.fn()};
+        const handler = new SnapshotHandler({websocketHandler: {broadcast: vi.fn()}, logger} as any);
+        const context = {} as any;
+
+        handler.pushToCache(context, {type: 'command', args: [circular()]});
+
+        expect(handler.getAllCachedItemsFrom(context)).toEqual([]);
+        expect(logger.warn).toHaveBeenCalledOnce();
+    });
+});
+
 describe('SnapshotHandler recording budgets', () => {
     function makeHandler(recordingBudgets: {context?: number, instance?: number}) {
         const logger = {warn: vi.fn()};
