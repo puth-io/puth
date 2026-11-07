@@ -3,30 +3,19 @@ schemaVersion: "1"
 name: puth
 
 kits:
-  - ./.sbx/node24
+  - ./.sbx/node26
 
 lifecycle:
   postCreate:
-    - name: Allow sandbox access to puth.io
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.io
-    - name: Allow sandbox access to puth.io
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.io"
-    - name: Allow sandbox access to puth.dev
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.dev
-    - name: Allow sandbox access to puth.dev
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.dev"
-    - name: Allow sandbox access to puth.dev
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org
-    - name: Allow sandbox access to puth.dev
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org:80
-    - name: Allow sandbox access to puth.dev
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" pecl.php.net
-    - name: Allow sandbox access to puth.dev
-      command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" nginx.org
-    - name: Set default npm configuration
-      command: sbx exec "$SBX_SANDBOX_NAME" sh -c 'printf "%s\n" "ignore-scripts=true" "min-release-age=7" > "$HOME/.npmrc"'
-    - name: Install Codex globally
-      command: sbx exec "$SBX_SANDBOX_NAME" npm install -g "@openai/codex"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.io
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.io"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.dev
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.dev"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org:80
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" pecl.php.net
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" nginx.org
+    - command: sbx exec "$SBX_SANDBOX_NAME" sh -c 'printf "%s\n" "ignore-scripts=true" "min-release-age=7" > "$HOME/.npmrc"'
 
 env:
   PUTH_ADDRESS: 0.0.0.0
