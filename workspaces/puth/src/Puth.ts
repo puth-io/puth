@@ -17,6 +17,7 @@ import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
 import { encode } from '@msgpack/msgpack';
 import { type PortalFailure } from './utils/CallStack';
+import { DEFAULT_SNAPSHOT_RETENTION, type SnapshotRetention } from './utils/SnapshotRetention';
 
 declare global {
     type TODO = any;
@@ -44,6 +45,8 @@ export type PuthOptions = {
     logger?: BaseLogger;
     // Limits in bytes, measured from encoded packets.
     recording?: Partial<RecordingBudgets>;
+    // Limits for the default snapshot directory, false keeps everything.
+    snapshotRetention?: Partial<SnapshotRetention>|false;
 };
 
 // Lets clients check what an instance supports before relying on it.
@@ -472,6 +475,12 @@ export class Puth {
 
     get debug() {
         return this.options?.debug === true;
+    }
+
+    get snapshotRetention(): SnapshotRetention|false {
+        const retention = this.options?.snapshotRetention;
+
+        return retention === false ? false : { ...DEFAULT_SNAPSHOT_RETENTION, ...retention };
     }
 
     get recordingBudgets() {

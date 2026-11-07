@@ -34,6 +34,7 @@ import { createHash } from 'node:crypto';
 import { PageClosedError, isConnectionLost, isNavigationError, isPageClosed } from './utils/TargetErrors';
 import { CallAttempt, browserCallKind, runBrowserCall } from './utils/CallRetry';
 import { PageStability } from './utils/PageStability';
+import { pruneSnapshots } from './utils/SnapshotRetention';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -258,7 +259,7 @@ class Context extends Generic {
         try {
             if (options?.save) {
                 await this.saveContextSnapshot(options.save);
-            } else if (this.debug) {
+            } else if (this.debug && this.test.status === ContextStatus.FAILED) {
                 await this.saveContextSnapshot({to: 'file'});
             }
         } catch (error) {
@@ -795,6 +796,9 @@ class Context extends Generic {
             let {location} = options;
             let storagePath;
 
+            // A custom location belongs to whoever chose it, so only the default one is cleaned up.
+            const isDefaultLocation = ! location;
+
             if (! location) {
                 location = path.join('storage', 'snapshots');
             }
@@ -804,10 +808,17 @@ class Context extends Generic {
 
             storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.id}.puth`);
 
-            return await writeFile(
+            await writeFile(
                 storagePath,
                 encode(this.puth.snapshotHandler.getAllCachedItemsFrom(this), {extensionCodec: PUTH_EXTENSION_CODEC}),
             );
+
+            const retention = this.puth.snapshotRetention;
+            if (isDefaultLocation && retention !== false) {
+                await pruneSnapshots(path.dirname(storagePath), retention).catch((error) => {
+                    this.puth.logger.warn({error}, 'Could not clean up snapshots');
+                });
+            }
         }
     }
 

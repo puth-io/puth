@@ -46,6 +46,18 @@ Snapshot files are written by the **Puth server**, so collect artifacts from the
 
 Configure your CI provider to upload the snapshot directory even when the test step fails. If you override the snapshot location, collect that directory instead.
 
+## Keep the snapshot directory small
+
+After saving a snapshot, Puth removes the oldest ones from the default directory once it holds more than 200 snapshots or 1 GiB, or for snapshots older than 14 days. The newest snapshot always stays, and other files and custom locations are not touched. Change the limits in `puth.config.json`, or set `snapshotRetention` to `false` to keep everything:
+
+```json
+{
+  "snapshotRetention": { "maxFiles": 50, "maxBytes": 268435456, "maxAgeDays": 7 }
+}
+```
+
+A server in debug mode also saves failed tests on its own, but not passing ones.
+
 ## Inspect a failure locally
 
 1. Download the `.puth` snapshot artifact from your CI run.
