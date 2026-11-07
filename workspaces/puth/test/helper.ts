@@ -6,14 +6,11 @@ import { test as testBase } from '@vitest/runner';
 import { RemotePuthClient } from '@puth/client';
 import { LocalPuthClient } from '../src/LocalPuthClient';
 
-export const envs: [string, () => [any, number?]][] = [
+export const envs: [string, () => [any]][] = [
     ['local', () => [() => makeLocalPuthClient()]],
     [
         'remote',
-        () => {
-            let port = 10000 + Math.floor(Math.random() * 55535);
-            return [() => new RemotePuthClient(process.env.PUTH_URL ?? `http://127.0.0.1:${port}`), port];
-        },
+        () => [(url) => new RemotePuthClient(process.env.PUTH_URL ?? url)],
     ],
 ];
 
@@ -24,9 +21,11 @@ export const testFn = (env) =>
             const config = env[1]();
 
             if (env[0] === 'remote' && !process.env.PUTH_URL) {
-                remoteInstance = makePuthServer(config[1], '127.0.0.1');
+                // The system picks a free port, a random one can collide with other sockets of the run.
+                remoteInstance = makePuthServer(0, '127.0.0.1');
+                await remoteInstance.http.ready();
             }
-            let remote = config[0]();
+            let remote = config[0](remoteInstance?.http.url.replace(/\/$/, ''));
             if (env[0] === 'local') {
                 remote.use(PuthStandardPlugin);
             }

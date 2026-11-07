@@ -310,3 +310,6 @@ dist/
 
 # Puth agent artifacts
 .puth/
+
+# Personal Claude Code settings
+.claude/settings.local.json
