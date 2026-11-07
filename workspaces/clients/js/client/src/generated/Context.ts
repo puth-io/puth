@@ -7,6 +7,10 @@ export class Context extends ContextBase {
         return this.callFunc('createBrowserShim', [options, shimOptions]);
     }
 
+    handoff(browser: Browser, options: Record<string, any> = {}): Promise<string> {
+        return this.callFunc('handoff', [browser, options]);
+    }
+
     getSnapshotsByType(type: any): Promise<any[]> {
         return this.callFunc('getSnapshotsByType', [type]);
     }

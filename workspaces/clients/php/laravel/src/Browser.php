@@ -124,6 +124,17 @@ class Browser extends \Puth\RemoteObjects\Browser
      */
     public $fitOnFailure = true;
 
+    /**
+     * Blocks while another client, usually an agent, drives this browser. Requests through the portal are still
+     * handled by this test, so everything it set up stays available. Continues once that client released the browser.
+     *
+     * @return string Why the handoff ended, for example "released" or "timeout".
+     */
+    public function handoff(string $name = '', array $options = []): string
+    {
+        return $this->context->handoff($this, array_merge(['name' => $name], $options));
+    }
+
     public function __construct(\Puth\RemoteObjects\Browser $remote, $resolver = null, $options = [])
     {
         parent::__construct($remote->id, $remote->type, $remote->represents, $remote->parent, $remote->context);

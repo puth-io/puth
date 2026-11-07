@@ -302,6 +302,11 @@ export class CallStack {
     public handlePortalRequest(request: PortalRequest) {
         this.logger.debug(`[handlePortalRequest] ${request.psuri} ${request.method} ${request.url}`);
 
+        // while the test waits in a handoff it answers portal requests, no matter who drives the browser
+        if (this.context.portalHandoff?.active) {
+            return this.context.portalHandoff.enqueue(request, this);
+        }
+
         // queue active --> continue handling portal requests
         if (this.portal.queue.active.length > 0) {
             this.logger.debug('-> add portal request to active queue');
@@ -334,8 +339,6 @@ export class CallStack {
     }
 
     public async handlePortalResponse(response: PortalResponse, res: any) {
-        clearTimeout(this.portalTimeout);
-
         let current = this.portal.queue.active[0];
         if (current === undefined) {
             throw new Error(`Received portal response [${response.psuri}] but there is no active portal request.`);
@@ -346,48 +349,7 @@ export class CallStack {
             );
         }
 
-        let body = response.body ?? '';
-        this.logger.debug(
-            {
-                status: response.status,
-                headers: response.headers,
-                error: response.error,
-                body: body.length > 500 ? body.length : body,
-            },
-            `[handlePortalResponse] ${response.psuri}`,
-        );
-        
-        let cache = this.context.psuriCache.get(current.psuri);
-        if (cache == undefined) {
-            throw new Error('TODO');
-        }
-        if (cache.handler == undefined) {
-            throw new Error('TODO');
-        }
-        this.context.psuriCache.delete(current.psuri);
-        
-        let headers: Protocol.Fetch.HeaderEntry[] = [];
-        for (let header of Object.keys(response.headers ?? {})) {
-            let values = response.headers[header];
-            if (!Array.isArray(values)) values = [values];
-            values.forEach((value: string) => headers.push({ name: header, value }));
-        }
-        this.logger.debug(
-            { handler: cache?.handler.toString(), status: response?.status, body: body.length, headers },
-            'dbg portal before handler',
-        );
-
-        // A failed delivery must not stop the queue, otherwise later requests would stay pending.
-        const failure = resolvePortalFailure(response);
-        try {
-            await cache.handler(failure, response.status as number, body, headers);
-        } catch (error) {
-            this.logger.error({ error, psuri: response.psuri }, '[Portal] Could not deliver response');
-            if (failure === undefined) {
-                await this.deliverPortalFailure(cache.handler, { reason: 'Failed' });
-            }
-        }
-        this.logger.debug('dbg portal after handler');
+        await this.deliverPortalResponse(response);
 
         this.portal.queue.active.shift();
         
@@ -423,6 +385,56 @@ export class CallStack {
         return this.call(this.portal.initial.call, true);
     }
 
+    /**
+     * Hands the answer of a client to the browser.
+     */
+    public async deliverPortalResponse(response: PortalResponse) {
+        clearTimeout(this.portalTimeout);
+
+        let body = response.body ?? '';
+        this.logger.debug(
+            {
+                status: response.status,
+                headers: response.headers,
+                error: response.error,
+                body: body.length > 500 ? body.length : body,
+            },
+            `[handlePortalResponse] ${response.psuri}`,
+        );
+        
+        let cache = this.context.psuriCache.get(response.psuri);
+        if (cache == undefined) {
+            throw new Error('TODO');
+        }
+        if (cache.handler == undefined) {
+            throw new Error('TODO');
+        }
+        this.context.psuriCache.delete(response.psuri);
+        
+        let headers: Protocol.Fetch.HeaderEntry[] = [];
+        for (let header of Object.keys(response.headers ?? {})) {
+            let values = response.headers[header];
+            if (!Array.isArray(values)) values = [values];
+            values.forEach((value: string) => headers.push({ name: header, value }));
+        }
+        this.logger.debug(
+            { handler: cache?.handler.toString(), status: response?.status, body: body.length, headers },
+            'dbg portal before handler',
+        );
+
+        // A failed delivery must not stop the queue, otherwise later requests would stay pending.
+        const failure = resolvePortalFailure(response);
+        try {
+            await cache.handler(failure, response.status as number, body, headers);
+        } catch (error) {
+            this.logger.error({ error, psuri: response.psuri }, '[Portal] Could not deliver response');
+            if (failure === undefined) {
+                await this.deliverPortalFailure(cache.handler, { reason: 'Failed' });
+            }
+        }
+        this.logger.debug('dbg portal after handler');
+    }
+
     public createServerRequest(portalRequest: TODO) {
         // Once the request is handed over no connection is open, so a vanished client can only be noticed by timing out.
         clearTimeout(this.portalTimeout);
@@ -448,6 +460,7 @@ export class CallStack {
      */
     public failPortalRequests(reason: string, message: string) {
         clearTimeout(this.portalTimeout);
+        this.context.portalHandoff?.forget(this);
 
         for (const [psuri, cached] of this.context.psuriCache) {
             if (cached.stack === this) {

@@ -39,6 +39,22 @@ class Context extends RemoteObject
     }
 
     /**
+     * Blocks until another client claimed this context and released it again, or until options.timeout. Until then
+     * this test keeps answering portal requests, so that client can use what the test set up.
+     * @codegen
+     * 
+     * @debug-gen-original-name "handoff"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["string"]
+     * @debug-gen-original-parameter browser {"type":"Browser","isOptional":false}
+     * @debug-gen-original-parameter options {"type":"object","isOptional":false,"initializer":{"type":"object","members":[]}}
+     */
+    public function handoff(Browser $browser, mixed $options = []): string
+    {
+        return $this->callFunc('handoff', [$browser, $options]);
+    }
+
+    /**
      * @codegen
      * @gen-returns any[]
      * 
