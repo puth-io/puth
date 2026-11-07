@@ -1,5 +1,5 @@
 import { describe, assert, expect } from 'vitest';
-import { envs, testFn } from './helper';
+import { envs, fixtureUrl, testFn } from './helper';
 import { Constructors } from '@puth/core';
 
 if (process.env.TEST_ONLY_REMOTE) {
@@ -31,8 +31,8 @@ function puthContextTests(env) {
             });
 
             test.concurrent('visit', async ({ puth: { remote, context, page } }) => {
-                await page.visit('https://playground.puth.dev');
-                assert.strictEqual(await page.url(), 'https://playground.puth.dev/');
+                await page.visit(fixtureUrl());
+                assert.strictEqual(await page.url(), fixtureUrl());
                 await expect(context.destroy()).resolves.toBeTruthy();
             });
         });

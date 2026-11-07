@@ -9,7 +9,7 @@ public class InteractsWithMouseTest extends BaseTest {
     @Test
     void test_mouse_control_click() {
         browser.setContent("<html><body>" +
-                "<a href=\"https://playground.puth.dev\" " +
+                "<a href=\"" + playground() + "\" " +
                 "onclick=\"event.preventDefault(); " +
                 "document.querySelector('#result').innerHTML = event.ctrlKey ? '1' : '0';\">playground</a>" +
                 "<div id=\"result\"></div></body></html>");

@@ -50,7 +50,7 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_navigation() {
-        String next = "https://puth.io/";
+        String next = alt();
         String play = playground();
 
         browser.visit(play)
@@ -121,7 +121,7 @@ public class AllMethodsTest extends BaseTest {
                 .assertSourceHas("<title>Playground | Puth</title>")
                 .assertSourceMissing("<div>__not in dom__</div>")
                 // Link assertions
-                .assertSeeLink("https://puth.io/")
+                .assertSeeLink(alt())
                 .assertDontSeeLink("https://notalink.io")
                 // Presence / absence
                 .assertVisible(".navbar")
@@ -198,13 +198,15 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_concern_makes_url_assertions() {
-        browser.visit("https://playground.puth.dev/first/second?param1=abc#starts-1234")
-                .assertUrlIs("https://playground.puth.dev/first/second")
-                .assertSchemeIs("https")
-                .assertSchemeIsNot("http")
-                .assertHostIs("playground.puth.dev")
+        var fixture = java.net.URI.create(playground());
+
+        browser.visit(playground() + "first/second?param1=abc#starts-1234")
+                .assertUrlIs(playground() + "first/second")
+                .assertSchemeIs(fixture.getScheme())
+                .assertSchemeIsNot("ftp")
+                .assertHostIs(fixture.getHost())
                 .assertHostIsNot("not.the.host")
-                .assertPortIs("443")
+                .assertPortIs(String.valueOf(fixture.getPort()))
                 .assertPortIsNot("12345")
                 .assertPathIs("/first/second")
                 .assertPathBeginsWith("/first")
@@ -221,8 +223,8 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_wait_for_function_target_change() {
-        var first = "https://playground.puth.dev/first/second?param1=abc#starts-1234";
-        var second = "https://playground.puth.dev/";
+        var first = playground() + "first/second?param1=abc#starts-1234";
+        var second = playground();
 
         browser.visit(first)
                 .assertUrlIs(first)

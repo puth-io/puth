@@ -140,8 +140,8 @@ class BrowserTest extends PuthTestCase
     function test_browser_blank()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('https://puth.io/')
-                ->assertUrlIs('https://puth.io/')
+            $browser->visit(config('puth.alt'))
+                ->assertUrlIs(config('puth.alt'))
                 ->blank()
                 ->assertUrlIs('about:blank');
         });

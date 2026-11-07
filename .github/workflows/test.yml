@@ -81,6 +81,7 @@ jobs:
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
+          node dev/fixtures/server.mjs &
           npm -w puth run ci:server &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd workspaces/clients/php/client && ./vendor/bin/phpunit
@@ -124,6 +125,7 @@ jobs:
           cache-dependency-path: ${{ matrix.client_dir }}/pom.xml
       - name: test
         run: |
+          node dev/fixtures/server.mjs &
           npm -w puth run ci:server &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
           cd ${{ matrix.client_dir }} && mvn --batch-mode --no-transfer-progress test
@@ -238,6 +240,7 @@ jobs:
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: test
         run: |
+          node dev/fixtures/server.mjs &
           npm -w puth run ci:server &
           cd workspaces/clients/php/workspaces/laravel
           cp .env.example .env

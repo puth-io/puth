@@ -1,4 +1,4 @@
-import { assert } from 'vitest';
+import { assert, inject } from 'vitest';
 import { Puth, usableBrowserInstallations, PuthStandardPlugin } from '../';
 import { test as testBase } from '@vitest/runner';
 import { RemotePuthClient } from '@puth/client';
@@ -56,6 +56,9 @@ export const testFn = (env) =>
 export const testLocal = testFn(envs[0]);
 
 export const installedBrowser = usableBrowserInstallations[0];
+
+export const fixtureUrl = (path = '/') => new URL(path, inject('fixtures').primary).toString();
+export const fixtureAltUrl = (path = '/') => new URL(path, inject('fixtures').alt).toString();
 
 export function makeLocalPuthClient() {
     return new LocalPuthClient({

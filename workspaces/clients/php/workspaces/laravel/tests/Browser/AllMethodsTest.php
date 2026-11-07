@@ -54,8 +54,8 @@ class AllMethodsTest extends PuthTestCase
     function test_navigation()
     {
         $this->browse(function (Browser $browser) {
-            $next = 'https://puth.io/';
-            $playground = 'https://playground.puth.dev/';
+            $next = config('puth.alt');
+            $playground = config('puth.playground');
 
             $browser->visit($playground)
                 ->assertUrlIs($playground)
@@ -128,7 +128,7 @@ class AllMethodsTest extends PuthTestCase
                 ->assertScript('1+1', 2)
                 ->assertSourceHas('<title>Playground | Puth</title>')
                 ->assertSourceMissing('<div>__not in dom__</div>')
-                ->assertSeeLink('https://puth.io/')
+                ->assertSeeLink(config('puth.alt'))
                 ->assertDontSeeLink('https://notalink.io')
                 ->assertVisible('.navbar')
                 ->assertPresent('.navbar')
@@ -212,13 +212,15 @@ class AllMethodsTest extends PuthTestCase
     function test_concern_makes_url_assertions()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
-                ->assertUrlIs('https://playground.puth.dev/first/second?param1=abc#starts-1234')
-                ->assertSchemeIs('https')
-                ->assertSchemeIsNot('http')
-                ->assertHostIs('playground.puth.dev')
+            $fixture = parse_url(config('puth.playground'));
+
+            $browser->visit(config('puth.playground').'first/second?param1=abc#starts-1234')
+                ->assertUrlIs(config('puth.playground').'first/second?param1=abc#starts-1234')
+                ->assertSchemeIs($fixture['scheme'])
+                ->assertSchemeIsNot('ftp')
+                ->assertHostIs($fixture['host'])
                 ->assertHostIsNot('not.the.host')
-                ->assertPortIs(443)
+                ->assertPortIs($fixture['port'])
                 ->assertPortIsNot(12345)
                 ->assertPathIs('/first/second')
                 ->assertPathBeginsWith('/first')
@@ -237,9 +239,9 @@ class AllMethodsTest extends PuthTestCase
     function test_wip()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('https://playground.puth.dev/first/second?param1=abc#starts-1234')
-                ->evaluate('setTimeout(_ => window.location.href = "https://puth.io", 250)');
-            $browser->assertUrlIs('https://puth.io/');
+            $browser->visit(config('puth.playground').'first/second?param1=abc#starts-1234')
+                ->evaluate('setTimeout(_ => window.location.href = "'.config('puth.alt').'", 250)');
+            $browser->assertUrlIs(config('puth.alt'));
         });
     }
 

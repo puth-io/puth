@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+  <link rel="icon" href="/favicon.ico" />
+  
+  <title>Playground | Puth</title>
+  
+  <link
+    href='/assets/bootstrap/bootstrap.min.css'
+    rel="stylesheet"
+  >
+  
+  <style>
+      html {
+          scroll-behavior: unset!important;
+      }
+      
+      .bg-darker {
+          background-color: #191a1d;
+      }
+      
+      .bg-accent {
+          background: #daa520;
+      }
+      
+      .text-accent {
+          color: #daa520;
+      }
+      
+      .btn-accent {
+          color: #191a1d;
+          background-color: #daa520;
+          border-color: #daa520;
+      }
+
+      pre {
+          margin: 0;
+      }
+
+      .function {
+          font-size: 1.25rem;
+          margin-top: 1rem;
+          /*color: #1c448a;*/
+          margin-bottom: 0.5rem;
+      }
+
+      .example {
+          flex: 0 0 auto;
+          width: 41.6666666667%;
+          padding: 0.5rem;
+          border: 1px solid #dbdbdb;
+          border-radius: 0.2rem;
+      }
+
+      .example > * {
+          padding: 0.125rem 0.5rem;
+          background: #e4e4e4;
+      }
+
+      .example > *:not(:first-child) {
+          margin-top: 0.25rem;
+      }
+
+      .example > * > div {
+          background: #bdbdbd;
+          padding: 0.125rem 0.5rem;
+      }
+
+      .example > * > * {
+          margin-bottom: 0.125rem;
+      }
+
+      .last-element-pr-0 > *:last-child > * {
+          padding-right: 0!important;
+      }
+      
+      .grid-container {
+          display: grid;
+          grid-auto-columns: minmax(0, 1fr);
+          grid-auto-flow: column;
+      }
+      
+      .text-grey {
+          color: #e1e1e1;
+      }
+      
+      .py-6 {
+          padding: 4rem 0;
+      }
+  </style>
+</head>
+<body class="bg-light">
+
+<!--<nav class="navbar navbar-expand navbar-dark bg-darker header sticky-top">-->
+<nav class="navbar navbar-expand navbar-dark bg-darker header sticky-top">
+  <div class="container">
+    <div class="d-flex align-items-center">
+      <img
+        src="/assets/image/puth-logo-new.png"
+        class="align-self-center"
+        alt=""
+        style="height: 22px;"
+      >
+      <span class="ms-2 text-accent" style="font-size: 1.125rem;">Puth</span>
+    </div>
+    <ul class="navbar-nav ms-auto last-element-pr-0">
+      <li class="nav-item"><a href="__ALT_URL__/" target="_blank" class="nav-link">Puth</a></li>
+      <li class="nav-item"><a href="__ALT_URL__/github" target="_blank" class="nav-link">Github</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="bg-accent">
+  <div class="container">
+    <h1 class="py-6 lh-1 fw-bold">Puth's playground</h1>
+    
+    <div class="grid-container gap-4 text-grey pb-4">
+      <div class="bg-darker rounded-1 p-3">
+        <div class="fw-bold mb-2">What is this page?</div>
+        <div>
+          This page is used for the internal Puth tests and offers the possibility to test all functions of Puth. You can check this page if you have difficulties with a function or to try out a function.
+        </div>
+      </div>
+      <div class="bg-darker rounded-1 p-3 d-flex flex-column">
+        <div class="fw-bold mb-2">Start with Puth</div>
+        <div class="flex-grow-1 d-flex flex-column">
+          How to get started with Puth you can read on puth.io
+          <div class="d-flex gap-4 mt-auto">
+            <a class="btn btn-sm btn-accent flex-grow-1" href="__ALT_URL__/docs">Get started</a>
+            <a class="btn btn-sm btn-accent flex-grow-1" href="__ALT_URL__/docs/supported-languages">Supported languages</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container my-5">
+  <h2>Querying</h2>
+  
+  <p class="function">$ (php: get)</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$div = $this->page->get('#querying-get');</code></pre>
+    <div class="example">
+      <div id="querying-get">
+        Div with id <code>querying-get</code>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">$$ (php: getAll)</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$divs = $this->page->getAll('.querying-get');
+
+foreach ($divs as $div) {
+    echo $div->getProperty('textContent')->jsonValue();
+}</code></pre>
+    <div class="example">
+      <div class="querying-get">
+        Div with class <code>querying-get</code>
+      </div>
+      <div class="querying-get">
+        Div with class <code>querying-get</code>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">contains</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$divs = $this->page->contains('apple');</code></pre>
+    <div
+      class="example"
+      id="querying-contains"
+    >
+      <div>
+        Text containing apple
+      </div>
+      <div>
+        Text containing apple
+      </div>
+    </div>
+    <div id="querying-empty-div"></div>
+  </div>
+
+
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>Properties</h2>
+  
+  <p class="function">.value()</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$inputValue = $this->page->get('#properties-value input')->value();
+$textareaValue = $this->page->get('#properties-value textarea')->value();
+$selectValue = $this->page->get('#properties-value select')->value();</code></pre>
+    <div class="example" id="properties-value">
+      <input type="text" name="properties-value-input" class="w-100" value="input with value">
+      <textarea
+        rows="3"
+        class="w-100"
+      >textarea with value</textarea>
+      <select>
+        <option value="apple" selected>selected apple</option>
+      </select>
+    </div>
+  </div>
+  
+  <p class="function">.innerText()</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$divInnerText = $this->page->get('#properties-innertext')->innerText();</code></pre>
+    <div class="example">
+      <div id="properties-innertext">div with this innertext</div>
+    </div>
+  </div>
+  
+  <p class="function">.innerHTML()</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$divInnerHtml = $this->page->get('#properties-innerhtml')->innerHTML();</code></pre>
+    <div class="example">
+      <div id="properties-innerhtml"><div>child div</div> with this innerhtml</div>
+    </div>
+  </div>
+  
+  <p class="function">Attributes</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$dataTest = $page->get('#properties-attributes')->its('data-test');    </code></pre>
+    <div class="example">
+      <div id="properties-attributes" data-test="1234" aria-rowspan="5678">div with data and aria attribute</div>
+    </div>
+  </div>
+
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>Dialog</h2>
+  
+  <p class="function">dialog</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// Alert
+$this->page->click('#dialog-alert');
+$dialog = $this->page->waitForDialog(); // waits for a dialog to open
+$dialog->dismiss();
+
+// Prompt
+$this->page->click('#dialog-prompt');
+$dialog = $this->page->waitForDialog();
+$dialog->accept('type this text into the prompt');
+// or $dialog->dismiss();
+
+// Confirm
+$this->page->click('#dialog-confirm');
+$dialog = $this->page->waitForDialog();
+$dialog->accept();
+// or $dialog->dismiss();</code></pre>
+    <div class="example">
+      <button
+        onclick="alert('alert')"
+        id="dialog-alert"
+      >
+        Open Alert
+      </button>
+      <button
+        onclick="document.querySelector('#dialog-prompt-result').innerText = prompt('prompt for input')"
+        id="dialog-prompt"
+      >
+        Open Prompt
+      </button>
+      <button
+        onclick="document.querySelector('#dialog-confirm-result').innerText = confirm('confirm this') ? 'true' : 'false'"
+        id="dialog-confirm"
+      >
+        Open Confirm
+      </button>
+      
+      <div class="mt-2">
+        Prompt text: <span id="dialog-prompt-result"></span>
+      </div>
+      <div>
+        confirm value: <span id="dialog-confirm-result"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>Actions</h2>
+  
+  <p class="function">type</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->get('input')->type('write your text');</code></pre>
+    <div
+      class="example"
+      id="actions-type"
+    >
+      <input
+        type="text"
+        class="w-100"
+        placeholder="input"
+      >
+    </div>
+  </div>
+  
+  <p class="function">focus/blur</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->get('#actions-focus')->focus();
+
+// or with selector
+$this->page->focus('#actions-focus');
+
+// And to blur
+$this->page->get('#actions-focus')->blur();
+
+// or with selector
+$this->page->blur('#actions-focus');</code></pre>
+    <div class="example">
+      <p>input with id <code>actions-focus</code></p>
+      
+      <input
+        type="text"
+        class="w-100"
+        id="actions-focus"
+        placeholder="input"
+      >
+    </div>
+  </div>
+  
+  <p class="function">clear</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->get('input')->clear();</code></pre>
+    <div class="example">
+      <input
+        type="text"
+        class="w-100"
+        id="actions-clear"
+        value="text to clear"
+      >
+    </div>
+  </div>
+  
+  <p class="function">click & doubleClick & middleClick & rightClick</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->get('button')->click();</code></pre>
+    <div
+      class="example"
+      id="actions-click"
+    >
+      <button id="actions-click-button" onclick="document.querySelector('#actions-click-verify').innerText = 'clicked button'">click me</button>
+      <p id="actions-click-verify"></p>
+      
+      <button
+        id="actions-click-double"
+        ondblclick="document.querySelector('#actions-click-double-verify').innerText = 'double clicked button'"
+      >double click
+      </button>
+      <p id="actions-click-double-verify"></p>
+      
+      <button id="actions-click-mousedown">mousedown event</button>
+      <p id="actions-click-mousedown-verify"></p>
+      <script>
+        let el = document.querySelector('#actions-click-mousedown');
+        el.addEventListener('mousedown', event => {
+          document.querySelector('#actions-click-mousedown-verify').innerText = 'mousedown: ' + event.which;
+        });
+      </script>
+  
+      <button id="actions-click-disabled" disabled>disabled</button>
+      <button id="actions-click-wait" onclick="let a = document.querySelector('#actions-click-disabled'); this.disabled = true; a.disabled = false; setTimeout(() => {this.disabled = false; a.disabled = true;}, 2000)">click and wait</button>
+      <button id="actions-click-reload" onclick="location.reload()">click for reload</button>
+    </div>
+  </div>
+  
+  <p class="function">select</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->get('select')->select('Apple');</code></pre>
+    <div class="example">
+      <select id="actions-select">
+        <option
+          value=""
+          selected
+          disabled
+        >-- Select Value --
+        </option>
+        <option value="apple">Apple</option>
+        <option value="orange">Orange</option>
+      </select>
+      <select
+        id="actions-select-multiple"
+        multiple="multiple"
+      >
+        <option value="apple">Apple</option>
+        <option value="orange">Orange</option>
+      </select>
+      <select
+        id="actions-select-checkboxes"
+        type="checkbox"
+        multiple="multiple"
+      >
+        <option value="apple">Apple</option>
+        <option value="orange">Orange</option>
+      </select>
+    </div>
+  </div>
+  
+  <p class="function">checkbox</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// TOD</code></pre>
+    <div class="example">
+      <div>
+        <input type="checkbox" id="action-checkbox" value="test-1234" name="action-checkbox"/>
+        <label for="action-checkbox">action-checkbox</label>
+      </div>
+      <div>
+        <input type="radio" id="action-radio-apple" value="apple" name="action-radio"/>
+        <label for="action-radio-apple">action-radio-apple</label>
+        <input type="radio" id="action-radio-orange" value="orange" name="action-radio"/>
+        <label for="action-radio-orange">action-radio-orange</label>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">scrollIntoView</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->get('select')->scrollIntoView();</code></pre>
+    <div class="example">
+      <div id="actions-scrollIntoView">
+        Div with id <code>actions-scrollIntoView</code>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">scrollTo</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$this->page->scrollTo(0, 200);
+
+$this->page->get('#actions-scrollTo')->scrollTo(0, 100);</code></pre>
+    <div class="example">
+      <div
+        id="actions-scrollTo"
+        style="overflow: scroll; height: 7rem;"
+      >
+        <div style="height: 100px;">
+          Div with id <code>actions-scrollIntoView</code>
+        </div>
+        <div>
+          Should see this div after scroll y 100
+        </div>
+        <div style="height: 100px;"></div>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">hover</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// TOD</code></pre>
+    <div class="example">
+      <div
+        id="actions-hover"
+        style="height: 2rem"
+        onmouseover="this.innerText = 'hovering'"
+        onmouseleave="this.innerText = ''"
+      >
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>Traversal</h2>
+  
+  <p class="function">children</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$parent = $this->page->get('#traversal-parent');
+
+// returns all 3 children
+$children = $parent->children();
+
+// returns only the children that match the selector
+$selected = $parent->children('.traversal-child-selector');</code></pre>
+    <div class="example">
+      <div id="traversal-parent">
+        Div with id traversal-parent
+        <div>Child 1</div>
+        <div class="traversal-child-selector">Child 2 (with class traversal-child-selector)</div>
+        <div class="traversal-child-selector">Child 3 (with class traversal-child-selector)</div>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">parent & parents</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$child = $this->page->get('#traversal-child');
+
+// returns the wrapper div
+$parent = $child->parent();
+
+// returns all parent elements until html
+$parents = $child->parents();</code></pre>
+    <div class="example">
+      <div class="test-feature-verify">
+        Wrapper div
+        <div id="traversal-child">Div with id <code>traversal-child</code></div>
+      </div>
+    </div>
+  </div>
+  
+  <p class="function">siblings</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// returns 'Child 1' and 'Child 3'
+$siblings = $this->page->get('#traversal-siblings')->siblings();</code></pre>
+    <div class="example">
+      <div>Child 1</div>
+      <div id="traversal-siblings">Child 2 (with id traversal-siblings)</div>
+      <div>Child 3</div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>Drag & Drop</h2>
+  
+  <p class="function">Drop element on target</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">$parent = $this->page->get('#traversal-parent');
+
+// returns all 3 children
+$children = $parent->children();
+
+// returns only the children that match the selector
+$selected = $parent->children('.traversal-child-selector');</code></pre>
+    <div class="example" id="draganddrop-example">
+      <div
+        id="draganddrop-example1-item"
+        draggable="true"
+        ondragstart="event.dataTransfer.setData('text', 'draganddrop-example1-item')"
+      >
+        Drag this
+      </div>
+      
+      <div>
+        <div id="draganddrop-example1-item-top" draggable="true" style="height: 5px; background-color: rgba(11,94,215,0.47)"></div>
+        
+        <div class="d-flex p-0">
+          <div id="draganddrop-example1-item-left" draggable="true" style="width: 5px; background-color: rgba(11,94,215,0.47)"></div>
+          
+          <div
+            ondrop="document.querySelector('#draganddrop-example1-dropzone-result').innerText = 'dropped element text: ' + event.dataTransfer.getData('text');"
+            ondragover="event.preventDefault()"
+            ondragenter="document.querySelector('#draganddrop-example1-dropzone-result').innerText = 'dragging over...'"
+            ondragleave="document.querySelector('#draganddrop-example1-dropzone-result').innerText = 'into here'"
+            style="height: 4rem;"
+            id="draganddrop-example1-dropzone-result-container"
+            class="flex-grow-1 p-0"
+          >
+            <div style="pointer-events: none" id="draganddrop-example1-dropzone-result" class="p-3">
+              into here
+            </div>
+          </div>
+          
+          <div id="draganddrop-example1-item-right" draggable="true" style="width: 5px; background-color: rgba(11,94,215,0.47)"></div>
+        </div>
+  
+        <div id="draganddrop-example1-item-bottom" draggable="true" style="height: 5px; background-color: rgba(11,94,215,0.47)"></div>
+      </div>
+      
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>Wait for</h2>
+  
+  <p class="function">waitForMissing(Text)</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// TODO</code></pre>
+    <div class="example" id="wait-for-missing">
+      <div id="wait-for-missing-text-container">
+        <div id="wait-for-missing-text-item">click button to hide this element</div>
+      </div>
+      <button
+        id="wait-for-missing-text-button"
+        onclick="let c = document.querySelector('#wait-for-missing-text-container'); let item = c.children.item(0); let clone = item.cloneNode(true); item.remove(); setTimeout(() => c.appendChild(clone), 2000)"
+      >
+        hide
+      </button>
+      <div id="wait-for-present-text-container"></div>
+      <button
+        id="wait-for-present-text-button"
+        onclick="let c = document.querySelector('#wait-for-present-text-container'); c.innerHTML = '<div id=\'wait-for-present-text-item\'>clicked button to show this element</div>'; setTimeout(() => c.innerHTML = '', 2000)"
+      >
+        show
+      </button>
+    </div>
+  </div>
+  
+  <p class="function">waitForEvent</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// TODO</code></pre>
+    <div class="example">
+      <button id="wait-for-event-document" onclick="setTimeout(_ => document.dispatchEvent(new Event('test-event')), 1000)">document event 'test-event'</button>
+      <button id="wait-for-event-element" onclick="setTimeout(_ => this.dispatchEvent(new Event('test-event')), 1000)">this button event 'test-event'</button>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>File</h2>
+  
+  <p class="function">waitForMissing(Text)</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// TODO</code></pre>
+    <div class="example" id="file-attach">
+      <input type="file" id="file-test-input" name="file-test-input" multiple>
+  
+      <div>File content preview:</div>
+      <div id="file-attach-preview"></div>
+      
+      <script>
+        const fileAttachPreview = document.querySelector('#file-attach-preview');
+        
+        document.querySelector('#file-test-input').addEventListener('change', function () {
+          if (this.files.length === 0) {
+            fileAttachPreview.innerText = '';
+            return;
+          }
+          
+          let files = [...this.files].filter(file => file.size < 256);
+  
+          if (files.length === 0) {
+            fileAttachPreview.innerText = 'File/s too big for preview.';
+            return;
+          }
+  
+          fileAttachPreview.innerText = '';
+          
+          files.forEach(file => {
+            let reader = new FileReader();
+  
+            reader.readAsText(file, "UTF-8");
+            reader.onload = (evt) => {
+              fileAttachPreview.innerText += evt.target.result
+            };
+          })
+        });
+      </script>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<section class="container my-5">
+  <h2>iFrame</h2>
+  
+  <p class="function">withinFrame</p>
+  <div class="row">
+    <pre class="col-7"><code class="php">// TODO</code></pre>
+    <div class="example">
+      <iframe id="iframe-example" src="/" style="width: 100%; height: 300px"></iframe>
+    </div>
+  </div>
+</section>
+
+<script src='/assets/bootstrap/bootstrap.bundle.min.js'></script>
+<script src='/assets/highlightjs/highlight.min.js'></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
+

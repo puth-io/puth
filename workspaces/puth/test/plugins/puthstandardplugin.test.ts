@@ -1,9 +1,9 @@
 import { describe, assert, beforeEach } from 'vitest';
-import { testLocal } from '../helper';
+import { fixtureUrl, testLocal } from '../helper';
 
 describe(`PuthStandardPlugin`, () => {
     beforeEach(async ({ puth: { page } }) => {
-        await page.goto('https://playground.puth.dev/');
+        await page.goto(fixtureUrl());
     });
 
     testLocal('should get page title', async function ({ puth: { page } }) {
@@ -11,7 +11,7 @@ describe(`PuthStandardPlugin`, () => {
     });
 
     testLocal('should get page title', async function ({ puth: { page } }) {
-        assert.strictEqual(await page.url(), 'https://playground.puth.dev/');
+        assert.strictEqual(await page.url(), fixtureUrl());
     });
 
     describe('ElementHandle', function () {
