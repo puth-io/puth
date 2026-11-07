@@ -60,8 +60,9 @@ export const installedBrowser = usableBrowserInstallations[0];
 export const fixtureUrl = (path = '/') => new URL(path, inject('fixtures').primary).toString();
 export const fixtureAltUrl = (path = '/') => new URL(path, inject('fixtures').alt).toString();
 
-export function makeLocalPuthClient() {
+export function makeLocalPuthClient(options = {}) {
     return new LocalPuthClient({
+        ...options,
         installedBrowser,
         logger: {
             info: () => {},

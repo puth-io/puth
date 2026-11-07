@@ -12,7 +12,7 @@ import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
 import { BrowserHandler, type IBrowserHandler } from './handlers/BrowserHandler';
 import { WebsocketHandler } from './handlers/WebsocketHandler';
-import { SnapshotHandler } from './handlers/SnapshotHandler';
+import { SnapshotHandler, type RecordingBudgets } from './handlers/SnapshotHandler';
 import { createRequire } from 'node:module';
 import { type PortalFailure } from './utils/CallStack';
 
@@ -40,6 +40,8 @@ export type PuthOptions = {
     };
     installedBrowser?: any;
     logger?: BaseLogger;
+    // Limits in bytes, measured from encoded packets.
+    recording?: Partial<RecordingBudgets>;
 };
 
 const NULL_BODY_STATUSES = [101, 204, 205, 304];
@@ -186,6 +188,7 @@ export class Puth {
             return handler(handle);
         });
 
+        h3.get('/diagnostics', () => this.diagnostics());
         h3.post('/context', json(data => this.contextCreate(data)));
         h3.patch('/context/call', event => event.req.json().then(
             data => deferTracked(event, data, handle => this.contextCall(data, handle)),
@@ -347,6 +350,17 @@ export class Puth {
         return context.serialize();
     }
 
+    public diagnostics() {
+        return {
+            contexts: Object.values(this.#contexts).map(context => ({
+                id: context.id,
+                recording: this.snapshotHandler.statsOf(context),
+            })),
+            recording: this.snapshotHandler.stats(),
+            browsers: this.browserHandler.stats(),
+        };
+    }
+
     public portalResponse(packet, res) {
         return this.#contexts[packet.context.id].handlePortalResponse(packet, res);
     }
@@ -416,6 +430,10 @@ export class Puth {
 
     get debug() {
         return this.options?.debug === true;
+    }
+
+    get recordingBudgets() {
+        return this.options?.recording;
     }
 
     get installedBrowser() {
