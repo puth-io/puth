@@ -20,7 +20,7 @@ async function openBrowser() {
     const browser = await remote.createBrowserShim();
     const representation = await browser.getRepresentation();
 
-    // The JS client does not report failed expectations, so these tests read what the server answered.
+    // Reads what the server answered, to tell the kinds of failures apart.
     const call = (name: string, ...parameters: any[]): Promise<any> => client.contextCall({
         context: { id: context.id },
         ...representation,
