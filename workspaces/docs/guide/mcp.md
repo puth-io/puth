@@ -224,7 +224,7 @@ last url http://laravel:8080/checkout
 error Uncaught TypeError: cart is undefined
 ```
 
-The summary lists what went wrong in the order it happened, so an error that came first reads as the cause. `view` lists all `commands`, `console` output or `network` activity, and `command` shows one command with its full arguments. `frame` returns the page after a command as an image, and `file` reads a `.puth` file instead, such as a CI artifact. `query` matches test names and classes. Recordings stay available until the instance restarts or evicts them.
+The summary lists what went wrong in the order it happened, so an error that came first reads as the cause. `view` lists all `commands`, `console` output or `network` activity, and `command` shows one command with its full arguments. Commands leave out what test runners do around a test, such as creating the browser and reporting the result, unless you pass `all=true`; the rest keep their numbers. `frame` returns the page after a command as an image, and `file` reads a `.puth` file instead, such as a CI artifact. `query` matches test names and classes. Recordings stay available until the instance restarts or evicts them.
 
 ## Lifecycle
 

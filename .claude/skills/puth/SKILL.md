@@ -64,6 +64,6 @@ What happened in the application, like sent mail, is not visible in the browser.
 
 1. `puth_contexts` with `status=failed` or a `query`, which also matches the test class.
 2. `puth_context` with its `id` shows what went wrong in the order it happened: an error before a failed command is usually its cause.
-3. Use `view=commands`, `view=console` or `view=network` for more, `command=<number>` for one command with its full arguments, and `frame=<command>` or `frame=-1` to see the page. Images cost far more than text.
+3. Use `view=commands` (`all=true` adds what the test runner did around the test), `view=console` or `view=network` for more, `command=<number>` for one command with its full arguments, and `frame=<command>` or `frame=-1` to see the page. Images cost far more than text.
 
 For a downloaded snapshot, pass `file` instead of `id`.
