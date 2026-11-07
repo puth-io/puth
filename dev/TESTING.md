@@ -62,9 +62,28 @@ docker compose run --rm --no-deps laravel-test php artisan test --without-tty --
 docker compose run --rm --no-deps java-test mvn --batch-mode --no-transfer-progress -Dtest=InteractsWithElementsTest test
 ```
 
-The Node suite creates its own local and HTTP servers. Java and Laravel connect
-to `http://puth:7345`. The standalone PHP test case currently hardcodes
-`127.0.0.1:7345`, so `php-test` shares Puth's network namespace.
+The Node suite creates its own local and HTTP servers, including ephemeral fixture
+origins. Java and Laravel connect to `http://puth:7345`. The standalone PHP test
+case currently hardcodes `127.0.0.1:7345`, so `php-test` shares Puth's network
+namespace.
+
+## Browser fixtures
+
+Browser suites use the local origins in `dev/fixtures`, not public websites. The
+`fixtures` service starts with `puth` and serves the playground page and a second
+origin for navigation, cookie, redirect, and cross-origin scenarios.
+
+| Variable | Compose | Direct runs |
+| --- | --- | --- |
+| `PUTH_FIXTURE_URL` | `http://fixtures:8081` | `http://127.0.0.1:8081` |
+| `PUTH_FIXTURE_ALT_URL` | `http://fixtures-alt:8082` | `http://localhost:8082` |
+
+These URLs are resolved by the browser, so they must be reachable from wherever
+Puth runs Chrome. The origins use different hostnames because cookies are not
+isolated by port. For direct PHP, Laravel, or Java runs, start them with
+`node dev/fixtures/server.mjs`. The Node suite starts its own origins unless both
+variables are set. `test/fixtures.test.ts` fails if a suite references the public
+playground or Puth websites again.
 
 ## Failures and cleanup
 
@@ -83,8 +102,7 @@ docker compose cp laravel:/workspace/workspaces/clients/php/workspaces/laravel/t
 docker compose cp laravel:/workspace/workspaces/clients/php/workspaces/laravel/tests/Browser/source /tmp/puth-source
 ```
 
-Browser suites use `https://playground.puth.dev` and `https://puth.io`. Image
-builds and dependency installation also need access to the configured Docker,
+Image builds and dependency installation need access to the configured Docker,
 Debian, npm, Composer, Maven, and Chrome-download hosts. If sandbox network
 policies block a required host, allow that host before rerunning. Treat missing page
 elements and certificate errors as possible environment failures first; do not

@@ -2,15 +2,12 @@
 
 namespace Tests\Feature;
 
-use Puth\PuthTestCase;
 use Puth\Traits\PuthAssertions;
 
-class PuthActionsTest extends PuthTestCase
+class PuthActionsTest extends PlaygroundTestCase
 {
     use PuthAssertions;
     
-    protected string $baseUrl = 'https://playground.puth.dev/';
-
     function testType()
     {
         $input = $this->page->get('#actions-type input')->type('puth test verify');

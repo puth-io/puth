@@ -1,7 +1,6 @@
 # Puth reliability and agent workflows
 
-Status: proposed; implementation has not started. Unchecked items are planned
-work, not completed capabilities.
+Status: in progress. Unchecked items are planned work, not completed capabilities.
 
 ## Goals and delivery order
 
@@ -23,15 +22,15 @@ terminal tools.
 
 ### Deterministic browser fixtures
 
-- [ ] Serve playground scenarios locally through Compose for Node, PHP, and Java
+- [x] Serve playground scenarios locally through Compose for Node, PHP, and Java
   suites.
-- [ ] Replace public-site dependencies with fixture URLs supplied through test
+- [x] Replace public-site dependencies with fixture URLs supplied through test
   configuration.
-- [ ] Provide two local origins for navigation, cookies, redirects, and
+- [x] Provide two local origins for navigation, cookies, redirects, and
   cross-origin scenarios.
 - [ ] Use the same fixtures in CI. Dependency installation and browser downloads
   may still require network access.
-- [ ] Acceptance: routine browser suites make no requests to public websites.
+- [x] Acceptance: routine browser suites make no requests to public websites.
 
 ### Context and browser lifecycle
 

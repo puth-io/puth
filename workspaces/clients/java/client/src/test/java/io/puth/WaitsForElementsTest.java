@@ -16,9 +16,9 @@ public class WaitsForElementsTest extends BaseTest {
 
     @Test
     void test_wait_for_location() {
-        browser.evaluate("window.location = \"https://puth.io\"");
-        browser.waitForLocation("https://puth.io/")
-                .assertUrlIs("https://puth.io/");
+        browser.evaluate("window.location = \"" + alt() + "\"");
+        browser.waitForLocation(alt())
+                .assertUrlIs(alt());
     }
 
     @Test
@@ -29,7 +29,7 @@ public class WaitsForElementsTest extends BaseTest {
     @Test
     void test_wait_for_link() {
         browser.visit(playground())
-                .waitForLink("https://puth.io/")
+                .waitForLink(alt())
                 .waitForInput("properties-value-input");
     }
 

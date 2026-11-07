@@ -16,6 +16,6 @@ public class InteractsWithJavascriptTest extends BaseTest {
                         "window.document.location.href"
                 });
 
-        assertArrayEquals(new Object[]{2, "https://playground.puth.dev/"}, response);
+        assertArrayEquals(new Object[]{2, playground()}, response);
     }
 }

@@ -2,11 +2,9 @@
 
 namespace Tests\Feature;
 
-use Puth\PuthTestCase;
 
-class PuthQueryingTest extends PuthTestCase
+class PuthQueryingTest extends PlaygroundTestCase
 {
-    protected string $baseUrl = 'https://playground.puth.dev/';
     
     function testGet()
     {

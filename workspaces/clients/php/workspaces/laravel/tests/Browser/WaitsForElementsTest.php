@@ -23,9 +23,9 @@ class WaitsForElementsTest extends PuthTestCase
     function test_wait_for_location()
     {
         $this->browse(function (Browser $browser) {
-            $browser->evaluate('window.location = "https://puth.io"');
-            $browser->waitForLocation('https://puth.io/')
-                ->assertUrlIs('https://puth.io/');
+            $browser->evaluate('window.location = "'.config('puth.alt').'"');
+            $browser->waitForLocation(config('puth.alt'))
+                ->assertUrlIs(config('puth.alt'));
         });
     }
 
@@ -78,7 +78,7 @@ class WaitsForElementsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
-                ->waitForLink('https://puth.io/')
+                ->waitForLink(config('puth.alt'))
                 ->waitForInput('properties-value-input');
         });
     }

@@ -8,6 +8,19 @@ function browserWithElements(count: number): Browser {
     );
 }
 
+describe('Browser port', () => {
+    const browserAt = (url: string) => new Browser({} as any, {url: () => url} as any);
+
+    it('uses the explicit port when the URL has one', () => {
+        expect(browserAt('http://fixtures:8081/').port()).toBe('8081');
+    });
+
+    it('derives the default port from the scheme', () => {
+        expect(browserAt('http://example.test/').port()).toBe('80');
+        expect(browserAt('https://example.test/').port()).toBe('443');
+    });
+});
+
 describe('Browser assertCount', () => {
     it('asserts the exact number of elements matching a selector', async () => {
         const browser = browserWithElements(2);

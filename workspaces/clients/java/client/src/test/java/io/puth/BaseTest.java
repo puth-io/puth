@@ -10,6 +10,8 @@ import java.util.Map;
 
 public class BaseTest {
     private static final String PUTH_INSTANCE_URL = System.getenv().getOrDefault("PUTH_INSTANCE_URL", "http://127.0.0.1:7345");
+    private static final String PUTH_FIXTURE_URL = System.getenv().getOrDefault("PUTH_FIXTURE_URL", "http://127.0.0.1:8081");
+    private static final String PUTH_FIXTURE_ALT_URL = System.getenv().getOrDefault("PUTH_FIXTURE_ALT_URL", "http://localhost:8082");
 
     Context context;
     Browser browser;
@@ -35,6 +37,14 @@ public class BaseTest {
     }
 
     static String playground() {
-        return "https://playground.puth.dev/";
+        return withTrailingSlash(PUTH_FIXTURE_URL);
+    }
+
+    static String alt() {
+        return withTrailingSlash(PUTH_FIXTURE_ALT_URL);
+    }
+
+    private static String withTrailingSlash(String url) {
+        return url.endsWith("/") ? url : url + "/";
     }
 }

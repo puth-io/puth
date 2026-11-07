@@ -73,7 +73,7 @@ class BrowserTest extends PuthTestCase
         $this->browse(function (Browser $browser) {
             $browser->visit(new Playground)
                 ->withinFrame('#iframe-example', function (Browser $iframe) {
-                    $iframe->assertUrlIs('https://playground.puth.dev/')
+                    $iframe->assertUrlIs(config('puth.playground'))
                         ->evaluate("document.body.insertAdjacentHTML('beforeend', '<div id=\'random-test-237654\'>bla</div>')")
                         ->assertVisible('#random-test-237654');
                 })

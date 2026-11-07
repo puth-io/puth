@@ -1,5 +1,5 @@
 import { describe, assert, beforeEach } from 'vitest';
-import { testLocal } from '../helper';
+import { fixtureUrl, testLocal } from '../helper';
 
 // Following code is substantially copied from
 // https://github.com/cypress-io/cypress-example-kitchensink/blob/master/cypress/integration/2-advanced-examples/actions.spec.js
@@ -16,7 +16,7 @@ import { testLocal } from '../helper';
 
 describe('Actions', function () {
     beforeEach(async ({ puth: { page } }) => {
-        await page.goto('https://playground.puth.dev/');
+        await page.goto(fixtureUrl());
     });
 
     // https://on.cypress.io/interacting-with-elements

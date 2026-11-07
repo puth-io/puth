@@ -33,7 +33,12 @@ x-php: &php
   volumes:
     - .:/workspace
 
+x-fixture-environment: &fixture-environment
+  PUTH_FIXTURE_URL: http://fixtures:8081
+  PUTH_FIXTURE_ALT_URL: http://fixtures-alt:8082
+
 x-laravel-environment: &laravel-environment
+  <<: *fixture-environment
   APP_ENV: testing
   APP_URL: http://laravel:8080
   DB_CONNECTION: sqlite
@@ -46,6 +51,21 @@ services:
     <<: *node
     user: root
     command: sh docker/dev/node-setup.sh
+
+  fixtures:
+    <<: *node
+    command: node dev/fixtures/server.mjs
+    environment:
+      <<: *fixture-environment
+    networks:
+      default:
+        aliases:
+          - fixtures-alt
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('node:net').connect(8082, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
+      interval: 2s
+      timeout: 3s
+      retries: 15
 
   puth:
     <<: *node
@@ -60,6 +80,8 @@ services:
     depends_on:
       setup:
         condition: service_completed_successfully
+      fixtures:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('node:net').connect(7345, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""]
       interval: 5s
@@ -148,6 +170,7 @@ services:
     working_dir: /workspace/workspaces/clients/php/client
     # The standalone PHP test case connects to 127.0.0.1:7345.
     network_mode: service:puth
+    environment: *fixture-environment
     command: ["sh", "-ec", "composer install --no-interaction && ./vendor/bin/phpunit"]
     depends_on:
       puth:
@@ -159,6 +182,7 @@ services:
     working_dir: /workspace/workspaces/clients/java/client
     command: mvn --batch-mode --no-transfer-progress test
     environment:
+      <<: *fixture-environment
       PUTH_INSTANCE_URL: http://puth:7345
     volumes:
       - .:/workspace
