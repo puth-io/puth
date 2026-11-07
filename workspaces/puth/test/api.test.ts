@@ -52,3 +52,21 @@ function puthContextTests(env) {
         });
     });
 }
+
+describe('Failed expectations', () => {
+    envs.forEach((env) => {
+        const test = testFn(env);
+
+        test(`reject the call [${env[0]}]`, async ({ puth: { context } }) => {
+            const browser = await context.createBrowserShim();
+            await browser.setTimeout(100);
+            await browser.visit(fixtureUrl());
+
+            await expect(browser.assertUrlIs('http://not.the.url/')).rejects.toMatchObject({
+                name: 'ExpectationFailedError',
+                message: expect.stringContaining('does not equal expected URL'),
+                expected: 'http://not.the.url/',
+            });
+        });
+    });
+});

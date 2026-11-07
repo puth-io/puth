@@ -1,5 +1,17 @@
 import {magicClassMethods} from './Utils';
 
+export class ExpectationFailedError extends Error {
+    readonly expected: unknown;
+    readonly actual: unknown;
+    
+    constructor({message, expected, actual}: {message: string, expected?: unknown, actual?: unknown}) {
+        super(message);
+        this.name = 'ExpectationFailedError';
+        this.expected = expected;
+        this.actual = actual;
+    }
+}
+
 export interface GenericRepresentation {
     id: string;
     type: string;
@@ -223,6 +235,8 @@ export function genericGet(on, context, representation, property) {
             context.callAssertionHandler(response);
             // return response;
             return on;
+        } else if (response?.type === 'ExpectationFailed') {
+            throw new ExpectationFailedError(response.value);
         } else if (response?.type === 'error') {
             throw new Error(response.code + ': ' + response.message);
         }
