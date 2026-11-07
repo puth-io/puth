@@ -58,6 +58,10 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     }
     
     private handleContextCreated(context: Context) {
+        if (! context.shouldSnapshot) {
+            return;
+        }
+
         const recording: ContextRecording = {
             pageCounter: 0,
             sessions: new Map(),

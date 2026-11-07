@@ -301,6 +301,10 @@ class Context extends Generic {
     }
     
     public async capturePageScreenshot(browser: Browser, initiator?: string) {
+        if (! this.shouldSnapshot) {
+            return;
+        }
+
         let screenshot = await browser.page.screenshot({type: 'jpeg', quality: 75});
         
         this.puth.snapshotHandler.pushToCache(this, {

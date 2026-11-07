@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
-import { PuthStandardPlugin } from '../';
 import { LiveViewSnapshotPlugin } from '../src/plugins/LiveViewPlugin';
+import { PuthStandardPlugin } from '../src/plugins/PuthStandardPlugin';
 import { fixtureUrl, makeLocalPuthClient } from './helper';
 
 const clients: any[] = [];
@@ -80,6 +80,41 @@ describe('Overlapping contexts', () => {
 
         await pending;
         await assertRecording(instance, other);
+    }, 30000);
+
+    it('does not record contexts with snapshots disabled', async () => {
+        const instance = makeInstance({ liveView: true });
+        const session = await openPage(instance, { snapshot: false });
+        const recording = await openPage(instance);
+
+        await assertRecording(instance, recording);
+        await session.page.evaluate(`document.body.append('changed')`);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        assert.strictEqual(frames(instance, session), 0);
+    }, 30000);
+
+    it('does not capture a final screenshot with snapshots disabled', async () => {
+        const instance = makeInstance();
+        const remote = await instance.client.contextCreate({ snapshot: false });
+        const browser = await remote.createBrowserShim();
+
+        await browser.quit();
+
+        const context = instance.contexts.at(-1);
+        assert.lengthOf(instance.puth.snapshotHandler.getAllCachedItemsFrom(context), 0);
+    }, 30000);
+
+    it('still captures console messages with snapshots disabled', async () => {
+        const instance = makeInstance();
+        const session = await openPage(instance, { snapshot: false });
+
+        await session.page.evaluate(`console.log('kept for clients')`);
+
+        await vi.waitFor(() => {
+            const logs = instance.puth.snapshotHandler.getAllCachedItemsFrom(session.context);
+            assert.isTrue(logs.some((item) => item.type === 'log' && item.text === 'kept for clients'));
+        });
     }, 30000);
 
     it('records a context created after another one closed', async () => {
