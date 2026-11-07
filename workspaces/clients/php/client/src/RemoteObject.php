@@ -261,17 +261,21 @@ class RemoteObject
                 $response = $this->context->testCase->handlePortalRequest($generic->value->request);
             }
         } catch (\Throwable $throwable) {
-            print_r($throwable);
-            dd($throwable);
+            fwrite(STDERR, "Portal request failed: {$throwable}\n");
+            $response = [
+                'type' => 'PortalResponse',
+                'error' => ['reason' => 'Failed', 'message' => $throwable->getMessage()],
+            ];
         }
         $response['psuri'] = $generic->value->request->psuri;
 
         if ($this->context->debug) {
             $this->log('server-request: response: ', false);
             var_export([
-                'body' => substr($response['body'], 0, 500),
-                'headers' => $response['headers'],
-                'status' => $response['status'],
+                'body' => substr($response['body'] ?? '', 0, 500),
+                'headers' => $response['headers'] ?? [],
+                'status' => $response['status'] ?? null,
+                'error' => $response['error'] ?? null,
             ]);
             print("\n\n");
         }

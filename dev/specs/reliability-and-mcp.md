@@ -45,15 +45,15 @@ terminal tools.
 
 ### Portal failures
 
-- [ ] Handle upstream transport failures in direct portal fulfillment and
+- [x] Handle upstream transport failures in direct portal fulfillment and
   detours.
-- [ ] Fail intercepted browser requests through the appropriate CDP or HTTP
+- [x] Fail intercepted browser requests through the appropriate CDP or HTTP
   failure path; distinguish network failures from valid HTTP error responses.
-- [ ] Remove request identifiers, callbacks, and pending queue entries after
+- [x] Remove request identifiers, callbacks, and pending queue entries after
   failure or cancellation.
-- [ ] Preserve prefix matching, per-context portal/detour settings, binary
+- [x] Preserve prefix matching, per-context portal/detour settings, binary
   response handling, and cache isolation.
-- [ ] Acceptance: failed upstream requests, canceled navigation, client
+- [x] Acceptance: failed upstream requests, canceled navigation, client
   disconnects, and context destruction leave no indefinitely pending portal
   work; existing portal regressions remain covered.
 

@@ -53,6 +53,13 @@ handled, while all other paused requests continue normally.
   example, oversized or multipart requests). Set it to `false` to keep normal
   portal handling but prevent that request from being rerouted through
   `/portal/detour`.
+- A client that gets no HTTP response at all answers with
+  `error: {reason, message}` instead of `status` and `body`, where `reason` is a
+  CDP `Network.ErrorReason`. Direct requests fail through `Fetch.failRequest`;
+  detours return `502` with a `puth-portal-error` header. HTTP error responses
+  from the application stay ordinary responses with their own status.
+- Unanswered portal requests fail after `timeouts.portal` milliseconds (120000 by
+  default), because a client that vanished mid-request holds no open connection.
 - Contexts expose `enablePortal()`, `disablePortal()`, `enableDetour()`, and
   `disableDetour()` to change these settings after creation. The Laravel test
   client creates contexts with both `portal` and `detour` set to `false`; a

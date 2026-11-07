@@ -58,12 +58,7 @@ final class PortalProxies {
                 if (psuri != null) portalResponse.put("psuri", psuri);
                 return portalResponse;
             } catch (Exception e) {
-                return Map.of(
-                        "type", "PortalResponse",
-                        "status", 500,
-                        "headers", Map.of("Content-Type", List.of("text/plain")),
-                        "body", "Proxy error: " + e.getMessage()
-                );
+                return portalFailure(e);
             }
         };
     }
@@ -103,14 +98,28 @@ final class PortalProxies {
                 if (psuri != null) portalResponse.put("psuri", psuri);
                 return portalResponse;
             } catch (Exception e) {
-                return Map.of(
-                        "type", "PortalResponse",
-                        "status", 500,
-                        "headers", Map.of("Content-Type", List.of("text/plain")),
-                        "body", "Proxy error (MockMvc): " + e.getMessage()
-                );
+                return portalFailure(e);
             }
         };
+    }
+
+    // No HTTP response exists here, so this must not look like a server's own 5xx response.
+    static Map<String, Object> portalFailure(Exception e) {
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("reason", portalFailureReason(e));
+        error.put("message", String.valueOf(e.getMessage()));
+
+        Map<String, Object> portalResponse = new LinkedHashMap<>();
+        portalResponse.put("type", "PortalResponse");
+        portalResponse.put("error", error);
+        return portalResponse;
+    }
+
+    private static String portalFailureReason(Exception e) {
+        if (e instanceof java.net.http.HttpTimeoutException) return "TimedOut";
+        if (e instanceof java.net.ConnectException) return "ConnectionRefused";
+        if (e instanceof java.net.UnknownHostException) return "NameNotResolved";
+        return "Failed";
     }
 
     @SuppressWarnings("unchecked")

@@ -15,6 +15,25 @@ class PortalTest extends PuthTestCase
 
     public static bool $debug = false;
 
+    public function handlePortalRequest(object $portalRequest)
+    {
+        if (str_ends_with($portalRequest->path, '/portal-client-failure')) {
+            throw new \RuntimeException('The portal client failed.');
+        }
+
+        return parent::handlePortalRequest($portalRequest);
+    }
+
+    function test_portal_client_failure_fails_the_browser_request()
+    {
+        $this->browse(function (Browser $browser) {
+            $result = $browser->visit('/')
+                ->evaluate("fetch('/portal-client-failure').then(() => 'loaded', error => error.name)");
+
+            Assert::assertSame('TypeError', $result);
+        });
+    }
+
     function test_portal_login_updates_test_authentication()
     {
         $user = User::factory()->create();
