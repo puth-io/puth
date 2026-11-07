@@ -39,6 +39,16 @@ export const outlineScript = (scope: string|null) => `(() => {
         }
         return '~' + parts.join('>');
     };
+    // Where text is, for a seeIn assertion: the element itself, or its nearest ancestor with a stable selector.
+    const whereOf = (element) => {
+        for (let current = element, depth = 0; current && current !== document.body && depth < 5; current = current.parentElement, depth++) {
+            const selector = selectorOf(current);
+            if (! selector.startsWith('~')) {
+                return selector;
+            }
+        }
+        return selectorOf(element);
+    };
     const labelOf = (element) => clean(
         element.labels?.[0]?.innerText
         || element.getAttribute('aria-label')
@@ -97,10 +107,15 @@ export const outlineScript = (scope: string|null) => `(() => {
             .filter((element) => element.checkVisibility())
             .map(lineOf)
             .filter((line, index, lines) => lines.indexOf(line) === index),
-        texts: (document.body?.innerText ?? '').split('\\n')
-            .map((text) => clean(text, 120))
-            .filter((text, index, texts) => text !== '' && texts.indexOf(text) === index)
-            .slice(0, 500),
+        texts: [...(document.body?.querySelectorAll('*') ?? [])]
+            .filter((element) => ! ['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'].includes(element.tagName))
+            .map((element) => ({
+                element,
+                text: clean([...element.childNodes].filter((node) => node.nodeType === 3).map((node) => node.textContent).join(' '), 120),
+            }))
+            .filter(({ element, text }) => text !== '' && element.checkVisibility())
+            .slice(0, 500)
+            .map(({ element, text }) => ({ text, where: whereOf(element) })),
     });
 })()`;
 
@@ -109,14 +124,17 @@ export const textScript = (scope: string|null) =>
 
 export const MAX_CHANGES = 15;
 
-type Outline = { lines: string[], texts: string[] };
+type Outline = { lines: string[], texts: { text: string, where: string }[] };
 
 /**
  * Everything on a page whose appearance is worth reporting: the outline, and visible text that is not part of it.
  */
 export const observableLines = ({ lines, texts }: Outline) => [
     ...lines,
-    ...texts.filter(text => ! lines.some(line => line.includes(text))).map(text => JSON.stringify(text)),
+    ...texts
+        .filter(({ text }) => ! lines.some(line => line.includes(text)))
+        .map(({ text, where }) => `${JSON.stringify(text)} in ${where}`)
+        .filter((line, index, all) => all.indexOf(line) === index),
 ];
 
 /**
