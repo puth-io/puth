@@ -186,6 +186,26 @@ export class Browser {
         return this.browserRefContext.context;
     }
 
+    // Named differently than pages() because plugins add that function to puppeteer browsers.
+    public async openPages(): Promise<any[]> {
+        const pages = await this.browserContext.pages();
+
+        return Promise.all(pages.map(async (page, index) => ({
+            index,
+            url: page.url(),
+            title: await page.title(),
+        })));
+    }
+
+    public async onPage(index: int): Promise<Browser> {
+        const page = (await this.browserContext.pages())[index];
+        if (page === undefined) {
+            throw new ExpectationFailed(`There is no open page with index [${index}].`);
+        }
+
+        return this.clone(page);
+    }
+
     public clone(site: Page | Frame | null = null, options: {} = {}): Browser {
         return new Browser(this.browserRefContext, site ?? this.site, {
             timeout: this.options.timeout,

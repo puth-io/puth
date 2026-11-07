@@ -10,6 +10,29 @@ use Puth\RemoteObject;
 class Browser extends RemoteObject
 {
     /**
+     * Named differently than pages() because plugins add that function to puppeteer browsers.
+     * 
+     * @debug-gen-original-name "openPages"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["any[]"]
+     */
+    public function openPages(): array
+    {
+        return $this->callFunc('openPages');
+    }
+
+    /**
+     * @debug-gen-original-name "onPage"
+     * @debug-gen-original-is-async true
+     * @debug-gen-original-returns ["Browser"]
+     * @debug-gen-original-parameter index {"type":"int","isOptional":false}
+     */
+    public function onPage(int $index): Browser
+    {
+        return $this->callFunc('onPage', [$index]);
+    }
+
+    /**
      * @debug-gen-original-name "clone"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["Browser"]

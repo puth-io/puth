@@ -2,6 +2,14 @@
 import {RemoteObject, type RemoteHandle} from '../RemoteObject';
 
 export class Browser extends RemoteObject {
+    openPages(): Promise<any[]> {
+        return this.callFunc('openPages', []);
+    }
+
+    onPage(index: number): Promise<Browser> {
+        return this.callFunc('onPage', [index]);
+    }
+
     clone(site: any|null = null, options: Record<string, any> = {}): Promise<Browser> {
         return this.callFunc('clone', [site, options]);
     }
