@@ -1340,6 +1340,11 @@ class Context extends Generic {
         return this.puth.logger;
     }
 
+    // Test runners name the class of a test here, like Tests\Browser\CheckoutTest.
+    get testGroup(): string {
+        return (this.options as any)?.test?.group ?? '';
+    }
+
     getGroup() {
         return this.options?.group ?? '';
     }

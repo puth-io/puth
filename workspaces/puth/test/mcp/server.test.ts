@@ -629,7 +629,10 @@ describe('Other browser tools', () => {
 
 describe('Reading other contexts', () => {
     async function failedTest(url: string) {
-        const context = await Context.create(new RemotePuthClient(url), { snapshot: true, test: { name: 'checkout fails' } });
+        const context = await Context.create(new RemotePuthClient(url), {
+            snapshot: true,
+            test: { name: 'checkout fails', group: 'Tests\\Browser\\CheckoutFlowTest' },
+        });
         const browser = await context.createBrowserShim();
         await browser.setTimeout(100);
         await browser.visit(fixtureUrl());
@@ -658,6 +661,7 @@ describe('Reading other contexts', () => {
 
         assert.include((await tool('puth_contexts', { query: 'CHECKOUT' })).text, 'checkout fails');
         assert.include((await tool('puth_contexts', { query: 'checkout_fails' })).text, 'checkout fails');
+        assert.include((await tool('puth_contexts', { query: 'CheckoutFlowTest' })).text, '"checkout fails" CheckoutFlowTest');
         assert.strictEqual((await tool('puth_contexts', { status: 'successful' })).text, 'none');
         await context.destroy({ immediately: true });
     }, 20000);
@@ -674,6 +678,7 @@ describe('Reading other contexts', () => {
         assert.include(text, 'click(#pay');
         assert.include(text, '✗ Waited 100ms for selector');
         assert.include(text, 'error payment widget broke');
+        assert.isBelow(text.indexOf('payment widget broke'), text.indexOf('click(#pay'), 'the error came first');
     }, 20000);
 
     it('lists commands, console and network', async () => {
@@ -683,6 +688,23 @@ describe('Reading other contexts', () => {
 
         assert.include((await tool('puth_context', { id, view: 'commands' })).text, 'visit(');
         assert.include((await tool('puth_context', { id, view: 'console' })).text, 'payment widget broke');
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('shows one command with its full arguments', async () => {
+        const { url, tool } = await start();
+        const context = await failedTest(url);
+        const id = context.getRepresentation().id;
+        const long = `<p>${'x'.repeat(200)}</p><script>window.answer = 42</script>`;
+        const browser = await context.createBrowserShim();
+        await browser.setContent(long);
+
+        const commands = (await tool('puth_context', { id, view: 'commands' })).text.split('\n');
+        const index = commands.find((line) => line.includes('setContent'))!.split(' ')[0];
+        const { text } = await tool('puth_context', { id, command: Number(index) });
+
+        assert.include(text, 'window.answer = 42');
+        assert.match((await tool('puth_context', { id, command: 999 })).text, /^ERR INVALID_REQUEST/);
         await context.destroy({ immediately: true });
     }, 20000);
 
@@ -724,7 +746,13 @@ describe('Taking over a test', () => {
         const browser = await context.createBrowserShim();
         await browser.visit(fixtureUrl());
 
-        return { context, browser, result: context.handoff(browser, { name: 'dashboard' }) };
+        // Like a test runner: the test passes once the handoff ends.
+        const result = context.handoff(browser, { name: 'dashboard' }).then(async (reason) => {
+            await context.testSuccess();
+            return reason;
+        });
+
+        return { context, browser, result };
     }
 
     it('drives the browser of the test and hands it back', async () => {
@@ -737,16 +765,19 @@ describe('Taking over a test', () => {
         const id = context.getRepresentation().id.slice(0, 8);
         const { text } = await tool('puth_session_create', { handoff: id });
         const sessionId = text.match(/^session (\w+)/)![1];
+        assert.include(text, 'took over "dashboard" from logged in test, its login and data apply');
 
         await run(sessionId, { op: 'visit', url: fixtureAltUrl() }, { op: 'see', text: 'Alternate origin' });
 
         const draft = (await tool('puth_export', { sessionId, format: 'laravel' })).text;
         assert.include(draft, "assertSee('Alternate origin')");
         assert.notInclude(draft, 'class ');
+        assert.include(draft, 'go after handoff() in the test');
 
-        await tool('puth_session_close', { sessionId });
+        const closed = await tool('puth_session_close', { sessionId });
 
         assert.strictEqual(await result, 'released');
+        assert.match(closed.text, /^closed, the test finished:\nsuccessful "logged in test"/);
         assert.strictEqual(await browser.url(), fixtureAltUrl());
         await context.destroy({ immediately: true });
     }, 20000);
