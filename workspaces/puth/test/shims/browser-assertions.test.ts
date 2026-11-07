@@ -21,6 +21,32 @@ describe('Browser port', () => {
     });
 });
 
+describe('Browser assertTextIs', () => {
+    const browserWithText = (innerText: string) => {
+        const element = {getProperty: vi.fn().mockResolvedValue({jsonValue: vi.fn().mockResolvedValue(innerText)})};
+        const logger = {debug: () => {}};
+
+        return new Browser(
+            {initiator: {puth: {logger}}} as any,
+            {waitForSelector: vi.fn().mockResolvedValue(element), $$: vi.fn().mockResolvedValue([element])} as any,
+        );
+    };
+
+    it('passes on the exact text, ignoring surrounding and repeated whitespace', async () => {
+        await expect(browserWithText('  Saved\n  changes ').assertTextIs('#status', 'Saved changes')).resolves.toMatchObject({
+            meta: {assertions: 1},
+        });
+    });
+
+    it('fails when the text only contains what was expected', async () => {
+        await expect(browserWithText('Saved twice').assertTextIs('#status', 'Saved')).rejects.toEqual(
+            expect.objectContaining<Partial<ExpectationFailed>>({
+                message: 'Expected text [Saved] in element [#status], but found [Saved twice].',
+            }),
+        );
+    });
+});
+
 describe('Browser assertCount', () => {
     it('asserts the exact number of elements matching a selector', async () => {
         const browser = browserWithElements(2);

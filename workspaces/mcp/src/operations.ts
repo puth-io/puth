@@ -113,6 +113,7 @@ export const operations: Record<string, Operation> = {
     see: simple('assertion', 'assertSee', 'text'),
     dontSee: simple('assertion', 'assertDontSee', 'text'),
     seeIn: simple('assertion', 'assertSeeIn', 'selector', 'text'),
+    textIs: simple('assertion', 'assertTextIs', 'selector', 'text'),
     title: simple('assertion', 'assertTitle', 'text'),
     urlIs: simple('assertion', 'assertUrlIs', 'url'),
     pathIs: simple('assertion', 'assertPathIs', 'url'),

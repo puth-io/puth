@@ -615,6 +615,10 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("assertSeeIn", new Object[]{selector, text, ignoreCase});
     }
 
+    public Browser assertTextIs(String selector, String text) {
+        return (Browser) this.callFunc("assertTextIs", new Object[]{selector, text});
+    }
+
     public Browser assertDontSeeIn(String selector, String text) {
         return this.assertDontSeeIn(selector, text, false);
     }

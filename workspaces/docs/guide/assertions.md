@@ -32,11 +32,12 @@ $browser->assertQueryStringHas('status', 'open');
 
 ## Check content
 
-Use `$browser->assertSee()` for page text and `$browser->assertSeeIn()` to limit the check to a particular element:
+Use `$browser->assertSee()` for page text and `$browser->assertSeeIn()` to limit the check to a particular element. Both pass when the text is contained; `$browser->assertTextIs()` passes only when it is all of the element's text, apart from whitespace:
 
 ```php
 $browser->assertSee('Dashboard');
 $browser->assertSeeIn('#account-menu', 'Sign out');
+$browser->assertTextIs('#status', 'Saved');
 $browser->assertDontSeeIn('#alerts', 'Payment failed');
 ```
 

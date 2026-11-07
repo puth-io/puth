@@ -42,6 +42,7 @@ await tool('puth_run', {
         { op: 'waitFor', selector: '#actions-click-button' },
         { op: 'click', selector: '#actions-click-button' },
         { op: 'seeIn', selector: '#actions-click-verify', text: 'clicked button' },
+        { op: 'textIs', selector: '#actions-click-verify', text: 'clicked button' },
         { op: 'type', selector: '#actions-focus', text: "it's typed" },
         { op: 'value', selector: '#actions-focus', value: "it's typed" },
         { op: 'keys', selector: '#actions-clear', keys: ['a', 'b'] },

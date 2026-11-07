@@ -1179,6 +1179,23 @@ export class Browser {
             .then(this.selfWithAsserts());
     }
 
+    // Unlike assertSeeIn, the whole text of the element has to match, apart from surrounding and repeated whitespace.
+    public assertTextIs(selector: string, text: string): Promise<Return<this>> {
+        const normalize = (value: string) => String(value ?? '').replace(/\s+/g, ' ').trim();
+
+        return this.firstOrFail(selector)
+            .then((element) => PuthStandardPlugin.its(element, 'innerText'))
+            .then((actual) =>
+                expects(
+                    normalize(actual),
+                    isEqualTo,
+                    normalize(text),
+                    ({ actual }: { actual: string }) => `Expected text [${normalize(text)}] in element [${selector}], but found [${actual}].`,
+                ),
+            )
+            .then(this.selfWithAsserts());
+    }
+
     public assertDontSeeIn(selector: string, text: string, ignoreCase = false): Promise<Return<this>> {
         return this.firstOrFail(selector)
             .then((element) => PuthStandardPlugin.its(element, 'innerText'))
