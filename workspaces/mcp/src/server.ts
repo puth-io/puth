@@ -6,7 +6,7 @@ import { createDraft } from './drafts';
 import { type ErrorCode, ToolError, toToolError } from './errors';
 import { DEFAULT_TIMEOUT, type OperationKind, operationKind, operationSummary, runOperation, type Step, stepSchema, validateStep } from './operations';
 import { MAX_CHANGES, observableLines, outlineChanges, outlineScript, textScript } from './outline';
-import { commandLine, decodeRecording, failedRequestLine, frameOf, logLine, parseRecording, readRecording, responseLine, summarize } from './recordings';
+import { commandDetails, commandLine, decodeRecording, failedRequestLine, frameOf, logLine, parseRecording, readRecording, responseLine, summarize } from './recordings';
 import { type Session, SessionManager } from './sessions';
 
 const INSTRUCTIONS = `Puth drives a real browser for testing. Start with puth_status.
@@ -25,6 +25,8 @@ const EXPECTATION_CODES: Record<OperationKind, ErrorCode> = {
 };
 
 const MAX_VALUE = 2000;
+
+const HANDOFF_RESULT_WAIT = 15 * 1000;
 
 // How outline lines start, see outlineScript.
 const KIND_PREFIXES: Record<string, RegExp> = {
@@ -214,6 +216,9 @@ export function createServer(config: Config) {
         async ({ name, url, viewport, handoff }) => {
             const target = url === undefined ? undefined : resolveUrl(url);
             const session = handoff === undefined ? await sessions.create(name) : await sessions.claim(handoff);
+            const origin = handoff === undefined
+                ? undefined
+                : `took over "${session.handoffName}" from ${session.handoffTest}, its login and data apply`;
 
             return session.run(async () => {
                 if (viewport !== undefined) {
@@ -224,16 +229,29 @@ export function createServer(config: Config) {
                     session.record({ kind: 'navigate', step: { op: 'visit', url: target }, outcome: 'passed' });
                 }
 
-                return reply(`session ${session.id}`, ...await pageUpdate(session));
+                return reply(`session ${session.id}`, origin, ...await pageUpdate(session));
             });
         },
     );
 
     tool(
         'puth_session_close',
-        'Close a session. A test that handed off continues.',
+        'Close a session. A test that handed off continues, and its result is reported if it finishes within a few seconds.',
         { sessionId },
-        async ({ sessionId }) => reply(await sessions.close(sessionId) ? 'closed' : 'closed already'),
+        async ({ sessionId }) => {
+            const contextId = sessions.handoffContext(sessionId);
+            const closed = await sessions.close(sessionId);
+            if (! closed || contextId === undefined) {
+                return reply(closed ? 'closed' : 'closed already');
+            }
+
+            const finished = await sessions.waitForResult(contextId, HANDOFF_RESULT_WAIT);
+            if (finished === undefined) {
+                return reply('closed, the test is still running. Read its result later with puth_context.');
+            }
+
+            return reply('closed, the test finished:', ...summarize(parseRecording(decodeRecording(await sessions.recording(contextId)))));
+        },
     );
 
     tool(
@@ -407,8 +425,8 @@ export function createServer(config: Config) {
 
             return reply(
                 items.length === 0 ? 'none' : undefined,
-                ...items.map(({ id, name, status, active, createdAt, handoff }) =>
-                    `${id.slice(0, 8)} ${status} "${name}" ${age(createdAt)}${active ? ' running' : ''}${handoff ? ` handoff:${handoff.state}` : ''}`),
+                ...items.map(({ id, name, group, status, active, createdAt, handoff }) =>
+                    `${id.slice(0, 8)} ${status} "${name}"${group ? ` ${group.split('\\').pop()}` : ''} ${age(createdAt)}${active ? ' running' : ''}${handoff ? ` handoff:${handoff.state}` : ''}`),
                 more,
             );
         },
@@ -416,16 +434,17 @@ export function createServer(config: Config) {
 
     tool(
         'puth_context',
-        'Read what a test recorded: id from puth_contexts or a session, or a .puth file. view summary shows why it failed, commands, console and network list everything. frame returns the page as an image after that command number, -1 for the last one.',
+        'Read what a test recorded: id from puth_contexts or a session, or a .puth file. view summary shows what went wrong in order, commands, console and network list everything. command shows one command with its full arguments. frame returns the page as an image after that command number, -1 for the last one.',
         {
             id: z.string().optional(),
             file: z.string().optional().describe('Path to a .puth snapshot'),
             view: z.enum(['summary', 'commands', 'console', 'network']).default('summary'),
             frame: z.number().int().min(-1).optional(),
+            command: z.number().int().min(0).optional().describe('Show one command with its full arguments'),
             cursor: z.number().int().min(0).default(0),
             limit: z.number().int().min(1).max(200).default(50),
         },
-        async ({ id, file, view, frame, cursor, limit }) => {
+        async ({ id, file, view, frame, command, cursor, limit }) => {
             if ((id === undefined) === (file === undefined)) {
                 throw new ToolError('INVALID_REQUEST', 'Pass either id or file.');
             }
@@ -444,6 +463,15 @@ export function createServer(config: Config) {
                 }
 
                 return { content: [{ type: 'image' as const, data: Buffer.from(found.frame).toString('base64'), mimeType: 'image/jpeg' }] };
+            }
+
+            if (command !== undefined) {
+                const found = recording.commands[command];
+                if (found === undefined) {
+                    throw new ToolError('INVALID_REQUEST', `There is no command [${command}], the recording has ${recording.commands.length}.`);
+                }
+
+                return reply(...commandDetails(found, command));
             }
 
             if (view === 'summary') {

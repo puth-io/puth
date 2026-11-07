@@ -387,7 +387,7 @@ export class Puth {
         return this.knownContexts().map(context => ({
             id: context.id,
             name: context.test.name,
-            group: context.getGroup(),
+            group: context.getGroup() || context.testGroup,
             status: context.test.status,
             active: this.#contexts[context.id] === context,
             createdAt: context.createdAt,

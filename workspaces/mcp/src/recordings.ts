@@ -72,21 +72,43 @@ export const failedRequestLine = ({ method, url, errorText }: any) =>
 
 const isError = ({ messageType }: any) => messageType === 'error';
 
+const timeOf = (packet: any) => packet.time?.started ?? packet.time?.finished ?? packet.timestamp ?? packet.time ?? 0;
+
+const MAX_SUMMARY_EVENTS = 8;
+
+/**
+ * What went wrong, in the order it happened, so an error that came first reads as the cause of what failed later.
+ */
 export function summarize(recording: Recording): string[] {
     const { name, status, commands, logs, responses, failedRequests, frames } = recording;
-    const failedCommands = commands.flatMap((command, index) => errorOf(command) === undefined ? [] : [commandLine(command, index)]);
     const errors = logs.filter(isError);
-    const badResponses = responses.filter(response => response.status >= 400);
+    const failed = commands.flatMap((command, index) => errorOf(command) === undefined ? [] : [{ time: timeOf(command), line: commandLine(command, index) }]);
+    const recent = failed.length > 0 ? [] : commands.slice(-3).map((command, index) => ({ time: timeOf(command), line: commandLine(command, commands.length - Math.min(3, commands.length) + index) }));
+    const events = [
+        ...failed,
+        ...recent,
+        ...errors.map(log => ({ time: timeOf(log), line: logLine(log) })),
+        ...failedRequests.map(request => ({ time: timeOf(request), line: failedRequestLine(request) })),
+        ...responses.filter(response => response.status >= 400).map(response => ({ time: timeOf(response), line: responseLine(response) })),
+    ].sort((a, b) => a.time - b.time);
     const last = frames.at(-1)?.page?.url;
 
     return [
         `${status} "${name}" ${commands.length} commands, ${errors.length} console errors, ${frames.length} frames`,
         ...(last === undefined ? [] : [`last url ${last}`]),
-        ...failedCommands.slice(-3),
-        ...(failedCommands.length === 0 ? commands.slice(-3).map((command, index) => commandLine(command, commands.length - 3 + index)) : []),
-        ...errors.slice(-3).map(logLine),
-        ...failedRequests.slice(-3).map(failedRequestLine),
-        ...badResponses.slice(-3).map(responseLine),
+        ...(events.length > MAX_SUMMARY_EVENTS ? [`… ${events.length - MAX_SUMMARY_EVENTS} earlier events, see view=commands or view=console`] : []),
+        ...events.slice(-MAX_SUMMARY_EVENTS).map(({ line }) => line),
+    ];
+}
+
+/**
+ * One command with everything it got, for when the shortened list is not enough.
+ */
+export function commandDetails(command: any, index: number): string[] {
+    return [
+        `${index} ${command.func} on ${command.on?.type ?? 'unknown'}${command.time?.took === undefined ? '' : `, ${command.time.took}ms`}`,
+        ...(command.args ?? []).map((arg: unknown, position: number) => `arg ${position}: ${shorten(arg, 8000)}`),
+        ...(command.errors ?? []).map((error: any) => `✗ ${shorten(error.error?.message ?? error.expectation?.message ?? 'failed', 2000)}`),
     ];
 }
 

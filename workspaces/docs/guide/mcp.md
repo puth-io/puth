@@ -204,9 +204,9 @@ $this->browse(function (Browser $browser) use ($user) {
 2. Find it with `puth_contexts`, which shows `handoff:waiting`.
 3. Take it over with `puth_session_create` and `handoff=<id>`.
 4. Use it like any other session. `puth_export` then returns only the steps, to paste in place of `handoff()`.
-5. `puth_session_close` lets the test continue.
+5. `puth_session_close` lets the test continue, and reports its result if it finishes within a few seconds.
 
-`handoff()` returns why it ended, such as `released` or `timeout`, and ends after 30 minutes unless you pass `['timeout' => ms]`. Only contexts that offer a handoff can be taken over.
+Checks of what the application did, such as sent mail, belong in the test after `handoff()` returned, since the browser does not see them. `handoff()` returns why it ended, such as `released` or `timeout`, and ends after 30 minutes unless you pass `['timeout' => ms]`. Only contexts that offer a handoff can be taken over.
 
 ## Reading other tests
 
@@ -224,7 +224,7 @@ last url http://laravel:8080/checkout
 error Uncaught TypeError: cart is undefined
 ```
 
-`view` lists all `commands`, `console` output or `network` activity. `frame` returns the page after a command as an image, and `file` reads a `.puth` file instead, such as a CI artifact. Recordings stay available until the instance restarts or evicts them.
+The summary lists what went wrong in the order it happened, so an error that came first reads as the cause. `view` lists all `commands`, `console` output or `network` activity, and `command` shows one command with its full arguments. `frame` returns the page after a command as an image, and `file` reads a `.puth` file instead, such as a CI artifact. `query` matches test names and classes. Recordings stay available until the instance restarts or evicts them.
 
 ## Lifecycle
 

@@ -35,19 +35,23 @@ class AgentSessionTest extends PuthTestCase
 
         $this->browse(function (Browser $browser) use ($user) {
             $browser->visit('/')->loginAs($user);
-            $browser->handoff('what this is for');
 
-            // Assertions here run after the agent closed its session.
+            // Asserting the result keeps PHPUnit from marking the test as risky.
+            Assert::assertSame('released', $browser->handoff('what this is for'));
         });
+
+        // Checks here run after the agent closed its session, like Mail::assertSentCount(1).
     }
 }
 ```
 
-1. Run it in the background, it blocks until you release it.
-2. Find it with `puth_contexts`, take it over with `puth_session_create` and `handoff=<id>`.
+1. Run it in the background, for example with `&`. It blocks until you release it.
+2. Find it with `puth_contexts`, take it over with `puth_session_create` and `handoff=<id>`. The session is already logged in.
 3. Use it like any session. Your requests run inside the test, so fakes and factories apply.
 4. `puth_export` gives only the steps. Paste them in place of `handoff()`.
-5. `puth_session_close` lets the test continue.
+5. `puth_session_close` lets the test continue, and reports its result if it finishes within a few seconds.
+
+What happened in the application, like sent mail, is not visible in the browser. Check it in the test after `handoff()` returned.
 
 ## Write a test
 
@@ -58,8 +62,8 @@ class AgentSessionTest extends PuthTestCase
 
 ## Find out why a test failed
 
-1. `puth_contexts` with `status=failed` or a `query`.
-2. `puth_context` with its `id` shows the failed command, console errors and failed requests.
-3. Use `view=commands`, `view=console` or `view=network` for more, and `frame=<command>` or `frame=-1` to see the page. Images cost far more than text.
+1. `puth_contexts` with `status=failed` or a `query`, which also matches the test class.
+2. `puth_context` with its `id` shows what went wrong in the order it happened: an error before a failed command is usually its cause.
+3. Use `view=commands`, `view=console` or `view=network` for more, `command=<number>` for one command with its full arguments, and `frame=<command>` or `frame=-1` to see the page. Images cost far more than text.
 
 For a downloaded snapshot, pass `file` instead of `id`.

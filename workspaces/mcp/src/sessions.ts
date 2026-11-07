@@ -52,6 +52,8 @@ export class Session {
         public browser: Browser,
         // A context claimed from a test belongs to that test, so it is released instead of destroyed.
         readonly handoff = false,
+        readonly handoffName = '',
+        readonly handoffTest = '',
     ) {}
 
     get contextId() {
@@ -192,13 +194,43 @@ export class SessionManager {
         }
 
         const claimed = await response.json();
+        const known = (await this.contexts()).find(context => context.id === contextId);
         const caller = new RemoteContext(this.client, claimed.context, {});
-        const session = new Session(this, new Context(caller as any, claimed.context), new Browser(caller as any, claimed.browser), true);
+        const session = new Session(
+            this,
+            new Context(caller as any, claimed.context),
+            new Browser(caller as any, claimed.browser),
+            true,
+            known?.handoff?.name ?? '',
+            [known?.group.split('\\').pop(), known?.name].filter(Boolean).join(' ') || 'the test',
+        );
 
         this.sessions.set(session.id, session);
         this.scheduleIdleCheck(session);
 
         return session;
+    }
+
+    handoffContext(id: string): string|undefined {
+        const session = this.sessions.get(id);
+
+        return session?.handoff ? session.contextId : undefined;
+    }
+
+    /**
+     * Waits until a released test finished, which its context reports once the test passed or failed.
+     */
+    async waitForResult(contextId: string, timeout: number): Promise<KnownContext|undefined> {
+        const deadline = Date.now() + timeout;
+
+        while (Date.now() < deadline) {
+            const context = (await this.contexts().catch(() => [])).find(known => known.id === contextId);
+            if (context === undefined || ! context.active || context.status !== 'pending') {
+                return context;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 250));
+        }
     }
 
     async create(name: string): Promise<Session> {

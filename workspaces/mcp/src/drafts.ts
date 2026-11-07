@@ -83,6 +83,10 @@ export function createDraft({ target, name, steps, appUrl, artifacts, sessionId,
         lines.push(...translateOperation(step, target));
     }
 
+    if (fragment) {
+        unresolved.push('Checks of what the application did, like sent mail or database rows, go after handoff() in the test.');
+    }
+
     if (! steps.some(({ kind }) => kind === 'assertion')) {
         unresolved.push('No assertion was recorded, so this test would pass without verifying the workflow. Add at least one.');
     }
