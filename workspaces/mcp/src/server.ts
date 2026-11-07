@@ -4,44 +4,55 @@ import { z } from 'zod';
 import { type Config } from './config';
 import { createDraft } from './drafts';
 import { type ErrorCode, ToolError, toToolError } from './errors';
-import { inspectScript } from './inspect';
-import { DEFAULT_TIMEOUT, type OperationKind, operationSchema, runOperation } from './operations';
+import { DEFAULT_TIMEOUT, type OperationKind, operationKind, operationSummary, runOperation, type Step, stepSchema, validateStep } from './operations';
+import { outlineChanges, outlineScript, textScript } from './outline';
+import { commandLine, decodeRecording, failedRequestLine, frameOf, logLine, parseRecording, readRecording, responseLine, summarize } from './recordings';
 import { type Session, SessionManager } from './sessions';
 
-const MAX_MESSAGE = 500;
-
-const sessionId = z.string().describe('From puth_session_create');
-
-const bound = (value: unknown, limit = MAX_MESSAGE) => {
-    const text = String(value ?? '');
-
-    return text.length > limit ? `${text.slice(0, limit)}... [truncated]` : text;
-};
-
-const success = (data: Record<string, unknown>) => ({
-    content: [{ type: 'text' as const, text: JSON.stringify(data) }],
-    structuredContent: { outcome: 'passed', ...data },
-});
-
-const failure = (error: ToolError, data: Record<string, unknown> = {}) => {
-    const structured = { outcome: 'failed', error: { code: error.code, message: bound(error.message, 2000) }, ...data };
-
-    return {
-        isError: true,
-        content: [{ type: 'text' as const, text: JSON.stringify(structured) }],
-        structuredContent: structured,
-    };
-};
+const INSTRUCTIONS = `Puth drives a real browser for testing. Start with puth_status.
+Results are compact: "+"/"-" lines say what appeared or disappeared on the page, so inspect only when you need more.
+Selectors starting with ~ are position based, avoid them in tests.
+To use an application behind a login or with test data: write a test that sets this up and calls $browser->handoff(), run it in the background, then claim it with puth_session_create handoff=<id from puth_contexts>. Closing the session lets the test continue.
+puth_contexts and puth_context show any test that ran on this instance, also why it failed. After writing a test, run it and read its context there.
+Exported drafts are unverified until the real test suite passed them.`;
 
 const EXPECTATION_CODES: Record<OperationKind, ErrorCode> = {
+    navigate: 'OPERATION_FAILED',
     action: 'ACTION_FAILED',
     wait: 'WAIT_FAILED',
     assertion: 'ASSERTION_FAILED',
 };
 
+const MAX_VALUE = 2000;
+
+const sessionId = z.string();
+
+const bound = (value: string, limit = MAX_VALUE) => value.length > limit ? `${value.slice(0, limit)}… [${value.length - limit} more]` : value;
+
+// Plain text sent once. Results are read by a model, and every token of them stays in its context.
+const reply = (...lines: (string|undefined)[]) => ({
+    content: [{ type: 'text' as const, text: lines.filter(line => line !== undefined && line !== '').join('\n') }],
+});
+
+const failure = (error: ToolError, ...lines: (string|undefined)[]) => ({
+    ...reply(`ERR ${error.code}: ${bound(error.message)}`, ...lines),
+    isError: true,
+});
+
+const page = <T>(items: T[], cursor: number, limit: number) => ({
+    items: items.slice(cursor, cursor + limit),
+    more: cursor + limit < items.length ? `… ${items.length - cursor - limit} more, cursor=${cursor + limit}` : undefined,
+});
+
+const age = (time: number) => {
+    const minutes = Math.round((Date.now() - time) / 60000);
+
+    return minutes < 60 ? `${minutes}m` : `${Math.round(minutes / 60)}h`;
+};
+
 export function createServer(config: Config) {
     const sessions = new SessionManager(config);
-    const server = new McpServer({ name: 'puth', version: '0.0.0' });
+    const server = new McpServer({ name: 'puth', version: '0.0.0' }, { instructions: INSTRUCTIONS });
 
     const tool = <Shape extends z.ZodRawShape>(
         name: string,
@@ -69,90 +80,107 @@ export function createServer(config: Config) {
         return new URL(url, `${config.appUrl}/`).toString();
     };
 
-    // Always describes where the page ended up, also after a failure.
-    const evidence = async (session: Session): Promise<Record<string, unknown>> => {
-        const page: Record<string, unknown> = { sessionId: session.id, page: session.pageIndex };
-        const warnings: string[] = [];
+    /**
+     * Compares the page with what the agent last saw, and only reports the difference.
+     */
+    const pageUpdate = async (session: Session): Promise<string[]> => {
+        const lines: string[] = [];
 
         try {
-            page.url = await session.browser.url();
-            page.title = await session.browser.title();
+            const outline = JSON.parse(await session.browser.evaluate(outlineScript(null)));
+            const known = session.known;
+            const navigated = outline.url !== known.url;
+
+            if (navigated || outline.title !== known.title) {
+                lines.push(`at ${outline.url} "${outline.title}"`);
+            }
+            lines.push(...outlineChanges(known.lines, outline.lines));
+            session.known = outline;
         } catch (error) {
-            warnings.push(toToolError(error, config.instanceUrl).code === 'DIALOG_OPEN'
-                ? 'A dialog is open and blocks the page. Answer it with the dialog action of puth_action.'
-                : 'The page state could not be read.');
+            const code = toToolError(error, config.instanceUrl).code;
+            lines.push(code === 'DIALOG_OPEN' ? '! a dialog is open, answer it with the dialog operation' : `! page not readable (${code})`);
         }
 
         const diagnostics = await sessions.diagnostics().catch(() => undefined);
-        const recording = diagnostics?.contexts?.find((context: any) => context.id === session.contextId)?.recording;
-        if (recording?.truncated) {
-            warnings.push('The recording reached its budget and is missing later evidence.');
+        if (diagnostics?.contexts?.find((context: any) => context.id === session.contextId)?.recording?.truncated) {
+            lines.push('! the recording reached its budget and misses later evidence');
         }
 
-        return { ...page, ...(warnings.length > 0 ? { warnings } : {}) };
+        return lines;
     };
 
-    const runStep = async (session: Session, kind: OperationKind, step: any) => session.run(async () => {
-        try {
-            // An open dialog blocks everything except answering it.
-            if (step.operation !== 'dialog') {
-                await session.browser.setTimeout(step.timeout ?? DEFAULT_TIMEOUT);
+    const runSteps = async (session: Session, steps: Step[]) => {
+        const values: string[] = [];
+
+        for (const [index, input] of steps.entries()) {
+            const step = input.url !== undefined && ['visit', 'waitUrl'].includes(input.op)
+                ? { ...input, url: resolveUrl(input.url) }
+                : input;
+            const kind = operationKind(step);
+
+            try {
+                validateStep(step);
+
+                // An open dialog blocks everything except answering it.
+                if (step.op !== 'dialog') {
+                    await session.browser.setTimeout(step.timeout ?? DEFAULT_TIMEOUT);
+                }
+
+                const value = await session.withDeadline(() => runOperation(session, step));
+                session.record({ kind, step, outcome: 'passed' });
+
+                if (step.op === 'evaluate') {
+                    values.push(`= ${bound(String(value))}`);
+                }
+            } catch (error) {
+                const toolError = toToolError(error, config.instanceUrl, EXPECTATION_CODES[kind]);
+                session.record({ kind, step, outcome: 'failed', error: toolError.message });
+
+                const invalidated = toolError.code === 'OPERATION_TIMEOUT' || toolError.code === 'SESSION_LOST' || toolError.code === 'INSTANCE_UNAVAILABLE';
+
+                return failure(
+                    toolError,
+                    `at step ${index} ${step.op}, ${index} passed`,
+                    ...values,
+                    ...(invalidated ? [] : await pageUpdate(session)),
+                );
             }
-
-            await runOperation(session.browser, step);
-        } catch (error) {
-            const toolError = toToolError(error, config.instanceUrl, EXPECTATION_CODES[kind]);
-            session.record({ kind, step, outcome: 'failed', error: toolError.message });
-
-            return failure(toolError, await evidence(session));
         }
 
-        const result = await evidence(session);
-        session.record({ kind, step, outcome: 'passed', url: result.url as string|undefined });
-
-        return success({ ...result, operation: step.operation });
-    });
+        return reply(`ok ${steps.length}`, ...values, ...await pageUpdate(session));
+    };
 
     tool(
         'puth_status',
-        'Report the Puth endpoint, application URL, instance and sessions of this server.',
+        'Show the connection, sessions and tests waiting for a handoff.',
         {},
         async () => {
-            const base = {
-                endpoint: config.instanceUrl,
-                appUrl: config.appUrl ?? null,
-                appUrlNote: 'The application URL is resolved by the browser, so it must be reachable from where Puth runs Chrome.',
-                artifactDirectory: config.artifactDirectory,
-                sessions: sessions.list().map(({ id, createdAt, lastActivity, journal }) => ({
-                    id,
-                    createdAt,
-                    lastActivity,
-                    steps: journal.length,
-                })),
-            };
+            const health = await sessions.health();
+            const contexts = await sessions.contexts();
+            const waiting = contexts.filter(({ handoff }) => handoff?.state === 'waiting');
 
-            try {
-                return success({ ...base, connected: true, ...await sessions.health() });
-            } catch (error) {
-                return failure(toToolError(error, config.instanceUrl), { ...base, connected: false });
-            }
+            return reply(
+                `connected ${config.instanceUrl} puth ${health.version} instance ${health.instanceId.slice(0, 8)}`,
+                `app ${config.appUrl ?? 'not configured'} (opened by the browser, so it has to be reachable from where Puth runs Chrome)`,
+                `artifacts ${config.artifactDirectory}`,
+                ...sessions.list().map(({ id, journal }) => `session ${id} ${journal.length} steps`),
+                ...waiting.map(({ id, name, handoff }) => `handoff ${id.slice(0, 8)} "${handoff?.name || name}"`),
+            );
         },
     );
 
     tool(
         'puth_session_create',
-        'Create an isolated browser session. It has its own Puth context and is closed after 30 idle minutes.',
+        'Create an isolated browser session, or take over a test that called handoff().',
         {
-            name: z.string().min(1).max(200).default('MCP session').describe('Also names exported tests'),
-            url: z.string().max(4000).optional().describe('Initial URL, relative ones use the application URL'),
-            viewport: z.object({
-                width: z.number().int().min(100).max(7680),
-                height: z.number().int().min(100).max(4320),
-            }).optional(),
+            name: z.string().min(1).max(200).default('MCP session'),
+            url: z.string().max(4000).optional().describe('Relative URLs use the application URL'),
+            viewport: z.object({ width: z.number().int().min(100).max(7680), height: z.number().int().min(100).max(4320) }).optional(),
+            handoff: z.string().optional().describe('Id from puth_contexts of a test waiting for a handoff'),
         },
-        async ({ name, url, viewport }) => {
+        async ({ name, url, viewport, handoff }) => {
             const target = url === undefined ? undefined : resolveUrl(url);
-            const session = await sessions.create(name);
+            const session = handoff === undefined ? await sessions.create(name) : await sessions.claim(handoff);
 
             return session.run(async () => {
                 if (viewport !== undefined) {
@@ -160,43 +188,36 @@ export function createServer(config: Config) {
                 }
                 if (target !== undefined) {
                     await session.browser.visit(target);
-                    session.record({ kind: 'navigate', step: { operation: 'navigate', url: target }, outcome: 'passed', url: target });
+                    session.record({ kind: 'navigate', step: { op: 'visit', url: target }, outcome: 'passed' });
                 }
 
-                return success({ ...await evidence(session), name });
+                return reply(`session ${session.id}`, ...await pageUpdate(session));
             });
         },
     );
 
     tool(
         'puth_session_close',
-        'Close a session and destroy its context. Closing a closed session succeeds.',
+        'Close a session. A test that handed off continues.',
         { sessionId },
-        async ({ sessionId }) => success({ sessionId, closed: true, alreadyClosed: ! await sessions.close(sessionId) }),
+        async ({ sessionId }) => reply(await sessions.close(sessionId) ? 'closed' : 'closed already'),
     );
 
     tool(
-        'puth_navigate',
-        'Navigate the selected page of a session.',
-        { sessionId, url: z.string().min(1).max(4000).describe('Relative URLs use the application URL') },
-        async ({ sessionId, url }) => {
+        'puth_run',
+        `Run steps in order on the selected page and stop at the first failure. Actions wait until their target can be acted on and never repeat; assertions and waits retry for timeout ms (3000). Operations: ${operationSummary}. evaluate takes a JavaScript expression and returns its JSON value. text in press and clickLink is the visible text.`,
+        { sessionId, steps: z.array(stepSchema).min(1).max(50) },
+        async ({ sessionId, steps }) => {
             const session = sessions.get(sessionId);
-            const target = resolveUrl(url);
 
-            return session.run(async () => {
-                await session.browser.visit(target);
-                const result = await evidence(session);
-                session.record({ kind: 'navigate', step: { operation: 'navigate', url: target }, outcome: 'passed', url: target });
-
-                return success(result);
-            });
+            return session.run(() => runSteps(session, steps as Step[]));
         },
     );
 
     tool(
         'puth_pages',
-        'List the open pages of a session, or select the page later tools use.',
-        { sessionId, select: z.number().int().min(0).optional().describe('Index of the page to select') },
+        'List open pages, or select the one later tools use.',
+        { sessionId, select: z.number().int().min(0).optional() },
         async ({ sessionId, select }) => {
             const session = sessions.get(sessionId);
 
@@ -204,77 +225,68 @@ export function createServer(config: Config) {
                 if (select !== undefined) {
                     session.browser = await session.browser.onPage(select);
                     session.pageIndex = select;
+                    session.known = { lines: [] };
                 }
 
-                return success({
-                    sessionId: session.id,
-                    selected: session.pageIndex,
-                    pages: (await session.browser.openPages()).map(page => ({ ...page, title: bound(page.title, 200) })),
-                });
+                const pages = await session.browser.openPages();
+
+                return reply(...pages.map(({ index, url, title }) => `${index === session.pageIndex ? '*' : ' '}${index} ${url} "${bound(title, 80)}"`));
             });
         },
     );
 
     tool(
         'puth_inspect',
-        'Read the URL, title, visible text and interactive elements of the selected page, with selector candidates.',
+        'Outline the selected page in document order: headings (#), alerts (!), and interactive elements as: kind "label" selector =value flags. Use selector to look at a part of the page, text for its visible text.',
         {
             sessionId,
-            maxText: z.number().int().min(0).max(20000).default(4000),
-            maxElements: z.number().int().min(0).max(200).default(50),
+            selector: z.string().max(1000).optional().describe('Limit to this element'),
+            text: z.boolean().default(false).describe('Return the visible text instead'),
+            cursor: z.number().int().min(0).default(0),
+            limit: z.number().int().min(1).max(300).default(60),
         },
-        async ({ sessionId, maxText, maxElements }) => {
+        async ({ sessionId, selector, text, cursor, limit }) => {
             const session = sessions.get(sessionId);
 
-            return session.run(async () => success({
-                sessionId: session.id,
-                page: session.pageIndex,
-                ...JSON.parse(await session.browser.evaluate(inspectScript(maxText, maxElements))),
-            }));
+            return session.run(async () => {
+                if (text) {
+                    return reply(bound(String(await session.browser.evaluate(textScript(selector ?? null))), 8000));
+                }
+
+                const outline = JSON.parse(await session.browser.evaluate(outlineScript(selector ?? null)));
+                if (outline.missing) {
+                    throw new ToolError('INVALID_REQUEST', `Nothing matches [${selector}].`);
+                }
+                if (selector === undefined) {
+                    session.known = outline;
+                }
+
+                const { items, more } = page<string>(outline.lines, cursor, limit);
+
+                return reply(`at ${outline.url} "${outline.title}"`, ...items, more);
+            });
         },
-    );
-
-    tool(
-        'puth_action',
-        'Perform one action on the selected page. It waits until its target can be acted on and is never repeated.',
-        { sessionId, action: operationSchema('action') as any },
-        async ({ sessionId, action }) => runStep(sessions.get(sessionId), 'action', action),
-    );
-
-    tool(
-        'puth_wait',
-        'Wait for a condition on the selected page, 3 seconds by default.',
-        { sessionId, wait: operationSchema('wait') as any },
-        async ({ sessionId, wait }) => runStep(sessions.get(sessionId), 'wait', wait),
-    );
-
-    tool(
-        'puth_assert',
-        'Check something on the selected page. A failed assertion is a tool error, not a successful validation.',
-        { sessionId, assertion: operationSchema('assertion') as any },
-        async ({ sessionId, assertion }) => runStep(sessions.get(sessionId), 'assertion', assertion),
     );
 
     tool(
         'puth_screenshot',
-        'Capture the selected page as an image and save it as an artifact.',
-        { sessionId },
-        async ({ sessionId }) => {
+        'Capture the selected page or one element as an image, and save it as an artifact. Prefer puth_inspect, images cost far more.',
+        { sessionId, selector: z.string().max(1000).optional() },
+        async ({ sessionId, selector }) => {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
-                const data = await session.browser.screenshot({ type: 'png', encoding: 'base64' }) as unknown as string;
-                const file = await session.artifactPath(`screenshot-${session.artifacts.length + 1}.png`);
+                const options = { type: 'jpeg', quality: 60, encoding: 'base64' };
+                const target = selector === undefined ? session.browser : await session.browser.firstOrFail(selector);
+                const data = await (target as any).screenshot(options) as string;
+                const file = await session.artifactPath(`screenshot-${session.artifacts.length + 1}.jpg`);
                 await writeFile(file, Buffer.from(data, 'base64'));
-
-                const result = { ...await evidence(session), artifact: file };
 
                 return {
                     content: [
-                        { type: 'image' as const, data, mimeType: 'image/png' },
-                        { type: 'text' as const, text: JSON.stringify(result) },
+                        { type: 'image' as const, data, mimeType: 'image/jpeg' },
+                        { type: 'text' as const, text: file },
                     ],
-                    structuredContent: { outcome: 'passed', ...result },
                 };
             });
         },
@@ -282,59 +294,132 @@ export function createServer(config: Config) {
 
     tool(
         'puth_events',
-        'Read console output, errors or network activity of a session, one page of results at a time.',
+        'Read console, errors or network activity of a session. network shows failed requests, HTTP errors and page or API calls, all=true adds the rest.',
         {
             sessionId,
             type: z.enum(['console', 'errors', 'network']),
+            all: z.boolean().default(false),
             cursor: z.number().int().min(0).default(0),
-            limit: z.number().int().min(1).max(200).default(50),
+            limit: z.number().int().min(1).max(200).default(30),
         },
-        async ({ sessionId, type, cursor, limit }) => {
+        async ({ sessionId, type, all, cursor, limit }) => {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
-                let events: Record<string, unknown>[];
+                const lines = await eventLines(session, type, all);
+                const { items, more } = page(lines, cursor, limit);
 
-                if (type === 'network') {
-                    const responses = await session.context.getSnapshotsByType('response');
-                    events = responses.map(({ method, status, url, resourceType }: any) => ({ method, status, url: bound(url), resourceType }));
-                } else {
-                    const logs = await session.context.getSnapshotsByType('log');
-                    const isError = (log: any) => log.messageType === 'error';
-                    const selected = logs.filter((log: any) => isError(log) === (type === 'errors'));
+                return reply(items.length === 0 ? 'none' : undefined, ...items, more);
+            });
+        },
+    );
 
-                    events = selected.map((log: any) => ({ type: log.messageType, text: bound(log.text), timestamp: log.timestamp }));
+    const eventLines = async ({ context }: Session, type: string, all: boolean): Promise<string[]> => {
+        if (type === 'network') {
+            const failed = await context.getSnapshotsByType('update');
+            const responses = await context.getSnapshotsByType('response');
+            const relevant = responses.filter(({ status, resourceType }: any) =>
+                all || status >= 400 || ['document', 'xhr', 'fetch'].includes(resourceType));
 
-                    if (type === 'errors') {
-                        const commands = await session.context.getSnapshotsByType('command');
-                        events.push(...commands.filter((command: any) => command.errors?.length > 0).map((command: any) => ({
-                            type: 'command',
-                            text: bound(`${command.func}: ${command.errors[0].error?.message ?? 'failed'}`),
-                            timestamp: command.timestamp,
-                        })));
-                    }
+            return [
+                ...failed.filter(({ specific }: any) => specific === 'request.failed').map(failedRequestLine),
+                ...relevant.map(responseLine),
+            ];
+        }
+
+        const logs = await context.getSnapshotsByType('log');
+        const selected = logs.filter(({ messageType }: any) => (messageType === 'error') === (type === 'errors')).map(logLine);
+        if (type !== 'errors') {
+            return selected;
+        }
+
+        const commands = await context.getSnapshotsByType('command');
+
+        return [...selected, ...commands.flatMap((command: any, index: number) => command.errors?.length > 0 ? [commandLine(command, index)] : [])];
+    };
+
+    tool(
+        'puth_contexts',
+        'List tests and sessions this Puth instance knows about, including finished ones, newest first. Read one with puth_context.',
+        {
+            status: z.enum(['failed', 'successful', 'pending']).optional(),
+            query: z.string().max(200).optional().describe('Part of the test name or group'),
+            limit: z.number().int().min(1).max(100).default(20),
+        },
+        async ({ status, query, limit }) => {
+            const normalize = (value: string) => value.toLowerCase().replace(/[\s_-]+/g, ' ');
+            const needle = query === undefined ? undefined : normalize(query);
+            const matching = (await sessions.contexts())
+                .filter(context => context.group !== 'mcp')
+                .filter(context => status === undefined || context.status === status)
+                .filter(context => needle === undefined || normalize(`${context.name} ${context.group}`).includes(needle))
+                .sort((a, b) => b.createdAt - a.createdAt);
+            const { items, more } = page(matching, 0, limit);
+
+            return reply(
+                items.length === 0 ? 'none' : undefined,
+                ...items.map(({ id, name, status, active, createdAt, handoff }) =>
+                    `${id.slice(0, 8)} ${status} "${name}" ${age(createdAt)}${active ? ' running' : ''}${handoff ? ` handoff:${handoff.state}` : ''}`),
+                more,
+            );
+        },
+    );
+
+    tool(
+        'puth_context',
+        'Read what a test recorded: id from puth_contexts or a session, or a .puth file. view summary shows why it failed, commands, console and network list everything. frame returns the page as an image after that command number, -1 for the last one.',
+        {
+            id: z.string().optional(),
+            file: z.string().optional().describe('Path to a .puth snapshot'),
+            view: z.enum(['summary', 'commands', 'console', 'network']).default('summary'),
+            frame: z.number().int().min(-1).optional(),
+            cursor: z.number().int().min(0).default(0),
+            limit: z.number().int().min(1).max(200).default(50),
+        },
+        async ({ id, file, view, frame, cursor, limit }) => {
+            if ((id === undefined) === (file === undefined)) {
+                throw new ToolError('INVALID_REQUEST', 'Pass either id or file.');
+            }
+
+            const packets = file !== undefined
+                ? await readRecording(file).catch(() => {
+                    throw new ToolError('CONTEXT_NOT_FOUND', `Can not read snapshot [${file}].`);
+                })
+                : decodeRecording(await sessions.recording(await sessions.resolveContext(id!)));
+            const recording = parseRecording(packets);
+
+            if (frame !== undefined) {
+                const found = frameOf(recording, frame === -1 ? undefined : frame);
+                if (found === undefined) {
+                    return reply('no frames recorded');
                 }
 
-                const next = cursor + limit;
+                return { content: [{ type: 'image' as const, data: Buffer.from(found.frame).toString('base64'), mimeType: 'image/jpeg' }] };
+            }
 
-                return success({
-                    sessionId: session.id,
-                    events: events.slice(cursor, next),
-                    total: events.length,
-                    nextCursor: next < events.length ? next : null,
-                });
-            });
+            if (view === 'summary') {
+                return reply(...summarize(recording));
+            }
+
+            const lines = view === 'commands'
+                ? recording.commands.map(commandLine)
+                : view === 'console'
+                    ? recording.logs.map(logLine)
+                    : [...recording.failedRequests.map(failedRequestLine), ...recording.responses.map(responseLine)];
+            const { items, more } = page<string>(lines, cursor, limit);
+
+            return reply(items.length === 0 ? 'none' : undefined, ...items, more);
         },
     );
 
     tool(
         'puth_export',
-        'Export a snapshot for the Puth GUI, the recorded steps, or a PHP or Laravel test draft. Drafts are unverified until the real test suite passed them.',
+        'Export a snapshot file, the recorded steps, or a php or laravel test draft of the passed steps. After a handoff, a draft holds only the steps for that test. Drafts are unverified until the real test suite passed them.',
         {
             sessionId,
             format: z.enum(['snapshot', 'steps', 'php', 'laravel']),
-            name: z.string().min(1).max(200).default('Recorded workflow').describe('Name of the exported test'),
-            steps: z.array(z.number().int().min(0)).max(1000).optional().describe('Journal indices to export, by default all passed steps'),
+            name: z.string().min(1).max(200).default('Recorded workflow'),
+            steps: z.array(z.number().int().min(0)).max(1000).optional().describe('Step numbers, by default all passed steps'),
         },
         async ({ sessionId, format, name, steps }) => {
             const session = sessions.get(sessionId);
@@ -345,11 +430,12 @@ export function createServer(config: Config) {
                     const file = await session.artifactPath(`snapshot-${session.artifacts.length + 1}.puth`);
                     await writeFile(file, snapshot);
 
-                    return success({ sessionId: session.id, artifact: file, bytes: snapshot.byteLength });
+                    return reply(file);
                 }
 
                 if (format === 'steps') {
-                    return success({ sessionId: session.id, steps: session.journal });
+                    return reply(...session.journal.map(({ index, step: { op, timeout, ...parameters }, outcome }) =>
+                        `${index} ${outcome === 'failed' ? '✗ ' : ''}${op} ${bound(JSON.stringify(parameters), 200)}`));
                 }
 
                 const selected = steps === undefined
@@ -357,23 +443,23 @@ export function createServer(config: Config) {
                     : steps.map((index) => {
                         const step = session.journal[index];
                         if (step === undefined) {
-                            throw new ToolError('INVALID_REQUEST', `There is no journal step with index [${index}].`);
+                            throw new ToolError('INVALID_REQUEST', `There is no step [${index}].`);
                         }
 
                         return step;
                     });
 
-                return success({
+                const { code } = createDraft({
+                    target: format,
+                    name,
+                    steps: selected,
+                    appUrl: config.appUrl,
+                    artifacts: session.artifacts,
                     sessionId: session.id,
-                    ...createDraft({
-                        target: format,
-                        name,
-                        steps: selected,
-                        appUrl: config.appUrl,
-                        artifacts: session.artifacts,
-                        sessionId: session.id,
-                    }),
+                    fragment: session.handoff,
                 });
+
+                return reply(code);
             });
         },
     );

@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { type Browser, Context, RemotePuthClient } from '@puth/client';
+import { Browser, Context, RemoteContext, RemotePuthClient } from '@puth/client';
 import { type Config } from './config';
 import { instanceUnavailable, ToolError } from './errors';
-import { type OperationKind } from './operations';
+import { type OperationKind, type Step } from './operations';
 
 export type JournalStep = {
     index: number;
-    kind: OperationKind|'navigate';
-    step: { operation: string } & Record<string, any>;
+    kind: OperationKind;
+    step: Step;
     outcome: 'passed'|'failed';
     error?: string;
     page: number;
@@ -18,14 +18,30 @@ export type JournalStep = {
 
 export type Health = { version: string; instanceId: string; capabilities: string[] };
 
+export type KnownContext = {
+    id: string;
+    name: string;
+    group: string;
+    status: string;
+    active: boolean;
+    createdAt: number;
+    recording: { packets: number, bytes: number, truncated: boolean };
+    handoff?: { name: string, state: string };
+};
+
+const SHORT_ID = 8;
+
 export class Session {
-    readonly id = randomUUID();
+    readonly id = randomUUID().slice(0, SHORT_ID);
     readonly createdAt = Date.now();
     readonly journal: JournalStep[] = [];
     readonly artifacts: string[] = [];
 
     pageIndex = 0;
     lastActivity = Date.now();
+
+    // What the agent knows about the page, so results only have to report what changed.
+    known: { url?: string, title?: string, lines: string[] } = { lines: [] };
 
     private queue: Promise<unknown> = Promise.resolve();
     private invalidated = false;
@@ -34,6 +50,8 @@ export class Session {
         private readonly manager: SessionManager,
         readonly context: Context,
         public browser: Browser,
+        // A context claimed from a test belongs to that test, so it is released instead of destroyed.
+        readonly handoff = false,
     ) {}
 
     get contextId() {
@@ -48,19 +66,21 @@ export class Session {
      * Operations of a session run one after the other, sessions run independently of each other.
      */
     run<T>(operation: () => Promise<T>): Promise<T> {
-        const result = this.queue.then(() => this.runWithDeadline(operation));
+        const result = this.queue.then(() => {
+            this.lastActivity = Date.now();
+            this.manager.scheduleIdleCheck(this);
+
+            return operation();
+        });
         this.queue = result.catch(() => {});
 
         return result;
     }
 
-    private async runWithDeadline<T>(operation: () => Promise<T>): Promise<T> {
+    async withDeadline<T>(operation: () => Promise<T>): Promise<T> {
         if (this.invalidated) {
             throw new ToolError('SESSION_INVALIDATED', 'This session was closed after an operation timed out. Create a new session.');
         }
-
-        this.lastActivity = Date.now();
-        this.manager.scheduleIdleCheck(this);
 
         const { operationTimeout } = this.manager.config;
         let timer: NodeJS.Timeout|undefined;
@@ -124,13 +144,61 @@ export class SessionManager {
     }
 
     async snapshot(session: Session): Promise<Uint8Array> {
-        // Only reached with a session of this server, which is what makes reading the context allowed.
-        const response = await fetch(`${this.config.instanceUrl}/context/${session.contextId}/snapshot`);
+        return this.recording(session.contextId);
+    }
+
+    async contexts(): Promise<KnownContext[]> {
+        const response = await fetch(`${this.config.instanceUrl}/contexts`).catch(() => {
+            throw instanceUnavailable(this.config.instanceUrl);
+        });
+
+        return response.json();
+    }
+
+    /**
+     * Finds a context by the start of its id, or through a session of this server.
+     */
+    async resolveContext(id: string): Promise<string> {
+        const session = this.sessions.get(id);
+        if (session !== undefined) {
+            return session.contextId;
+        }
+
+        const matches = (await this.contexts()).filter(context => context.id.startsWith(id));
+        if (matches.length !== 1) {
+            throw new ToolError('CONTEXT_NOT_FOUND', matches.length === 0 ? `No context [${id}] on this instance.` : `[${id}] matches several contexts.`);
+        }
+
+        return matches[0].id;
+    }
+
+    async recording(contextId: string): Promise<Uint8Array> {
+        const response = await fetch(`${this.config.instanceUrl}/context/${contextId}/snapshot`);
         if (! response.ok) {
-            throw new ToolError('SESSION_LOST', 'The Puth instance does not know this session anymore.');
+            throw new ToolError('CONTEXT_NOT_FOUND', `No recording of context [${contextId}] on this instance.`);
         }
 
         return new Uint8Array(await response.arrayBuffer());
+    }
+
+    /**
+     * Takes over a context whose test offered it. Everything else stays out of reach.
+     */
+    async claim(id: string): Promise<Session> {
+        const contextId = await this.resolveContext(id);
+        const response = await fetch(`${this.config.instanceUrl}/context/${contextId}/handoff`, { method: 'POST' });
+        if (! response.ok) {
+            throw new ToolError('HANDOFF_UNAVAILABLE', `Context [${id}] does not wait for a handoff, or it was claimed already.`);
+        }
+
+        const claimed = await response.json();
+        const caller = new RemoteContext(this.client, claimed.context, {});
+        const session = new Session(this, new Context(caller as any, claimed.context), new Browser(caller as any, claimed.browser), true);
+
+        this.sessions.set(session.id, session);
+        this.scheduleIdleCheck(session);
+
+        return session;
     }
 
     async create(name: string): Promise<Session> {
@@ -176,7 +244,7 @@ export class SessionManager {
             if (this.closed.has(id)) {
                 return false;
             }
-            throw new ToolError('SESSION_NOT_FOUND', `Session [${id}] does not belong to this server.`);
+            throw new ToolError('SESSION_NOT_FOUND', `Session [${id}] does not belong to this server. Only sessions from puth_session_create can be used.`);
         }
 
         this.sessions.delete(id);
@@ -184,7 +252,11 @@ export class SessionManager {
         clearTimeout(this.idleTimers.get(id));
         this.idleTimers.delete(id);
 
-        await session.context.destroy({ immediately: true }).catch(() => {});
+        if (session.handoff) {
+            await fetch(`${this.config.instanceUrl}/context/${session.contextId}/handoff`, { method: 'DELETE' }).catch(() => {});
+        } else {
+            await session.context.destroy({ immediately: true }).catch(() => {});
+        }
 
         return true;
     }

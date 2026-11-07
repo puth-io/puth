@@ -3,7 +3,9 @@ import { ExpectationFailedError } from '@puth/client';
 export type ErrorCode =
     | 'ACTION_FAILED'
     | 'ASSERTION_FAILED'
+    | 'CONTEXT_NOT_FOUND'
     | 'DIALOG_OPEN'
+    | 'HANDOFF_UNAVAILABLE'
     | 'INSTANCE_UNAVAILABLE'
     | 'INVALID_REQUEST'
     | 'OPERATION_FAILED'
@@ -46,7 +48,7 @@ export function toToolError(error: any, instanceUrl: string, expectationCode: Er
         return new ToolError('PAGE_CLOSED', message);
     }
     if (message.includes('open dialog')) {
-        return new ToolError('DIALOG_OPEN', 'A dialog blocks the page. Answer it with the dialog action of puth_action.');
+        return new ToolError('DIALOG_OPEN', 'A dialog blocks the page, answer it with the dialog operation.');
     }
     if (error instanceof ExpectationFailedError) {
         return new ToolError(expectationCode, message);

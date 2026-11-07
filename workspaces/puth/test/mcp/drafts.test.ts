@@ -1,10 +1,11 @@
 import { assert, describe, it } from 'vitest';
 import { createDraft } from '../../../mcp/src/drafts';
+import { outlineChanges } from '../../../mcp/src/outline';
 import { operations, phpString, translateOperation } from '../../../mcp/src/operations';
 
 const step = (index: number, kind: any, details: any) => ({ index, kind, step: details, outcome: 'passed' as const, page: 0 });
-const visit = step(0, 'navigate', { operation: 'navigate', url: 'http://app.test/login' });
-const assertion = step(1, 'assertion', { operation: 'see', text: 'Welcome', timeout: 3000 });
+const visit = step(0, 'navigate', { op: 'visit', url: 'http://app.test/login' });
+const assertion = step(1, 'assertion', { op: 'see', text: 'Welcome', timeout: 3000 });
 const draft = (target: any, steps: any[]) => createDraft({
     target,
     name: 'User logs in',
@@ -32,7 +33,7 @@ describe('Test drafts', () => {
     });
 
     it('never infer success from completed actions', () => {
-        const click = step(1, 'action', { operation: 'click', selector: '#save', timeout: 3000 });
+        const click = step(1, 'action', { op: 'click', selector: '#save', timeout: 3000 });
         const { code, unresolved } = draft('laravel', [visit, click]);
 
         assert.notInclude(code, '->assert');
@@ -40,7 +41,7 @@ describe('Test drafts', () => {
     });
 
     it('do not contain credentials', () => {
-        const typed = step(1, 'action', { operation: 'type', selector: 'input[name="password"]', text: 'hunter2', timeout: 3000 });
+        const typed = step(1, 'action', { op: 'type', selector: 'input[name="password"]', text: 'hunter2', timeout: 3000 });
 
         for (const target of ['laravel', 'php']) {
             const { code, unresolved } = draft(target, [visit, typed, assertion]);
@@ -56,7 +57,7 @@ describe('Test drafts', () => {
     });
 
     it('mark workflows that leave the application', () => {
-        const external = step(1, 'navigate', { operation: 'navigate', url: 'http://other.test/' });
+        const external = step(1, 'navigate', { op: 'visit', url: 'http://other.test/' });
 
         assert.isTrue(draft('laravel', [visit, external, assertion]).unresolved.some((item) => item.includes('other.test')));
     });
@@ -68,7 +69,7 @@ describe('Test drafts', () => {
     });
 
     it('rank selectors and report the weaker ones', () => {
-        const click = (selector: string, index: number) => step(index, 'action', { operation: 'click', selector, timeout: 3000 });
+        const click = (selector: string, index: number) => step(index, 'action', { op: 'click', selector, timeout: 3000 });
         const { selectorWarnings } = draft('php', [
             visit,
             click('[puth="save"]', 1),
@@ -84,9 +85,23 @@ describe('Test drafts', () => {
     });
 
     it('set custom timeouts in a way all clients treat alike', () => {
-        const slow = step(1, 'wait', { operation: 'waitForVisible', selector: '#done', timeout: 8000 });
+        const slow = step(1, 'wait', { op: 'waitFor', selector: '#done', timeout: 8000 });
 
         assert.include(draft('laravel', [visit, slow, assertion]).code, "->setTimeout(8000)\n                ->waitFor('#done')");
+    });
+
+    it('hold only the steps after a handoff', () => {
+        const { code } = createDraft({ target: 'laravel', name: 'x', steps: [visit, assertion], appUrl: 'http://app.test', artifacts: [], sessionId: 's', fragment: true });
+
+        assert.include(code, "$browser->visit('/login')");
+        assert.notInclude(code, 'class ');
+    });
+
+    it('turn what a client can not do into a TODO', () => {
+        const upload = step(1, 'action', { op: 'upload', selector: '#file', file: '/tmp/a.pdf', timeout: 3000 });
+
+        assert.include(draft('laravel', [visit, upload, assertion]).code, "attach('#file', '/tmp/a.pdf')");
+        assert.include(draft('php', [visit, upload, assertion]).code, '// TODO: upload /tmp/a.pdf');
     });
 
     it('escape strings', () => {
@@ -96,19 +111,36 @@ describe('Test drafts', () => {
 
 describe('Operation registry', () => {
     it('translates every operation', () => {
-        const parameters = { selector: '#x', text: 'y', value: 'z', keys: ['a'], url: '/u', path: '/p', title: 't', count: 1, response: 'accept' };
+        const parameters = { selector: '#x', text: 'y', value: 'z', keys: ['a'], url: '/u', to: '#y', file: '/f', script: '1', count: 1, response: 'accept' };
 
-        for (const operation of Object.keys(operations)) {
+        for (const op of Object.keys(operations)) {
             for (const target of ['php', 'laravel'] as const) {
-                assert.isNotEmpty(translateOperation({ operation, ...parameters } as any, target), operation);
+                assert.isNotEmpty(translateOperation({ op, ...parameters }, target), op);
             }
         }
     });
 
     it('knows that Laravel takes keys as arguments', () => {
-        const step = { operation: 'keypress', selector: '#x', keys: ['a', 'b'] } as any;
+        const step = { op: 'keys', selector: '#x', keys: ['a', 'b'] };
 
         assert.deepEqual(translateOperation(step, 'laravel'), ["keys('#x', 'a', 'b')"]);
         assert.deepEqual(translateOperation(step, 'php'), ["keys('#x', ['a', 'b'])"]);
+    });
+});
+
+describe('outlineChanges', () => {
+    it('reports what appeared and disappeared', () => {
+        assert.deepEqual(outlineChanges(['a', 'b'], ['b', 'c']), ['+ c', '- a']);
+    });
+
+    it('is empty when nothing changed', () => {
+        assert.deepEqual(outlineChanges(['a'], ['a']), []);
+    });
+
+    it('stays short when a whole page changed', () => {
+        const changes = outlineChanges([], Array.from({ length: 40 }, (_, index) => `line ${index}`));
+
+        assert.lengthOf(changes, 16);
+        assert.include(changes.at(-1), '25 more changes');
     });
 });

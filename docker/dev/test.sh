@@ -10,3 +10,4 @@ for suite in node-test docs-test php-test java-test laravel-test; do
     docker compose run --rm --no-deps "$suite"
 done
 ./docker/dev/test-mcp-drafts.sh
+./docker/dev/test-mcp-handoff.sh

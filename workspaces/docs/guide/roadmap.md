@@ -15,13 +15,13 @@ Puth focuses on stable browser testing with native clients, a realtime GUI and s
 
 - [x] MCP server for exploring applications and validating behavior
 - [x] PHP and Laravel test drafts, verified by the real test runners
-- [x] Project configuration and documentation
+- [x] Taking over tests that hand their browser to an agent, with the portal working
+- [x] Reading what any test on an instance recorded
+- [x] Project configuration, a Claude Code skill and documentation
 
 ## Later
 
 - HTTP transport for the MCP server
-- Attaching agents to contexts of running tests
-- Portal configuration through MCP
 - Running repository tests through MCP
 
 For current development, see the [GitHub repository](https://github.com/puth-io/puth), [open issues](https://github.com/puth-io/puth/issues) and [releases](https://github.com/puth-io/puth/releases).

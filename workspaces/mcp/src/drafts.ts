@@ -1,4 +1,4 @@
-import { type ExportTarget, phpString, translateOperation } from './operations';
+import { DEFAULT_TIMEOUT, type ExportTarget, phpString, translateOperation } from './operations';
 import { type JournalStep } from './sessions';
 
 const SECRET_FIELD = /pass|secret|token|api[-_]?key/i;
@@ -31,9 +31,11 @@ export type DraftOptions = {
     appUrl?: string;
     artifacts: string[];
     sessionId: string;
+    // Only the steps, for pasting after a handoff in the test that offered it.
+    fragment?: boolean;
 };
 
-export function createDraft({ target, name, steps, appUrl, artifacts, sessionId }: DraftOptions) {
+export function createDraft({ target, name, steps, appUrl, artifacts, sessionId, fragment = false }: DraftOptions) {
     const unresolved: string[] = [];
     const selectorWarnings: { selector: string, strength: string }[] = [];
     const lines: string[] = [];
@@ -51,10 +53,10 @@ export function createDraft({ target, name, steps, appUrl, artifacts, sessionId 
 
     for (const { step, kind, page } of steps) {
         if (page !== 0) {
-            unresolved.push(`Step "${step.operation}" ran on page ${page}. Switching pages is not exported, add it by hand.`);
+            unresolved.push(`Step "${step.op}" ran on page ${page}. Switching pages is not exported, add it by hand.`);
         }
 
-        if (kind === 'navigate') {
+        if (step.op === 'visit') {
             lines.push(`visit(${phpString(relative(step.url))})`);
             continue;
         }
@@ -66,19 +68,19 @@ export function createDraft({ target, name, steps, appUrl, artifacts, sessionId 
             }
         }
 
-        if (step.timeout !== undefined && step.timeout !== 3000) {
+        if (step.timeout !== undefined && step.timeout !== DEFAULT_TIMEOUT) {
             // Not a timeout parameter, because clients scale those differently.
             lines.push(`setTimeout(${step.timeout})`);
         }
 
-        if (step.operation === 'type' && SECRET_FIELD.test(step.selector)) {
+        if (step.op === 'type' && SECRET_FIELD.test(step.selector)) {
             const variable = 'PUTH_TEST_SECRET';
             unresolved.push(`The value typed into ${step.selector} looks like a credential. Provide it through ${variable}.`);
             lines.push(`type(${phpString(step.selector)}, ${target === 'laravel' ? `env('${variable}')` : `getenv('${variable}')`})`);
             continue;
         }
 
-        lines.push(...translateOperation(step as any, target));
+        lines.push(...translateOperation(step, target));
     }
 
     if (! steps.some(({ kind }) => kind === 'assertion')) {
@@ -86,16 +88,30 @@ export function createDraft({ target, name, steps, appUrl, artifacts, sessionId 
     }
     unresolved.push('Database state, users and other data the session relied on were not captured. Set them up in the test.');
 
-    const chain = lines.map((line, index) => index === 0 ? `$browser->${line}` : `${' '.repeat(target === 'laravel' ? 16 : 12)}->${line}`).join('\n');
+    const indent = ' '.repeat(fragment ? 4 : (target === 'laravel' ? 16 : 12));
+    let started = false;
+    const chain = lines.map((line) => {
+        if (line.startsWith('//')) {
+            return indent + line;
+        }
+
+        const prefix = started ? `${indent}->` : '$browser->';
+        started = true;
+
+        return prefix + line;
+    }).join('\n');
     const notes = [
         '// UNVERIFIED: exported by puth-mcp and not run yet. Only a passing run of the real test suite verifies it.',
         `// Session: ${sessionId}`,
         ...artifacts.map(file => `// Evidence: ${file}`),
         ...[...new Set(unresolved)].map(item => `// TODO: ${item}`),
+        ...selectorWarnings.map(({ selector, strength }) => `// TODO: ${selector} is a ${strength} selector, prefer a puth attribute.`),
     ];
     const indented = (indent: string) => notes.map(note => indent + note).join('\n');
 
-    const code = target === 'laravel'
+    const code = fragment
+        ? `${notes.join('\n')}\n${chain};\n`
+        : target === 'laravel'
         ? `<?php
 
 namespace Tests\\Browser;

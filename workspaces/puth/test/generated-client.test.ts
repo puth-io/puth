@@ -48,6 +48,10 @@ describe('Generated client', () => {
         assert.strictEqual(await element.evaluate('(element) => element.id'), 'actions-focus');
     });
 
+    it('passes generated objects as references', () => {
+        assert.deepEqual(JSON.parse(JSON.stringify([browser])), [browser.getRepresentation()]);
+    });
+
     it('rejects failed expectations', async () => {
         await browser.setTimeout(100);
 

@@ -34,6 +34,11 @@ export abstract class RemoteObject {
         return this.representation;
     }
 
+    // Objects are sent as a reference when they are passed as a parameter.
+    toJSON(): GenericRepresentation {
+        return this.representation;
+    }
+
     protected async callFunc(func: string, parameters: any[] = []): Promise<any> {
         return resolveResponse(this, this.context, await this.context.call(this.representation, func, parameters));
     }

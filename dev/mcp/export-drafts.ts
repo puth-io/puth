@@ -24,32 +24,36 @@ await client.connect(new StdioClientTransport({
 async function tool(name: string, args: Record<string, unknown>) {
     const result: any = await client.callTool({ name, arguments: args });
     if (result.isError) {
-        throw new Error(`${name} failed: ${JSON.stringify(result.structuredContent)}`);
+        throw new Error(`${name} failed: ${result.content[0].text}`);
     }
 
-    return result.structuredContent;
+    return result.content[0].text as string;
 }
 
-const { sessionId } = await tool('puth_session_create', { name: 'Mcp draft', url: '/' });
-const assertion = (step: Record<string, unknown>) => tool('puth_assert', { sessionId, assertion: step });
-const action = (step: Record<string, unknown>) => tool('puth_action', { sessionId, action: step });
+const created = await tool('puth_session_create', { name: 'Mcp draft', url: '/' });
+const sessionId = created.match(/^session (\w+)/)![1];
 
-await assertion({ operation: 'title', title: 'laravel puth testbed' });
-
-await tool('puth_navigate', { sessionId, url: `${fixtures}/` });
-await assertion({ operation: 'title', title: 'Playground | Puth' });
-await tool('puth_wait', { sessionId, wait: { operation: 'waitForVisible', selector: '#actions-click-button' } });
-await action({ operation: 'click', selector: '#actions-click-button' });
-await assertion({ operation: 'seeIn', selector: '#actions-click-verify', text: 'clicked button' });
-await action({ operation: 'type', selector: '#actions-focus', text: "it's typed" });
-await assertion({ operation: 'value', selector: '#actions-focus', value: "it's typed" });
-await action({ operation: 'keypress', selector: '#actions-clear', keys: ['a', 'b'] });
-await action({ operation: 'select', selector: '#actions-select', value: 'orange' });
-await assertion({ operation: 'value', selector: '#actions-select', value: 'orange' });
+await tool('puth_run', {
+    sessionId,
+    steps: [
+        { op: 'title', text: 'laravel puth testbed' },
+        { op: 'visit', url: `${fixtures}/` },
+        { op: 'title', text: 'Playground | Puth' },
+        { op: 'waitFor', selector: '#actions-click-button' },
+        { op: 'click', selector: '#actions-click-button' },
+        { op: 'seeIn', selector: '#actions-click-verify', text: 'clicked button' },
+        { op: 'type', selector: '#actions-focus', text: "it's typed" },
+        { op: 'value', selector: '#actions-focus', value: "it's typed" },
+        { op: 'keys', selector: '#actions-clear', keys: ['a', 'b'] },
+        { op: 'select', selector: '#actions-select', value: 'orange' },
+        { op: 'value', selector: '#actions-select', value: 'orange' },
+    ],
+});
 
 for (const [format, directory] of Object.entries(targets)) {
-    const { code, className, status } = await tool('puth_export', { sessionId, format, name: 'Mcp draft' });
-    if (status !== 'unverified') {
+    const className = 'McpDraftTest';
+    const code = await tool('puth_export', { sessionId, format, name: 'Mcp draft' });
+    if (! code.includes('UNVERIFIED')) {
         throw new Error('Exported drafts must be labeled as unverified.');
     }
 

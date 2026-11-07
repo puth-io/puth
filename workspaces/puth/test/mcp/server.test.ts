@@ -1,4 +1,4 @@
-import { readFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,7 +6,7 @@ import { decode } from '@msgpack/msgpack';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { Context, RemotePuthClient } from '@puth/client';
-import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest';
 import { fixtureAltUrl, fixtureUrl, makePuthServer } from '../helper';
 import { LiveViewSnapshotPlugin } from '../../src/plugins/LiveViewPlugin';
 import { PUTH_EXTENSION_CODEC } from '../../src/handlers/WebsocketHandler';
@@ -74,42 +74,50 @@ async function connect(instanceUrl: string, environment: Record<string, string> 
     const tool = async (name: string, args: Record<string, unknown> = {}) => {
         const result: any = await client.callTool({ name, arguments: args });
 
-        return { ...result, data: result.structuredContent };
+        return { ...result, text: result.content.find(({ type }) => type === 'text')?.text ?? '' };
     };
-    const session = async (args: Record<string, unknown> = {}) =>
-        (await tool('puth_session_create', { url: fixtureUrl(), ...args })).data.sessionId as string;
+    const session = async (args: Record<string, unknown> = {}) => {
+        const { text } = await tool('puth_session_create', { url: fixtureUrl(), ...args });
 
-    return { client, tool, session, close, protocolErrors };
+        return text.match(/^session (\w+)/)![1] as string;
+    };
+    const run = (sessionId: string, ...steps: Record<string, unknown>[]) => tool('puth_run', { sessionId, steps });
+
+    return { client, tool, session, run, close, protocolErrors };
 }
 
+const start = async (environment = {}) => ({ ...await startInstance().then(async (started) => ({ ...started, ...await connect(started.url, environment) })) });
+
 describe('MCP protocol', () => {
-    it('advertises its tools and nothing that runs arbitrary code', async () => {
-        const { url } = await startInstance();
-        const { client } = await connect(url);
+    it('advertises its tools', async () => {
+        const { client } = await start();
 
         const { tools } = await client.listTools();
 
         assert.sameMembers(tools.map(({ name }) => name), [
-            'puth_action', 'puth_assert', 'puth_events', 'puth_export', 'puth_inspect', 'puth_navigate', 'puth_pages',
-            'puth_screenshot', 'puth_session_close', 'puth_session_create', 'puth_status', 'puth_wait',
+            'puth_context', 'puth_contexts', 'puth_events', 'puth_export', 'puth_inspect', 'puth_pages', 'puth_run',
+            'puth_screenshot', 'puth_session_close', 'puth_session_create', 'puth_status',
         ]);
-        assert.notInclude(JSON.stringify(tools), 'evaluate');
+    }, 20000);
+
+    it('tells agents how to work with it', async () => {
+        const { client } = await start();
+
+        assert.include(client.getInstructions(), 'handoff');
     }, 20000);
 
     it('keeps stdout to the protocol', async () => {
-        const { url } = await startInstance();
-        const { tool, session, protocolErrors } = await connect(url);
+        const { tool, session, run, protocolErrors } = await start();
 
         const sessionId = await session();
-        await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'not there', timeout: 100 } });
+        await run(sessionId, { op: 'see', text: 'not there', timeout: 100 });
         await tool('puth_status');
 
         assert.deepEqual(protocolErrors, []);
     }, 20000);
 
     it('closes owned contexts on shutdown', async () => {
-        const { instance, url } = await startInstance();
-        const { session, close } = await connect(url);
+        const { instance, session, close } = await start();
         await session();
         assert.lengthOf(instance.diagnostics().contexts, 1);
 
@@ -118,16 +126,20 @@ describe('MCP protocol', () => {
         await vi.waitFor(() => assert.lengthOf(instance.diagnostics().contexts, 0), { timeout: 5000 });
     }, 20000);
 
-    it('rejects invalid input', async () => {
-        const { url } = await startInstance();
-        const { tool, session } = await connect(url);
+    it('rejects steps with missing parameters using a stable code', async () => {
+        const { session, run } = await start();
         const sessionId = await session();
 
-        const unknown = await tool('puth_action', { sessionId, action: { operation: 'evaluate', script: '1' } });
-        const incomplete = await tool('puth_assert', { sessionId, assertion: { operation: 'seeIn', selector: 'body' } });
+        const { isError, text } = await run(sessionId, { op: 'seeIn', selector: 'body' });
 
-        assert.isTrue(unknown.isError);
-        assert.isTrue(incomplete.isError);
+        assert.isTrue(isError);
+        assert.match(text, /^ERR INVALID_REQUEST: seeIn needs text/);
+    }, 20000);
+
+    it('rejects unknown operations', async () => {
+        const { session, run } = await start();
+
+        assert.isTrue((await run(await session(), { op: 'unknown' })).isError);
     }, 20000);
 });
 
@@ -173,89 +185,78 @@ describe('Project configuration', () => {
         await client.connect(transport);
         cleanups.push(() => client.close());
 
-        const { structuredContent: status }: any = await client.callTool({ name: 'puth_status', arguments: {} });
+        const { content }: any = await client.callTool({ name: 'puth_status', arguments: {} });
 
-        assert.isTrue(status.connected);
-        assert.strictEqual(status.endpoint, url);
-        assert.strictEqual(status.appUrl, 'http://laravel:8080');
-        assert.strictEqual(status.artifactDirectory, directory);
+        assert.include(content[0].text, `connected ${url}`);
+        assert.include(content[0].text, 'app http://laravel:8080');
+        assert.include(content[0].text, `artifacts ${directory}`);
     }, 20000);
 });
 
 describe('puth_status', () => {
-    it('reports the instance and the addresses in use', async () => {
-        const { instance, url } = await startInstance();
-        const { tool, session } = await connect(url);
+    it('reports the instance and addresses in use', async () => {
+        const { instance, url, tool, session } = await start();
         const sessionId = await session();
 
-        const { data } = await tool('puth_status');
+        const { text } = await tool('puth_status');
 
-        assert.strictEqual(data.endpoint, url);
-        assert.strictEqual(data.instanceId, instance.health().instanceId);
-        assert.strictEqual(data.appUrl, fixtureUrl().replace(/\/$/, ''));
-        assert.include(data.appUrlNote, 'browser');
-        assert.deepEqual(data.sessions.map(({ id }) => id), [sessionId]);
+        assert.include(text, `connected ${url}`);
+        assert.include(text, instance.health().instanceId.slice(0, 8));
+        assert.include(text, `app ${fixtureUrl().replace(/\/$/, '')}`);
+        assert.include(text, 'opened by the browser');
+        assert.include(text, `session ${sessionId}`);
     }, 20000);
 
     it('explains how to start an unavailable instance without starting one', async () => {
         const { tool } = await connect('http://127.0.0.1:9');
 
-        const { isError, data } = await tool('puth_status');
+        const { isError, text } = await tool('puth_status');
 
         assert.isTrue(isError);
-        assert.strictEqual(data.error.code, 'INSTANCE_UNAVAILABLE');
-        assert.include(data.error.message, 'docker compose up');
-        assert.isFalse(data.connected);
+        assert.match(text, /^ERR INSTANCE_UNAVAILABLE: /);
+        assert.include(text, 'docker compose up');
     }, 20000);
 });
 
 describe('Sessions', () => {
     it('are isolated in their own contexts', async () => {
-        const { instance, url } = await startInstance();
-        const { tool, session } = await connect(url);
-
+        const { instance, session, run } = await start();
         const first = await session();
         const second = await session();
-        await tool('puth_navigate', { sessionId: first, url: fixtureAltUrl() });
+
+        await run(first, { op: 'visit', url: fixtureAltUrl() });
 
         assert.lengthOf(instance.diagnostics().contexts, 2);
-        assert.isFalse((await tool('puth_assert', { sessionId: first, assertion: { operation: 'see', text: 'Alternate origin' } })).isError ?? false);
-        assert.isTrue((await tool('puth_assert', { sessionId: second, assertion: { operation: 'see', text: 'Alternate origin', timeout: 100 } })).isError);
+        assert.notOk((await run(first, { op: 'see', text: 'Alternate origin' })).isError);
+        assert.isTrue((await run(second, { op: 'see', text: 'Alternate origin', timeout: 100 })).isError);
     }, 20000);
 
     it('can be closed repeatedly', async () => {
-        const { tool, session } = { ...await connect((await startInstance()).url) };
+        const { tool, session } = await start();
         const sessionId = await session();
 
-        assert.isFalse((await tool('puth_session_close', { sessionId })).data.alreadyClosed);
-        assert.isTrue((await tool('puth_session_close', { sessionId })).data.alreadyClosed);
-
-        const { data } = await tool('puth_inspect', { sessionId });
-        assert.strictEqual(data.error.code, 'SESSION_CLOSED');
+        assert.strictEqual((await tool('puth_session_close', { sessionId })).text, 'closed');
+        assert.strictEqual((await tool('puth_session_close', { sessionId })).text, 'closed already');
+        assert.match((await tool('puth_inspect', { sessionId })).text, /^ERR SESSION_CLOSED/);
     }, 20000);
 
-    it('refuse contexts of test runners', async () => {
-        const { instance, url } = await startInstance();
-        const { tool } = await connect(url);
+    it('refuse contexts of test runners that did not offer a handoff', async () => {
+        const { instance, url, tool } = await start();
         const runner = await Context.create(new RemotePuthClient(url));
         const { id } = runner.getRepresentation();
 
-        for (const name of ['puth_inspect', 'puth_session_close']) {
-            const { data, isError } = await tool(name, { sessionId: id });
-
-            assert.isTrue(isError);
-            assert.strictEqual(data.error.code, 'SESSION_NOT_FOUND');
-        }
+        assert.match((await tool('puth_inspect', { sessionId: id })).text, /^ERR SESSION_NOT_FOUND/);
+        assert.match((await tool('puth_session_close', { sessionId: id })).text, /^ERR SESSION_NOT_FOUND/);
+        assert.match((await tool('puth_session_create', { handoff: id })).text, /^ERR HANDOFF_UNAVAILABLE/);
 
         assert.lengthOf(instance.diagnostics().contexts, 1);
         await runner.destroy({ immediately: true });
     }, 20000);
 
     it('run operations of one session one at a time and sessions next to each other', async () => {
-        const { url } = await startInstance();
-        const { tool, session } = await connect(url);
+        const { session, run } = await start();
         const [first, second] = [await session(), await session()];
-        const wait = (sessionId: string) => tool('puth_wait', { sessionId, wait: { operation: 'waitForText', text: 'never', timeout: 800 } });
+        const wait = (sessionId: string) => run(sessionId, { op: 'waitText', text: 'never', timeout: 800 });
         const timed = async (work: Promise<unknown>) => {
             const startedAt = performance.now();
             await work;
@@ -272,24 +273,22 @@ describe('Sessions', () => {
     }, 20000);
 
     it('are closed after being idle', async () => {
-        const { instance, url } = await startInstance();
-        const { tool, session } = await connect(url, { PUTH_MCP_IDLE_TIMEOUT: '500' });
+        const { instance, tool, session } = await start({ PUTH_MCP_IDLE_TIMEOUT: '500' });
         const sessionId = await session();
 
         await vi.waitFor(() => assert.lengthOf(instance.diagnostics().contexts, 0), { timeout: 5000 });
 
-        assert.strictEqual((await tool('puth_inspect', { sessionId })).data.error.code, 'SESSION_CLOSED');
+        assert.match((await tool('puth_inspect', { sessionId })).text, /^ERR SESSION_CLOSED/);
     }, 20000);
 
     it('are invalidated when an operation can not finish in time', async () => {
-        const { instance, url } = await startInstance();
-        const { tool, session } = await connect(url, { PUTH_MCP_OPERATION_TIMEOUT: '1500' });
+        const { instance, tool, session, run } = await start({ PUTH_MCP_OPERATION_TIMEOUT: '1500' });
         const sessionId = await session();
 
-        const { data } = await tool('puth_wait', { sessionId, wait: { operation: 'waitForVisible', selector: '#never', timeout: 5000 } });
+        const { text } = await run(sessionId, { op: 'waitFor', selector: '#never', timeout: 5000 });
 
-        assert.strictEqual(data.error.code, 'OPERATION_TIMEOUT');
-        assert.strictEqual((await tool('puth_inspect', { sessionId })).data.error.code, 'SESSION_CLOSED');
+        assert.match(text, /^ERR OPERATION_TIMEOUT/);
+        assert.match((await tool('puth_inspect', { sessionId })).text, /^ERR SESSION_CLOSED/);
         await vi.waitFor(() => assert.lengthOf(instance.diagnostics().contexts, 0), { timeout: 5000 });
     }, 20000);
 
@@ -299,224 +298,478 @@ describe('Sessions', () => {
         const sessionId = await session();
 
         await destroy();
-        assert.strictEqual((await tool('puth_inspect', { sessionId })).data.error.code, 'INSTANCE_UNAVAILABLE');
+        assert.match((await tool('puth_inspect', { sessionId })).text, /^ERR INSTANCE_UNAVAILABLE/);
 
         await startInstance(Number(new URL(url).port));
-        assert.strictEqual((await tool('puth_inspect', { sessionId })).data.error.code, 'SESSION_LOST');
+        assert.match((await tool('puth_inspect', { sessionId })).text, /^ERR SESSION_LOST/);
     }, 25000);
 });
 
-describe('Browser tools', () => {
-    it('navigate relative to the application', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
-        const sessionId = await session({ url: undefined });
-
-        const { data } = await tool('puth_navigate', { sessionId, url: '/first?page=1' });
-
-        assert.strictEqual(data.url, fixtureUrl('/first?page=1'));
-    }, 20000);
-
-    it('inspect the page with ranked selector candidates and bounded output', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+describe('puth_run', () => {
+    it('runs steps in one call and reports only what changed', async () => {
+        const { session, run } = await start();
         const sessionId = await session();
 
-        const { data } = await tool('puth_inspect', { sessionId, maxText: 100, maxElements: 5 });
+        const { text, isError } = await run(
+            sessionId,
+            { op: 'type', selector: '#actions-focus', text: 'hello' },
+            { op: 'value', selector: '#actions-focus', value: 'hello' },
+        );
 
-        assert.strictEqual(data.title, 'Playground | Puth');
-        assert.isAtMost(data.text.length, 100);
-        assert.isTrue(data.textTruncated);
-        assert.lengthOf(data.elements, 5);
-        assert.isAbove(data.totalElements, 5);
-        assert.isTrue(data.elements.every(({ selectors }) => selectors.every(({ stability }) => ['stable', 'medium', 'weak'].includes(stability))));
+        assert.notOk(isError);
+        assert.match(text, /^ok 2/);
+        assert.include(text, '=\\"hello\\"'.replace(/\\/g, ''));
+        assert.notInclude(text, 'Playground | Puth');
+        assert.isBelow(text.split('\n').length, 5);
     }, 20000);
 
-    it('act, wait and assert', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+    it('stops at the first failure and says where', async () => {
+        const { session, run, tool } = await start();
         const sessionId = await session();
 
-        const typed = await tool('puth_action', { sessionId, action: { operation: 'type', selector: '#actions-type input', text: 'hello' } });
-        const value = await tool('puth_assert', { sessionId, assertion: { operation: 'value', selector: '#actions-type input', value: 'hello' } });
-        const waited = await tool('puth_wait', { sessionId, wait: { operation: 'waitForVisible', selector: '#actions-focus' } });
-
-        for (const result of [typed, value, waited]) {
-            assert.notOk(result.isError);
-            assert.strictEqual(result.data.outcome, 'passed');
-            assert.strictEqual(result.data.title, 'Playground | Puth');
-        }
-    }, 20000);
-
-    it('report a failed assertion as an error with what was found', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
-        const sessionId = await session();
-
-        const { isError, data } = await tool('puth_assert', { sessionId, assertion: { operation: 'title', title: 'Wrong', timeout: 100 } });
+        const { isError, text } = await run(
+            sessionId,
+            { op: 'title', text: 'Playground | Puth' },
+            { op: 'title', text: 'Wrong', timeout: 100 },
+            { op: 'click', selector: '#actions-click-button' },
+        );
 
         assert.isTrue(isError);
-        assert.strictEqual(data.outcome, 'failed');
-        assert.strictEqual(data.error.code, 'ASSERTION_FAILED');
-        assert.include(data.error.message, 'Playground | Puth');
-        assert.strictEqual(data.url, fixtureUrl());
+        assert.match(text, /^ERR ASSERTION_FAILED: .*Playground \| Puth/);
+        assert.include(text, 'at step 1 title, 1 passed');
+        assert.lengthOf((await tool('puth_export', { sessionId, format: 'steps' })).text.split('\n'), 3);
     }, 20000);
 
-    it('report why an action failed', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+    it('reports the new page after a navigation', async () => {
+        const { session, run } = await start();
         const sessionId = await session();
 
-        const { data } = await tool('puth_action', { sessionId, action: { operation: 'click', selector: '#never', timeout: 100 } });
+        const { text } = await run(sessionId, { op: 'visit', url: '/first?page=1' }, { op: 'visit', url: fixtureAltUrl() });
 
-        assert.strictEqual(data.error.code, 'ACTION_FAILED');
+        assert.include(text, `at ${fixtureAltUrl()} "Puth Fixtures | Alternate origin"`);
     }, 20000);
 
-    it('answer dialogs', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+    it('finds things by their visible text', async () => {
+        const { session, run } = await start();
         const sessionId = await session();
 
-        const opened = await tool('puth_action', { sessionId, action: { operation: 'click', selector: '#dialog-confirm' } });
-        assert.isTrue(opened.data.warnings.some((warning) => warning.includes('A dialog is open')));
+        const { isError } = await run(
+            sessionId,
+            { op: 'press', text: 'click me' },
+            { op: 'seeIn', selector: '#actions-click-verify', text: 'clicked button' },
+            { op: 'visit', url: fixtureAltUrl() },
+            { op: 'clickLink', text: 'Playground' },
+            { op: 'title', text: 'Playground | Puth' },
+        );
 
-        const blocked = await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'anything' } });
-        assert.strictEqual(blocked.data.error.code, 'DIALOG_OPEN');
-
-        const answered = await tool('puth_action', { sessionId, action: { operation: 'dialog', response: 'accept' } });
-        assert.notOk(answered.isError);
-        assert.notOk((await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'Puth' } })).isError);
+        assert.notOk(isError);
     }, 20000);
 
+    it('goes back, forward and reloads', async () => {
+        const { session, run } = await start();
+        const sessionId = await session();
+
+        const { isError } = await run(
+            sessionId,
+            { op: 'visit', url: fixtureAltUrl() },
+            { op: 'back' },
+            { op: 'title', text: 'Playground | Puth' },
+            { op: 'forward' },
+            { op: 'reload' },
+            { op: 'see', text: 'Alternate origin' },
+        );
+
+        assert.notOk(isError);
+    }, 20000);
+
+    it('evaluates scripts and returns their value', async () => {
+        const { session, run } = await start();
+        const sessionId = await session();
+
+        const { text } = await run(sessionId, { op: 'evaluate', script: `({ title: document.title, sum: 1 + 1 })` });
+
+        assert.include(text, '= {"title":"Playground | Puth","sum":2}');
+    }, 20000);
+
+    it('uploads files', async () => {
+        const { session, run } = await start();
+        const sessionId = await session();
+        await run(sessionId, { op: 'evaluate', script: `document.body.insertAdjacentHTML('beforeend', '<input id="file" type="file">')` });
+
+        const { isError } = await run(
+            sessionId,
+            { op: 'upload', selector: '#file', file: cli },
+            { op: 'evaluate', script: `document.querySelector('#file').files[0].name` },
+        );
+
+        assert.notOk(isError);
+    }, 20000);
+
+    it('explains why an action failed', async () => {
+        const { session, run } = await start();
+
+        const { text } = await run(await session(), { op: 'click', selector: '#never', timeout: 100 });
+
+        assert.match(text, /^ERR ACTION_FAILED/);
+    }, 20000);
+
+    it('handles dialogs', async () => {
+        const { session, run } = await start();
+        const sessionId = await session();
+
+        const opened = await run(sessionId, { op: 'click', selector: '#dialog-confirm' });
+        assert.include(opened.text, 'a dialog is open');
+
+        assert.match((await run(sessionId, { op: 'see', text: 'anything' })).text, /^ERR DIALOG_OPEN/);
+        assert.notOk((await run(sessionId, { op: 'dialog', response: 'accept' })).isError);
+        assert.notOk((await run(sessionId, { op: 'see', text: 'Puth' })).isError);
+    }, 20000);
+});
+
+describe('puth_inspect', () => {
+    const page = `data:text/html,${encodeURIComponent(`
+        <title>Form</title><h1>Sign in</h1><p role="alert">Wrong password</p>
+        <form id="login">
+            <label for="email">Email address</label><input id="email" name="email" type="email" required value="a@b.c">
+            <label>Password <input name="password" type="password" value="hunter2"></label>
+            <select name="plan"><option value="free">Free</option><option value="pro" selected>Pro</option></select>
+            <button>Sign in</button>
+        </form>
+        <div hidden><button>Hidden</button></div>
+    `)}`;
+
+    it('outlines the page with labels, structure and values', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        const { text } = await tool('puth_inspect', { sessionId });
+
+        assert.include(text, '# Sign in');
+        assert.include(text, '! Wrong password');
+        assert.include(text, 'input:email "Email address" #email ="a@b.c" required');
+        assert.include(text, 'input:password "Password" input[name="password"]');
+        assert.include(text, 'select "" select[name="plan"] ="pro" of free|pro');
+        const [, ...lines] = text.split('\n');
+        assert.notInclude(lines.join('\n'), 'hunter2');
+        assert.notInclude(lines.join('\n'), 'Hidden');
+    }, 20000);
+
+    it('can look at a part of the page', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        const { text } = await tool('puth_inspect', { sessionId, selector: '#login' });
+
+        assert.notInclude(text, '# Sign in');
+        assert.include(text, '#email');
+    }, 20000);
+
+    it('bounds its output and says how to continue', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session();
+
+        const first = await tool('puth_inspect', { sessionId, limit: 5 });
+        const next = Number(first.text.match(/cursor=(\d+)/)![1]);
+        const second = await tool('puth_inspect', { sessionId, limit: 5, cursor: next });
+
+        assert.lengthOf(first.text.split('\n'), 7);
+        assert.notStrictEqual(first.text, second.text);
+    }, 20000);
+
+    it('returns the visible text on request', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        assert.include((await tool('puth_inspect', { sessionId, text: true })).text, 'Wrong password');
+    }, 20000);
+
+    it('reports an unknown part of the page', async () => {
+        const { tool, session } = await start();
+
+        assert.match((await tool('puth_inspect', { sessionId: await session(), selector: '#never' })).text, /^ERR INVALID_REQUEST/);
+    }, 20000);
+});
+
+describe('Other browser tools', () => {
     it('select pages', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+        const { tool, session, run } = await start();
         const sessionId = await session();
-        await tool('puth_action', { sessionId, action: { operation: 'click', selector: `a[href="${fixtureAltUrl()}"]` } });
+        await run(sessionId, { op: 'click', selector: `a[href="${fixtureAltUrl()}"]` });
 
-        await vi.waitFor(async () => assert.lengthOf((await tool('puth_pages', { sessionId })).data.pages, 2), { timeout: 3000 });
-        const { data } = await tool('puth_pages', { sessionId, select: 1 });
+        await vi.waitFor(async () => assert.lengthOf((await tool('puth_pages', { sessionId })).text.split('\n'), 2), { timeout: 3000 });
+        const { text } = await tool('puth_pages', { sessionId, select: 1 });
 
-        assert.strictEqual(data.selected, 1);
-        assert.notOk((await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'Alternate origin' } })).isError);
+        assert.include(text, '*1');
+        assert.notOk((await run(sessionId, { op: 'see', text: 'Alternate origin' })).isError);
     }, 20000);
 
-    it('return a screenshot as an image and an artifact', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+    it('return screenshots as images and artifacts', async () => {
+        const { tool, session } = await start();
         const sessionId = await session();
 
-        const { content, data } = await tool('puth_screenshot', { sessionId });
+        const { content, text } = await tool('puth_screenshot', { sessionId });
+        const element = await tool('puth_screenshot', { sessionId, selector: '#actions-focus' });
 
         assert.strictEqual(content[0].type, 'image');
-        assert.strictEqual(content[0].mimeType, 'image/png');
-        assert.isTrue(existsSync(data.artifact));
-        assert.include(data.artifact, path.join(directory, sessionId));
-        assert.deepEqual([...readFileSync(data.artifact).subarray(1, 4)], [...Buffer.from('PNG')]);
+        assert.strictEqual(content[0].mimeType, 'image/jpeg');
+        assert.isTrue(existsSync(text));
+        assert.include(text, path.join(directory, sessionId));
+        assert.isBelow(element.content[0].data.length, content[0].data.length);
     }, 20000);
 
     it('page through events of their own session only', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
-        const sessionId = await session({ url: fixtureUrl('/plain.txt') });
+        const { tool, session, run } = await start();
+        const sessionId = await session({ url: undefined });
         const other = await session();
         const script = `<script>console.log('one'); console.log('two'); console.log('three'); console.error('bad')</script>`;
-        await tool('puth_navigate', { sessionId, url: `data:text/html,${encodeURIComponent(script)}` });
+        await run(sessionId, { op: 'visit', url: `data:text/html,${encodeURIComponent(script)}` });
 
-        await vi.waitFor(async () => assert.strictEqual((await tool('puth_events', { sessionId, type: 'console' })).data.total, 3));
+        await vi.waitFor(async () => assert.lengthOf((await tool('puth_events', { sessionId, type: 'console' })).text.split('\n'), 3));
 
         const first = await tool('puth_events', { sessionId, type: 'console', limit: 2 });
-        const second = await tool('puth_events', { sessionId, type: 'console', limit: 2, cursor: first.data.nextCursor });
         const errors = await tool('puth_events', { sessionId, type: 'errors' });
         const network = await tool('puth_events', { sessionId: other, type: 'network' });
 
-        assert.deepEqual(first.data.events.map(({ text }) => text), ['one', 'two']);
-        assert.deepEqual(second.data.events.map(({ text }) => text), ['three']);
-        assert.isNull(second.data.nextCursor);
-        assert.isTrue(errors.data.events.some(({ text }) => text === 'bad'));
-        assert.isTrue(network.data.events.some(({ url, status }) => url === fixtureUrl() && status === 200));
+        assert.deepEqual(first.text.split('\n'), ['log one', 'log two', '… 1 more, cursor=2']);
+        assert.include(errors.text, 'error bad');
+        assert.include(network.text, '200 GET / document');
+        assert.notInclude(network.text, 'bootstrap');
+    }, 20000);
+
+    it('show failed requests', async () => {
+        const { tool, session, run } = await start();
+        const sessionId = await session();
+        await run(sessionId, { op: 'evaluate', script: `fetch('http://127.0.0.1:9/gone').catch(() => 'failed')` });
+
+        await vi.waitFor(async () => assert.include((await tool('puth_events', { sessionId, type: 'network' })).text, 'FAILED GET /gone net::ERR'));
+    }, 20000);
+});
+
+describe('Reading other contexts', () => {
+    async function failedTest(url: string) {
+        const context = await Context.create(new RemotePuthClient(url), { snapshot: true, test: { name: 'checkout fails' } });
+        const browser = await context.createBrowserShim();
+        await browser.setTimeout(100);
+        await browser.visit(fixtureUrl());
+        await browser.evaluate(`console.error('payment widget broke')`);
+        await browser.click('#pay').catch(() => {});
+        await context.testFailed();
+
+        return context;
+    }
+
+    it('lists them newest first and without agent sessions', async () => {
+        const { url, tool, session } = await start();
+        await session({ name: 'mine' });
+        const context = await failedTest(url);
+        await context.destroy({ immediately: true });
+
+        const { text } = await tool('puth_contexts');
+
+        assert.include(text, 'failed "checkout fails"');
+        assert.notInclude(text, 'mine');
+    }, 20000);
+
+    it('filters them', async () => {
+        const { url, tool } = await start();
+        const context = await failedTest(url);
+
+        assert.include((await tool('puth_contexts', { query: 'CHECKOUT' })).text, 'checkout fails');
+        assert.include((await tool('puth_contexts', { query: 'checkout_fails' })).text, 'checkout fails');
+        assert.strictEqual((await tool('puth_contexts', { status: 'successful' })).text, 'none');
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('explains why a finished test failed', async () => {
+        const { url, tool } = await start();
+        const context = await failedTest(url);
+        const { id } = context.getRepresentation();
+        await context.destroy({ immediately: true });
+
+        const { text } = await tool('puth_context', { id: id.slice(0, 8) });
+
+        assert.include(text, 'failed "checkout fails"');
+        assert.include(text, 'click(#pay');
+        assert.include(text, '✗ Waited 100ms for selector');
+        assert.include(text, 'error payment widget broke');
+    }, 20000);
+
+    it('lists commands, console and network', async () => {
+        const { url, tool } = await start();
+        const context = await failedTest(url);
+        const id = context.getRepresentation().id;
+
+        assert.include((await tool('puth_context', { id, view: 'commands' })).text, 'visit(');
+        assert.include((await tool('puth_context', { id, view: 'console' })).text, 'payment widget broke');
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('shows the page at a command', async () => {
+        const { url, tool } = await start();
+        const context = await failedTest(url);
+
+        await vi.waitFor(async () => {
+            const { content } = await tool('puth_context', { id: context.getRepresentation().id, frame: -1 });
+            assert.strictEqual(content[0].type, 'image');
+        }, { timeout: 3000 });
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('reads snapshot files', async () => {
+        const { tool, session, run } = await start();
+        const sessionId = await session({ name: 'exported' });
+        await run(sessionId, { op: 'visible', selector: '#never', timeout: 100 });
+        const file = (await tool('puth_export', { sessionId, format: 'snapshot' })).text;
+
+        const { text } = await tool('puth_context', { file });
+
+        assert.include(text, '"exported"');
+        assert.include(text, '✗ Waited 100ms');
+    }, 20000);
+
+    it('reports unknown contexts and files', async () => {
+        const { tool } = await start();
+
+        assert.match((await tool('puth_context', { id: 'nope' })).text, /^ERR CONTEXT_NOT_FOUND/);
+        assert.match((await tool('puth_context', { file: '/nope.puth' })).text, /^ERR CONTEXT_NOT_FOUND/);
+        assert.match((await tool('puth_context', {})).text, /^ERR INVALID_REQUEST/);
+    }, 20000);
+});
+
+describe('Taking over a test', () => {
+    async function waitingTest(url: string) {
+        const context = await Context.create(new RemotePuthClient(url), { snapshot: true, test: { name: 'logged in test' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl());
+
+        return { context, browser, result: context.handoff(browser, { name: 'dashboard' }) };
+    }
+
+    it('drives the browser of the test and hands it back', async () => {
+        const { url, tool, run } = await start();
+        const { context, browser, result } = await waitingTest(url);
+
+        await vi.waitFor(async () => assert.include((await tool('puth_contexts')).text, 'handoff:waiting'));
+        assert.include((await tool('puth_status')).text, 'handoff ');
+
+        const id = context.getRepresentation().id.slice(0, 8);
+        const { text } = await tool('puth_session_create', { handoff: id });
+        const sessionId = text.match(/^session (\w+)/)![1];
+
+        await run(sessionId, { op: 'visit', url: fixtureAltUrl() }, { op: 'see', text: 'Alternate origin' });
+
+        const draft = (await tool('puth_export', { sessionId, format: 'laravel' })).text;
+        assert.include(draft, "assertSee('Alternate origin')");
+        assert.notInclude(draft, 'class ');
+
+        await tool('puth_session_close', { sessionId });
+
+        assert.strictEqual(await result, 'released');
+        assert.strictEqual(await browser.url(), fixtureAltUrl());
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('can not be taken twice', async () => {
+        const { url, tool } = await start();
+        const { context } = await waitingTest(url);
+        const id = context.getRepresentation().id;
+        await vi.waitFor(async () => assert.include((await tool('puth_contexts')).text, 'handoff:waiting'));
+
+        await tool('puth_session_create', { handoff: id });
+
+        assert.match((await tool('puth_session_create', { handoff: id })).text, /^ERR HANDOFF_UNAVAILABLE/);
+    }, 20000);
+
+    it('releases the test when the server shuts down', async () => {
+        const { url, tool, close } = await start();
+        const { context, result } = await waitingTest(url);
+        await vi.waitFor(async () => assert.include((await tool('puth_contexts')).text, 'handoff:waiting'));
+        await tool('puth_session_create', { handoff: context.getRepresentation().id });
+
+        await close();
+
+        assert.strictEqual(await result, 'released');
+        await context.destroy({ immediately: true });
     }, 20000);
 });
 
 describe('puth_export', () => {
     it('saves a snapshot the GUI can read', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+        const { tool, session } = await start();
         const sessionId = await session();
 
-        const { data } = await tool('puth_export', { sessionId, format: 'snapshot' });
+        const { text } = await tool('puth_export', { sessionId, format: 'snapshot' });
 
-        const packets = decode(readFileSync(data.artifact), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        const packets = decode(readFileSync(text), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
         assert.strictEqual(packets[0].type, 'context');
-        assert.strictEqual(data.bytes, readFileSync(data.artifact).byteLength);
     }, 20000);
 
     it('saves a snapshot of a failure that the GUI shows', async () => {
-        const { url } = await startInstance();
-        const { tool, session } = await connect(url);
+        const { url, tool, session, run } = await start();
         const sessionId = await session({ name: 'failed in mcp' });
-        await tool('puth_assert', { sessionId, assertion: { operation: 'visible', selector: '#never', timeout: 100 } });
-        const { data } = await tool('puth_export', { sessionId, format: 'snapshot' });
+        await run(sessionId, { op: 'visible', selector: '#never', timeout: 100 });
+        const file = (await tool('puth_export', { sessionId, format: 'snapshot' })).text;
 
         const context = await Context.create(new RemotePuthClient(url));
         const gui = await context.createBrowserShim();
         await gui.visit(url);
         const input = await gui.firstOrFail('input[type=file]');
-        await input.uploadFile(data.artifact);
+        await input.uploadFile(file);
 
         await gui.waitForText('failed in mcp');
         await gui.assertSeeIn('[data-messagetype="error"]', 'Waited 100ms for selector');
         await context.destroy({ immediately: true });
     }, 20000);
 
-    it('returns the journal', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+    it('lists the journal', async () => {
+        const { tool, session, run } = await start();
         const sessionId = await session();
-        await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'Puth' } });
-        await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'not there', timeout: 100 } });
+        await run(sessionId, { op: 'see', text: 'Puth' });
+        await run(sessionId, { op: 'see', text: 'not there', timeout: 100 });
 
-        const { data } = await tool('puth_export', { sessionId, format: 'steps' });
+        const lines = (await tool('puth_export', { sessionId, format: 'steps' })).text.split('\n');
 
-        assert.deepEqual(data.steps.map(({ kind, outcome }) => [kind, outcome]), [
-            ['navigate', 'passed'],
-            ['assertion', 'passed'],
-            ['assertion', 'failed'],
-        ]);
+        assert.match(lines[0], /^0 visit /);
+        assert.match(lines[1], /^1 see /);
+        assert.match(lines[2], /^2 ✗ see /);
     }, 20000);
 
     it('drafts tests from passed steps, or the selected ones', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
+        const { tool, session, run } = await start();
         const sessionId = await session();
-        await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'Puth' } });
-        await tool('puth_assert', { sessionId, assertion: { operation: 'see', text: 'not there', timeout: 100 } });
+        await run(sessionId, { op: 'see', text: 'Puth' });
+        await run(sessionId, { op: 'see', text: 'not there', timeout: 100 });
         await tool('puth_inspect', { sessionId });
 
-        const all = (await tool('puth_export', { sessionId, format: 'laravel', name: 'Playground loads' })).data;
-        const selected = (await tool('puth_export', { sessionId, format: 'php', steps: [0] })).data;
+        const all = (await tool('puth_export', { sessionId, format: 'laravel', name: 'Playground loads' })).text;
+        const selected = (await tool('puth_export', { sessionId, format: 'php', steps: [0] })).text;
 
-        assert.strictEqual(all.status, 'unverified');
-        assert.strictEqual(all.className, 'PlaygroundLoadsTest');
-        assert.include(all.code, "assertSee('Puth')");
-        assert.notInclude(all.code, 'not there');
-        assert.notInclude(selected.code, 'assertSee');
-        assert.isTrue(selected.unresolved.some((item) => item.includes('No assertion')));
+        assert.include(all, 'UNVERIFIED');
+        assert.include(all, 'class PlaygroundLoadsTest');
+        assert.include(all, "assertSee('Puth')");
+        assert.notInclude(all, 'not there');
+        assert.notInclude(selected, '->assertSee');
+        assert.include(selected, 'No assertion');
     }, 20000);
 
-    it('rejects unknown journal steps', async () => {
-        const { tool, session } = await connect((await startInstance()).url);
-        const sessionId = await session();
+    it('rejects unknown steps', async () => {
+        const { tool, session } = await start();
 
-        const { data } = await tool('puth_export', { sessionId, format: 'php', steps: [42] });
-
-        assert.strictEqual(data.error.code, 'INVALID_REQUEST');
+        assert.match((await tool('puth_export', { sessionId: await session(), format: 'php', steps: [42] })).text, /^ERR INVALID_REQUEST/);
     }, 20000);
 });
 
 describe('Next to a test runner', () => {
     it('shares the instance without disturbing the context of the runner', async () => {
-        const { instance, url } = await startInstance();
-        const { tool, session } = await connect(url);
+        const { instance, url, tool, session } = await start();
         const runner = await Context.create(new RemotePuthClient(url), { snapshot: true });
         const browser = await runner.createBrowserShim();
         await browser.visit(fixtureUrl());
 
         const sessionId = await session();
         const health = await (await fetch(`${url}/health`)).json();
-        const status = (await tool('puth_status')).data;
-        assert.strictEqual(status.instanceId, health.instanceId);
-
-        const contexts = instance.diagnostics().contexts.map(({ id }) => id);
-        assert.lengthOf(new Set(contexts), 2);
+        assert.include((await tool('puth_status')).text, health.instanceId.slice(0, 8));
+        assert.lengthOf(new Set(instance.diagnostics().contexts.map(({ id }) => id)), 2);
 
         const frames = async () => (await runner.getSnapshotsByType('screencasts')).length;
         const before = await frames();
