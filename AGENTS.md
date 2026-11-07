@@ -65,6 +65,22 @@ handled, while all other paused requests continue normally.
   client creates contexts with both `portal` and `detour` set to `false`; a
   value returned by `getContextOptions()` overrides those defaults.
 
+## Browser call behavior
+
+The `Browser` shim follows Cypress's flake resistance model; `utils/CallRetry.ts`
+classifies its methods, so add new ones there.
+
+- Assertions and waits run again until they pass or their timeout runs out. Reads
+  run again when the page changes under them.
+- Actions wait until their target is visible, enabled, attached, not readonly when
+  typing, not moving, and not covered. They never run again once they reached the
+  page, because that could repeat a form submission. An action that reached the
+  page succeeds even if the page closes because of it.
+- Calls pause while the main frame loads a new document, for up to
+  `timeouts.pageLoad` milliseconds.
+- Functions sent to the page must not contain named functions: `tsx` wraps them in
+  a helper that only exists on the server, and Vitest does not catch this.
+
 ## Client code generation
 
 `@codegen` marks server-side remote APIs for generation. Add it immediately

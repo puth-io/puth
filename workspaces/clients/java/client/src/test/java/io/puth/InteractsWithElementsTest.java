@@ -1,5 +1,6 @@
 package io.puth;
 
+import org.opentest4j.AssertionFailedError;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -67,16 +68,12 @@ public class InteractsWithElementsTest extends BaseTest {
 
     @Test
     void test_click_exception() {
-        Exception ex = assertThrows(Exception.class, () -> {
+        AssertionFailedError error = assertThrows(AssertionFailedError.class, () -> {
             browser.setContent("<body><button style=\"display: none\">test</button></body>");
             browser.click("button");
         });
-        // Optional: verify message pattern similar to PHP test
-        assertTrue(
-                ex.getMessage() != null &&
-                        ex.getMessage().matches("(?s).*Function click threw error: Node is either not clickable or not an Element.*"),
-                "Unexpected exception message: " + ex.getMessage()
-        );
+
+        assertTrue(error.getMessage().contains("Element [button] is not actionable: it is not visible"));
     }
 
     @Test

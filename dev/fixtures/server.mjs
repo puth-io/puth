@@ -104,6 +104,18 @@ function helperRoutes(urls) {
             res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
                 .end('<!doctype html><title>Reloading</title><script>setTimeout(() => location.reload(), 15)</script>');
         },
+        // /slow?ms=300 answers late, so a page transition takes a while
+        '/slow': (req, res, url) => {
+            setTimeout(() => {
+                res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+                    .end('<!doctype html><title>Slow page</title><h1 id="slow">Slow page</h1>');
+            }, Number(url.searchParams.get('ms') ?? 300));
+        },
+        // /closable offers a button that closes the window, which only works in opened windows
+        '/closable': (req, res) => {
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+                .end('<!doctype html><title>Closable</title><button id="close" onclick="window.close()">Close</button>');
+        },
         // /status/<code> is exercised through ?code=
         '/status': (req, res, url) => {
             res.writeHead(Number(url.searchParams.get('code') ?? 200), { 'content-type': 'text/plain' }).end('status');

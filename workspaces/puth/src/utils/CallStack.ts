@@ -69,7 +69,7 @@ function resolvePortalFailure({ error, status, body }: PortalResponse): PortalFa
 
 export class CallStack {
     private context: Context;
-    private page: Page;
+    readonly page: Page;
 
     activeCall?: Call;
     lastCall?: Call;
