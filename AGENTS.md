@@ -39,15 +39,19 @@ Puth instance of the Compose environment. Run `npm run build` and start the
 environment first.
 
 1. Check the connection with `puth_status`.
-2. Explore and validate in an isolated session with the `puth_*` tools.
-3. Export a PHP or Laravel draft with `puth_export`, resolve what it reports as
-   unresolved, and write it with your normal tools.
+2. Explore and validate in an isolated session with the `puth_*` tools. For
+   pages behind a login, write a test that calls `$browser->handoff()` and take
+   it over.
+3. Export a PHP or Laravel draft with `puth_export`, resolve its `TODO`s, and
+   write it with your normal tools.
 4. Run the relevant suite. A draft is unverified until that run passes.
-5. Inspect failures through `.puth` snapshots and `.puth/agent-artifacts/`.
+5. Read failures with `puth_contexts` and `puth_context`.
 
 Read [the MCP guide](workspaces/docs/guide/mcp.md) for configuration, tools and
-network addressing. Add new actions, waits and assertions to
-`workspaces/mcp/src/operations.ts`, which also defines their PHP translations.
+network addressing. `.claude/skills/puth` describes these workflows for Claude
+Code. Add new operations to `workspaces/mcp/src/operations.ts`, which also defines
+their PHP translations. Tool results and schemas stay in the context of agents, so
+keep them short and only report what is new.
 
 ## Releases
 

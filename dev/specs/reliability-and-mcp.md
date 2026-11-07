@@ -107,13 +107,13 @@ Follow the Cypress model for the `Browser` shim.
 - [x] Keep protocol traffic on stdout and diagnostics on stderr. Update client
   logging where necessary.
 - [x] Give each agent session its own Puth context with recording enabled and
-  portal/detours disabled in v1.
+  portal/detours disabled. Claimed tests keep their own settings.
 - [x] Serialize browser operations within each session while allowing separate
   sessions to run concurrently.
 - [x] Close owned contexts on session closure and graceful MCP shutdown; expire
   idle sessions after 30 minutes.
-- [x] Reject attachment to or destruction of contexts owned by project test
-  runners.
+- [x] Reject driving or destroying contexts of test runners unless they offered a
+  handoff. Reading what they recorded is allowed.
 
 ### Puth HTTP interfaces
 
@@ -122,38 +122,57 @@ Follow the Cypress model for the `Browser` shim.
 - [x] Add `GET /context/:id/snapshot`, returning a binary `.puth` snapshot using
   existing serialization without destroying the context.
 - [x] Return structured errors for unknown or destroyed contexts.
-- [x] Check session ownership in the MCP adapter before requesting a snapshot.
+- [x] Add `GET /contexts`, and serve the snapshots of finished contexts for as long
+  as their recording exists.
 - [x] Preserve existing client behavior.
 
 ### MCP tools
 
-Use explicit schemas and bounded responses for the following tools:
+Tool schemas and results stay in the context of agents, so both are kept small:
+one flat schema for all steps, plain text sent once, and results that only report
+what is new.
 
-- [x] `puth_status`: report configured endpoint, instance ID, capabilities, and
-  owned sessions.
+- [x] `puth_status`: report endpoint, application URL, instance, sessions, and
+  tests waiting for a handoff.
 - [x] `puth_session_create`: create an isolated session with optional initial URL
-  and viewport.
-- [x] `puth_session_close`: destroy an owned session; repeated closure succeeds.
-- [x] `puth_navigate`: navigate the session's selected page.
+  and viewport, or take over a test that offered a handoff.
+- [x] `puth_session_close`: destroy an owned session or release a claimed test;
+  repeated closure succeeds.
+- [x] `puth_run`: run steps in order and stop at the first failure. Steps cover
+  navigation, actions including text-based targets and `evaluate`, waits, and
+  assertions. Results report what changed on the page.
+- [x] `puth_inspect`: outline the page or a part of it with labels, structure,
+  values, and the best selector, or return its visible text.
 - [x] `puth_pages`: list pages or select a page within the session.
-- [x] `puth_inspect`: return URL, title, visible text, and bounded element
-  information with selector candidates.
-- [x] `puth_action`: perform a typed action: click, type, select, check, uncheck,
-  keypress, or dialog interaction.
-- [x] `puth_wait`: wait for visibility, disappearance, text, URL, or
-  enabled/disabled state using existing Puth semantics.
-- [x] `puth_assert`: execute supported Puth assertions and return observed results.
-- [x] `puth_screenshot`: return an MCP image and save a local artifact.
-- [x] `puth_events`: read paginated console, error, and network summaries
-  belonging to the session.
+- [x] `puth_screenshot`: return an MCP image of the page or an element and save a
+  local artifact.
+- [x] `puth_events`: read paginated console, error, and network summaries of the
+  session, including failed requests.
+- [x] `puth_contexts`: list tests and sessions the instance knows about.
+- [x] `puth_context`: read what any context or `.puth` file recorded: why it
+  failed, commands, console, network, and frames.
 - [x] `puth_export`: export a snapshot, recorded steps, or PHP/Laravel test draft.
+
+### Taking over tests
+
+Portal requests have to be answered by the process of the application, so an agent
+can not use the portal on its own. A test prepares what it needs instead, for
+example with `loginAs` or factories, and hands its browser over.
+
+- [x] `Context.handoff()` blocks the test while it keeps answering portal requests,
+  until the context is released, destroyed, or the handoff times out.
+- [x] Requests of the agent run inside the test, so fakes and authentication apply.
+- [x] Only contexts that offer a handoff can be claimed, and only once.
+- [x] Closing the session lets the test continue with its own assertions.
+- [x] A handoff ends when the process of the test disappears.
 
 ### Tool contracts and failure handling
 
 - [x] Define supported actions, waits, assertions, parameter validation, and
   PHP/Laravel translations in a shared operation registry.
-- [x] Advertise only implemented operations; do not expose arbitrary
-  remote-object invocation in v1.
+- [x] Advertise only implemented operations. `evaluate` runs JavaScript in the page,
+  because this is a testing tool and agents need to read page state. Remote objects
+  stay out of reach.
 - [x] Include session/page identifiers, operation outcome, available evidence,
   and truncation warnings in results where applicable.
 - [x] Include a stable error code and useful message in failures. Assertion
@@ -187,6 +206,7 @@ Use explicit schemas and bounded responses for the following tools:
 
 - [x] Add `.mcp.json` for Claude Code, the primary client, with a stdio MCP server
   entry invoking the locally built package through a root npm script.
+- [x] Add a `puth` skill for Claude Code, and MCP instructions for every client.
 - [x] Add `.codex/config.toml` with the same entry for Codex.
 - [x] Use `PUTH_INSTANCE_URL` for the endpoint, defaulting to
   `http://127.0.0.1:7345`.
@@ -260,7 +280,6 @@ project before it applies.
 - PHP and Laravel are the initial test-export targets.
 - GUI tests use Puth itself, driving the GUI through the generated TypeScript
   client.
-- HTTP MCP transport, attachment to existing test contexts, portal configuration
-  through MCP, and execution of repository tests inside MCP are deferred.
+- HTTP MCP transport and execution of repository tests inside MCP are deferred.
 - Sharing a Puth instance does not mean sharing a browser context. Agent sessions
-  must remain separate from test-runner contexts.
+  remain separate from test-runner contexts, unless a test hands its context over.

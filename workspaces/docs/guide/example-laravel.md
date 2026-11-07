@@ -46,15 +46,22 @@ docker compose run --rm --no-deps laravel-test php artisan test --without-tty --
 
 The test fails, and the Puth server writes a snapshot to `workspaces/puth/storage/snapshots`. Open the GUI and drop the `.puth` file into the window to step through the commands, frames, console output and the error. Delete the test afterwards.
 
-## Explore with an agent
+## Read the failure as an agent
 
-Build the MCP server with `npm run build`, [connect your client](./mcp#setup), and call the tools:
+Build the MCP server with `npm run build` and [connect your client](./mcp#setup). The agent can read the failed test directly from the instance:
+
+```json
+{ "tool": "puth_contexts", "arguments": { "status": "failed" } }
+{ "tool": "puth_context", "arguments": { "id": "3f2a91bc" } }
+```
+
+## Explore with an agent
 
 ```json
 { "tool": "puth_status" }
 { "tool": "puth_session_create", "arguments": { "name": "Testbed loads", "url": "/" } }
-{ "tool": "puth_inspect", "arguments": { "sessionId": "..." } }
-{ "tool": "puth_assert", "arguments": { "sessionId": "...", "assertion": { "operation": "title", "title": "laravel puth testbed" } } }
+{ "tool": "puth_inspect", "arguments": { "sessionId": "1a2b3c4d" } }
+{ "tool": "puth_run", "arguments": { "sessionId": "1a2b3c4d", "steps": [{ "op": "title", "text": "laravel puth testbed" }] } }
 ```
 
 The agent runs next to your tests in its own context, so it can explore while a suite is running.
@@ -64,16 +71,20 @@ The agent runs next to your tests in its own context, so it can explore while a 
 Export what the session did:
 
 ```json
-{ "tool": "puth_export", "arguments": { "sessionId": "...", "format": "laravel", "name": "Testbed loads" } }
+{ "tool": "puth_export", "arguments": { "sessionId": "1a2b3c4d", "format": "laravel", "name": "Testbed loads" } }
 ```
 
-The result is an unverified draft. Resolve its `unresolved` list, then save `code` as `tests/Browser/TestbedLoadsTest.php` and run it. Only this run verifies the draft:
+The result is an unverified draft. Resolve its `TODO`s, then save it as `tests/Browser/TestbedLoadsTest.php` and run it. Only this run verifies the draft:
 
 ```sh
 docker compose run --rm --no-deps laravel-test php artisan test --without-tty --cache-directory=/tmp/phpunit-cache --filter=TestbedLoadsTest
 ```
 
 `./docker/dev/test-mcp-drafts.sh` does all of this automatically for a longer workflow, and also checks that a wrong assertion fails.
+
+## Work behind a login
+
+Write a test that logs in and [hands over](./mcp#taking-over-a-test), run it in the background, and take it over. `./docker/dev/test-mcp-handoff.sh` shows this with `Mail::fake()`: the agent visits a page that sends a mail, and the test sees that mail afterwards.
 
 ## Collect artifacts in CI
 

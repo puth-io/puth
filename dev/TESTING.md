@@ -94,7 +94,9 @@ playground or Puth websites again.
 `./docker/dev/test-mcp-drafts.sh` drives a workflow through the MCP server, writes
 the exported PHP and Laravel drafts into the real test suites, runs them, and
 checks that copies with a wrong assertion fail. The files are removed afterwards.
-The full runner includes this step.
+`./docker/dev/test-mcp-handoff.sh` runs a Laravel test that hands its browser to the
+MCP server, and checks that a request of the agent ran inside the test. The full
+runner includes both.
 
 ## Benchmarks
 
