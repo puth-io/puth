@@ -24,7 +24,7 @@ import path from 'node:path';
 import {encode} from '@msgpack/msgpack';
 import {promises as fsPromise} from 'node:fs';
 import { Return } from './context/Return';
-import {ContextStatus, Constructors, ConstructorValues, type IExpectation, type ICommand} from '@puth/core';
+import {ContextStatus, Constructors, ConstructorValues, SNAPSHOT_VERSION, type IExpectation, type ICommand} from '@puth/core';
 import {tmpdir} from 'node:os';
 import { Browser, ExpectationFailed } from './shims/Browser';
 import { type BrowserRefContext } from './handlers/BrowserHandler';
@@ -154,6 +154,7 @@ class Context extends Generic {
                 ...this.serialize(), // TODO remove -> GUI needs to use packet.context
                 context: this.serialize(),
                 type: 'context',
+                snapshotVersion: SNAPSHOT_VERSION,
                 options: this.options,
                 createdAt: this.createdAt,
                 timestamp: Date.now(),
