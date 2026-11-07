@@ -296,7 +296,12 @@ export class Puth {
     public async contextCreate(options = {}) {
         let context = new Context(this as TODO, options);
         this.#contexts[context.id] = context;
-        await context.setup();
+        try {
+            await context.setup();
+        } catch (error) {
+            await context.destroy({ immediately: true });
+            throw error;
+        }
         this.#emitter.emit('context:created', { context });
         return context.serialize();
     }
@@ -325,23 +330,31 @@ export class Puth {
         let { id } = packet as { id: string };
 
         if (id in this.#contexts) {
-            let destroyed = await this.#contexts[id].destroy(packet?.options);
-            if (destroyed) {
-                this.#emitter.emit('context:destroyed', { context: this.#contexts[id] });
-                delete this.#contexts[id];
-            }
+            await this.#contexts[id].destroy(packet?.options);
 
             return true;
         }
 
         return false;
     }
+
+    // Called by every context once it finished tearing down, however the destroy was requested.
+    public contextDestroyed(context: Context) {
+        if (this.#contexts[context.id] !== context) {
+            return;
+        }
+
+        delete this.#contexts[context.id];
+        this.#emitter.emit('context:destroyed', { context });
+    }
     
-    destroy(): Promise<any> {
-        return Promise.allSettled([
+    async destroy(): Promise<any> {
+        await Promise.allSettled([
             this.http?.close(true),
             ...Object.values(this.#contexts).map(context => context.destroy({immediately: true})),
         ]);
+
+        return this.browserHandler.shutdown();
     }
 
     // public contextCallAll(packet) {
@@ -401,6 +414,6 @@ export class Puth {
     off<Key extends keyof PuthEvents>(type: Key, handler: Handler<PuthEvents[Key]>): void;
     off(type: '*', handler: WildcardHandler<PuthEvents>): void;
     off(type, handler) {
-        return this.#emitter.on(type, handler);
+        return this.#emitter.off(type, handler);
     }
 }

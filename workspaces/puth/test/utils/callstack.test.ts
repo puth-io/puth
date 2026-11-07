@@ -297,3 +297,80 @@ describe('CallStack', () => {
         expect(response.resolve).toHaveBeenCalledWith(Return.Self().serialize());
     });
 });
+
+describe('CallStack disposal', () => {
+    it('settles the active call and ignores its late result', async () => {
+        const { stack } = makeStack();
+        const call = makeCall();
+        call.setStack(stack);
+        stack.activeCall = call;
+
+        stack.dispose('Page closed while a call was pending.');
+
+        await expect(call.response.promise).resolves.toMatchObject({
+            type: 'error',
+            code: 'PageUnavailable',
+            message: 'Page closed while a call was pending.',
+        });
+        await expect(call.result({ type: 'value' })).resolves.toBeUndefined();
+        expect(stack.activeCall).toBeUndefined();
+    });
+
+    it('settles the portal response a client is waiting on', async () => {
+        const { stack } = makeStack();
+        const response = Promise.withResolvers<unknown>();
+        stack.portal.open.response = response;
+        stack.portal.queue.active.push({ psuri: '1' });
+        stack.portal.queue.backlog.push({ psuri: '2' });
+
+        stack.dispose('Context destroyed while a call was pending.');
+
+        await expect(response.promise).resolves.toMatchObject({ type: 'error', code: 'PageUnavailable' });
+        expect(stack.portal.queue.active).toEqual([]);
+        expect(stack.portal.queue.backlog).toEqual([]);
+    });
+
+    it('settles an initial call that was waiting behind the portal queue', async () => {
+        const { stack } = makeStack();
+        const call = makeCall();
+        stack.portal.initial.call = call;
+
+        stack.dispose('Page closed while a call was pending.');
+
+        await expect(call.response.promise).resolves.toMatchObject({ code: 'PageUnavailable' });
+    });
+
+    it('leaves a call alone that finishes before the delayed disposal', async () => {
+        vi.useFakeTimers();
+        try {
+            const { stack } = makeStack();
+            const call = makeCall('quit');
+            call.setStack(stack);
+            stack.activeCall = call;
+
+            stack.disposeAfter(1000, 'Page closed while a call was pending.');
+            await call.result({ type: 'value', value: 'closed' });
+            await vi.advanceTimersByTimeAsync(1000);
+
+            await expect(call.response.promise).resolves.toEqual({ type: 'value', value: 'closed' });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('settles a hanging call after the delayed disposal', async () => {
+        vi.useFakeTimers();
+        try {
+            const { stack } = makeStack();
+            const call = makeCall();
+            stack.activeCall = call;
+
+            stack.disposeAfter(1000, 'Page closed while a call was pending.');
+            await vi.advanceTimersByTimeAsync(1000);
+
+            await expect(call.response.promise).resolves.toMatchObject({ code: 'PageUnavailable' });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});

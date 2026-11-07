@@ -1,5 +1,5 @@
 import {v4} from 'uuid';
-import { Browser, BrowserContext, Page } from 'puppeteer-core';
+import { CDPSession, Page } from 'puppeteer-core';
 import Context from "../Context";
 import PuthInstancePlugin from "../PuthInstancePlugin";
 import { Puth } from '../Puth';
@@ -30,9 +30,20 @@ export class LiveViewContextPlugin extends PuthContextPlugin {
     }
 }
 
+type ScreencastSession = {
+    client: CDPSession;
+    handler: (event: any) => Promise<void>;
+};
+
+type ContextRecording = {
+    pageCounter: number;
+    sessions: Map<Page, ScreencastSession>;
+    onPageCreated: (event: any) => void;
+    onPageClosed: (event: {page: Page}) => void;
+};
+
 export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
-    private pages: Page[] = [];
-    private handlers: any[] = [];
+    private recordings = new Map<Context, ContextRecording>();
     
     install(puth: Puth) {
         super.install(puth);
@@ -42,43 +53,51 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         });
         
         puth.on('context:destroyed', ({context}) => {
-            this.detachScreencastEvents(context);
+            this.handleContextDestroyed(context);
         });
     }
     
-    private async handleContextCreated(context: Context) {
-        await Promise.all([context.browsers.flatMap(
-            async rv => rv.ref.contexts.flatMap(
-                async browser => {
-                    return Promise.all([(await browser.pages()).map(page => {
-                        return this.attachScreencastEvents({context, browser, page} as TODO);
-                    })]);
-                },
-            ),
-        )]);
-        
-        const pageCreated = event => this.attachScreencastEvents({context, ...event});
-        context.on('page:created', pageCreated);
-        this.handlers.push([context, 'page:created', pageCreated]);
-        
-        const pageClosed = ({page}) => {
-            this.pages.splice(this.pages.indexOf(page), 1);
-            this.handlers = this.handlers.filter(x => x[0] !== page);
+    private handleContextCreated(context: Context) {
+        const recording: ContextRecording = {
+            pageCounter: 0,
+            sessions: new Map(),
+            onPageCreated: ({page}) => void this.attachScreencastEvents(context, recording, page),
+            onPageClosed: ({page}) => this.detachScreencastEvents(recording, page),
         };
-        context.on('page:closed', pageClosed);
-        this.handlers.push([context, 'page:closed', pageClosed]);
+        
+        this.recordings.set(context, recording);
+        context.on('page:created', recording.onPageCreated);
+        context.on('page:closed', recording.onPageClosed);
     }
     
-    private async attachScreencastEvents({context, page, browser}: {
-        context: Context,
-        page: Page,
-        browser: Browser|undefined,
-        browserContext: BrowserContext,
-    }) {
-        let pageIdx = this.pages.push(page);
-        // let browserIdx = context.browsers.indexOf(browser as TODO);
-
-        const client = await page.createCDPSession();
+    private handleContextDestroyed(context: Context) {
+        const recording = this.recordings.get(context);
+        if (recording === undefined) {
+            return;
+        }
+        
+        this.recordings.delete(context);
+        context.off('page:created', recording.onPageCreated);
+        context.off('page:closed', recording.onPageClosed);
+        [...recording.sessions.keys()].forEach(page => this.detachScreencastEvents(recording, page));
+    }
+    
+    private async attachScreencastEvents(context: Context, recording: ContextRecording, page: Page) {
+        const pageIdx = ++recording.pageCounter;
+        
+        let client: CDPSession;
+        try {
+            client = await page.createCDPSession();
+        } catch (error) {
+            this.puth?.logger.debug({error}, 'Could not create screencast session');
+            return;
+        }
+        
+        if (this.recordings.get(context) !== recording || page.isClosed()) {
+            client.detach().catch(() => {});
+            return;
+        }
+        
         const handler = async ({data, metadata, sessionId}) => {
             const serializedContext = context.serialize();
             const url = page.url();
@@ -92,16 +111,21 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
                 // TODO handle target closed
             });
             
-            if (viewport) {
-                frame = await sharp(frame)
-                    .jpeg()
-                    .resize({
-                        height: viewport.height,
-                        width: viewport.width,
-                        fit: 'cover',
-                        position: 'top',
-                    })
-                    .toBuffer();
+            try {
+                if (viewport) {
+                    frame = await sharp(frame)
+                        .jpeg()
+                        .resize({
+                            height: viewport.height,
+                            width: viewport.width,
+                            fit: 'cover',
+                            position: 'top',
+                        })
+                        .toBuffer();
+                }
+            } catch (error) {
+                this.puth?.logger.warn({error}, 'Could not process screencast frame');
+                return;
             }
             
             this.puth.snapshotHandler.pushToCache(context as TODO, {
@@ -124,7 +148,7 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             });
         };
         client.on('Page.screencastFrame', handler);
-        this.handlers.push([client, 'Page.screencastFrame', handler]);
+        recording.sessions.set(page, {client, handler});
         
         client.send('Page.startScreencast', {
             format: 'jpeg',
@@ -138,8 +162,14 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         });
     }
     
-    private detachScreencastEvents(context: Context) {
-        this.handlers.forEach(([holder, event, handler]) => holder.off(event, handler));
-        this.handlers = [];
+    private detachScreencastEvents(recording: ContextRecording, page: Page) {
+        const session = recording.sessions.get(page);
+        if (session === undefined) {
+            return;
+        }
+        
+        recording.sessions.delete(page);
+        session.client.off('Page.screencastFrame', session.handler);
+        session.client.detach().catch(() => {});
     }
 }
