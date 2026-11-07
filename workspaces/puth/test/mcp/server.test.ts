@@ -131,6 +131,57 @@ describe('MCP protocol', () => {
     }, 20000);
 });
 
+describe('Project configuration', () => {
+    const root = path.resolve(path.dirname(cli), '../../..');
+
+    const claude = (environment: Record<string, string>) => {
+        const { mcpServers } = JSON.parse(readFileSync(path.join(root, '.mcp.json'), 'utf8'));
+        const expand = (value: string) =>
+            value.replace(/\$\{(\w+):-([^}]*)\}/g, (_, name, fallback) => environment[name] ?? fallback);
+        const { command, args, env } = mcpServers.puth;
+
+        return {
+            command,
+            args: args.map(expand),
+            env: { ...Object.fromEntries(Object.entries(env).map(([name, value]) => [name, expand(value as string)])) },
+        };
+    };
+
+    const codex = (environment: Record<string, string>) => {
+        const config = readFileSync(path.join(root, '.codex/config.toml'), 'utf8');
+        const forwarded: string[] = JSON.parse(config.match(/^env_vars = (.+)$/m)![1]);
+
+        return {
+            command: config.match(/^command = "(.+)"$/m)![1],
+            args: JSON.parse(config.match(/^args = (.+)$/m)![1]),
+            env: Object.fromEntries(forwarded.filter((name) => name in environment).map((name) => [name, environment[name]])),
+        };
+    };
+
+    it.each([['Claude Code', claude], ['Codex', codex]])('starts the server the way %s is configured to', async (_, read) => {
+        const { url } = await startInstance();
+        const { command, args, env } = read({ PUTH_INSTANCE_URL: url, PUTH_ARTIFACT_DIR: directory });
+
+        const transport = new StdioClientTransport({
+            command,
+            args,
+            cwd: root,
+            stderr: 'pipe',
+            env: { PATH: process.env.PATH!, HOME: process.env.HOME ?? root, ...env },
+        });
+        const client = new Client({ name: 'test', version: '1.0.0' });
+        await client.connect(transport);
+        cleanups.push(() => client.close());
+
+        const { structuredContent: status }: any = await client.callTool({ name: 'puth_status', arguments: {} });
+
+        assert.isTrue(status.connected);
+        assert.strictEqual(status.endpoint, url);
+        assert.strictEqual(status.appUrl, 'http://laravel:8080');
+        assert.strictEqual(status.artifactDirectory, directory);
+    }, 20000);
+});
+
 describe('puth_status', () => {
     it('reports the instance and the addresses in use', async () => {
         const { instance, url } = await startInstance();

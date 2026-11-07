@@ -12,6 +12,25 @@ $browser->press('Save');
 $browser->waitForTextIn('#status', 'Saved');
 ```
 
+## Automatic waiting
+
+Most waiting happens without asking for it, following the model of [Cypress](https://docs.cypress.io/app/core-concepts/retry-ability).
+
+- **Assertions and waits** run again until they pass or their timeout runs out.
+- **Reads** such as `text()` and `attribute()` run again when the page changes under them.
+- **Actions** such as `click()` and `type()` wait until their element is visible, enabled, attached, not moving and not covered, and for typing also not readonly. If it never gets there, the error says why, for example `Element [#save] is not actionable: it is covered by <div#modal>`. An action is never repeated once it reached the page, because that could submit a form twice.
+- **Page loads** pause calls until the next document loaded, for up to `timeouts.pageLoad` milliseconds (30000 by default).
+
+An action succeeds even if the page closes because of it. Work that could not happen because the page closed fails with `PageClosed`.
+
+After an action, a navigation can start a moment later. The next call that does not retry on its own therefore waits `timeouts.actionSettle` milliseconds, 20 by default, and `0` turns this off. Both timeouts are context options:
+
+```php
+$context = new \Puth\Context('http://127.0.0.1:7345', ['timeouts' => ['actionSettle' => 0]]);
+```
+
+Pass `force` to `click` to skip the checks, or set the `actionability` Browser option to `false` to skip them for a whole Browser.
+
 ## Timeouts
 
 Browser wait timeouts are in milliseconds. The default Browser timeout is 3000 ms.

@@ -32,6 +32,23 @@ repository's tests. Docker with Compose remains sufficient for the full suite.
   prerequisites are already available. Report network-policy blockers without
   weakening TLS verification or changing unrelated worktree files.
 
+## Using Puth as an agent
+
+`.mcp.json` connects Claude Code, and `.codex/config.toml` connects Codex, to the
+Puth instance of the Compose environment. Run `npm run build` and start the
+environment first.
+
+1. Check the connection with `puth_status`.
+2. Explore and validate in an isolated session with the `puth_*` tools.
+3. Export a PHP or Laravel draft with `puth_export`, resolve what it reports as
+   unresolved, and write it with your normal tools.
+4. Run the relevant suite. A draft is unverified until that run passes.
+5. Inspect failures through `.puth` snapshots and `.puth/agent-artifacts/`.
+
+Read [the MCP guide](workspaces/docs/guide/mcp.md) for configuration, tools and
+network addressing. Add new actions, waits and assertions to
+`workspaces/mcp/src/operations.ts`, which also defines their PHP translations.
+
 ## Releases
 
 Releases use Changesets. For every user-facing change to a publishable package,

@@ -26,6 +26,7 @@ export default defineConfig({
           { text: 'Getting started', link: '/guide/getting-started' },
           { text: 'Migrating from Dusk', link: '/guide/migration-from-dusk' },
           { text: 'CI/CD and snapshots', link: '/guide/ci-cd' },
+          { text: 'Client support', link: '/guide/client-support' },
         ],
       },
       {
@@ -34,6 +35,13 @@ export default defineConfig({
           { text: 'Laravel integration', link: '/guide/laravel' },
           { text: 'Laravel cookies', link: '/guide/laravel-cookies' },
           { text: 'Laravel test artifacts', link: '/guide/laravel-debugging' },
+        ],
+      },
+      {
+        text: 'Agents',
+        items: [
+          { text: 'MCP server', link: '/guide/mcp' },
+          { text: 'Laravel example', link: '/guide/example-laravel' },
         ],
       },
       {

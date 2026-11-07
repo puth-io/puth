@@ -1,13 +1,14 @@
 # Puth
 
 [Puth](https://puth.io) is a nice browser testing tool with focus on stability, performance and extensive
-feedback. Currently supported: PHP and Laravel.
+feedback. Laravel and PHP are the main clients, with Java and TypeScript available. See the [client support matrix](workspaces/docs/guide/client-support.md).
 
 Features:
 
 - Native PHP & Laravel clients
 - Replaying your tests
 - Realtime web GUI
+- MCP server for exploring applications and drafting tests with agents
 - See for yourself in the Screenshot. What you see can be automatically exported in your CI/CD if a test fails for example. Simply drag and drop the snapshot file into your locally running GUI
 
 ![GUI Preview](assets/gui-preview_2024-11.png)
@@ -50,6 +51,24 @@ Puth has a Laravel integration package. You can find more information in the [do
 ### PHP
 
 Puth has a client package for PHP. Currently undocumented.
+
+### TypeScript
+
+`@puth/client` has generated, typed classes:
+
+```ts
+import { Context, RemotePuthClient } from '@puth/client';
+
+const context = await Context.create(new RemotePuthClient('http://127.0.0.1:7345'));
+const browser = await context.createBrowserShim();
+await browser.visit('http://localhost:8000');
+await browser.assertSee('Welcome');
+await context.destroy();
+```
+
+## Agents
+
+`@puth/mcp` gives Claude Code, Codex and other MCP clients isolated browser sessions for exploring applications, validating behavior, and drafting PHP and Laravel tests. See the [MCP guide](workspaces/docs/guide/mcp.md).
 
 ## Documentation development
 
