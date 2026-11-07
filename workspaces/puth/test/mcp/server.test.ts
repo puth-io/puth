@@ -686,7 +686,12 @@ describe('Reading other contexts', () => {
         const context = await failedTest(url);
         const id = context.getRepresentation().id;
 
-        assert.include((await tool('puth_context', { id, view: 'commands' })).text, 'visit(');
+        const commands = (await tool('puth_context', { id, view: 'commands' })).text;
+        assert.include(commands, 'visit(');
+        assert.notInclude(commands, 'createBrowserShim');
+        assert.notInclude(commands, 'testFailed');
+        assert.include((await tool('puth_context', { id, view: 'commands', all: true })).text, 'testFailed');
+        assert.match(commands, /^1 setTimeout/, 'hidden commands keep their numbers');
         assert.include((await tool('puth_context', { id, view: 'console' })).text, 'payment widget broke');
         await context.destroy({ immediately: true });
     }, 20000);
@@ -705,6 +710,20 @@ describe('Reading other contexts', () => {
 
         assert.include(text, 'window.answer = 42');
         assert.match((await tool('puth_context', { id, command: 999 })).text, /^ERR INVALID_REQUEST/);
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('explains about:blank after setContent', async () => {
+        const { url, tool } = await start();
+        const context = await Context.create(new RemotePuthClient(url), { snapshot: true, test: { name: 'set directly' } });
+        const browser = await context.createBrowserShim();
+        await browser.setContent('<h1>Checkout</h1>');
+        await browser.evaluate(`document.body.append('changed')`);
+
+        await vi.waitFor(async () => {
+            const { text } = await tool('puth_context', { id: context.getRepresentation().id });
+            assert.include(text, 'last url about:blank (content was set with setContent, not loaded)');
+        }, { timeout: 3000 });
         await context.destroy({ immediately: true });
     }, 20000);
 

@@ -72,6 +72,28 @@ export const failedRequestLine = ({ method, url, errorText }: any) =>
 
 const isError = ({ messageType }: any) => messageType === 'error';
 
+// Calls test runners make around a test, which say nothing about what the test did.
+const HOUSEKEEPING = [
+    'createBrowser',
+    'createBrowserShim',
+    'destroy',
+    'getSnapshotsByType',
+    'quit',
+    'saveTemporaryFile',
+    'testFailed',
+    'testSucceeded',
+    'testSuccess',
+];
+
+export const isHousekeeping = ({ func }: any) => HOUSEKEEPING.includes(func);
+
+/**
+ * Commands with the number they have in the recording, which command= and frame= take.
+ */
+export const numberedCommands = (commands: any[], all = false) => commands
+    .map((command, index) => ({ command, index }))
+    .filter(({ command }) => all || ! isHousekeeping(command));
+
 const timeOf = (packet: any) => packet.time?.started ?? packet.time?.finished ?? packet.timestamp ?? packet.time ?? 0;
 
 const MAX_SUMMARY_EVENTS = 8;
@@ -82,8 +104,9 @@ const MAX_SUMMARY_EVENTS = 8;
 export function summarize(recording: Recording): string[] {
     const { name, status, commands, logs, responses, failedRequests, frames } = recording;
     const errors = logs.filter(isError);
-    const failed = commands.flatMap((command, index) => errorOf(command) === undefined ? [] : [{ time: timeOf(command), line: commandLine(command, index) }]);
-    const recent = failed.length > 0 ? [] : commands.slice(-3).map((command, index) => ({ time: timeOf(command), line: commandLine(command, commands.length - Math.min(3, commands.length) + index) }));
+    const steps = numberedCommands(commands);
+    const failed = steps.flatMap(({ command, index }) => errorOf(command) === undefined ? [] : [{ time: timeOf(command), line: commandLine(command, index) }]);
+    const recent = failed.length > 0 ? [] : steps.slice(-3).map(({ command, index }) => ({ time: timeOf(command), line: commandLine(command, index) }));
     const events = [
         ...failed,
         ...recent,
@@ -92,10 +115,12 @@ export function summarize(recording: Recording): string[] {
         ...responses.filter(response => response.status >= 400).map(response => ({ time: timeOf(response), line: responseLine(response) })),
     ].sort((a, b) => a.time - b.time);
     const last = frames.at(-1)?.page?.url;
+    // setContent replaces the page without navigating, so that page keeps about:blank as its address.
+    const setDirectly = last === 'about:blank' && commands.some(({ func }) => func === 'setContent');
 
     return [
-        `${status} "${name}" ${commands.length} commands, ${errors.length} console errors, ${frames.length} frames`,
-        ...(last === undefined ? [] : [`last url ${last}`]),
+        `${status} "${name}" ${steps.length} commands, ${errors.length} console errors, ${frames.length} frames`,
+        ...(last === undefined ? [] : [`last url ${last}${setDirectly ? ' (content was set with setContent, not loaded)' : ''}`]),
         ...(events.length > MAX_SUMMARY_EVENTS ? [`… ${events.length - MAX_SUMMARY_EVENTS} earlier events, see view=commands or view=console`] : []),
         ...events.slice(-MAX_SUMMARY_EVENTS).map(({ line }) => line),
     ];

@@ -6,7 +6,7 @@ import { createDraft } from './drafts';
 import { type ErrorCode, ToolError, toToolError } from './errors';
 import { DEFAULT_TIMEOUT, type OperationKind, operationKind, operationSummary, runOperation, type Step, stepSchema, validateStep } from './operations';
 import { MAX_CHANGES, observableLines, outlineChanges, outlineScript, textScript } from './outline';
-import { commandDetails, commandLine, decodeRecording, failedRequestLine, frameOf, logLine, parseRecording, readRecording, responseLine, summarize } from './recordings';
+import { commandDetails, commandLine, numberedCommands, decodeRecording, failedRequestLine, frameOf, logLine, parseRecording, readRecording, responseLine, summarize } from './recordings';
 import { type Session, SessionManager } from './sessions';
 
 const INSTRUCTIONS = `Puth drives a real browser for testing. Start with puth_status.
@@ -434,17 +434,18 @@ export function createServer(config: Config) {
 
     tool(
         'puth_context',
-        'Read what a test recorded: id from puth_contexts or a session, or a .puth file. view summary shows what went wrong in order, commands, console and network list everything. command shows one command with its full arguments. frame returns the page as an image after that command number, -1 for the last one.',
+        'Read what a test recorded: id from puth_contexts or a session, or a .puth file. view summary shows what went wrong in order, commands, console and network list everything; commands leaves out what test runners do around a test unless all=true. command shows one command with its full arguments. frame returns the page as an image after that command number, -1 for the last one.',
         {
             id: z.string().optional(),
             file: z.string().optional().describe('Path to a .puth snapshot'),
             view: z.enum(['summary', 'commands', 'console', 'network']).default('summary'),
             frame: z.number().int().min(-1).optional(),
             command: z.number().int().min(0).optional().describe('Show one command with its full arguments'),
+            all: z.boolean().default(false).describe('Also list commands test runners make around a test'),
             cursor: z.number().int().min(0).default(0),
             limit: z.number().int().min(1).max(200).default(50),
         },
-        async ({ id, file, view, frame, command, cursor, limit }) => {
+        async ({ id, file, view, frame, command, all, cursor, limit }) => {
             if ((id === undefined) === (file === undefined)) {
                 throw new ToolError('INVALID_REQUEST', 'Pass either id or file.');
             }
@@ -479,7 +480,7 @@ export function createServer(config: Config) {
             }
 
             const lines = view === 'commands'
-                ? recording.commands.map(commandLine)
+                ? numberedCommands(recording.commands, all).map(({ command, index }) => commandLine(command, index))
                 : view === 'console'
                     ? recording.logs.map(logLine)
                     : [...recording.failedRequests.map(failedRequestLine), ...recording.responses.map(responseLine)];
