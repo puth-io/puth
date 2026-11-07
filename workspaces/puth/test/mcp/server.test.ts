@@ -329,7 +329,7 @@ describe('puth_run', () => {
 
         const { text } = await run(sessionId, { op: 'click', selector: '#actions-click-button' });
 
-        assert.include(text, '+ "clicked button"');
+        assert.include(text, '+ "clicked button" in #actions-click-verify');
     }, 20000);
 
     it('shows the start of a new page and how to read on', async () => {
@@ -502,6 +502,25 @@ describe('puth_inspect', () => {
         const { text } = await tool('puth_inspect', { sessionId, find: 'wrong' });
 
         assert.deepEqual(text.split('\n').slice(1), ['! Wrong password']);
+    }, 20000);
+
+    it('filters by kind', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        const buttons = (await tool('puth_inspect', { sessionId, kind: 'button' })).text.split('\n').slice(1);
+        const signIn = (await tool('puth_inspect', { sessionId, kind: 'heading', find: 'sign' })).text.split('\n').slice(1);
+
+        assert.lengthOf(buttons, 1);
+        assert.match(buttons[0], /^button "Sign in" ~#login>button/);
+        assert.deepEqual(signIn, ['# Sign in']);
+    }, 20000);
+
+    it('says where text is, preferring a stable selector', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: `data:text/html,${encodeURIComponent('<div id="status"><span>Saved</span></div>')}` });
+
+        assert.deepEqual((await tool('puth_inspect', { sessionId, kind: 'text' })).text.split('\n').slice(1), ['"Saved" in #status']);
     }, 20000);
 
     it('searches the visible text', async () => {

@@ -14,7 +14,8 @@ Results are compact: "+"/"-" lines say what appeared or disappeared on the page,
 Selectors starting with ~ are position based, avoid them in tests.
 To use an application behind a login or with test data: write a test that sets this up and calls $browser->handoff(), run it in the background, then claim it with puth_session_create handoff=<id from puth_contexts>. Closing the session lets the test continue.
 puth_contexts and puth_context show any test that ran on this instance, also why it failed. After writing a test, run it and read its context there.
-Exported drafts are unverified until the real test suite passed them.`;
+Exported drafts are unverified until the real test suite passed them.
+Close sessions with puth_session_close when done, also after a failure.`;
 
 const EXPECTATION_CODES: Record<OperationKind, ErrorCode> = {
     navigate: 'OPERATION_FAILED',
@@ -24,6 +25,17 @@ const EXPECTATION_CODES: Record<OperationKind, ErrorCode> = {
 };
 
 const MAX_VALUE = 2000;
+
+// How outline lines start, see outlineScript.
+const KIND_PREFIXES: Record<string, RegExp> = {
+    heading: /^#/,
+    alert: /^!/,
+    text: /^"/,
+    button: /^button /,
+    link: /^link /,
+    input: /^(input:|textarea )/,
+    select: /^select /,
+};
 
 const sessionId = z.string();
 
@@ -254,10 +266,11 @@ export function createServer(config: Config) {
             selector: z.string().max(1000).optional().describe('Limit to this element'),
             text: z.boolean().default(false).describe('Return the visible text instead'),
             find: z.string().max(200).optional().describe('Only lines containing this, ignoring case'),
+            kind: z.enum(['heading', 'alert', 'text', 'button', 'link', 'input', 'select']).optional().describe('Only lines of this kind'),
             cursor: z.number().int().min(0).default(0),
             limit: z.number().int().min(1).max(300).default(60),
         },
-        async ({ sessionId, selector, text, find, cursor, limit }) => {
+        async ({ sessionId, selector, text, find, kind, cursor, limit }) => {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
@@ -280,7 +293,10 @@ export function createServer(config: Config) {
                 }
 
                 const needle = find?.toLowerCase();
-                const matching = needle === undefined ? outline.lines : observable.filter(line => line.toLowerCase().includes(needle));
+                const prefix = kind === undefined ? undefined : KIND_PREFIXES[kind];
+                const matching = (needle === undefined && prefix === undefined ? outline.lines : observable)
+                    .filter((line: string) => needle === undefined || line.toLowerCase().includes(needle))
+                    .filter((line: string) => prefix === undefined || prefix.test(line));
                 const { items, more } = page<string>(matching, cursor, limit);
 
                 return reply(`at ${outline.url} "${outline.title}"`, ...items, more);

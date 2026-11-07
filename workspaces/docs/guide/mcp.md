@@ -162,7 +162,7 @@ at http://laravel:8080/dashboard "Dashboard"
 
 `+` and `-` lines use the format of `puth_inspect` and report what appeared and disappeared on the page, with other visible text in quotes, so inspecting again is rarely needed. After a navigation, the result shows the start of the new page. `!` lines are warnings, such as an open dialog.
 
-`puth_inspect` lists headings (`#`), alerts (`!`) and interactive elements as `kind "label" selector =value flags`, and `find` searches them and the visible text. A selector starting with `~` depends on the position in the page, so avoid it in tests.
+`puth_inspect` lists headings (`#`), alerts (`!`) and interactive elements as `kind "label" selector =value flags`. `find` searches them and the visible text, and `kind` keeps only one kind, such as `button` or `text`. Text lines say where the text is, like `"Saved" in #status`, using the nearest stable selector. A selector starting with `~` depends on the position in the page, so avoid it in tests.
 
 Failures are tool errors that start with a stable code:
 
