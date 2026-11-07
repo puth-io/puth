@@ -42,17 +42,39 @@ describe('HTTP interfaces', () => {
         await context.destroy({ immediately: true });
     });
 
-    it('answers with a structured error for unknown and destroyed contexts', async () => {
-        const context = await Context.create(client);
+    it('answers with a structured error for unknown contexts', async () => {
+        const response = await fetch(url('context/never-existed/snapshot'));
+
+        assert.strictEqual(response.status, 404);
+        expect(await response.json()).toMatchObject({ type: 'error', code: 'ContextNotFound' });
+    });
+
+    it('keeps the recording of finished contexts available', async () => {
+        const context = await Context.create(client, { snapshot: true, test: { name: 'finished test' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl());
+        await context.testFailed();
         const { id } = context.getRepresentation();
         await context.destroy({ immediately: true });
 
-        for (const unknown of [id, 'never-existed']) {
-            const response = await fetch(url(`context/${unknown}/snapshot`));
+        const contexts = await (await fetch(url('contexts'))).json();
+        const snapshot = await fetch(url(`context/${id}/snapshot`));
 
-            assert.strictEqual(response.status, 404);
-            expect(await response.json()).toMatchObject({ type: 'error', code: 'ContextNotFound' });
-        }
+        expect(contexts.find((item) => item.id === id)).toMatchObject({ name: 'finished test', status: 'failed', active: false });
+        assert.strictEqual(snapshot.status, 200);
+    });
+
+    it('records why a request failed', async () => {
+        const context = await Context.create(client, { track: ['network'] });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl());
+        await browser.evaluate(`fetch('http://127.0.0.1:9/gone').catch(() => {})`);
+
+        await vi.waitFor(async () => {
+            const updates = await context.getSnapshotsByType('update');
+            expect(updates.find((update) => update.url.endsWith('/gone'))).toMatchObject({ errorText: 'net::ERR_UNSAFE_PORT' });
+        });
+        await context.destroy({ immediately: true });
     });
 
     it('rejects calls on a destroyed context with that error', async () => {

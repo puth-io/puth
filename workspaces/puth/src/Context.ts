@@ -34,6 +34,7 @@ import { createHash } from 'node:crypto';
 import { PageClosedError, isConnectionLost, isNavigationError, isPageClosed } from './utils/TargetErrors';
 import { CallAttempt, browserCallKind, runBrowserCall } from './utils/CallRetry';
 import { PageStability } from './utils/PageStability';
+import { PortalHandoff } from './utils/PortalHandoff';
 import { pruneSnapshots } from './utils/SnapshotRetention';
 
 const {writeFile, mkdtemp} = fsPromise;
@@ -251,6 +252,7 @@ class Context extends Generic {
     // Every step runs even if an earlier one failed, so a failure cannot leak the remaining resources.
     private async teardown(options: any): Promise<boolean> {
         this.destroying = true;
+        this.portalHandoff?.end('context-destroyed');
 
         if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
@@ -516,6 +518,9 @@ class Context extends Generic {
                         context: this.serialize(),
                         // @ts-ignore
                         url: request.url(),
+                        method: request.method(),
+                        resourceType: request.resourceType(),
+                        errorText: request.failure()?.errorText,
                         time: Date.now(),
                     });
                 }
@@ -672,10 +677,15 @@ class Context extends Generic {
     }
 
     public clientDisconnected(response: PromiseWithResolvers<unknown>) {
+        this.portalHandoff?.clientDisconnected(response);
         this.callStacks.forEach(stack => stack.clientDisconnected(response));
     }
 
     public async handlePortalResponse(data: {context: any, response: PortalResponse}, res) {
+        if (this.portalHandoff !== undefined) {
+            return this.portalHandoff.respond(data.response, res);
+        }
+
         let psuri = this.psuriCache.get(data.response.psuri);
         if (psuri == null) {
             throw new Error('Received portal response but no stack found.');
@@ -732,6 +742,43 @@ class Context extends Generic {
         let session = await page.createCDPSession();
         this.pageCDPSessions.set(page, new WeakRef<CDPSession>(session));
         return session;
+    }
+
+    public portalHandoff?: PortalHandoff;
+    private handoffResponse?: PromiseWithResolvers<unknown>;
+
+    /**
+     * Blocks until another client claimed this context and released it again, or until options.timeout. Until then
+     * this test keeps answering portal requests, so that client can use what the test set up.
+     */
+    // @codegen
+    public async handoff(browser: Browser, options: {} = {}): Promise<string> {
+        if (this.handoffResponse === undefined || this.portalHandoff !== undefined) {
+            throw new Error('This context is handed off already.');
+        }
+
+        const handoff = new PortalHandoff(this, browser, this.handoffResponse, options);
+        this.handoffResponse = undefined;
+        this.portalHandoff = handoff;
+
+        // Requests the test did not answer yet belong to it, like the last ones of the page it opened.
+        this.callStacks.forEach((stack) => {
+            stack.portal.queue.backlog.splice(0).forEach((request: PortalRequest) => handoff.enqueue(request, stack));
+        });
+
+        return handoff.done;
+    }
+
+    public claimHandoff() {
+        if (this.portalHandoff?.state !== 'waiting') {
+            return undefined;
+        }
+        this.portalHandoff.state = 'claimed';
+
+        return {
+            context: this.serialize(),
+            browser: this.returnCached(this.portalHandoff.browser),
+        };
     }
 
     // @codegen
@@ -873,6 +920,12 @@ class Context extends Generic {
         this._lastActivity = Date.now();
 
         let on = this.resolveOn(packet);
+
+        // A handoff keeps answering this call with portal requests while it runs.
+        if (on === this && packet.function === 'handoff') {
+            this.handoffResponse = response;
+        }
+
         // it's hideous, but it's better than 3 deep ifs imho
         let page =
             (on instanceof Page)

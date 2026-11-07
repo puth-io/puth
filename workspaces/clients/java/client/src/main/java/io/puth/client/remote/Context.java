@@ -31,6 +31,14 @@ public class Context extends RemoteObject {
         return (boolean) this.callFunc("destroy", new Object[]{options});
     }
 
+    public String handoff(Browser browser) {
+        return this.handoff(browser, Map.of());
+    }
+
+    public String handoff(Browser browser, Map<String, Object> options) {
+        return (String) this.callFunc("handoff", new Object[]{browser, options});
+    }
+
     public Object[] getSnapshotsByType(Object type) {
         return (Object[]) this.callFunc("getSnapshotsByType", new Object[]{type});
     }

@@ -160,6 +160,11 @@ export class SnapshotHandler extends BaseHandler {
         return {...DEFAULT_RECORDING_BUDGETS, ...this.puth.recordingBudgets};
     }
 
+    // Finished contexts stay around for as long as their recording does.
+    recordedContexts(): Context[] {
+        return [...this.#recordings.keys()];
+    }
+
     stats() {
         return {
             bytes: this.#bytes,

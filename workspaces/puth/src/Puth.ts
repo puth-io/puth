@@ -50,7 +50,7 @@ export type PuthOptions = {
 };
 
 // Lets clients check what an instance supports before relying on it.
-const CAPABILITIES = ['context-snapshot', 'network-events'];
+const CAPABILITIES = ['context-snapshot', 'network-events', 'context-list', 'handoff'];
 
 const NULL_BODY_STATUSES = [101, 204, 205, 304];
 
@@ -199,7 +199,10 @@ export class Puth {
 
         h3.get('/health', () => this.health());
         h3.get('/diagnostics', () => this.diagnostics());
+        h3.get('/contexts', () => this.contexts());
         h3.get('/context/:id/snapshot', (event) => this.contextSnapshot(H3.getRouterParam(event, 'id') as string));
+        h3.post('/context/:id/handoff', (event) => this.claimHandoff(H3.getRouterParam(event, 'id') as string));
+        h3.delete('/context/:id/handoff', (event) => this.releaseHandoff(H3.getRouterParam(event, 'id') as string));
         h3.post('/context', json(data => this.contextCreate(data)));
         h3.patch('/context/call', event => event.req.json().then(
             data => deferTracked(event, data, handle => this.contextCall(data, handle)),
@@ -373,16 +376,57 @@ export class Puth {
         return { type: 'error', code: 'ContextNotFound', message: `Context [${id}] does not exist or was destroyed.` };
     }
 
+    private knownContexts(): Context[] {
+        return [...new Set([...Object.values(this.#contexts), ...this.snapshotHandler.recordedContexts()])];
+    }
+
+    /**
+     * Everything an instance knows about, including finished contexts as long as their recording exists.
+     */
+    public contexts() {
+        return this.knownContexts().map(context => ({
+            id: context.id,
+            name: context.test.name,
+            group: context.getGroup(),
+            status: context.test.status,
+            active: this.#contexts[context.id] === context,
+            createdAt: context.createdAt,
+            recording: this.snapshotHandler.statsOf(context),
+            handoff: context.portalHandoff === undefined
+                ? undefined
+                : { name: context.portalHandoff.name, state: context.portalHandoff.state },
+        }));
+    }
+
+    public claimHandoff(id: string): Response {
+        const claimed = this.#contexts[id]?.claimHandoff();
+        if (claimed === undefined) {
+            return Response.json({
+                type: 'error',
+                code: 'HandoffUnavailable',
+                message: `Context [${id}] does not wait for a handoff, or it was claimed already.`,
+            }, { status: 409 });
+        }
+
+        return Response.json(claimed);
+    }
+
+    public releaseHandoff(id: string) {
+        this.#contexts[id]?.portalHandoff?.end('released');
+
+        return { released: true };
+    }
+
     // Reads the recording without touching the context, so it can keep running.
     public contextSnapshot(id: string): Response {
-        const context = this.#contexts[id];
+        const context = this.knownContexts().find(known => known.id === id);
         if (context === undefined) {
             return Response.json(this.contextNotFound(id), { status: 404 });
         }
 
         const packets = this.snapshotHandler.getAllCachedItemsFrom(context);
 
-        return new Response(encode(packets, { extensionCodec: PUTH_EXTENSION_CODEC }), {
+        return new Response(encode(packets, { extensionCodec: PUTH_EXTENSION_CODEC }) as BodyInit, {
             headers: {
                 'content-type': 'application/octet-stream',
                 'content-disposition': `attachment; filename="snapshot-${context.createdAt}-${id}.puth"`,
