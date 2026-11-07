@@ -13,6 +13,13 @@ export type CallKind = 'assertion'|'read'|'action';
 const READS = [
     'attribute',
     'bounds',
+    'host',
+    'isPage',
+    'path',
+    'port',
+    'scheme',
+    'url',
+    'viewport',
     'clickablePoint',
     'content',
     'find',
@@ -32,6 +39,16 @@ const READS = [
     'text',
     'title',
     'vueAttribute',
+];
+
+// These change how the shim behaves and do not touch the page.
+const SETTINGS = [
+    'disableFitOnFailure',
+    'enableFitOnFailure',
+    'setResolverPageElements',
+    'setResolverPrefix',
+    'setTimeout',
+    'setTimeoutMultiplier',
 ];
 
 const ACTIONS = [
@@ -68,7 +85,7 @@ export function browserCallKind(name: string, parameters: any[]): CallKind|undef
         return 'assertion';
     }
     // With a second parameter this sets the value instead of reading it.
-    if (READS.includes(name) || (name === 'value' && parameters[1] == null)) {
+    if (READS.includes(name) || SETTINGS.includes(name) || (name === 'value' && parameters[1] == null)) {
         return 'read';
     }
     if (ACTIONS.includes(name)) {

@@ -1,8 +1,5 @@
 import { type CDPSession, type Protocol } from 'puppeteer-core';
 
-// An action can start a navigation shortly after it returned, for example a submitted form.
-const ACTION_SETTLE_DELAY = 50;
-
 // A requested navigation might never load, for example when it turns into a download.
 const REQUESTED_NAVIGATION_DELAY = 1000;
 
@@ -66,9 +63,10 @@ export class PageStability {
     }
 
     // Stops waiting once the page finished or the timeout ran out. A slow page should fail on what the call expects.
-    async settled(timeout: number): Promise<void> {
+    // An action can start a navigation shortly after it returned, like a submitted form, which actionSettle allows for.
+    async settled(timeout: number, actionSettle = 0): Promise<void> {
         const deadline = Date.now() + timeout;
-        const remainingDelay = this.actionFinishedAt + ACTION_SETTLE_DELAY - Date.now();
+        const remainingDelay = this.actionFinishedAt + actionSettle - Date.now();
 
         if (remainingDelay > 0) {
             await this.wait(remainingDelay);

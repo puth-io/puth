@@ -65,6 +65,7 @@ type ContextOptions = {
     group: string|undefined;
     status: string|undefined;
     timeouts?: {
+        actionSettle?: number;
         command?: number;
         pageLoad?: number;
         portal?: number;
@@ -86,6 +87,8 @@ const PAGE_CLOSED_SETTLE_DELAY = 1000;
 const DEFAULT_PORTAL_TIMEOUT = 120 * 1000;
 
 const DEFAULT_PAGE_LOAD_TIMEOUT = 30 * 1000;
+
+const DEFAULT_ACTION_SETTLE_TIMEOUT = 20;
 
 const PAGE_CLOSING_CALLS = ['close', 'quit'];
 
@@ -963,11 +966,13 @@ class Context extends Generic {
         const name = call.packet.function;
         const kind = call.on instanceof Browser ? browserCallKind(name, call.packet.parameters) : undefined;
         const attempt = new CallAttempt();
+        const retries = kind === 'read' || kind === 'assertion';
         const stability = call.stack === undefined ? undefined : this.pageStabilities.get(call.stack.page);
 
         // Runs after the call became active, a loading page might need it to reach the client through the portal.
         if (stability !== undefined && ! PAGE_CLOSING_CALLS.includes(name) && ! this.isPageBlockedByDialog(call.stack!.page)) {
-            await stability.settled(this.pageLoadTimeout);
+            // Calls that retry find out about a late navigation on their own.
+            await stability.settled(this.pageLoadTimeout, retries ? 0 : this.actionSettleTimeout);
         }
 
         try {
@@ -996,7 +1001,7 @@ class Context extends Generic {
 
             return call.on instanceof Browser ? call.on : undefined;
         } finally {
-            if (kind !== 'read' && kind !== 'assertion') {
+            if (! retries) {
                 stability?.actionFinished();
             }
         }
@@ -1274,6 +1279,10 @@ class Context extends Generic {
         return this.options?.timeouts?.command ?? 30 * 1000;
     }
     
+    get actionSettleTimeout(): number {
+        return this.options?.timeouts?.actionSettle ?? DEFAULT_ACTION_SETTLE_TIMEOUT;
+    }
+
     get pageLoadTimeout(): number {
         return this.options?.timeouts?.pageLoad ?? DEFAULT_PAGE_LOAD_TIMEOUT;
     }

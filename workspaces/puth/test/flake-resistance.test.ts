@@ -9,14 +9,14 @@ afterEach(async () => {
     await Promise.all(clients.splice(0).map((client) => client.destroy()));
 });
 
-async function open(html?: string) {
+async function open(html?: string, options = {}) {
     const client = makeLocalPuthClient();
     clients.push(client);
     client.use(PuthStandardPlugin);
 
     let context!: any;
     client.getPuth().on('context:created', (event) => { context = event.context; });
-    const remote = await client.contextCreate();
+    const remote = await client.contextCreate(options);
     const browser = await remote.createBrowserShim();
     await browser.setTimeout(1500);
     await browser.visit(fixtureUrl('/plain.txt'));
@@ -69,6 +69,40 @@ describe('Page transitions', () => {
         await browser.click('#link');
 
         assert.strictEqual(await browser.evaluate('document.title'), 'Slow page');
+    });
+
+    const timed = async (fn) => {
+        const startedAt = performance.now();
+        await fn();
+        return performance.now() - startedAt;
+    };
+
+    it('hold back the call after an action for the configured time', async () => {
+        const { browser, client } = await open('<p>idle</p>', { timeouts: { actionSettle: 200 } });
+        await browser.evaluate('1');
+
+        assert.isAtLeast(await timed(() => browser.evaluate('1')), 150);
+        assert.exists(client);
+    });
+
+    it('do not hold back calls that retry on their own', async () => {
+        const { browser } = await open('<title>idle</title>', { timeouts: { actionSettle: 500 } });
+        await browser.evaluate('1');
+
+        assert.isBelow(await timed(() => browser.assertTitle('idle')), 300);
+        await browser.evaluate('1');
+        assert.isBelow(await timed(() => browser.title()), 300);
+    });
+
+    it('can be turned off after actions', async () => {
+        const { browser } = await open('<p>idle</p>', { timeouts: { actionSettle: 0 } });
+        const elapsed = await timed(async () => {
+            for (let i = 0; i < 20; i++) {
+                await browser.evaluate('1');
+            }
+        });
+
+        assert.isBelow(elapsed, 200);
     });
 
     it('do not hold back calls on an idle page', async () => {

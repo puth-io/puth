@@ -7,7 +7,7 @@ Status: in progress. Unchecked items are planned work, not completed capabilitie
 Make Puth dependable for development and CI, then expose the same testing
 environment to Codex and other MCP clients for validation and test authoring.
 
-- [ ] Deliver the reliability foundation: local fixtures, context isolation,
+- [x] Deliver the reliability foundation: local fixtures, context isolation,
   portal failures, snapshot replay coverage, and recording limits.
 - [ ] Deliver an MCP server for browser exploration, validation, and PHP/Laravel
   test authoring.
@@ -28,7 +28,7 @@ terminal tools.
   configuration.
 - [x] Provide two local origins for navigation, cookies, redirects, and
   cross-origin scenarios.
-- [ ] Use the same fixtures in CI. Dependency installation and browser downloads
+- [x] Use the same fixtures in CI. Dependency installation and browser downloads
   may still require network access.
 - [x] Acceptance: routine browser suites make no requests to public websites.
 
@@ -57,6 +57,25 @@ terminal tools.
   disconnects, and context destruction leave no indefinitely pending portal
   work; existing portal regressions remain covered.
 
+### Flake-resistant browser calls
+
+Follow the Cypress model for the `Browser` shim.
+
+- [x] Retry assertions and waits until they pass or their timeout runs out, and
+  retry safe reads when the page changes under them. All attempts of a call share
+  its timeout.
+- [x] Wait until the target of an action is visible, enabled, attached, not
+  readonly when typing, not moving, and not covered. `click` accepts `force` to
+  skip the checks.
+- [x] Never repeat an action once it reached the page. It succeeds even if the
+  page closes because of it, while work that never happened fails with
+  `PageClosed`.
+- [x] Pause calls while the main frame loads a new document, for up to
+  `timeouts.pageLoad` milliseconds (30000 by default).
+- [x] After an action, hold back the next call that does not retry on its own for
+  `timeouts.actionSettle` milliseconds (20 by default, 0 turns it off), because a
+  navigation can start shortly after the action returned.
+
 ### Snapshot replay and recording limits
 
 - [x] Add GUI browser tests covering a failed run's export, import, command
@@ -82,8 +101,8 @@ terminal tools.
 - [ ] Create a publishable `@puth/mcp` workspace with a `puth-mcp` executable,
   built through root workspace commands.
 - [ ] Use the maintained TypeScript MCP SDK with stdio transport.
-- [ ] Connect to an existing instance through `@puth/client`; never silently
-  start another Puth instance.
+- [ ] Connect to an existing instance through the generated `@puth/client`; never
+  silently start another Puth instance.
 - [ ] Keep protocol traffic on stdout and diagnostics on stderr. Update client
   logging where necessary.
 - [ ] Give each agent session its own Puth context with recording enabled and
@@ -227,8 +246,8 @@ to trusted projects.
 - [ ] Cover disconnected servers, server restarts, stale session IDs, operation
   timeouts, recording truncation, and invalid inputs.
 - [ ] Add Changesets for user-facing changes to publishable packages.
-- [ ] Regenerate PHP and Java clients whenever a server change affects a
-  `@codegen` API, and inspect generated diffs.
+- [ ] Regenerate PHP, Java, and TypeScript clients whenever a server change
+  affects a `@codegen` API, and inspect generated diffs.
 - [ ] Publish packages only when publishing is explicitly intended.
 
 ## Defaults and boundaries
@@ -236,6 +255,8 @@ to trusted projects.
 - Reliability is a prerequisite for MCP delivery.
 - MCP v1 targets local development and CI with existing Puth instances.
 - PHP and Laravel are the initial test-export targets.
+- GUI tests use Puth itself, driving the GUI through the generated TypeScript
+  client.
 - HTTP MCP transport, attachment to existing test contexts, portal configuration
   through MCP, and execution of repository tests inside MCP are deferred.
 - Sharing a Puth instance does not mean sharing a browser context. Agent sessions

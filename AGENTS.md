@@ -77,7 +77,9 @@ classifies its methods, so add new ones there.
   page, because that could repeat a form submission. An action that reached the
   page succeeds even if the page closes because of it.
 - Calls pause while the main frame loads a new document, for up to
-  `timeouts.pageLoad` milliseconds.
+  `timeouts.pageLoad` milliseconds. After an action, the next call that does not
+  retry on its own also waits `timeouts.actionSettle` milliseconds, because a
+  navigation can start shortly after the action returned.
 - Functions sent to the page must not contain named functions: `tsx` wraps them in
   a helper that only exists on the server, and Vitest does not catch this.
 
