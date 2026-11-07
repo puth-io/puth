@@ -53,6 +53,7 @@
     "LICENCE"
   ],
   "scripts": {
+    "benchmark": "node --expose-gc --import tsx ../../dev/benchmarks/recording.ts",
     "build": "pkgroll --clean-dist",
     "dev": "NODE_ENV=development tsx watch --clear-screen=false src/dev/server.ts",
     "dev:browser:install": "tsx src/dev/browser-install.ts",

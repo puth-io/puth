@@ -89,6 +89,20 @@ isolated by port. For direct PHP, Laravel, or Java runs, start them with
 variables are set. `test/fixtures.test.ts` fails if a suite references the public
 playground or Puth websites again.
 
+## Benchmarks
+
+`dev/benchmarks/recording.ts` reports memory, recording size, and command latency
+for a long run and for concurrent contexts, using the local fixtures. To compare
+a change, measure both versions in the same environment, because the numbers vary
+between machines:
+
+```sh
+docker compose run --rm --no-deps node-test npm -w puth run benchmark
+mkdir .benchmark-base && git archive master workspaces/puth/src | tar -x -C .benchmark-base
+docker compose run --rm --no-deps node-test npm -w puth run benchmark -- --src ../../.benchmark-base/workspaces/puth/src
+rm -r .benchmark-base
+```
+
 ## Failures and cleanup
 
 ```sh
