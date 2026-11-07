@@ -67,6 +67,10 @@ origins. Java and Laravel connect to `http://puth:7345`. The standalone PHP test
 case currently hardcodes `127.0.0.1:7345`, so `php-test` shares Puth's network
 namespace.
 
+GUI tests in `workspaces/puth/test/gui` drive the built GUI with Puth itself, so
+rebuild it with `npm -w @puth/gui run build` after changing GUI source. `setup`
+does this whenever the Compose environment starts.
+
 ## Browser fixtures
 
 Browser suites use the local origins in `dev/fixtures`, not public websites. The

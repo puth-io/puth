@@ -45,6 +45,8 @@ export default class AppStore {
     
     view: 'local'|'instance' = 'instance';
     
+    importErrors: string[] = [];
+    
     constructor() {
         this.settings.preview.darken = this.readLocalStorageBoolean('previewStore.darken');
         
@@ -59,6 +61,7 @@ export default class AppStore {
             dragAndDropped: observable,
             settings: observable,
             view: observable,
+            importErrors: observable,
             
             tryConnectingTo: action,
             setActive: action,

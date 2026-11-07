@@ -75,8 +75,9 @@ export function makeLocalPuthClient(options = {}) {
     });
 }
 
-export function makePuthServer(port, address) {
+export function makePuthServer(port, address, options = {}) {
     let instance = new Puth({
+        ...options,
         installedBrowser,
         logger: {
             info: () => {},

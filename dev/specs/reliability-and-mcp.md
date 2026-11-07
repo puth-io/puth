@@ -59,9 +59,9 @@ terminal tools.
 
 ### Snapshot replay and recording limits
 
-- [ ] Add GUI browser tests covering a failed run's export, import, command
+- [x] Add GUI browser tests covering a failed run's export, import, command
   selection, frames, console output, and errors.
-- [ ] Cover repeated response-content references, malformed imports, and
+- [x] Cover repeated response-content references, malformed imports, and
   unsupported snapshot versions with useful errors.
 - [x] Add configurable recording budgets, defaulting to 256 MiB per context and
   1 GiB across the instance, measured from encoded packet sizes.
@@ -72,7 +72,7 @@ terminal tools.
   browsers for diagnostics.
 - [ ] Establish repeatable benchmarks for long runs and concurrent contexts.
   Report memory, recording size, and command latency before and after changes.
-- [ ] Acceptance: oversized recordings stay within configured budgets, remain
+- [x] Acceptance: oversized recordings stay within configured budgets, remain
   importable, and clearly indicate missing later evidence.
 
 ## Milestone 2: MCP server
