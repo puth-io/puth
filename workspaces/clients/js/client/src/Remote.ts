@@ -1,4 +1,5 @@
 import {magicClassMethods} from './Utils';
+import {createRemoteObject} from './RemoteObject';
 
 export class ExpectationFailedError extends Error {
     readonly expected: unknown;
@@ -204,6 +205,36 @@ export const RemoteContext = magicClassMethods(
     },
 );
 
+// Turns a server response into what the caller gets, for dynamic and generated objects alike.
+export function resolveResponse(on, context, response) {
+    if (response?.type === 'GenericObject') {
+        return createRemoteObject(context, response) ?? new MagicCustomObject(new Remote(context, response), {skip: true});
+    } else if (response?.type === 'GenericObjects') {
+        return response.value.map((ro) => resolveResponse(on, context, ro));
+    } else if (response?.type === 'GenericValue') {
+        return response.value;
+    } else if (response?.type === 'GenericValues') {
+        return response.value;
+    } else if (response?.type === 'GenericSelf') {
+        return on;
+    } else if (response?.type === 'GenericNull') {
+        return null;
+    } else if (response?.type === 'GenericUndefined') {
+        return on;
+    } else if (response?.type === 'GenericArray') {
+        return response.value.map((ro) => resolveResponse(on, context, ro));
+    } else if (response?.type === 'PuthAssertion') {
+        context.callAssertionHandler(response);
+        return on;
+    } else if (response?.type === 'ExpectationFailed') {
+        throw new ExpectationFailedError(response.value);
+    } else if (response?.type === 'error') {
+        throw new Error(response.code + ': ' + response.message);
+    }
+    
+    return on;
+}
+
 export function genericGet(on, context, representation, property) {
     // await keeps calling then on the new returned GenericObject
     // maybe this is intentional but couldn't debug more at the moment
@@ -212,37 +243,11 @@ export function genericGet(on, context, representation, property) {
         return;
     }
     
-    function handleResponse(response) {
+    const handleResponse = (response) => {
         context.debug(`${representation.type} __get =>`, property, response);
         
-        if (response?.type === 'GenericObject') {
-            return new MagicCustomObject(new Remote(context, response), {skip: true});
-        } else if (response?.type === 'GenericObjects') {
-            return response.value.map((ro) => new MagicCustomObject(new Remote(context, ro), {skip: true}));
-        } else if (response?.type === 'GenericValue') {
-            return response.value;
-        } else if (response?.type === 'GenericValues') {
-            return response.value;
-        } else if (response?.type === 'GenericSelf') {
-            return on;
-        } else if (response?.type === 'GenericNull') {
-            return null;
-        } else if (response?.type === 'GenericUndefined') {
-            return on;
-        } else if (response?.type === 'GenericArray') {
-            return response.value.map(ro => handleResponse(ro));
-        } else if (response?.type === 'PuthAssertion') {
-            context.callAssertionHandler(response);
-            // return response;
-            return on;
-        } else if (response?.type === 'ExpectationFailed') {
-            throw new ExpectationFailedError(response.value);
-        } else if (response?.type === 'error') {
-            throw new Error(response.code + ': ' + response.message);
-        }
-        
-        return on;
-    }
+        return resolveResponse(on, context, response);
+    };
     
     if (property === '_getProperty') {
         return async function (name) {

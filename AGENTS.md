@@ -85,12 +85,12 @@ classifies its methods, so add new ones there.
 
 `@codegen` marks server-side remote APIs for generation. Add it immediately
 above a public `Context`/shim method (or to a root class comment) when that API
-must be exposed to generated PHP and Java remote-object clients. Keep generated
+must be exposed to generated PHP, Java, and TypeScript remote-object clients. Keep generated
 methods simple and use explicit TypeScript parameter and return types when
 possible.
 
 After changing a `@codegen` API, run `node bin/codegen-clients.js`. It rewrites
-the generated PHP and Java remote-object classes, so inspect the diff and keep
+the generated PHP, Java, and TypeScript classes, so inspect the diff and keep
 only intentional generated changes. Do not hand-maintain generated methods;
 make the change in the server source and regenerate. The Java generator uses a
 Node-compatible ESM import, so run it with Node unless the project specifically

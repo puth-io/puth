@@ -2,17 +2,15 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { decode, encode } from '@msgpack/msgpack';
-import { RemotePuthClient } from '@puth/client';
+import { type Browser, Context, RemotePuthClient } from '@puth/client';
 import { afterEach, assert, beforeEach, describe, it } from 'vitest';
-import { fixtureUrl, makeLocalPuthClient, makePuthServer } from '../helper';
+import { fixtureUrl, makePuthServer } from '../helper';
 import { LiveViewSnapshotPlugin } from '../../src/plugins/LiveViewPlugin';
-import { PuthStandardPlugin } from '../../src/plugins/PuthStandardPlugin';
 import { PUTH_EXTENSION_CODEC } from '../../src/handlers/WebsocketHandler';
 
-// Puth tests its own GUI: one instance serves the GUI and records, a second one drives it in a browser.
+// Puth tests its own GUI: an instance records and serves the GUI, which the generated client drives over HTTP.
 
 const cleanups: (() => unknown)[] = [];
-const requestedUrls: string[] = [];
 let directory: string;
 
 beforeEach(() => {
@@ -20,8 +18,11 @@ beforeEach(() => {
     cleanups.push(() => rmSync(directory, { recursive: true, force: true }));
 });
 
+// In reverse order, contexts have to go before the instance they live on.
 afterEach(async () => {
-    await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+    for (const cleanup of cleanups.splice(0).reverse()) {
+        await cleanup();
+    }
 });
 
 async function startInstance(options = {}) {
@@ -33,33 +34,30 @@ async function startInstance(options = {}) {
     return instance;
 }
 
-// Uses the shim on the server side, so failed expectations throw.
-async function openGui(instance) {
-    const client = makeLocalPuthClient();
-    cleanups.push(() => client.destroy());
-    client.use(PuthStandardPlugin);
+const clientOf = (instance) => new RemotePuthClient(instance.http.url.replace(/\/$/, ''));
 
-    let context!: any;
-    client.getPuth().on('context:created', (event) => { context = event.context; });
-    await client.contextCreate();
+async function createContext(instance, options = {}) {
+    const context = await Context.create(clientOf(instance), options);
+    cleanups.push(() => context.destroy({ immediately: true }));
 
+    return context;
+}
+
+async function openGui(instance): Promise<Browser> {
+    const context = await createContext(instance);
     const gui = await context.createBrowserShim();
-    gui.page.on('request', (request) => requestedUrls.push(request.url()));
 
     await gui.visit(instance.http.url);
 
     return gui;
 }
 
-async function importFile(gui, name: string, content: Uint8Array) {
+async function importFile(gui: Browser, name: string, content: Uint8Array) {
     const file = path.join(directory, name);
     writeFileSync(file, content);
 
-    await (await gui.page.$('input[type=file]')).uploadFile(file);
-}
-
-function recordingClient(instance) {
-    return new RemotePuthClient(instance.http.url.replace(/\/$/, ''));
+    const input = await gui.firstOrFail('input[type=file]');
+    await input.uploadFile(file);
 }
 
 const paint = (browser, color: number) => browser.evaluate(`(() => {
@@ -69,7 +67,7 @@ const paint = (browser, color: number) => browser.evaluate(`(() => {
 })()`);
 
 async function recordFailedRun(instance) {
-    const context = await recordingClient(instance).contextCreate({ snapshot: true, test: { name: 'failed checkout' } });
+    const context = await createContext(instance, { snapshot: true, test: { name: 'failed checkout' } });
     const browser = await context.createBrowserShim();
 
     await browser.setTimeout(200);
@@ -84,14 +82,14 @@ async function recordFailedRun(instance) {
     await context.destroy({ immediately: true });
 }
 
-async function connect(gui, instance) {
+async function connect(gui: Browser, instance) {
     const { host } = new URL(instance.http.url);
 
     await gui.press(`ws://${host}/websocket`);
 }
 
 // The download goes through an object URL, so the exported bytes can be read from the page.
-async function exportActiveContext(gui): Promise<Uint8Array> {
+async function exportActiveContext(gui: Browser): Promise<Uint8Array> {
     await gui.evaluate(`(() => {
         const createObjectURL = URL.createObjectURL;
         URL.createObjectURL = (blob) => {
@@ -101,11 +99,13 @@ async function exportActiveContext(gui): Promise<Uint8Array> {
     })()`);
 
     await gui.click('[puth="export-snapshot"]');
-    await gui.waitUntil(() => (window as any).exportedSnapshot !== undefined);
+    await gui.waitUntil('window.exportedSnapshot !== undefined');
 
-    return Buffer.from(await gui.evaluate(`
-        window.exportedSnapshot.arrayBuffer().then((buffer) => Array.from(new Uint8Array(buffer)))
-    `));
+    return Buffer.from(await gui.evaluate(`window.exportedSnapshot.arrayBuffer().then((buffer) => {
+        let binary = '';
+        new Uint8Array(buffer).forEach((byte) => { binary += String.fromCharCode(byte); });
+        return btoa(binary);
+    })`), 'base64');
 }
 
 const contextPacket = (extra = {}) => ({
@@ -122,15 +122,16 @@ const contextPacket = (extra = {}) => ({
 
 describe('Snapshot replay', () => {
     it('loads nothing from other hosts', async () => {
-        requestedUrls.length = 0;
         const instance = await startInstance();
+        const gui = await openGui(instance);
 
-        await openGui(instance);
+        const requested: string[] = JSON.parse(await gui.evaluate(
+            `JSON.stringify(performance.getEntriesByType('resource').map((entry) => entry.name))`,
+        ));
 
         const { host } = new URL(instance.http.url);
-        const external = requestedUrls.filter((url) => url.startsWith('http') && new URL(url).host !== host);
-        assert.isNotEmpty(requestedUrls);
-        assert.deepEqual(external, []);
+        assert.isNotEmpty(requested);
+        assert.deepEqual(requested.filter((url) => new URL(url).host !== host), []);
     }, 30000);
 
     it('shows a failed run after exporting and importing it', async () => {
@@ -190,7 +191,7 @@ describe('Snapshot replay', () => {
     it('shows where a truncated recording ends', async () => {
         const instance = await startInstance({ recording: { context: 32 * 1024 } });
         const directoryOption = path.relative(process.cwd(), directory);
-        const context = await recordingClient(instance).contextCreate({ snapshot: true, test: { name: 'long run' } });
+        const context = await createContext(instance, { snapshot: true, test: { name: 'long run' } });
         const browser = await context.createBrowserShim();
         await browser.visit(fixtureUrl());
         for (let i = 0; i < 30; i++) {
