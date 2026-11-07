@@ -11,9 +11,11 @@ import { PuthPlugin, PuthPluginType, type PuthPluginGeneric } from './PuthPlugin
 import PuthContextPlugin from './PuthContextPlugin';
 import PuthInstancePlugin from './PuthInstancePlugin';
 import { BrowserHandler, type IBrowserHandler } from './handlers/BrowserHandler';
-import { WebsocketHandler } from './handlers/WebsocketHandler';
+import { PUTH_EXTENSION_CODEC, WebsocketHandler } from './handlers/WebsocketHandler';
 import { SnapshotHandler, type RecordingBudgets } from './handlers/SnapshotHandler';
 import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
+import { encode } from '@msgpack/msgpack';
 import { type PortalFailure } from './utils/CallStack';
 
 declare global {
@@ -43,6 +45,9 @@ export type PuthOptions = {
     // Limits in bytes, measured from encoded packets.
     recording?: Partial<RecordingBudgets>;
 };
+
+// Lets clients check what an instance supports before relying on it.
+const CAPABILITIES = ['context-snapshot', 'network-events'];
 
 const NULL_BODY_STATUSES = [101, 204, 205, 304];
 
@@ -86,6 +91,7 @@ export class Puth {
     #instancePlugins: PuthInstancePlugin[] = [];
     #contextPlugins: PuthPluginGeneric<PuthContextPlugin>[] = [];
     #contexts: { [key: string]: Context } = {};
+    #instanceId = randomUUID();
 
     private options: PuthOptions;
 
@@ -188,7 +194,9 @@ export class Puth {
             return handler(handle);
         });
 
+        h3.get('/health', () => this.health());
         h3.get('/diagnostics', () => this.diagnostics());
+        h3.get('/context/:id/snapshot', (event) => this.contextSnapshot(H3.getRouterParam(event, 'id') as string));
         h3.post('/context', json(data => this.contextCreate(data)));
         h3.patch('/context/call', event => event.req.json().then(
             data => deferTracked(event, data, handle => this.contextCall(data, handle)),
@@ -350,6 +358,35 @@ export class Puth {
         return context.serialize();
     }
 
+    public health() {
+        return {
+            version: createRequire(import.meta.url)('../package.json').version,
+            instanceId: this.#instanceId,
+            capabilities: CAPABILITIES,
+        };
+    }
+
+    private contextNotFound(id: string) {
+        return { type: 'error', code: 'ContextNotFound', message: `Context [${id}] does not exist or was destroyed.` };
+    }
+
+    // Reads the recording without touching the context, so it can keep running.
+    public contextSnapshot(id: string): Response {
+        const context = this.#contexts[id];
+        if (context === undefined) {
+            return Response.json(this.contextNotFound(id), { status: 404 });
+        }
+
+        const packets = this.snapshotHandler.getAllCachedItemsFrom(context);
+
+        return new Response(encode(packets, { extensionCodec: PUTH_EXTENSION_CODEC }), {
+            headers: {
+                'content-type': 'application/octet-stream',
+                'content-disposition': `attachment; filename="snapshot-${context.createdAt}-${id}.puth"`,
+            },
+        });
+    }
+
     public diagnostics() {
         return {
             contexts: Object.values(this.#contexts).map(context => ({
@@ -366,19 +403,24 @@ export class Puth {
     }
 
     public contextCall(packet, res) {
-        return this.#contexts[packet.context.id].call(packet, res);
+        const context = this.#contexts[packet.context.id];
+        if (context === undefined) {
+            return res.resolve(this.contextNotFound(packet.context.id));
+        }
+
+        return context.call(packet, res);
     }
 
     public contextGet(packet) {
-        return this.#contexts[packet.context.id].get(packet);
+        return this.#contexts[packet.context.id]?.get(packet) ?? this.contextNotFound(packet.context.id);
     }
 
     public contextSet(packet) {
-        return this.#contexts[packet.context.id].set(packet);
+        return this.#contexts[packet.context.id]?.set(packet) ?? this.contextNotFound(packet.context.id);
     }
 
     public contextDelete(packet) {
-        return this.#contexts[packet.context.id].delete(packet);
+        return this.#contexts[packet.context.id]?.delete(packet) ?? this.contextNotFound(packet.context.id);
     }
 
     public async contextDestroy(packet) {

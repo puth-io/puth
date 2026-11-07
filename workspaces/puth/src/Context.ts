@@ -468,7 +468,23 @@ class Context extends Generic {
             await cdp.send('Fetch.enable');
         }
         
-        if (this.debug) {
+        this.registerEventListenerOn(page, 'pageerror', (error: Error) => {
+            const text = error?.message ?? String(error);
+
+            this.puth.snapshotHandler.pushToCache(this, {
+                id: v4(),
+                type: 'log',
+                context: this.serialize(),
+                timestamp: Date.now(),
+                messageType: 'error',
+                args: [text],
+                location: {},
+                text,
+                stackTrace: [],
+            });
+        });
+
+        if (this.debug || this.options?.track?.includes('network')) {
             let trackable = (request: HTTPRequest) => ['document', 'stylesheet', 'image', 'media', 'font', 'script', 'manifest', 'xhr', 'fetch'].includes(request.resourceType());
             
             this.registerEventListenerOn(page, 'request', async (request: HTTPRequest) => {
@@ -520,7 +536,8 @@ class Context extends Generic {
                         resourceType: response.request().resourceType(),
                         method: response.request().method(),
                         headers: response.headers(),
-                        content: await response.buffer().catch((err) => {
+                        // Tracking network activity alone only needs a summary of it.
+                        content: ! this.debug ? undefined : await response.buffer().catch((err) => {
                             // Error occurs only when page is navigating. So if the response is coming in after page is already
                             // navigating to somewhere else, then chrome deletes the data.
                             return Buffer.alloc(0);

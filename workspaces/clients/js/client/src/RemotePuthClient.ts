@@ -73,7 +73,7 @@ export class RemotePuthClient {
         })
             .then(async response => {
                 if (! response.ok) {
-                    console.log(method, url, data);
+                    console.error(method, url, data);
                     console.error(await response.text());
                     throw new Error(`Request failed. Status: ${response.status}`);
                 }

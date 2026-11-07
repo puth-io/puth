@@ -28,6 +28,8 @@ const READS = [
     'firstOrFail',
     'getCookieByName',
     'inputValue',
+    'onPage',
+    'openPages',
     'resolveForButtonPress',
     'resolveForChecking',
     'resolveForField',

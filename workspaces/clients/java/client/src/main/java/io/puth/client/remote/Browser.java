@@ -11,6 +11,14 @@ public class Browser extends RemoteObject {
         super(id, type, represents, parent, context);
     }
 
+    public Object[] openPages() {
+        return (Object[]) this.callFunc("openPages", new Object[]{});
+    }
+
+    public Browser onPage(int index) {
+        return (Browser) this.callFunc("onPage", new Object[]{index});
+    }
+
     public Browser clone() {
         return this.clone(null, Map.of());
     }
