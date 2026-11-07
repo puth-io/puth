@@ -238,7 +238,7 @@ describe('CallStack', () => {
     });
 
     it('releases page, CDP, dialog, waiter, and portal state when a page closes', async () => {
-        const cdp = makeEventTarget({ send: vi.fn().mockResolvedValue(undefined) });
+        const cdp = makeEventTarget({ send: vi.fn().mockResolvedValue({ frameTree: { frame: { id: 'main' } } }) });
         const page = makeEventTarget({
             emulateMediaFeatures: vi.fn().mockResolvedValue(undefined),
             createCDPSession: vi.fn().mockResolvedValue(cdp),

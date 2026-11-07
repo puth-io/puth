@@ -32,6 +32,8 @@ import { CallStack, type PortalFailure, type PortalRequest, type PortalResponse 
 import { Call } from './utils/Call';
 import { createHash } from 'node:crypto';
 import { PageClosedError, isConnectionLost, isNavigationError, isPageClosed } from './utils/TargetErrors';
+import { CallAttempt, browserCallKind, runBrowserCall } from './utils/CallRetry';
+import { PageStability } from './utils/PageStability';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -64,6 +66,7 @@ type ContextOptions = {
     status: string|undefined;
     timeouts?: {
         command?: number;
+        pageLoad?: number;
         portal?: number;
     };
     dev: boolean|undefined;
@@ -82,10 +85,12 @@ const PAGE_CLOSED_SETTLE_DELAY = 1000;
 
 const DEFAULT_PORTAL_TIMEOUT = 120 * 1000;
 
-// Asserts and waits only observe the page, so they can safely run again.
-const RETRYABLE_BROWSER_CALL = /^(assert|wait)/;
+const DEFAULT_PAGE_LOAD_TIMEOUT = 30 * 1000;
 
 const PAGE_CLOSING_CALLS = ['close', 'quit'];
+
+// Calls on puppeteer objects that act on the page. Unlike the Browser shim they do not report when they did.
+const PAGE_ACTION = /^(click|drag|drop|focus|hover|press|select|tap|type)/;
 
 type PsuriResponseHandler = (
     error: undefined|PortalFailure,
@@ -410,6 +415,8 @@ class Context extends Generic {
         }
         
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await this.trackPageStability(page);
+
         this.registerEventListenerOn(page, 'close', () => {
             this.untrackPage(page)?.disposeAfter(PAGE_CLOSED_SETTLE_DELAY, 'Page closed while a call was pending.');
             // @ts-ignore
@@ -523,6 +530,17 @@ class Context extends Generic {
         return true;
     }
 
+    private async trackPageStability(page: Page) {
+        const cdp = await this.cdps(page);
+        const stability = await PageStability.track(
+            cdp,
+            (event, handler) => this.registerEventListenerOn(cdp, event, handler),
+            this.puth.logger,
+        );
+
+        this.pageStabilities.set(page, stability);
+    }
+
     private untrackPage(page: Page): CallStack|undefined {
         const stack = this.callStacks.get(page);
         const cdp = this.pageCDPSessions.get(page)?.deref();
@@ -532,6 +550,8 @@ class Context extends Generic {
             this.removeEventListenersFrom(cdp);
         }
 
+        this.pageStabilities.get(page)?.dispose();
+        this.pageStabilities.delete(page);
         this.callStacks.delete(page);
         this.pageCDPSessions.delete(page);
         this.caches.dialog.delete(page);
@@ -815,6 +835,7 @@ class Context extends Generic {
     
     callStacks: Map<Page, CallStack> = new Map<Page, CallStack>();
     private trackedPages: WeakSet<Page> = new WeakSet<Page>();
+    private pageStabilities: Map<Page, PageStability> = new Map<Page, PageStability>();
 
     public call(packet: any, response: PromiseWithResolvers<unknown>) {
         this.puth.logger.debug(packet, 'Context call');
@@ -940,24 +961,44 @@ class Context extends Generic {
 
     private async applyCall(call: Call) {
         const name = call.packet.function;
+        const kind = call.on instanceof Browser ? browserCallKind(name, call.packet.parameters) : undefined;
+        const attempt = new CallAttempt();
+        const stability = call.stack === undefined ? undefined : this.pageStabilities.get(call.stack.page);
 
-        if (call.on instanceof Browser && RETRYABLE_BROWSER_CALL.test(name)) {
-            return call.on.retryOnTargetChange(name, call.fn);
+        // Runs after the call became active, a loading page might need it to reach the client through the portal.
+        if (stability !== undefined && ! PAGE_CLOSING_CALLS.includes(name) && ! this.isPageBlockedByDialog(call.stack!.page)) {
+            await stability.settled(this.pageLoadTimeout);
         }
 
         try {
+            if (kind !== undefined) {
+                return await runBrowserCall(call.on, attempt, name, kind, call.fn);
+            }
+
             // @ts-ignore
             return await Promise.try(call.fn);
         } catch (error: any) {
+            // These already decided the outcome, even if their message quotes the error behind it.
+            if (error instanceof ExpectationFailed || error instanceof PageClosedError) {
+                throw error;
+            }
             if (! isConnectionLost(error) && ! isNavigationError(error)) {
                 throw error;
             }
-            if (! PAGE_CLOSING_CALLS.includes(name) && await isPageClosed(call.page, error)) {
+
+            // An action that reached the page succeeded, even if the page went away because of it.
+            const acted = attempt.dispatched || (kind === undefined && PAGE_ACTION.test(name));
+            if (! acted && ! PAGE_CLOSING_CALLS.includes(name) && await isPageClosed(call.page, error)) {
                 throw new PageClosedError(`Page closed during ${name}.`);
             }
 
-            // The call may already have done its work, like a click that navigates, and repeating it is not safe.
             this.puth.logger.debug({ error, packet: call.packet }, '[Call apply] Page changed during call');
+
+            return call.on instanceof Browser ? call.on : undefined;
+        } finally {
+            if (kind !== 'read' && kind !== 'assertion') {
+                stability?.actionFinished();
+            }
         }
     }
 
@@ -1233,6 +1274,10 @@ class Context extends Generic {
         return this.options?.timeouts?.command ?? 30 * 1000;
     }
     
+    get pageLoadTimeout(): number {
+        return this.options?.timeouts?.pageLoad ?? DEFAULT_PAGE_LOAD_TIMEOUT;
+    }
+
     get portalTimeout(): number {
         return this.options?.timeouts?.portal ?? DEFAULT_PORTAL_TIMEOUT;
     }

@@ -88,8 +88,6 @@ async function connect(gui, instance) {
     const { host } = new URL(instance.http.url);
 
     await gui.press(`ws://${host}/websocket`);
-    // The popover fades out and keeps covering what is below it until then.
-    await gui.waitUntilMissing('[data-radix-popper-content-wrapper]');
 }
 
 // The download goes through an object URL, so the exported bytes can be read from the page.

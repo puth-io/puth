@@ -5,9 +5,63 @@ import { PuthStandardPlugin } from '../plugins/PuthStandardPlugin';
 import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
 import { type BrowserRef, type BrowserRefContext } from '../handlers/BrowserHandler';
-import { PageClosedError, isPageClosed, isTargetChange, rethrowTargetChange } from '../utils/TargetErrors';
+import { type CallAttempt } from '../utils/CallRetry';
+import { rethrowTargetChange } from '../utils/TargetErrors';
 
-const TARGET_CHANGE_RETRY_DELAY = 50;
+const ACTIONABILITY_RETRY_DELAY = 50;
+const ANIMATION_SAMPLE_DELAY = 20;
+const ANIMATION_DISTANCE_THRESHOLD = 5;
+
+// Runs inside the page and returns why the element can not be acted on. Named functions must not be used in here:
+// tsx wraps them in a helper that does not exist in the page.
+async function actionabilityProblem(
+    element: Element,
+    editable: boolean,
+    sampleDelay: number,
+    distanceThreshold: number,
+): Promise<string|null> {
+    if (! element.isConnected) {
+        return 'it is detached from the document';
+    }
+    if (! element.checkVisibility({ visibilityProperty: true } as any)) {
+        return 'it is not visible';
+    }
+
+    let box = element.getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) {
+        return 'it has no size';
+    }
+    if (element.matches(':disabled')) {
+        return 'it is disabled';
+    }
+    if (editable && (element as HTMLInputElement).readOnly) {
+        return 'it is readonly';
+    }
+
+    const root = element.getRootNode() as Document;
+    let top = root.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+    if (top !== element && ! element.contains(top)) {
+        element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+        box = element.getBoundingClientRect();
+    }
+
+    await new Promise(resolve => setTimeout(resolve, sampleDelay));
+
+    const moved = element.getBoundingClientRect();
+    if (Math.hypot(moved.x - box.x, moved.y - box.y) > distanceThreshold) {
+        return 'it is animating';
+    }
+
+    top = root.elementFromPoint(moved.x + moved.width / 2, moved.y + moved.height / 2);
+    if (top === null) {
+        return 'it is outside of the viewport';
+    }
+    if (top !== element && ! element.contains(top)) {
+        return `it is covered by <${top.tagName.toLowerCase()}${top.id ? `#${top.id}` : ''}>`;
+    }
+
+    return null;
+}
 
 // TODO
 // @gen-class ElementHandle
@@ -93,7 +147,9 @@ export class Browser {
     private readonly selfWithAsserts: (count?: int) => () => Return<this>;
 
     private dialogTypeCache: string = '';
-    private retryWindow?: { startedAt: number; deadline?: number; retried: boolean };
+
+    // Set while a call runs through runBrowserCall.
+    public attempt?: CallAttempt;
 
     public options = {
         timeout: 3000,
@@ -104,6 +160,7 @@ export class Browser {
             elements: {},
         },
         fitOnFailure: true,
+        actionability: true,
     };
 
     constructor(browserRefContext: BrowserRefContext, site: Page | Frame, options = {}) {
@@ -127,43 +184,6 @@ export class Browser {
 
     get browserContext(): BrowserContext {
         return this.browserRefContext.context;
-    }
-
-    /**
-     * Runs an idempotent call again when the page changes under it, until the timeout of the call runs out. All
-     * attempts share that timeout. Calls that act on the page must not use this, a retry would repeat the action.
-     */
-    public async retryOnTargetChange<T>(name: string, fn: () => Promise<T>|T): Promise<T> {
-        const retryWindow: Browser['retryWindow'] = { startedAt: Date.now(), retried: false };
-        this.retryWindow = retryWindow;
-
-        try {
-            while (true) {
-                try {
-                    return await fn();
-                } catch (error: any) {
-                    if (! isTargetChange(error)) {
-                        throw error;
-                    }
-                    if (await isPageClosed(this.site, error)) {
-                        throw new PageClosedError(`Page closed during ${name}.`);
-                    }
-
-                    retryWindow.deadline ??= retryWindow.startedAt + this.timeout;
-                    if (Date.now() >= retryWindow.deadline) {
-                        throw new ExpectationFailed(
-                            `${name} did not finish in ${retryWindow.deadline - retryWindow.startedAt}ms `
-                            + `because the page kept changing: ${error.message}`,
-                        );
-                    }
-
-                    retryWindow.retried = true;
-                    await new Promise(resolve => setTimeout(resolve, TARGET_CHANGE_RETRY_DELAY));
-                }
-            }
-        } finally {
-            this.retryWindow = undefined;
-        }
     }
 
     public clone(site: Page | Frame | null = null, options: {} = {}): Browser {
@@ -229,6 +249,59 @@ export class Browser {
         });
     }
 
+    // Resolves the target of an action again until it can be acted on, which a page in transition or a re-render needs.
+    private async actionable(
+        resolve: () => Promise<ElementHandle>,
+        label: string|string[],
+        { editable = false, force = false } = {},
+    ): Promise<ElementHandle> {
+        const deadline = Date.now() + this.resolveTimeout();
+
+        while (true) {
+            const element = await resolve();
+
+            if (force || ! this.options.actionability) {
+                return element;
+            }
+
+            const problem = await element.evaluate(
+                actionabilityProblem,
+                editable,
+                ANIMATION_SAMPLE_DELAY,
+                ANIMATION_DISTANCE_THRESHOLD,
+            );
+            if (problem === null) {
+                return element;
+            }
+            if (Date.now() >= deadline) {
+                throw new ExpectationFailed(
+                    `Element [${Array.isArray(label) ? label.join(' | ') : label}] is not actionable: ${problem}.`,
+                );
+            }
+
+            await new Promise(next => setTimeout(next, ACTIONABILITY_RETRY_DELAY));
+        }
+    }
+
+    // From here on the call acted on the page, so it must not run again.
+    private dispatched() {
+        if (this.attempt !== undefined) {
+            this.attempt.dispatched = true;
+        }
+    }
+
+    private async act<T>(
+        resolve: () => Promise<ElementHandle>,
+        label: string|string[],
+        action: (element: ElementHandle) => Promise<T>,
+        options: { editable?: boolean, force?: boolean } = {},
+    ): Promise<T> {
+        const element = await this.actionable(resolve, label, options);
+        this.dispatched();
+
+        return action(element);
+    }
+
     public visit(url: string): Promise<this> {
         return this.site.goto(url).then(this.self);
     }
@@ -236,21 +309,24 @@ export class Browser {
     // error msg "Unable to locate element with selector [{$selector}]."
     public click(selector: string|null = null, options: any = {}): Promise<this> {
         if (selector == null) {
+            this.dispatched();
             return this.page.mouse.down()
                 .then(() => this.page.mouse.up())
                 .then(this.self);
         }
 
-        return this.firstOrFail(selector)
-            .then((element) => element.click(options))
+        const { force, ...clickOptions } = options ?? {};
+
+        return this.act(() => this.firstOrFail(selector), selector, (element) => element.click(clickOptions), { force })
             .then(this.self);
     }
 
     public clickLink(linkText: string, element: string = 'a'): Promise<this> {
         const text = xpathLiteral(linkText.trim().replace(/\s+/g, ' '));
 
-        return this.firstOrFail(`xpath////${element}[normalize-space(.) = ${text}]`)
-            .then((element) => element.click())
+        const selector = `xpath////${element}[normalize-space(.) = ${text}]`;
+
+        return this.act(() => this.firstOrFail(selector), linkText, (element) => element.click())
             .then(this.self);
     }
 
@@ -261,18 +337,20 @@ export class Browser {
     public clickAtXPath(expression: string): Promise<this> {
         expression = expression.startsWith('.') ? expression.substring(1) : expression;
 
-        return this.firstOrFail(`xpath//.${expression}`)
-            .then((element) => element.click())
+        const selector = `xpath//.${expression}`;
+
+        return this.act(() => this.firstOrFail(selector), expression, (element) => element.click())
             .then(this.self);
     }
 
     public async clickAndHold(selector: string | null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.firstOrFail(selector);
+            let element = await this.actionable(() => this.firstOrFail(selector), selector);
             await element.scrollIntoView();
             let point = await element.clickablePoint();
             await this.page.mouse.move(point.x, point.y);
         }
+        this.dispatched();
         await this.page.mouse.down();
 
         return this.self();
@@ -280,9 +358,9 @@ export class Browser {
 
     public async doubleClick(selector: string | null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.firstOrFail(selector);
-            await element.click({ count: 2 });
+            await this.act(() => this.firstOrFail(selector), selector, (element) => element.click({ count: 2 }));
         } else {
+            this.dispatched();
             await this.page.mouse.down();
             await this.page.mouse.up();
             await this.page.mouse.down();
@@ -294,9 +372,9 @@ export class Browser {
 
     public async rightClick(selector: string | null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.firstOrFail(selector);
-            await element.click({ button: 'right' });
+            await this.act(() => this.firstOrFail(selector), selector, (element) => element.click({ button: 'right' }));
         } else {
+            this.dispatched();
             await this.page.mouse.down({ button: 'right' });
             await this.page.mouse.up({ button: 'right' });
         }
@@ -566,13 +644,12 @@ export class Browser {
     }
 
     public _type(selector: string, value: string, options = {}): Promise<this> {
-        return this.resolveForTyping(selector)
-            .then(async element => {
-                if (options?.clear) {
-                    await PuthStandardPlugin.clear(element);
-                }
-                await type(element, value, options);
-            })
+        return this.act(() => this.resolveForTyping(selector), selector, async element => {
+            if (options?.clear) {
+                await PuthStandardPlugin.clear(element);
+            }
+            await type(element, value, options);
+        }, { editable: true })
             .then(this.self);
     }
 
@@ -593,27 +670,26 @@ export class Browser {
     }
 
     public clear(selector: string): Promise<this> {
-        return this.resolveForTyping(selector)
-            .then(element => PuthStandardPlugin.clear(element))
+        return this.act(() => this.resolveForTyping(selector), selector, element => PuthStandardPlugin.clear(element), { editable: true })
             .then(this.self);
     }
 
     public keys(selector: string, keys: string[] = []): Promise<this> {
         let parsed = keys.map((comb) => (Array.isArray(comb) ? comb.join('') : comb));
 
-        return this.firstOrFail(selector)
-            .then(element => type(element, parsed))
+        return this.act(() => this.firstOrFail(selector), selector, element => type(element, parsed))
             .then(this.self);
     }
 
     // TODO check with laravel dusk community because the original function does not keep options select for multiple
     public async select(selector: string, value: null|string|(string[]) = null): Promise<this> {
-        let element = await this.resolveForSelection(selector);
+        let element = await this.actionable(() => this.resolveForSelection(selector), selector);
         let options = await element.$$('option:not([disabled])');
         if (options.length === 0) {
             throw new ExpectationFailed('Element has no selectable/non-disabled options.');
         }
         value = value === null ? null : (!Array.isArray(value) ? [value] : value);
+        this.dispatched();
 
         let select = (await PuthStandardPlugin.its(element, 'tagName') === 'SELECT') ? element : null;
         let isMultiple = Boolean(await PuthStandardPlugin.its(element, 'multiple'));
@@ -656,14 +732,14 @@ export class Browser {
     }
 
     public radio(selector: string, value: string): Promise<this> {
-        return this.resolveForRadioSelection(selector, value)
-            .then(element => element.click())
+        return this.act(() => this.resolveForRadioSelection(selector, value), selector, element => element.click())
             .then(this.self);
     }
 
     public async _check(shouldBeChecked: boolean, selector: string, value: string|null = null): Promise<this> {
-        let element = await this.resolveForChecking(selector, value);
+        let element = await this.actionable(() => this.resolveForChecking(selector, value), selector ?? '');
         if (shouldBeChecked !== await PuthStandardPlugin.its(element, 'checked')) {
+            this.dispatched();
             await element.click();
         }
 
@@ -679,7 +755,9 @@ export class Browser {
     }
 
     public async drag(from: string, to: string): Promise<this> {
-        let [first, second] = await Promise.all([from, to].map(s => this.resolver(s)).map(s => this._waitFor(s)));
+        let first = await this.actionable(() => this._waitFor(this.resolver(from)) as Promise<ElementHandle>, from);
+        let second = await this.actionable(() => this._waitFor(this.resolver(to)) as Promise<ElementHandle>, to);
+        this.dispatched();
         // @ts-ignore
         await second.drop(first);
 
@@ -687,8 +765,7 @@ export class Browser {
     }
 
     public dragOffset(selector: string, x: int, y: int): Promise<this> {
-        return this.firstOrFail(selector)
-            .then(element => element.drag({x, y}))
+        return this.act(() => this.firstOrFail(selector), selector, element => element.drag({x, y}))
             .then(this.self);
     }
 
@@ -989,26 +1066,24 @@ export class Browser {
 
     // Press the button with the given text or name.
     public press(button: string): Promise<this> {
-        return this.resolveForButtonPress(button)
-            .then((element) => element.click())
+        return this.act(() => this.resolveForButtonPress(button), button, (element) => element.click())
             .then(this.self);
     }
 
     // Press the button with the given text or name.
     public pressAndWaitFor(button: string): Promise<this> {
-        return this.resolveForButtonPress(button)
-            .then(async (element) =>
-                element
-                    .click()
-                    .then((_) =>
-                        this.expectsHandleFunction(
-                            (handle, expected) => !!handle.disabled === expected,
-                            element,
-                            false,
-                            `Expected element [${button}] to be enabled, but it wasn't.`,
-                        ),
+        return this.act(() => this.resolveForButtonPress(button), button, (element) =>
+            element
+                .click()
+                .then((_) =>
+                    this.expectsHandleFunction(
+                        (handle, expected) => !!handle.disabled === expected,
+                        element,
+                        false,
+                        `Expected element [${button}] to be enabled, but it wasn't.`,
                     ),
-            )
+                ),
+        )
             .then(this.self);
     }
 
@@ -1328,13 +1403,7 @@ export class Browser {
     private resolveTimeout(timeout?: int|null) {
         const resolved = timeout ? (timeout * this.options.timeoutMultiplier) : this.timeout;
 
-        if (this.retryWindow === undefined) {
-            return resolved;
-        }
-
-        this.retryWindow.deadline ??= this.retryWindow.startedAt + resolved;
-
-        return this.retryWindow.retried ? Math.max(1, this.retryWindow.deadline - Date.now()) : resolved;
+        return this.attempt?.timeout(resolved) ?? resolved;
     }
 
     public inputValue(field: any): string {
@@ -2121,8 +2190,7 @@ export class Browser {
 
     //// MOUSE /////////////////////////////////////////////////////////////////////////////////////////////////////////
     public mouseover(selector: string): Promise<this> {
-        return this.firstOrFail(selector)
-            .then((element) => element.hover())
+        return this.act(() => this.firstOrFail(selector), selector, (element) => element.hover())
             .then(this.self);
     }
 

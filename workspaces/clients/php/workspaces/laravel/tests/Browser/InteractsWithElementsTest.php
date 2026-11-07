@@ -87,8 +87,8 @@ HTML;
     
     function test_click_exception()
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessageMatches('/Function click threw error: Node is either not clickable or not an Element/');
+        $this->expectException(ExpectationFailedException::class);
+        $this->expectExceptionMessageMatches('/Element \[button\] is not actionable: it is not visible/');
         
         $this->browse(function (Browser $browser) {
             $browser->setContent('<body><button style="display: none">test</button></body>');
