@@ -19,6 +19,8 @@ describe('browserCallKind', () => {
         ['value', ['#input'], 'read'],
         ['value', ['#input', 'new value'], undefined],
         ['click', [], 'action'],
+        ['url', [], 'read'],
+        ['setTimeout', [100], 'read'],
         ['evaluate', [], undefined],
         ['visit', [], undefined],
     ])('classifies %s %j', (name, parameters, kind) => {

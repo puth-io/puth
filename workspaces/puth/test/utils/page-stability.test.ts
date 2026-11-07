@@ -61,9 +61,21 @@ describe('PageStability', () => {
         expect(await isSettled(stability.settled(5000))).toBe(true);
     });
 
+    it('does not wait after an action unless asked to', async () => {
+        stability.actionFinished();
+
+        expect(await isSettled(stability.settled(5000))).toBe(true);
+    });
+
+    it('waits no longer than the configured time after an action', async () => {
+        stability.actionFinished();
+
+        expect(await isSettled(stability.settled(5000, 20), 20)).toBe(true);
+    });
+
     it('gives an action time to start a navigation', async () => {
         stability.actionFinished();
-        const settled = stability.settled(5000);
+        const settled = stability.settled(5000, 20);
 
         expect(await isSettled(settled, 10)).toBe(false);
         stability.navigationRequested({ ...main, disposition: 'currentTab' });
