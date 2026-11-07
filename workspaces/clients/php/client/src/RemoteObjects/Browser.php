@@ -1206,6 +1206,20 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Unlike assertSeeIn, the whole text of the element has to match, apart from surrounding and repeated whitespace.
+     * 
+     * @debug-gen-original-name "assertTextIs"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter selector {"type":"string","isOptional":false}
+     * @debug-gen-original-parameter text {"type":"string","isOptional":false}
+     */
+    public function assertTextIs(string $selector, string $text): Browser
+    {
+        return $this->callFunc('assertTextIs', [$selector, $text]);
+    }
+
+    /**
      * @debug-gen-original-name "assertDontSeeIn"
      * @debug-gen-original-is-async false
      * @debug-gen-original-returns ["this"]

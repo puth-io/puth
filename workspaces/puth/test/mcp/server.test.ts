@@ -343,6 +343,15 @@ describe('puth_run', () => {
         assert.match(text, /… \d+ more, puth_inspect cursor=15\nkinds: .*button/);
     }, 20000);
 
+    it('checks exact text', async () => {
+        const { session, run } = await start();
+        const sessionId = await session();
+        await run(sessionId, { op: 'click', selector: '#actions-click-button' });
+
+        assert.notOk((await run(sessionId, { op: 'textIs', selector: '#actions-click-verify', text: 'clicked button' })).isError);
+        assert.match((await run(sessionId, { op: 'textIs', selector: '#actions-click-verify', text: 'clicked', timeout: 100 })).text, /^ERR ASSERTION_FAILED: .*but found \[clicked button\]/);
+    }, 20000);
+
     it('stops at the first failure and says where', async () => {
         const { session, run, tool } = await start();
         const sessionId = await session();
@@ -506,6 +515,15 @@ describe('puth_inspect', () => {
         assert.deepEqual(text.split('\n').slice(1), ['! Wrong password']);
     }, 20000);
 
+    it('says when a search found nothing', async () => {
+        const { tool, session } = await start();
+        const sessionId = await session({ url: page });
+
+        const { text } = await tool('puth_inspect', { sessionId, find: 'absent' });
+
+        assert.deepEqual(text.split('\n').slice(1), ['no matches in the outline or visible text']);
+    }, 20000);
+
     it('filters by kind', async () => {
         const { tool, session } = await start();
         const sessionId = await session({ url: page });
@@ -537,7 +555,7 @@ describe('puth_inspect', () => {
         const sessionId = await session({ url: page });
 
         assert.strictEqual((await tool('puth_inspect', { sessionId, text: true, find: 'WRONG' })).text, 'Wrong password');
-        assert.strictEqual((await tool('puth_inspect', { sessionId, text: true, find: 'absent' })).text, 'none');
+        assert.strictEqual((await tool('puth_inspect', { sessionId, text: true, find: 'absent' })).text, 'no matches in the visible text');
     }, 20000);
 
     it('returns the visible text on request', async () => {

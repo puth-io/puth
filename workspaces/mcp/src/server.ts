@@ -238,7 +238,7 @@ export function createServer(config: Config) {
 
     tool(
         'puth_run',
-        `Run steps in order on the selected page and stop at the first failure. Actions wait until their target can be acted on and never repeat; assertions and waits retry for timeout ms (3000). Operations: ${operationSummary}. evaluate takes a JavaScript expression and returns its JSON value. text in press and clickLink is the visible text.`,
+        `Run steps in order on the selected page and stop at the first failure. Actions wait until their target can be acted on and never repeat; assertions and waits retry for timeout ms (3000). Operations: ${operationSummary}. evaluate takes a JavaScript expression and returns its JSON value. text in press and clickLink is the visible text. seeIn checks that an element contains text, textIs that it is exactly that text.`,
         { sessionId, steps: z.array(stepSchema).min(1).max(50) },
         async ({ sessionId, steps }) => {
             const session = sessions.get(sessionId);
@@ -290,7 +290,7 @@ export function createServer(config: Config) {
                         ? visible
                         : visible.split('\n').filter(line => line.toLowerCase().includes(find.toLowerCase())).join('\n');
 
-                    return reply(bound(searched, 8000) || 'none');
+                    return reply(bound(searched, 8000) || (find === undefined ? 'no visible text' : 'no matches in the visible text'));
                 }
 
                 const outline = JSON.parse(await session.browser.evaluate(outlineScript(selector ?? null)));
@@ -308,8 +308,11 @@ export function createServer(config: Config) {
                     .filter((line: string) => needle === undefined || line.toLowerCase().includes(needle))
                     .filter((line: string) => prefix === undefined || prefix.test(line));
                 const { items, more } = page<string>(matching, cursor, limit);
+                const empty = items.length === 0
+                    ? (needle === undefined && prefix === undefined ? 'nothing visible to outline' : 'no matches in the outline or visible text')
+                    : undefined;
 
-                return reply(`at ${outline.url} "${outline.title}"`, ...items, more, more === undefined ? undefined : kindCounts(matching));
+                return reply(`at ${outline.url} "${outline.title}"`, empty, ...items, more, more === undefined ? undefined : kindCounts(matching));
             });
         },
     );

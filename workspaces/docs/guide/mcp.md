@@ -144,7 +144,7 @@ See the [Laravel example](./example-laravel) for a complete run. This repository
 | Navigation | `visit`, `back`, `forward`, `reload` |
 | Actions | `click`, `press`, `clickLink`, `type`, `select`, `check`, `uncheck`, `hover`, `drag`, `scroll`, `keys`, `upload`, `dialog`, `evaluate` |
 | Waits | `waitFor`, `waitGone`, `waitText`, `waitTextGone`, `waitUrl`, `waitEnabled`, `waitDisabled` |
-| Assertions | `see`, `dontSee`, `seeIn`, `title`, `urlIs`, `pathIs`, `visible`, `missing`, `value`, `checked`, `notChecked`, `count` |
+| Assertions | `see`, `dontSee`, `seeIn`, `textIs`, `title`, `urlIs`, `pathIs`, `visible`, `missing`, `value`, `checked`, `notChecked`, `count` |
 
 `press` and `clickLink` find their target by its visible text. `evaluate` takes a JavaScript expression and returns its JSON value. Steps behave like [Browser calls](./waiting-and-sync#automatic-waiting): actions wait until their target can be acted on and are never repeated, and assertions retry until they pass or time out.
 

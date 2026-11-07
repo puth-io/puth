@@ -15,7 +15,7 @@ Start with `puth_status`. If no instance answers, run the command it reports. Do
 4. Read the `+` and `-` lines of the result. They say what changed, including text in quotes, so inspect again only if you need more.
 5. Close the session with `puth_session_close`, also when something failed. Open sessions keep a browser running for 30 minutes.
 
-`+` lines for text say where it is, like `+ "Saved" in #status`, which is what a `seeIn` assertion needs.
+`+` lines for text say where it is, like `+ "Saved" in #status`, which is what a `seeIn` or `textIs` assertion needs. `seeIn` passes when the element contains the text, `textIs` only when that is all of its text.
 
 Prefer `press` and `clickLink` with visible text while exploring, and selectors that do not start with `~` in tests. A `~` selector depends on the position in the page.
 

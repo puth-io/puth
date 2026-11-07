@@ -402,6 +402,10 @@ export class Browser extends RemoteObject {
         return this.callFunc('assertSeeIn', [selector, text, ignoreCase]);
     }
 
+    assertTextIs(selector: string, text: string): Promise<this> {
+        return this.callFunc('assertTextIs', [selector, text]);
+    }
+
     assertDontSeeIn(selector: string, text: string, ignoreCase: any = false): Promise<this> {
         return this.callFunc('assertDontSeeIn', [selector, text, ignoreCase]);
     }
