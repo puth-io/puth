@@ -3,8 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { decode } from '@msgpack/msgpack';
 import { afterEach, assert, describe, it } from 'vitest';
-import { PuthStandardPlugin } from '../';
 import { Puth } from '../src/Puth';
+import { PuthStandardPlugin } from '../src/plugins/PuthStandardPlugin';
 import { PUTH_EXTENSION_CODEC } from '../src/handlers/WebsocketHandler';
 import { fixtureUrl, installedBrowser, makeLocalPuthClient } from './helper';
 
