@@ -20,6 +20,7 @@ function makeStack(overrides: Record<string, unknown> = {}) {
         puth: { logger },
         psuriCache: new Map(),
         isDetourEnabled: false,
+        portalTimeout: 120000,
         portalSafeUniqueRequestId: () => '1',
         setPsuriHandler(psuri, handler) {
             this.psuriCache.get(psuri).handler = handler;
@@ -372,5 +373,179 @@ describe('CallStack disposal', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+});
+
+describe('CallStack portal failures', () => {
+    function pendingRequest(overrides: Record<string, unknown> = {}) {
+        const { context, stack } = makeStack(overrides);
+        const handler = vi.fn().mockResolvedValue(undefined);
+        const call = makeCall();
+        stack.activeCall = call;
+        stack.portal.queue.active.push({ psuri: '1' });
+        context.psuriCache.set('1', { stack, handler });
+
+        return { context, stack, handler, call };
+    }
+
+    it('reports a client failure instead of a response', async () => {
+        const { stack, handler } = pendingRequest();
+
+        await stack.handlePortalResponse({
+            psuri: '1',
+            type: 'PortalResponse',
+            error: { reason: 'ConnectionRefused', message: 'connect ECONNREFUSED' },
+        }, { resolve: vi.fn() });
+
+        expect(handler).toHaveBeenCalledWith(
+            { reason: 'ConnectionRefused', message: 'connect ECONNREFUSED' }, undefined, '', [],
+        );
+        expect(stack.portal.queue.active).toEqual([]);
+    });
+
+    it('passes HTTP error responses through as responses', async () => {
+        const { stack, handler } = pendingRequest();
+
+        await stack.handlePortalResponse({
+            psuri: '1',
+            type: 'PortalResponse',
+            status: 503,
+            headers: {},
+            body: btoa('unavailable'),
+        }, { resolve: vi.fn() });
+
+        expect(handler).toHaveBeenCalledWith(undefined, 503, btoa('unavailable'), []);
+    });
+
+    it('falls back to a generic reason CDP accepts', async () => {
+        const { stack, handler } = pendingRequest();
+
+        await stack.handlePortalResponse({
+            psuri: '1', type: 'PortalResponse', error: { reason: 'NotACdpReason' },
+        }, { resolve: vi.fn() });
+
+        expect(handler.mock.calls[0][0]).toMatchObject({ reason: 'Failed' });
+    });
+
+    it('treats a response without status or body as failed', async () => {
+        const { context, stack, handler } = pendingRequest();
+
+        await stack.handlePortalResponse({ psuri: '1', type: 'PortalResponse' }, { resolve: vi.fn() });
+
+        expect(handler.mock.calls[0][0]).toMatchObject({ reason: 'Failed' });
+        expect(context.psuriCache.has('1')).toBe(false);
+    });
+
+    it('fails the request and keeps the queue moving when delivery throws', async () => {
+        const { context, stack, handler } = pendingRequest();
+        handler.mockRejectedValueOnce(new Error('invalid response'));
+        const next = { psuri: '2' };
+        stack.portal.queue.active.push(next);
+        context.psuriCache.set('2', { stack, handler: vi.fn() });
+        const response = { resolve: vi.fn() };
+
+        await stack.handlePortalResponse({
+            psuri: '1', type: 'PortalResponse', status: 200, headers: {}, body: '',
+        }, response);
+
+        expect(handler).toHaveBeenLastCalledWith({ reason: 'Failed' }, 0, '', []);
+        expect(response.resolve.mock.calls[0][0]).toMatchObject({ type: 'ServerRequest' });
+        expect(stack.portal.queue.active).toEqual([next]);
+    });
+
+    it('fails requests the client never answers', async () => {
+        vi.useFakeTimers();
+        try {
+            const { context, stack, handler } = pendingRequest({ portalTimeout: 5000 });
+            const backlogged = vi.fn().mockResolvedValue(undefined);
+            context.psuriCache.set('2', { stack, handler: backlogged });
+            stack.portal.queue.backlog.push({ psuri: '2' });
+
+            stack.createServerRequest(stack.portal.queue.active[0]);
+            await vi.advanceTimersByTimeAsync(5000);
+
+            expect(handler.mock.calls[0][0]).toMatchObject({ reason: 'TimedOut' });
+            expect(backlogged.mock.calls[0][0]).toMatchObject({ reason: 'TimedOut' });
+            expect(context.psuriCache.size).toBe(0);
+            expect(stack.portal.queue.active).toEqual([]);
+            expect(stack.portal.queue.backlog).toEqual([]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not time out once the client answered', async () => {
+        vi.useFakeTimers();
+        try {
+            const { stack, handler } = pendingRequest({ portalTimeout: 5000 });
+
+            stack.createServerRequest(stack.portal.queue.active[0]);
+            await stack.handlePortalResponse({
+                psuri: '1', type: 'PortalResponse', status: 200, headers: {}, body: '',
+            }, { resolve: vi.fn() });
+            await vi.advanceTimersByTimeAsync(5000);
+
+            expect(handler).toHaveBeenCalledOnce();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('releases a finished call that only waited for the portal queue', () => {
+        const { stack } = pendingRequest();
+        const response = { resolve: vi.fn() };
+        stack.portal.open.response = response;
+        stack.portal.waiting.response = Return.Self().serialize();
+
+        stack.failPortalRequests('Aborted', 'The client disconnected.');
+
+        expect(response.resolve).toHaveBeenCalledWith(Return.Self().serialize());
+        expect(stack.activeCall).toBeUndefined();
+    });
+
+    it('fails portal work when the waiting client disconnects', () => {
+        const { context, stack, handler } = pendingRequest();
+        const response = Promise.withResolvers<unknown>();
+        stack.portal.open.response = response;
+
+        stack.clientDisconnected(response);
+
+        expect(handler.mock.calls[0][0]).toMatchObject({ reason: 'Aborted' });
+        expect(stack.portal.open.response).toBeUndefined();
+        expect(context.psuriCache.size).toBe(0);
+    });
+
+    it('ignores disconnects of unrelated clients', () => {
+        const { stack, handler } = pendingRequest();
+
+        stack.clientDisconnected(Promise.withResolvers<unknown>());
+
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('drops a canceled request from the backlog', () => {
+        const { context, stack } = makeStack();
+        stack.portal.queue.backlog.push({ psuri: '1' }, { psuri: '2' });
+        context.psuriCache.set('1', { stack });
+        context.psuriCache.set('2', { stack });
+
+        stack.cancelPortalRequest('1');
+
+        expect(stack.portal.queue.backlog).toEqual([{ psuri: '2' }]);
+        expect(context.psuriCache.has('1')).toBe(false);
+    });
+
+    it('keeps a canceled request the client is handling but ignores its answer', async () => {
+        const { context, stack, handler } = pendingRequest();
+
+        stack.cancelPortalRequest('1');
+        expect(context.psuriCache.has('1')).toBe(true);
+
+        await stack.handlePortalResponse({
+            psuri: '1', type: 'PortalResponse', status: 200, headers: {}, body: '',
+        }, { resolve: vi.fn() });
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(stack.portal.queue.active).toEqual([]);
     });
 });

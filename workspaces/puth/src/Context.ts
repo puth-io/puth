@@ -28,7 +28,7 @@ import {ContextStatus, Constructors, ConstructorValues, type IExpectation, type 
 import {tmpdir} from 'node:os';
 import { Browser, ExpectationFailed } from './shims/Browser';
 import { type BrowserRefContext } from './handlers/BrowserHandler';
-import { CallStack, type PortalRequest, type PortalResponse } from './utils/CallStack';
+import { CallStack, type PortalFailure, type PortalRequest, type PortalResponse } from './utils/CallStack';
 import { Call } from './utils/Call';
 import { createHash } from 'node:crypto';
 
@@ -63,6 +63,7 @@ type ContextOptions = {
     status: string|undefined;
     timeouts?: {
         command?: number;
+        portal?: number;
     };
     dev: boolean|undefined;
     track: string[]|undefined;
@@ -78,8 +79,10 @@ type ContextCaches = {
 // succeed. Only calls that are still pending after this delay are settled as failed.
 const PAGE_CLOSED_SETTLE_DELAY = 1000;
 
+const DEFAULT_PORTAL_TIMEOUT = 120 * 1000;
+
 type PsuriResponseHandler = (
-    error: undefined|{reason: string},
+    error: undefined|PortalFailure,
     status: number,
     data: string,
     headers: Protocol.Fetch.HeaderEntry[],
@@ -526,13 +529,7 @@ class Context extends Generic {
         this.waitingForDialog = this.waitingForDialog.filter((waiter) => waiter.page !== page);
         waiters.forEach((waiter) => waiter.reject(new Error('Page closed while waiting for a dialog.')));
 
-        if (stack !== undefined) {
-            for (const [psuri, cached] of this.psuriCache) {
-                if (cached.stack === stack) {
-                    this.psuriCache.delete(psuri);
-                }
-            }
-        }
+        stack?.failPortalRequests('Aborted', 'Page closed before the portal request finished.');
 
         return stack;
     }
@@ -618,6 +615,14 @@ class Context extends Generic {
         return psuri.stack.handlePortalRequest(request);
     }
     
+    public cancelPortalRequest(psuri: string) {
+        this.psuriCache.get(psuri)?.stack.cancelPortalRequest(psuri);
+    }
+
+    public clientDisconnected(response: PromiseWithResolvers<unknown>) {
+        this.callStacks.forEach(stack => stack.clientDisconnected(response));
+    }
+
     public async handlePortalResponse(data: {context: any, response: PortalResponse}, res) {
         let psuri = this.psuriCache.get(data.response.psuri);
         if (psuri == null) {
@@ -1218,6 +1223,10 @@ class Context extends Generic {
         return this.options?.timeouts?.command ?? 30 * 1000;
     }
     
+    get portalTimeout(): number {
+        return this.options?.timeouts?.portal ?? DEFAULT_PORTAL_TIMEOUT;
+    }
+
     get debug(): boolean {
         return this.puth.debug;
     }

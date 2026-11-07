@@ -14,6 +14,7 @@ import { BrowserHandler, type IBrowserHandler } from './handlers/BrowserHandler'
 import { WebsocketHandler } from './handlers/WebsocketHandler';
 import { SnapshotHandler } from './handlers/SnapshotHandler';
 import { createRequire } from 'node:module';
+import { type PortalFailure } from './utils/CallStack';
 
 declare global {
     type TODO = any;
@@ -40,6 +41,37 @@ export type PuthOptions = {
     installedBrowser?: any;
     logger?: BaseLogger;
 };
+
+const NULL_BODY_STATUSES = [101, 204, 205, 304];
+
+function portalDetourResponse(failure: PortalFailure|undefined, status: number, data: string, headers: any[]): Response {
+    // The request already left CDP, so an HTTP status is the only way left to report the failure to the browser.
+    if (failure != null) {
+        return new Response(failure.message ?? 'Portal request failed.', {
+            status: 502,
+            headers: { 'puth-portal-error': failure.reason },
+        });
+    }
+
+    return new Response(
+        NULL_BODY_STATUSES.includes(status) ? null : Uint8Array.from(atob(data), c => c.charCodeAt(0)),
+        {
+            status,
+            headers: headers.map((header): [string, string] => [header.name, header.value]),
+        },
+    );
+}
+
+// Request signals cannot tell this apart: they abort as soon as the request body was consumed.
+function onClientDisconnect(event: H3.H3Event, callback: () => void) {
+    // @ts-ignore
+    const response = event.req.runtime?.node?.res;
+    response?.once('close', () => {
+        if (! response.writableEnded) {
+            callback();
+        }
+    });
+}
 
 export class Puth {
     // @ts-ignore
@@ -149,15 +181,24 @@ export class Puth {
             return resolvers.promise;
         }
 
+        const deferTracked = (event: H3.H3Event, data: any, handler: (handle: any) => unknown) => defer((handle: any) => {
+            onClientDisconnect(event, () => this.#contexts[data.context?.id]?.clientDisconnected(handle));
+            return handler(handle);
+        });
+
         h3.post('/context', json(data => this.contextCreate(data)));
-        h3.patch('/context/call', json(data => defer(handle => this.contextCall(data, handle))));
+        h3.patch('/context/call', event => event.req.json().then(
+            data => deferTracked(event, data, handle => this.contextCall(data, handle)),
+        ));
         h3.patch('/context/get', json(data => this.contextGet(data)));
         h3.patch('/context/set', json(data => this.contextSet(data)));
         h3.patch('/context/delete', json(data => this.contextDelete(data)));
         // TODO fix response based on contextDestroy return value (bool)
         h3.delete('/context', json(data => this.contextDestroy(data)));
 
-        h3.patch('/portal/response', json(data => defer(handle => this.portalResponse(data, handle))));
+        h3.patch('/portal/response', event => event.req.json().then(
+            data => deferTracked(event, data, handle => this.portalResponse(data, handle)),
+        ));
         h3.all('/portal/detour/**', async (event) => {
             let cid = event.req.headers.get('puth-portal-context-id');
             let psuri = event.req.headers.get('puth-portal-psuri');
@@ -198,14 +239,14 @@ export class Puth {
             return defer(async handle => {
                 context.setPsuriHandler(
                     psuri,
-                    // TODO handle portal network error - Fetch.failRequest
-                    (error, status, data, headers) => handle.resolve(
-                        new Response(Uint8Array.from(atob(data), c => c.charCodeAt(0)), {
-                            status,
-                            headers: headers.map((header): [string, string] => [header.name, header.value]),
-                        }),
+                    async (failure, status, data, headers) => handle.resolve(
+                        portalDetourResponse(failure, status, data, headers),
                     ),
                 );
+                onClientDisconnect(event, () => {
+                    context.cancelPortalRequest(psuri);
+                    handle.resolve(new Response(null, { status: 499 }));
+                });
 
                 context.handlePortalRequest({
                     psuri,
