@@ -41,6 +41,8 @@ export class CallStack {
 
     skipCallResponses: Call[] = [];
 
+    private disposed = false;
+
     constructor(context: Context, page: Page) {
         this.context = context;
         this.page = page;
@@ -75,6 +77,10 @@ export class CallStack {
     }
 
     conclude(call: Call | undefined, result: any, force = false) {
+        if (this.disposed) {
+            return;
+        }
+
         this.logger.debug(call?.packet, 'conclude');
         if (call == undefined) {
             this.logger.error({ result }, 'Unhandled call result');
@@ -120,6 +126,34 @@ export class CallStack {
         
         this.logger.debug({ packet: call?.packet, result }, '[Call apply response]');
         return call.resolve(result);
+    }
+
+    /**
+     * Settles everything still waiting on this stack. Results arriving afterwards are ignored.
+     */
+    dispose(message: string) {
+        if (this.disposed) {
+            return;
+        }
+        this.disposed = true;
+
+        const error = { type: 'error', code: 'PageUnavailable', message };
+        const { open, initial } = this.portal;
+        const pending = [this.activeCall, initial.call];
+
+        this.activeCall = undefined;
+        this.portal.queue.active = [];
+        this.portal.queue.backlog = [];
+        this.portal.waiting.response = null;
+        initial.call = null;
+
+        open.response?.resolve(error);
+        open.response = undefined;
+        pending.forEach((call) => void call?.resolve(error));
+    }
+
+    disposeAfter(delay: number, message: string) {
+        setTimeout(() => this.dispose(message), delay).unref();
     }
 
     async onPortalRequest(event: Protocol.Fetch.RequestPausedEvent, path: string, cdp: CDPSession) {

@@ -74,6 +74,10 @@ type ContextCaches = {
     dialog: Map<Page, Dialog>;
 }
 
+// Closing a page usually rejects whatever runs on it, and calls such as Browser.quit() close their own page and
+// succeed. Only calls that are still pending after this delay are settled as failed.
+const PAGE_CLOSED_SETTLE_DELAY = 1000;
+
 type PsuriResponseHandler = (
     error: undefined|{reason: string},
     status: number,
@@ -166,12 +170,20 @@ class Context extends Generic {
             options.executablePath = this.puth.installedBrowser.executablePath;
         }
 
-        return await this.puth.browserHandler.launch(options, this)
-            .then(rv => {
-                this.browsers.push(rv);
-                //         .then(() => this.emitter.emit('browser:connected', {browser}))
-                return this.trackBrowser(rv.context).then(_ => rv);
+        let rv = await this.puth.browserHandler.launch(options, this);
+        this.browsers.push(rv);
+        //         .then(() => this.emitter.emit('browser:connected', {browser}))
+
+        try {
+            await this.trackBrowser(rv.context);
+        } catch (error) {
+            await this.destroyBrowserContext(rv).catch(destroyError => {
+                this.puth.logger.error({error: destroyError}, 'Could not release browser after failed setup');
             });
+            throw error;
+        }
+
+        return rv;
     }
 
     public async createBrowser(options: any = {}): Promise<BrowserContext> {
@@ -192,38 +204,51 @@ class Context extends Generic {
     // }
     
     destroyingTimeout?: NodeJS.Timeout;
+    private teardownPromise?: Promise<boolean>;
     
     // when client call destroy() without 'immediately=true' we delay the actual destroy by destroyingDelay ms
     // this is to catch all screencast frames when the call ends too fast
     // @codegen
     public async destroy(options: any = {}): Promise<boolean> {
+        if (this.teardownPromise !== undefined) {
+            return this.teardownPromise;
+        }
+
         if (! options?.immediately) {
-            if (options == null) {
-                options = {};
-            }
-            options.immediately = true;
-            options.initiator = 'timeout';
-            this.destroyingTimeout = setTimeout(() => this.destroy(options), 400);
+            clearTimeout(this.destroyingTimeout);
+            this.destroyingTimeout = setTimeout(() => {
+                void this.destroy({...options, immediately: true, initiator: 'timeout'});
+            }, 400);
 
             return false;
         }
         
         clearTimeout(this.destroyingTimeout);
-        if (this.destroying) {
-            return Promise.resolve(true);
-        }
+        this.teardownPromise = this.teardown(options);
+
+        return this.teardownPromise;
+    }
+
+    // Every step runs even if an earlier one failed, so a failure cannot leak the remaining resources.
+    private async teardown(options: any): Promise<boolean> {
         this.destroying = true;
 
         if (this.test.status === ContextStatus.PENDING) { // succeed test if not defined by client
             this.testSuccess();
         }
-        if (options?.save) {
-            await this.saveContextSnapshot(options.save);
-        } else if (this.debug) {
-            await this.saveContextSnapshot({to: 'file'});
+
+        try {
+            if (options?.save) {
+                await this.saveContextSnapshot(options.save);
+            } else if (this.debug) {
+                await this.saveContextSnapshot({to: 'file'});
+            }
+        } catch (error) {
+            this.puth.logger.error({error}, 'Could not save context snapshot');
         }
+
         for (let page of [...this.callStacks.keys()]) {
-            this.untrackPage(page);
+            this.untrackPage(page)?.dispose('Context destroyed while a call was pending.');
         }
         this.eventFunctions.forEach(([object, event, func]) => {
             object.off(event, func);
@@ -231,13 +256,31 @@ class Context extends Generic {
         this.eventFunctions = [];
 
         this.puth.logger.debug(options, `context destroy`);
-        return await Promise.all(this.browsers.map(rv => this.puth.browserHandler.destroy(rv)))
-            .then(() => Promise.all(this.cleanupCallbacks))
-            .then(() => true);
+        const results = await Promise.allSettled(this.browsers.map(rv => this.puth.browserHandler.destroy(rv)));
+        results.push(...await Promise.allSettled(this.cleanupCallbacks.map((callback: () => Promise<void>) => callback())));
+        this.browsers = [];
+        this.cleanupCallbacks = [];
+
+        results
+            .filter(result => result.status === 'rejected')
+            .forEach(({reason}: PromiseRejectedResult) => this.puth.logger.error({error: reason}, 'Context cleanup failed'));
+
+        this.puth.contextDestroyed(this);
+
+        return true;
     }
     
-    // TODO implement sending fatal message to connected client/or next incoming client request
-    fatal(message: string): Promise<void> {
+    // Called when a browser is lost without the context asking for it.
+    // TODO implement sending fatal message to next incoming client request
+    fatal(message: string, brc: BrowserRefContext): Promise<void> {
+        for (let page of [...this.callStacks.keys()]) {
+            if (page.browserContext() === brc.context) {
+                this.untrackPage(page)?.dispose(message);
+            }
+        }
+        this.removeEventListenersFrom(brc.context);
+        this.browsers = this.browsers.filter(rv => rv !== brc);
+
         return Promise.resolve();
     }
 
@@ -248,6 +291,9 @@ class Context extends Generic {
 
     public async destroyBrowserContext(brc: BrowserRefContext) {
         this.puth.logger.debug(`destroyBrowserContext`);
+        this.removeEventListenersFrom(brc.context);
+        this.browsers = this.browsers.filter(rv => rv !== brc);
+
         return this.puth.browserHandler.destroy(brc);
     }
     
@@ -304,14 +350,22 @@ class Context extends Generic {
 
         this.registerEventListenerOn(browserContext, 'targetcreated', async (target: Target) => {
             // TODO do we need to track more here? like 'browser' or 'background_page'...?
-            if (target.type() === 'page') {
+            if (target.type() !== 'page') {
+                return;
+            }
+
+            try {
                 // @ts-ignore
                 let page: Page = await target.page();
-                await this.trackPage(page);
-                // @ts-ignore
-                this.emitter.emit('page:created', { browserContext, page});
-                // @ts-ignore
-                page.on('close', _ => this.emitter.emit('page:closed', { browser: browserContext, page}));
+                if (page != null && ! this.destroying && await this.trackPage(page, browserContext)) {
+                    // @ts-ignore
+                    this.emitter.emit('page:created', { browserContext, page});
+                }
+            } catch (error) {
+                // Pages can close while they are set up, for example short-lived popups.
+                if (! (error instanceof TargetCloseError || error instanceof ConnectionClosedError)) {
+                    this.puth.logger.error({error}, 'Could not track page');
+                }
             }
         });
 
@@ -319,8 +373,9 @@ class Context extends Generic {
         return await browserContext.pages()
             .then(async pages => {
                 let page0 = pages[0];
-                await this.trackPage(page0);
-                this.emitter.emit('page:created', { browserContext, page: page0});
+                if (await this.trackPage(page0, browserContext)) {
+                    this.emitter.emit('page:created', { browserContext, page: page0});
+                }
             });
     }
 
@@ -328,7 +383,12 @@ class Context extends Generic {
      * TODO maybe track "outgoing" navigation requests, and stall incoming request until finished loading
      *      but check if we need to make sure if call the object called on needs to be existing
      */
-    private async trackPage(page: Page) {
+    private async trackPage(page: Page, browserContext: BrowserContext): Promise<boolean> {
+        if (this.trackedPages.has(page)) {
+            return false;
+        }
+        this.trackedPages.add(page);
+
         let stack = this.callStacks.get(page);
         if (stack == null) {
             stack = new CallStack(this, page);
@@ -336,7 +396,11 @@ class Context extends Generic {
         }
         
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-        this.registerEventListenerOn(page, 'close', () => this.untrackPage(page));
+        this.registerEventListenerOn(page, 'close', () => {
+            this.untrackPage(page)?.disposeAfter(PAGE_CLOSED_SETTLE_DELAY, 'Page closed while a call was pending.');
+            // @ts-ignore
+            this.emit('page:closed', {browser: browserContext, page});
+        });
         this.registerEventListenerOn(page, 'dialog', (dialog: Dialog) => stack.onDialogOpen(dialog));
 
         this.registerEventListenerOn(page, 'console', async (consoleMessage: ConsoleMessage) => {
@@ -441,9 +505,11 @@ class Context extends Generic {
                 }
             });
         }
+
+        return true;
     }
 
-    private untrackPage(page: Page): void {
+    private untrackPage(page: Page): CallStack|undefined {
         const stack = this.callStacks.get(page);
         const cdp = this.pageCDPSessions.get(page)?.deref();
 
@@ -467,6 +533,8 @@ class Context extends Generic {
                 }
             }
         }
+
+        return stack;
     }
 
     private async handleRequestPaused(
@@ -730,6 +798,7 @@ class Context extends Generic {
     // }
     
     callStacks: Map<Page, CallStack> = new Map<Page, CallStack>();
+    private trackedPages: WeakSet<Page> = new WeakSet<Page>();
 
     public call(packet: any, response: PromiseWithResolvers<unknown>) {
         this.puth.logger.debug(packet, 'Context call');

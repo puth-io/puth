@@ -34,13 +34,13 @@ terminal tools.
 
 ### Context and browser lifecycle
 
-- [ ] Track LiveView pages, CDP sessions, and event handlers by context.
+- [x] Track LiveView pages, CDP sessions, and event handlers by context.
   Destroying a context removes only its own handlers.
-- [ ] Release browser-pool references and temporary resources after failed
+- [x] Release browser-pool references and temporary resources after failed
   creation, page closure, browser disconnection, and context destruction.
-- [ ] Make repeated destruction safe.
-- [ ] Settle pending calls when their page or context disappears.
-- [ ] Acceptance: two overlapping contexts record independently when either
+- [x] Make repeated destruction safe.
+- [x] Settle pending calls when their page or context disappears.
+- [x] Acceptance: two overlapping contexts record independently when either
   closes, including during failed browser operations.
 
 ### Portal failures

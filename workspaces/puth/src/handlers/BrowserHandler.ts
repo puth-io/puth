@@ -10,6 +10,7 @@ export type IBrowserHandler = {
     launch: (options: any, context: Context) => Promise<BrowserRefContext>;
     // connect: (options: any) => Promise<Browser>;
     destroy: (brc: BrowserRefContext) => Promise<void>;
+    shutdown: () => Promise<void>;
 };
 
 export type BrowserRef = {
@@ -32,6 +33,7 @@ export type BrowserRefContext = {
 //      context.
 export class BrowserHandler extends BaseHandler implements IBrowserHandler {
     #refs: BrowserRef[] = [];
+    #cleanupInterval: NodeJS.Timeout;
 
     // limits the browsers that are kept cached
     public browserLimit = 3;
@@ -41,7 +43,8 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
 
     constructor(puth: Puth) {
         super(puth);
-        setInterval(() => this.cleanupUnused(), this.browserUnusedTimeout);
+        this.#cleanupInterval = setInterval(() => this.cleanupUnused(), this.browserUnusedTimeout);
+        this.#cleanupInterval.unref();
     }
 
     async launch(options: any = {}, context: Context): Promise<BrowserRefContext> {
@@ -50,51 +53,57 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
         let ref = this.findBrowserRefForOptionsHash(optionsHash);
         if (ref) {
             this.logger.debug(`BrowserHandler pool reusing ref ${ref.optionsHash}`);
-            ref.unusedSince = undefined;
 
-            let contextRef = {ref, initiator: context} as BrowserRefContext;
-            ref.contexts.push(contextRef);
-
-            return ref.browser.createBrowserContext()
-                .then(async browserContext => {
-                    contextRef.context = browserContext;
-                    await browserContext.newPage();
-
-                    return contextRef;
-                });
+            return this.createContextRef(ref, context);
         }
 
+        let userDataDir = tmp.dirSync({unsafeCleanup: true});
         options.args = [
             ...chromeDefaultArgs,
             '--no-sandbox',
-            '--user-data-dir=' + tmp.dirSync({unsafeCleanup: true}).name,
+            '--user-data-dir=' + userDataDir.name,
             ...(options.args ?? []),
         ];
 
         // options.headless = false;
 
-        return puppeteer.launch(options)
-            .then(async browser => {
-                let ref: BrowserRef = {
-                    browser,
-                    contexts: [],
-                    optionsHash,
-                };
-                this.#refs.push(ref);
-                this.logger.debug(`BrowserHandler pool added ref ${ref.optionsHash}`);
-                browser.once('disconnected', () => this.disconnected(browser));
+        let browser: Browser;
+        try {
+            browser = await puppeteer.launch(options);
+        } catch (error) {
+            userDataDir.removeCallback();
+            throw error;
+        }
 
-                let contextRef = {ref, initiator: context} as BrowserRefContext;
-                ref.contexts.push(contextRef);
+        let newRef: BrowserRef = {
+            browser,
+            contexts: [],
+            optionsHash,
+            cleanup: async () => userDataDir.removeCallback(),
+        };
+        this.#refs.push(newRef);
+        this.logger.debug(`BrowserHandler pool added ref ${newRef.optionsHash}`);
+        browser.once('disconnected', () => this.disconnected(browser));
 
-                return browser.createBrowserContext()
-                    .then(async browserContext => {
-                        contextRef.context = browserContext;
-                        await browserContext.newPage();
+        return this.createContextRef(newRef, context);
+    }
 
-                        return contextRef;
-                    });
+    private async createContextRef(ref: BrowserRef, context: Context): Promise<BrowserRefContext> {
+        let contextRef = {ref, initiator: context} as BrowserRefContext;
+        ref.contexts.push(contextRef);
+        ref.unusedSince = undefined;
+
+        try {
+            contextRef.context = await ref.browser.createBrowserContext();
+            await contextRef.context.newPage();
+        } catch (error) {
+            await this.destroy(contextRef).catch(destroyError => {
+                this.logger.error({error: destroyError}, 'Could not release browser context after failed creation');
             });
+            throw error;
+        }
+
+        return contextRef;
     }
 
     // connect(options: any = {}): Promise<Browser> {
@@ -111,21 +120,30 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
         this.logger.debug(`BrowserHandler pool destroying browser context for ref ${ref.optionsHash}`);
         ref.contexts.splice(idx, 1);
 
-        await context.close().catch(error => {
-            if (error instanceof PuppeteerError || error.message?.includes('Connection closed')) {
-                this.logger.error({error}, 'ignoring');
-                return;
+        try {
+            await context?.close();
+        } catch (error: any) {
+            if (! (error instanceof PuppeteerError || error.message?.includes('Connection closed'))) {
+                this.logger.error({error});
+                throw error;
             }
-            this.logger.error({error});
-            throw error;
-        });
+            this.logger.error({error}, 'ignoring');
+        } finally {
+            if (ref.contexts.length === 0) {
+                ref.unusedSince = Date.now();
+            }
+        }
         this.logger.debug(`BrowserHandler pool destroyed browser context for ref ${ref.optionsHash}`);
         this.logger.debug(ref.contexts, 'ref.contexts');
 
         if (ref.contexts.length === 0) {
-            ref.unusedSince = Date.now();
             await this.cleanupUnused();
         }
+    }
+
+    async shutdown() {
+        clearInterval(this.#cleanupInterval);
+        await Promise.allSettled([...this.#refs].map(ref => this.destroyRef(ref)));
     }
 
     private async destroyRef(ref?: BrowserRef) {
@@ -136,16 +154,21 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
         this.logger.debug(`BrowserHandler pool destroying ref ${ref.optionsHash}`);
 
         if (ref.contexts.length > 0) {
-            this.logger.warn(ref, `[BrowserHandler] Browser disconnected with open browser contexts. This will interrupt all contexts.`);
-            await Promise.allSettled(ref.contexts.map(({initiator}) => initiator.fatal('FATAL: Browser context unexpectedly closed.')));
+            this.logger.warn({optionsHash: ref.optionsHash}, `[BrowserHandler] Browser disconnected with open browser contexts. This will interrupt all contexts.`);
+            let interrupted = ref.contexts;
+            ref.contexts = [];
+            await Promise.allSettled(interrupted.map(brc => brc.initiator.fatal('FATAL: Browser context unexpectedly closed.', brc)));
         }
 
-        let idx = this.#refs.indexOf(ref);
-        this.#refs.splice(idx, 1);
+        this.#refs = this.#refs.filter(other => other !== ref);
 
-        return ref.browser.close()
-            // return cause possibly async
-            .then(() => ref?.cleanup?.());
+        try {
+            await ref.browser.close();
+        } catch (error) {
+            this.logger.debug({error}, '[BrowserHandler] Could not close browser, it is probably gone already');
+        } finally {
+            await ref.cleanup?.();
+        }
     }
 
     async disconnected(browser: Browser) {
