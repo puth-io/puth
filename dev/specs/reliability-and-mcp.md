@@ -9,7 +9,7 @@ environment to Codex and other MCP clients for validation and test authoring.
 
 - [x] Deliver the reliability foundation: local fixtures, context isolation,
   portal failures, snapshot replay coverage, and recording limits.
-- [ ] Deliver an MCP server for browser exploration, validation, and PHP/Laravel
+- [x] Deliver an MCP server for browser exploration, validation, and PHP/Laravel
   test authoring.
 - [ ] Configure the project MCP connection to use the Puth instance used by its
   development tests, and document the complete workflow.
@@ -98,87 +98,87 @@ Follow the Cypress model for the `Browser` shim.
 
 ### Package and lifecycle
 
-- [ ] Create a publishable `@puth/mcp` workspace with a `puth-mcp` executable,
+- [x] Create a publishable `@puth/mcp` workspace with a `puth-mcp` executable,
   built through root workspace commands.
-- [ ] Use the maintained TypeScript MCP SDK with stdio transport.
-- [ ] Connect to an existing instance through the generated `@puth/client`; never
+- [x] Use the maintained TypeScript MCP SDK with stdio transport.
+- [x] Connect to an existing instance through the generated `@puth/client`; never
   silently start another Puth instance.
-- [ ] Keep protocol traffic on stdout and diagnostics on stderr. Update client
+- [x] Keep protocol traffic on stdout and diagnostics on stderr. Update client
   logging where necessary.
-- [ ] Give each agent session its own Puth context with recording enabled and
+- [x] Give each agent session its own Puth context with recording enabled and
   portal/detours disabled in v1.
-- [ ] Serialize browser operations within each session while allowing separate
+- [x] Serialize browser operations within each session while allowing separate
   sessions to run concurrently.
-- [ ] Close owned contexts on session closure and graceful MCP shutdown; expire
+- [x] Close owned contexts on session closure and graceful MCP shutdown; expire
   idle sessions after 30 minutes.
-- [ ] Reject attachment to or destruction of contexts owned by project test
+- [x] Reject attachment to or destruction of contexts owned by project test
   runners.
 
 ### Puth HTTP interfaces
 
-- [ ] Add `GET /health`, returning the server version, a process-lifetime
+- [x] Add `GET /health`, returning the server version, a process-lifetime
   instance ID, and supported agent capabilities.
-- [ ] Add `GET /context/:id/snapshot`, returning a binary `.puth` snapshot using
+- [x] Add `GET /context/:id/snapshot`, returning a binary `.puth` snapshot using
   existing serialization without destroying the context.
-- [ ] Return structured errors for unknown or destroyed contexts.
-- [ ] Check session ownership in the MCP adapter before requesting a snapshot.
-- [ ] Preserve existing client behavior.
+- [x] Return structured errors for unknown or destroyed contexts.
+- [x] Check session ownership in the MCP adapter before requesting a snapshot.
+- [x] Preserve existing client behavior.
 
 ### MCP tools
 
 Use explicit schemas and bounded responses for the following tools:
 
-- [ ] `puth_status`: report configured endpoint, instance ID, capabilities, and
+- [x] `puth_status`: report configured endpoint, instance ID, capabilities, and
   owned sessions.
-- [ ] `puth_session_create`: create an isolated session with optional initial URL
+- [x] `puth_session_create`: create an isolated session with optional initial URL
   and viewport.
-- [ ] `puth_session_close`: destroy an owned session; repeated closure succeeds.
-- [ ] `puth_navigate`: navigate the session's selected page.
-- [ ] `puth_pages`: list pages or select a page within the session.
-- [ ] `puth_inspect`: return URL, title, visible text, and bounded element
+- [x] `puth_session_close`: destroy an owned session; repeated closure succeeds.
+- [x] `puth_navigate`: navigate the session's selected page.
+- [x] `puth_pages`: list pages or select a page within the session.
+- [x] `puth_inspect`: return URL, title, visible text, and bounded element
   information with selector candidates.
-- [ ] `puth_action`: perform a typed action: click, type, select, check, uncheck,
+- [x] `puth_action`: perform a typed action: click, type, select, check, uncheck,
   keypress, or dialog interaction.
-- [ ] `puth_wait`: wait for visibility, disappearance, text, URL, or
+- [x] `puth_wait`: wait for visibility, disappearance, text, URL, or
   enabled/disabled state using existing Puth semantics.
-- [ ] `puth_assert`: execute supported Puth assertions and return observed results.
-- [ ] `puth_screenshot`: return an MCP image and save a local artifact.
-- [ ] `puth_events`: read paginated console, error, and network summaries
+- [x] `puth_assert`: execute supported Puth assertions and return observed results.
+- [x] `puth_screenshot`: return an MCP image and save a local artifact.
+- [x] `puth_events`: read paginated console, error, and network summaries
   belonging to the session.
-- [ ] `puth_export`: export a snapshot, recorded steps, or PHP/Laravel test draft.
+- [x] `puth_export`: export a snapshot, recorded steps, or PHP/Laravel test draft.
 
 ### Tool contracts and failure handling
 
-- [ ] Define supported actions, waits, assertions, parameter validation, and
+- [x] Define supported actions, waits, assertions, parameter validation, and
   PHP/Laravel translations in a shared operation registry.
-- [ ] Advertise only implemented operations; do not expose arbitrary
+- [x] Advertise only implemented operations; do not expose arbitrary
   remote-object invocation in v1.
-- [ ] Include session/page identifiers, operation outcome, available evidence,
+- [x] Include session/page identifiers, operation outcome, available evidence,
   and truncation warnings in results where applicable.
-- [ ] Include a stable error code and useful message in failures. Assertion
+- [x] Include a stable error code and useful message in failures. Assertion
   failures are tool errors, not successful validations.
-- [ ] Use a 3-second default for explicit waits and a 30-second outer operation
+- [x] Use a 3-second default for explicit waits and a 30-second outer operation
   deadline.
-- [ ] If a timed-out operation cannot be canceled safely, invalidate and destroy
+- [x] If a timed-out operation cannot be canceled safely, invalidate and destroy
   its session before accepting more commands.
 
 ### Test-authoring support
 
-- [ ] Record actions, waits, and assertions in an ordered session journal.
-- [ ] Export standalone PHP and Laravel PHPUnit test drafts using actual
+- [x] Record actions, waits, and assertions in an ordered session journal.
+- [x] Export standalone PHP and Laravel PHPUnit test drafts using actual
   supported client methods.
-- [ ] Preserve explicit assertions. Never infer workflow success merely because
+- [x] Preserve explicit assertions. Never infer workflow success merely because
   actions completed.
-- [ ] Prefer existing `puth` attributes and stable selectors; identify weaker
+- [x] Prefer existing `puth` attributes and stable selectors; identify weaker
   selector candidates.
-- [ ] Mark missing setup, credentials, fixture data, and unsupported translations
+- [x] Mark missing setup, credentials, fixture data, and unsupported translations
   as unresolved requirements.
-- [ ] Include cleanup and references to captured evidence.
-- [ ] Treat exploratory navigation and screenshots as evidence rather than
+- [x] Include cleanup and references to captured evidence.
+- [x] Treat exploratory navigation and screenshots as evidence rather than
   mandatory test steps; allow callers to select journal steps for export.
-- [ ] Label drafts unverified until the repository's real test suite has
+- [x] Label drafts unverified until the repository's real test suite has
   executed them successfully. Exporting a draft alone never establishes a pass.
-- [ ] Keep source-file writes and shell execution outside the MCP server.
+- [x] Keep source-file writes and shell execution outside the MCP server.
 
 ## Milestone 3: project integration and onboarding
 

@@ -1,0 +1,25 @@
+{
+  "name": "@puth/mcp",
+  "version": "0.0.0",
+  "description": "MCP server for exploring applications and authoring tests with Puth",
+  "author": {
+    "name": "Sebastian Uehlin",
+    "email": "s.uehlin@proton.me"
+  },
+  "type": "module",
+  "bin": {
+    "puth-mcp": "./dist/cli.mjs"
+  },
+  "scripts": {
+    "build": "pkgroll --clean-dist",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist/"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@puth/client": "*",
+    "zod": "^3.25.76"
+  }
+}

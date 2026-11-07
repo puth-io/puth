@@ -60,6 +60,8 @@ trait PuthTestCaseTrait
             ],
         ]);
 
+        $this->context->setTestCase($this);
+
         // If specific browser ws endpoint is set, always connect to that
         if ($this->hasSpecificBrowserWSEndpoint()) {
             $this->browser = $this->context->connectBrowser([
