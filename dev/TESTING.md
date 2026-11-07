@@ -89,6 +89,13 @@ isolated by port. For direct PHP, Laravel, or Java runs, start them with
 variables are set. `test/fixtures.test.ts` fails if a suite references the public
 playground or Puth websites again.
 
+## MCP drafts
+
+`./docker/dev/test-mcp-drafts.sh` drives a workflow through the MCP server, writes
+the exported PHP and Laravel drafts into the real test suites, runs them, and
+checks that copies with a wrong assertion fail. The files are removed afterwards.
+The full runner includes this step.
+
 ## Benchmarks
 
 `dev/benchmarks/recording.ts` reports memory, recording size, and command latency

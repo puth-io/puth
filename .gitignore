@@ -307,3 +307,6 @@ workspaces/puth/static/gui
 
 dist/
 *.large.binary
+
+# Puth agent artifacts
+.puth/

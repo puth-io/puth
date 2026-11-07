@@ -19,8 +19,7 @@ class Context extends BaseContext
     protected bool $dev;
     protected bool $debug;
 
-    // TODO protected ?\PHPUnit\Framework\TestCase $testCase;
-    protected ?\Illuminate\Foundation\Testing\TestCase $testCase;
+    protected ?\PHPUnit\Framework\TestCase $testCase = null;
 
     function __construct(string $baseUrl, array $options = [])
     {
