@@ -54,7 +54,7 @@ describe('Actions', function () {
         // https://on.cypress.io/focus
         let el = await page.get('#actions-focus');
         await el.focus();
-        assertHandleEquals(await page.focused(), el);
+        await assertHandleEquals(await page.focused(), el);
     });
 
     //

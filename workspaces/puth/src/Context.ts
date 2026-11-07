@@ -31,6 +31,7 @@ import { type BrowserRefContext } from './handlers/BrowserHandler';
 import { CallStack, type PortalFailure, type PortalRequest, type PortalResponse } from './utils/CallStack';
 import { Call } from './utils/Call';
 import { createHash } from 'node:crypto';
+import { PageClosedError, isConnectionLost, isNavigationError, isPageClosed } from './utils/TargetErrors';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -80,6 +81,11 @@ type ContextCaches = {
 const PAGE_CLOSED_SETTLE_DELAY = 1000;
 
 const DEFAULT_PORTAL_TIMEOUT = 120 * 1000;
+
+// Asserts and waits only observe the page, so they can safely run again.
+const RETRYABLE_BROWSER_CALL = /^(assert|wait)/;
+
+const PAGE_CLOSING_CALLS = ['close', 'quit'];
 
 type PsuriResponseHandler = (
     error: undefined|PortalFailure,
@@ -884,31 +890,7 @@ class Context extends Generic {
         await this.emitAsync('call:apply:before', {command, page: call.page});
         
         try {
-            // @ts-ignore
-            let returnValue = await Promise.try(call.fn)
-                .catch((error) => {
-                    // TODO handle puppeteer errors - should also be used when snapshotting
-                    if (error instanceof TargetCloseError) {
-                        this.puth.logger.error('TargetCloseError');
-                        return;
-                    }
-                    if (error instanceof ConnectionClosedError) {
-                        this.puth.logger.error('ConnectionClosedError');
-                        return;
-                    }
-                    if (error?.message?.includes('Attempted to use detached Frame')) {
-                        this.puth.logger.error('Attempted to use detached Frame');
-                        return;
-                    }
-                    if (error?.message?.includes('Execution context was destroyed')) {
-                        this.puth.logger.error('Execution context was destroyed');
-                        return;
-                    }
-
-                    // this.puth.logger.debug('handleCallApply throwing');
-                    // TODO test if try also catches promise errors without this throw
-                    throw error;
-                });
+            let returnValue = await this.applyCall(call);
 
             if (command) {
                 command.time.finished = Date.now();
@@ -947,11 +929,34 @@ class Context extends Generic {
                     ? error.getReturnInstance().serialize()
                     : {
                         type: 'error',
-                        code: 'MethodException',
+                        code: error instanceof PageClosedError ? 'PageClosed' : 'MethodException',
                         message: `Function ${call.packet.function} threw error: ${error.message}`,
                         error,
                     }
             );
+        }
+    }
+
+    private async applyCall(call: Call) {
+        const name = call.packet.function;
+
+        if (call.on instanceof Browser && RETRYABLE_BROWSER_CALL.test(name)) {
+            return call.on.retryOnTargetChange(name, call.fn);
+        }
+
+        try {
+            // @ts-ignore
+            return await Promise.try(call.fn);
+        } catch (error: any) {
+            if (! isConnectionLost(error) && ! isNavigationError(error)) {
+                throw error;
+            }
+            if (! PAGE_CLOSING_CALLS.includes(name) && await isPageClosed(call.page, error)) {
+                throw new PageClosedError(`Page closed during ${name}.`);
+            }
+
+            // The call may already have done its work, like a click that navigates, and repeating it is not safe.
+            this.puth.logger.debug({ error, packet: call.packet }, '[Call apply] Page changed during call');
         }
     }
 

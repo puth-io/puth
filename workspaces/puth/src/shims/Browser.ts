@@ -5,6 +5,9 @@ import { PuthStandardPlugin } from '../plugins/PuthStandardPlugin';
 import { type } from '../plugins/utils/cy';
 import { Return } from '../context/Return';
 import { type BrowserRef, type BrowserRefContext } from '../handlers/BrowserHandler';
+import { PageClosedError, isPageClosed, isTargetChange, rethrowTargetChange } from '../utils/TargetErrors';
+
+const TARGET_CHANGE_RETRY_DELAY = 50;
 
 // TODO
 // @gen-class ElementHandle
@@ -90,6 +93,7 @@ export class Browser {
     private readonly selfWithAsserts: (count?: int) => () => Return<this>;
 
     private dialogTypeCache: string = '';
+    private retryWindow?: { startedAt: number; deadline?: number; retried: boolean };
 
     public options = {
         timeout: 3000,
@@ -123,6 +127,43 @@ export class Browser {
 
     get browserContext(): BrowserContext {
         return this.browserRefContext.context;
+    }
+
+    /**
+     * Runs an idempotent call again when the page changes under it, until the timeout of the call runs out. All
+     * attempts share that timeout. Calls that act on the page must not use this, a retry would repeat the action.
+     */
+    public async retryOnTargetChange<T>(name: string, fn: () => Promise<T>|T): Promise<T> {
+        const retryWindow: Browser['retryWindow'] = { startedAt: Date.now(), retried: false };
+        this.retryWindow = retryWindow;
+
+        try {
+            while (true) {
+                try {
+                    return await fn();
+                } catch (error: any) {
+                    if (! isTargetChange(error)) {
+                        throw error;
+                    }
+                    if (await isPageClosed(this.site, error)) {
+                        throw new PageClosedError(`Page closed during ${name}.`);
+                    }
+
+                    retryWindow.deadline ??= retryWindow.startedAt + this.timeout;
+                    if (Date.now() >= retryWindow.deadline) {
+                        throw new ExpectationFailed(
+                            `${name} did not finish in ${retryWindow.deadline - retryWindow.startedAt}ms `
+                            + `because the page kept changing: ${error.message}`,
+                        );
+                    }
+
+                    retryWindow.retried = true;
+                    await new Promise(resolve => setTimeout(resolve, TARGET_CHANGE_RETRY_DELAY));
+                }
+            }
+        } finally {
+            this.retryWindow = undefined;
+        }
     }
 
     public clone(site: Page | Frame | null = null, options: {} = {}): Browser {
@@ -769,6 +810,7 @@ export class Browser {
                 marker,
             );
         } catch (error) {
+            rethrowTargetChange(error);
             throw new ExpectationFailed(`Waited ${timeoutInMs}ms for event [${type}].`);
         } finally {
             await this.site.evaluate((marker) => delete (globalThis as Record<string, boolean>)[marker], marker).catch(() => undefined);
@@ -1255,7 +1297,7 @@ export class Browser {
                         }
                     }
                 },
-                { timeout: this.timeout, polling: 'mutation' },
+                { timeout: this.resolveTimeout(), polling: 'mutation' },
                 this.resolver('input[type=submit]'),
                 field,
             ) as Promise<ElementHandle>,
@@ -1268,7 +1310,7 @@ export class Browser {
                         }
                     }
                 },
-                { timeout: this.timeout, polling: 'mutation' },
+                { timeout: this.resolveTimeout(), polling: 'mutation' },
                 this.resolver('button'),
                 field,
             ) as Promise<ElementHandle>,
@@ -1284,7 +1326,15 @@ export class Browser {
     }
 
     private resolveTimeout(timeout?: int|null) {
-        return timeout ? (timeout * this.options.timeoutMultiplier) : this.timeout;
+        const resolved = timeout ? (timeout * this.options.timeoutMultiplier) : this.timeout;
+
+        if (this.retryWindow === undefined) {
+            return resolved;
+        }
+
+        this.retryWindow.deadline ??= this.retryWindow.startedAt + resolved;
+
+        return this.retryWindow.retried ? Math.max(1, this.retryWindow.deadline - Date.now()) : resolved;
     }
 
     public inputValue(field: any): string {
@@ -1708,6 +1758,7 @@ export class Browser {
             url,
         )
             .catch((error) => {
+                rethrowTargetChange(error);
                 let actual = this.url();
                 throw new ExpectationFailed(
                     `Actual URL [${actual}] does not equal expected URL [${url}].`,
@@ -1735,6 +1786,7 @@ export class Browser {
     private _assertSchemeIs(scheme: string, matches: boolean = true): Promise<Return<this>> {
         return this._assertLocationProperty('protocol', scheme, matches, 1)
             .catch((error) => {
+                rethrowTargetChange(error);
                 throw new ExpectationFailed(
                     matches
                         ? `Actual scheme [${this.scheme()}] does not equal expected scheme [${scheme}].`
@@ -1759,6 +1811,7 @@ export class Browser {
     private _assertPathIs(path: string, matches: boolean = true): Promise<Return<this>> {
         return this._assertLocationProperty('pathname', path, matches)
             .catch((error) => {
+                rethrowTargetChange(error);
                 throw new ExpectationFailed(
                     matches
                         ? `Actual path [${this.path()}] does not equal expected path [${path}].`
@@ -1846,7 +1899,8 @@ export class Browser {
 
     private _assertHasQueryStringParameter(name: string, matches: boolean = true) {
         return this.eW({}, (n, m) => new URLSearchParams(window.location.search).has(n) === m, name, matches).catch(
-            (_) => {
+            (error) => {
+                rethrowTargetChange(error);
                 throw new ExpectationFailed(
                     matches
                         ? `Did not see expected query string parameter [${name}] in [${this.url()}]`
@@ -1885,6 +1939,7 @@ export class Browser {
 
         return this._assertQueryStringParameter(name, value)
             .catch((error) => {
+                rethrowTargetChange(error);
                 if (!(error instanceof ExpectationFailed)) {
                     throw new ExpectationFailed(
                         `Query string parameter [${name}] had value [${this._url().searchParams.get(
@@ -1911,7 +1966,8 @@ export class Browser {
                 ),
             fragment,
         )
-            .catch((_) => {
+            .catch((error) => {
+                rethrowTargetChange(error);
                 throw new ExpectationFailed(
                     `Actual fragment [${this._url().hash.substring(
                         1,
@@ -1929,7 +1985,8 @@ export class Browser {
             (f) => window.location.hash.substring(1, window.location.hash.length).startsWith(f),
             fragment,
         )
-            .catch((_) => {
+            .catch((error) => {
+                rethrowTargetChange(error);
                 throw new ExpectationFailed(
                     `Actual fragment [${this._url().hash.substring(
                         1,
@@ -1943,7 +2000,8 @@ export class Browser {
     // Assert that the current URL fragment does not match the given fragment.
     public assertFragmentIsNot(fragment: string): Promise<Return<this>> {
         return this.eW({}, (f) => window.location.hash.substring(1, window.location.hash.length) != f, fragment)
-            .catch((_) => {
+            .catch((error) => {
+                rethrowTargetChange(error);
                 throw new ExpectationFailed(
                     `Actual fragment [${this._url().hash.substring(
                         1,

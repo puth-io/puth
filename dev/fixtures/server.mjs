@@ -99,6 +99,11 @@ function helperRoutes(urls) {
         '/cookies/read': (req, res) => {
             res.writeHead(200, { 'content-type': 'text/plain' }).end(req.headers.cookie ?? '');
         },
+        // /reloading keeps destroying the execution context of whatever runs on it
+        '/reloading': (req, res) => {
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+                .end('<!doctype html><title>Reloading</title><script>setTimeout(() => location.reload(), 15)</script>');
+        },
         // /status/<code> is exercised through ?code=
         '/status': (req, res, url) => {
             res.writeHead(Number(url.searchParams.get('code') ?? 200), { 'content-type': 'text/plain' }).end('status');
