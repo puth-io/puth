@@ -70,7 +70,7 @@ terminal tools.
   remain valid; browser operations continue.
 - [x] Expose recording size, truncation status, active contexts, and pooled
   browsers for diagnostics.
-- [ ] Establish repeatable benchmarks for long runs and concurrent contexts.
+- [x] Establish repeatable benchmarks for long runs and concurrent contexts.
   Report memory, recording size, and command latency before and after changes.
 - [x] Acceptance: oversized recordings stay within configured budgets, remain
   importable, and clearly indicate missing later evidence.
