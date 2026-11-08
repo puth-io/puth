@@ -5,7 +5,7 @@ description: Context lifecycle and server helpers.
 
 # Context
 
-The Context object manages the browser session lifecycle and server-side helpers. Calls use the PHP Context object. In Laravel tests, access it as `$this->context`; in standalone PHP, create it with `new \Puth\Context($serverUrl, $options)`.
+The Context object manages the browser session lifecycle and server-side helpers. Calls use the PHP Context object. In Laravel tests, access it as `$this->context`; in standalone PHP, create it with `\Puth\Context::create($serverUrl, $options)`.
 
 ## Browser lifecycle
 

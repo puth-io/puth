@@ -42,7 +42,7 @@ The Laravel test case creates contexts with portal and detours disabled. Use `$t
 Standalone contexts enable portal and detours by default. Configure matching prefixes when creating the context:
 
 ```php
-$context = new \Puth\Context('http://127.0.0.1:7345', [
+$context = \Puth\Context::create('http://127.0.0.1:7345', [
     'supports' => ['portal' => ['urlPrefixes' => ['https://app.test/']]],
 ]);
 ```

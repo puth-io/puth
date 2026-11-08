@@ -74,7 +74,7 @@ Create a context, then a Browser shim. Use absolute application URLs with the st
 ```php
 require 'vendor/autoload.php';
 
-$context = new \Puth\Context('http://127.0.0.1:7345');
+$context = \Puth\Context::create('http://127.0.0.1:7345');
 try {
     $browser = $context->createBrowserShim();
     $browser->visit('https://playground.puth.dev');

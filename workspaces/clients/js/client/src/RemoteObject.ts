@@ -1,4 +1,5 @@
 import {type GenericRepresentation, resolveResponse} from './Remote';
+import {RemotePuthClient} from './RemotePuthClient';
 
 // A puppeteer object on the server. These are not generated, so calls on them are forwarded as they are.
 export type RemoteHandle = any;
@@ -46,14 +47,15 @@ export abstract class RemoteObject {
 
 export abstract class ContextBase extends RemoteObject {
     /**
-     * Creates a context on the instance of the given client.
+     * Creates a context on the instance at the given URL, or of the given client.
      */
     static async create<T extends ContextBase>(
         this: new (context: RemoteCaller, representation: GenericRepresentation) => T,
-        client: { contextCreate: (options?: any) => Promise<any> },
+        client: string | { contextCreate: (options?: any) => Promise<any> },
         options: any = {},
     ): Promise<T> {
-        const context = await client.contextCreate(options);
+        const puth = typeof client === 'string' ? new RemotePuthClient(client) : client;
+        const context = await puth.contextCreate(options);
 
         return new this(context, context.getRepresentation());
     }

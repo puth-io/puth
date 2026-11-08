@@ -49,7 +49,7 @@ public class PuthPortalExtension implements BeforeEachCallback, AfterEachCallbac
         var options = new HashMap<>(contextOptions.get());
         options.put("test", Map.of("name", ctx.getDisplayName(), "group", ctx.getClass().getName()));
 
-        Context context = new Context(puthBaseUrl.get(), options);
+        Context context = Context.create(puthBaseUrl.get(), options);
         context.setPortalRequestHandler(handlerSupplier.get());
         ctx.getStore(NS).put("context", context);
     }

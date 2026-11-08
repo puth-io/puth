@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        Context context = new Context("http://127.0.0.1:7345", Map.of(
+        Context context = Context.create("http://127.0.0.1:7345", Map.of(
                 "test", Map.of(
                         "name", "Example Test"
                 ),

@@ -15,7 +15,7 @@ Examples run inside a `$this->browse()` callback. Follow [Laravel setup](./larav
 
 <SdkContent sdk="php">
 
-Create `$context` with `new \Puth\Context($serverUrl)`, then use `$context->createBrowserShim()` to obtain `$browser`. See [Getting started](./getting-started#connect-a-client) for a complete example.
+Create `$context` with `\Puth\Context::create($serverUrl)`, then use `$context->createBrowserShim()` to obtain `$browser`. See [Getting started](./getting-started#connect-a-client) for a complete example.
 
 </SdkContent>
 

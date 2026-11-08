@@ -21,6 +21,14 @@ class Context extends BaseContext
 
     protected ?\PHPUnit\Framework\TestCase $testCase = null;
 
+    /**
+     * Creates a context on the Puth instance at the given URL.
+     */
+    public static function create(string $baseUrl, array $options = []): static
+    {
+        return new static($baseUrl, $options);
+    }
+
     function __construct(string $baseUrl, array $options = [])
     {
         $this->baseUrl = $baseUrl;

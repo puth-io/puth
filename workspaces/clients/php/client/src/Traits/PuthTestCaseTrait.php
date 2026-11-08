@@ -46,7 +46,7 @@ trait PuthTestCaseTrait
     {
         parent::setUp();
 
-        $this->context = new Context($this->getPuthInstanceUrl(), [
+        $this->context = Context::create($this->getPuthInstanceUrl(), [
             'snapshot' => $this->isSnapshot(),
             'test' => [
                 'name' => $this->getPhpunitTestName(),
