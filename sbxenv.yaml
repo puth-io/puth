@@ -7,6 +7,16 @@ kits:
 
 lifecycle:
   postCreate:
+    # claude artifacts
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.anthropic.com"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "claudemcpcontent.com"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.claudemcpcontent.com"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "claudeusercontent.com"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.claudeusercontent.com"
+    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.frame.claudeusercontent.com"
+    # security
+    - command: sbx exec "$SBX_SANDBOX_NAME" sh -c 'printf "%s\n" "ignore-scripts=true" "min-release-age=7" > "$HOME/.npmrc"'
+    # project specific
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.io
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.io"
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.dev
@@ -15,7 +25,6 @@ lifecycle:
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org:80
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" pecl.php.net
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" nginx.org
-    - command: sbx exec "$SBX_SANDBOX_NAME" sh -c 'printf "%s\n" "ignore-scripts=true" "min-release-age=7" > "$HOME/.npmrc"'
 
 env:
   PUTH_ADDRESS: 0.0.0.0
