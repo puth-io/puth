@@ -191,6 +191,21 @@ services:
       puth:
         condition: service_healthy
 
+  # The Spring example depends on the Java client, so install it into the Maven cache first.
+  spring-test:
+    image: maven:3.9-eclipse-temurin-17
+    profiles: ["test"]
+    working_dir: /workspace/workspaces/clients/java/workspaces/spring
+    command: ["sh", "-ec", "mvn -f ../../client/pom.xml --batch-mode --no-transfer-progress -q install -DskipTests && mvn --batch-mode --no-transfer-progress test"]
+    environment:
+      PUTH_INSTANCE_URL: http://puth:7345
+    volumes:
+      - .:/workspace
+      - maven-cache:/root/.m2
+    depends_on:
+      puth:
+        condition: service_healthy
+
 volumes:
   node-modules:
   puth-node-modules:

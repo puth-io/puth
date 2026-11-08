@@ -96,8 +96,10 @@ jobs:
         include:
           - name: java-client
             client_dir: workspaces/clients/java/client
-#          - name: java-spring
-#            client_dir: workspaces/clients/java/workspaces/spring
+          - name: java-spring
+            client_dir: workspaces/clients/java/workspaces/spring
+            # The example depends on the client from this checkout.
+            install_client: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -128,6 +130,9 @@ jobs:
           node dev/fixtures/server.mjs &
           npm -w puth run ci:server &
           timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
+          if [ "${{ matrix.install_client }}" = "true" ]; then
+            mvn -f workspaces/clients/java/client/pom.xml --batch-mode --no-transfer-progress install -DskipTests
+          fi
           cd ${{ matrix.client_dir }} && mvn --batch-mode --no-transfer-progress test
       - name: Upload artifacts
         if: failure()
