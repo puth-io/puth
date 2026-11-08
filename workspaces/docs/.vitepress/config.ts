@@ -6,17 +6,18 @@ export default defineConfig({
   title: 'Puth',
   description: 'Browser testing with native clients, a realtime GUI, and test replay.',
   cleanUrls: true,
-  appearance: 'dark',
+  appearance: 'force-dark',
   srcExclude: ['README.md'],
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/assets/image/puth-logo-blue.png' }],
-    ['meta', { name: 'theme-color', content: '#191a1d' }],
+    ['meta', { name: 'theme-color', content: '#0a0a0a' }],
   ],
   themeConfig: {
     logo: '/assets/image/puth-logo-blue.png',
     nav: [
-      { text: 'Documentation', link: '/guide/getting-started' },
-      { text: 'Laravel', link: '/guide/laravel' },
+      { text: 'Guide', link: '/guide/getting-started', activeMatch: '^/guide/(?!mcp|example-laravel)' },
+      { text: 'API', link: '/api/browser', activeMatch: '^/api/' },
+      { text: 'Agents', link: '/guide/mcp', activeMatch: '^/guide/(mcp|example-laravel)' },
     ],
     sidebar: [
       {
@@ -24,17 +25,8 @@ export default defineConfig({
         items: [
           { text: 'What is Puth?', link: '/guide/what-is-puth' },
           { text: 'Getting started', link: '/guide/getting-started' },
-          { text: 'Migrating from Dusk', link: '/guide/migration-from-dusk' },
           { text: 'CI/CD and snapshots', link: '/guide/ci-cd' },
           { text: 'Client support', link: '/guide/client-support' },
-        ],
-      },
-      {
-        text: 'Laravel',
-        items: [
-          { text: 'Laravel integration', link: '/guide/laravel' },
-          { text: 'Laravel cookies', link: '/guide/laravel-cookies' },
-          { text: 'Laravel test artifacts', link: '/guide/laravel-debugging' },
         ],
       },
       {
@@ -76,5 +68,7 @@ export default defineConfig({
       pattern: 'https://github.com/puth-io/puth/edit/master/workspaces/docs/:path',
     },
     search: { provider: 'local', options: sdkSearch },
+    outline: { label: 'On this page' },
+    docFooter: { prev: '< Previous', next: 'Next >' },
   },
 });

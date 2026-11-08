@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { sdkFromUrl, sdkHref } from '../.vitepress/lib/sdk.ts';
+import { contentSdk, hasOwnExamples, pageSdk, pageSdks, sdkFromUrl, sdkHref, sdkParam } from '../.vitepress/lib/sdk.ts';
 
 const base = 'https://puth.io/guide/cookies?sdk=php';
 
@@ -37,4 +37,40 @@ test('external links, assets, homepage and email are unchanged', () => {
 test('navigation also supports a configured base path', () => {
   assert.equal(sdkHref('/docs/guide/cookies', 'php', base), '/docs/guide/cookies?sdk=php');
   assert.equal(sdkHref('/docs/guide/laravel', 'php', base), '/docs/guide/laravel?sdk=laravel');
+});
+
+test('Spring Boot, Java and Node.js are selectable and carried through links', () => {
+  for (const sdk of ['spring', 'java', 'js'] as const) {
+    assert.equal(sdkFromUrl(new URL(`/guide/cookies?sdk=${sdk}`, base)), sdk);
+    assert.equal(sdkHref('/guide/browser-basics', sdk, base), `/guide/browser-basics?sdk=${sdk}`);
+    assert.equal(sdkHref('/guide/laravel', sdk, base), '/guide/laravel?sdk=laravel');
+  }
+});
+
+test('clients without their own examples show the PHP variant', () => {
+  assert.equal(contentSdk('laravel'), 'laravel');
+  for (const sdk of ['php', 'spring', 'java', 'js'] as const) assert.equal(contentSdk(sdk), 'php');
+  assert.equal(hasOwnExamples('php'), true);
+  assert.equal(hasOwnExamples('spring'), false);
+});
+
+test('pages can add variants through their frontmatter', () => {
+  const available = pageSdks({ sdks: ['spring', 'unknown'] });
+  assert.deepEqual(available, ['laravel', 'php', 'spring']);
+  assert.equal(contentSdk('spring', available), 'spring');
+  assert.equal(contentSdk('java', available), 'php');
+  assert.equal(hasOwnExamples('spring', available), true);
+});
+
+test('the Spring Boot page always uses Spring Boot', () => {
+  assert.equal(pageSdk('/guide/spring-boot'), 'spring');
+  assert.equal(pageSdk('/guide/example-laravel'), undefined);
+  assert.equal(sdkFromUrl(new URL('/guide/spring-boot?sdk=php', base)), 'spring');
+  assert.equal(sdkHref('/guide/spring-boot', 'laravel', base), '/guide/spring-boot?sdk=spring');
+});
+
+test('URLs without an SDK leave the choice to the reader', () => {
+  assert.equal(sdkParam(new URL('/guide/cookies', base)), undefined);
+  assert.equal(sdkParam(new URL('/guide/cookies?sdk=go', base)), 'laravel');
+  assert.equal(sdkParam(new URL('/guide/laravel-cookies', base)), 'laravel');
 });

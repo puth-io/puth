@@ -1,3 +1,7 @@
+---
+sdks: [spring]
+---
+
 # Getting started
 
 ::: warning Development and CI only
@@ -5,6 +9,8 @@ Puth exposes remote browser objects through its API. Keep the server restricted 
 :::
 
 Run a Puth server, open its GUI, then connect your test client. For an overview of how these pieces fit together, see [What is Puth?](./what-is-puth).
+
+<div class="steps">
 
 ## Start the server
 
@@ -59,6 +65,12 @@ Follow [Laravel setup](./laravel) to install `puth/laravel`, configure the serve
 
 </SdkContent>
 
+<SdkContent sdk="spring">
+
+Follow [Spring Boot integration](./spring-boot) to install the Java client, register `PuthPortalExtension` on a `@SpringBootTest` and run your first test with `mvn test`.
+
+</SdkContent>
+
 <SdkContent sdk="php">
 
 The standalone PHP client is in development. Its current assertion metadata handling expects a bound Laravel test case, so this standalone example checks a returned value with ordinary PHP. Generated assertion methods are listed in the reference, but are not yet safe to use without that binding.
@@ -89,6 +101,8 @@ try {
 `$context->destroy()` releases the context and its browsers. Standalone clients manage their own lifecycle; there is no Laravel test case to clean up automatically.
 
 </SdkContent>
+
+</div>
 
 ## Learn the Browser API
 
