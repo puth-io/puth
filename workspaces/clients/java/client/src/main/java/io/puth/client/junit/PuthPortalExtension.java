@@ -47,7 +47,7 @@ public class PuthPortalExtension implements BeforeEachCallback, AfterEachCallbac
     @Override
     public void beforeEach(ExtensionContext ctx) {
         var options = new HashMap<>(contextOptions.get());
-        options.put("test", Map.of("name", ctx.getDisplayName(), "group", ctx.getClass().getName()));
+        options.put("test", testInfo(ctx.getDisplayName(), ctx.getRequiredTestClass()));
 
         Context context = Context.create(puthBaseUrl.get(), options);
         context.setPortalRequestHandler(handlerSupplier.get());
@@ -63,6 +63,11 @@ public class PuthPortalExtension implements BeforeEachCallback, AfterEachCallbac
         context.destroy(Map.of("context", Map.of()));
 
         ctx.getStore(NS).remove("context");
+    }
+
+    // Groups tests by their class in the GUI.
+    static Map<String, Object> testInfo(String displayName, Class<?> testClass) {
+        return Map.of("name", displayName, "group", testClass.getName());
     }
 
     private static Context getContext(ExtensionContext ctx) {
