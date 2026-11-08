@@ -19,6 +19,20 @@ public class Context extends io.puth.client.remote.Context {
     protected static final Logger logger = Logger.getLogger(Context.class.getName());
     protected static final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Creates a context on the Puth instance at the given URL.
+     */
+    public static Context create(String baseUrl) {
+        return create(baseUrl, Map.of());
+    }
+
+    /**
+     * Creates a context on the Puth instance at the given URL.
+     */
+    public static Context create(String baseUrl, Map<String, Object> options) {
+        return new Context(baseUrl, options);
+    }
+
     public Context(String baseUrl, Map<String, Object> options) {
         super(null, null, null, null, null); // Initialize parent class with placeholders
         this.baseUrl = baseUrl;

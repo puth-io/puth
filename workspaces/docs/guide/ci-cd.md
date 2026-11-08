@@ -17,7 +17,7 @@ The Laravel test case enables snapshot recording and can save failures automatic
 Enable snapshot recording when creating the context. Your test runner must report failures and request a saved snapshot before cleanup:
 
 ```php
-$context = new \Puth\Context('http://127.0.0.1:7345', ['snapshot' => true]);
+$context = \Puth\Context::create('http://127.0.0.1:7345', ['snapshot' => true]);
 $cleanup = ['immediately' => true];
 try {
     $browser = $context->createBrowserShim();

@@ -18,7 +18,7 @@ public class BaseTest {
 
     @BeforeEach
     void setUp(TestInfo testInfo) {
-        context = new Context(PUTH_INSTANCE_URL, Map.of(
+        context = Context.create(PUTH_INSTANCE_URL, Map.of(
                 "test", Map.of("name", testInfo.getDisplayName(), "group", testInfo.getClass().getName()),
                 "snapshot", false,
                 "debug", false
@@ -34,6 +34,10 @@ public class BaseTest {
         if (context != null) {
             try { context.destroy(); } catch (Exception ignored) {}
         }
+    }
+
+    static String instance() {
+        return PUTH_INSTANCE_URL;
     }
 
     static String playground() {

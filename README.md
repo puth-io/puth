@@ -57,9 +57,9 @@ Puth has a client package for PHP. Currently undocumented.
 `@puth/client` has generated, typed classes:
 
 ```ts
-import { Context, RemotePuthClient } from '@puth/client';
+import { Context } from '@puth/client';
 
-const context = await Context.create(new RemotePuthClient('http://127.0.0.1:7345'));
+const context = await Context.create('http://127.0.0.1:7345');
 const browser = await context.createBrowserShim();
 await browser.visit('http://localhost:8000');
 await browser.assertSee('Welcome');

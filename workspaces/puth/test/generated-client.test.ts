@@ -67,4 +67,16 @@ describe('Generated client', () => {
 
         assert.include(path, 'file.txt');
     });
+
+    it('creates a context from a URL', async () => {
+        const fromUrl = await Context.create(instance.http.url.replace(/\/$/, ''));
+
+        try {
+            const shim = await fromUrl.createBrowserShim();
+            await shim.visit(fixtureUrl());
+            assert.strictEqual(await shim.title(), 'Playground | Puth');
+        } finally {
+            await fromUrl.destroy({ immediately: true });
+        }
+    });
 });
