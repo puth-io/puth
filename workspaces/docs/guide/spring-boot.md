@@ -6,7 +6,7 @@ description: Run browser tests against your Spring Boot application with JUnit 5
 # Spring Boot integration
 
 ::: warning Beta
-The Spring Boot integration works and has an example application in the repository, but it is not part of CI yet. Its API may still change.
+The Spring Boot integration is tested in CI, but its API may still change.
 :::
 
 `PuthPortalExtension` is a JUnit 5 extension from the Java client. For every test it creates a Puth context, passes a `Browser` to the test method, and destroys the context afterwards. The browser's requests to your application go through [portal](./portal) to the test, which answers them with MockMvc, so the test needs no running server.
@@ -107,4 +107,4 @@ When a test fails, the extension marks its context as failed before destroying i
 
 ## Example application
 
-`workspaces/clients/java/workspaces/spring` in the Puth repository is a small Spring Boot application with a portal test. Use it as a starting point or to check your setup.
+`workspaces/clients/java/workspaces/spring` in the Puth repository is a small Spring Boot application with portal tests for links, forms, query strings and script requests, each run with MockMvc and with a server on a random port. Use it as a starting point or to check your setup.

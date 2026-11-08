@@ -31,9 +31,9 @@ container dependencies separate from host installations. Laravel screenshots,
 console logs, and page sources use shared named volumes to preserve existing
 host artifacts and avoid permission conflicts; PHPUnit's cache is temporary.
 
-This runs the active Node, docs, PHP client, Java client, and Laravel suites. It
-does not reproduce CI's PHP/Laravel version matrix or Docker release-image smoke
-tests. The Spring example is currently excluded from CI and from this runner.
+This runs the active Node, docs, PHP client, Java client, Spring Boot, and Laravel
+suites. It does not reproduce CI's PHP/Laravel version matrix or Docker
+release-image smoke tests.
 
 ## Individual suites
 
@@ -52,6 +52,7 @@ Then run any suite without restarting setup or its dependencies:
 | `docs-test` | Documentation tests | `docker compose run --rm --no-deps docs-test` |
 | `php-test` | Standalone PHP client | `docker compose run --rm --no-deps php-test` |
 | `java-test` | Java client | `docker compose run --rm --no-deps java-test` |
+| `spring-test` | Spring Boot example and its portal tests | `docker compose run --rm --no-deps spring-test` |
 | `laravel-test` | Laravel unit and browser tests | `docker compose run --rm --no-deps laravel-test` |
 
 Focused Node and Laravel examples:
@@ -63,7 +64,11 @@ docker compose run --rm --no-deps java-test mvn --batch-mode --no-transfer-progr
 ```
 
 The Node suite creates its own local and HTTP servers, including ephemeral fixture
-origins. Java and Laravel connect to `http://puth:7345`. The standalone PHP test
+origins. Java, Spring Boot and Laravel connect to `http://puth:7345`. The Spring
+Boot example installs the Java client from the checkout into the shared Maven
+cache before it runs, so it always tests the current client. Its portal tests run
+every browser scenario twice, answered by MockMvc and by a server on a random
+port. The standalone PHP test
 case currently hardcodes `127.0.0.1:7345`, so `php-test` shares Puth's network
 namespace.
 
