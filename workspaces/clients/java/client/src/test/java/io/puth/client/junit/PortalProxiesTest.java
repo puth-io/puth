@@ -78,6 +78,17 @@ class PortalProxiesTest {
     }
 
     @Test
+    void decodes_query_parameters_like_a_servlet_container() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new EchoController()).build();
+        var proxy = PortalProxies.mockMvcProxy(() -> mockMvc);
+
+        Map<String, Object> response = proxy.handlePortalRequest(Map.of("method", "GET", "path", "/search?q=browser+tests&tag=a%26b"));
+
+        assertEquals(200, response.get("status"), String.valueOf(response.get("error")));
+        assertEquals("browser tests a&b", body(response));
+    }
+
+    @Test
     void serves_the_portal_prefix_itself_as_the_root_path() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new EchoController()).build();
         var proxy = PortalProxies.mockMvcProxy(() -> mockMvc);
@@ -112,6 +123,11 @@ class PortalProxiesTest {
         @GetMapping("/")
         String home() {
             return "home";
+        }
+
+        @GetMapping("/search")
+        String search(@RequestParam("q") String query, @RequestParam("tag") String tag) {
+            return query + " " + tag;
         }
 
         @PostMapping("/echo")

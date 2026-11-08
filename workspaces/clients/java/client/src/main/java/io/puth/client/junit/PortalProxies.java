@@ -8,9 +8,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Supplier;
@@ -71,8 +73,11 @@ final class PortalProxies {
                 byte[] body = requestBody(request);
                 @SuppressWarnings("unchecked") Map<String, List<String>> headers = coerceHeaders(request.get("headers"));
 
-                // A URI, not a URI template: query strings and braces in paths are passed as they are.
-                MockHttpServletRequestBuilder rb = MockMvcRequestBuilders.request(HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), URI.create(path));
+                // A URI, not a URI template, so braces in paths are passed as they are. Query
+                // parameters are decoded like a servlet container does, where "+" is a space.
+                URI uri = URI.create(path);
+                MockHttpServletRequestBuilder rb = MockMvcRequestBuilders.request(HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), URI.create(uri.getRawPath()));
+                queryParameters(uri.getRawQuery()).forEach(parameter -> rb.queryParam(parameter.getKey(), parameter.getValue()));
                 headers.forEach((k, vs) -> {
                     if (k == null) return;
                     String key = k.trim();
@@ -108,6 +113,19 @@ final class PortalProxies {
         Object raw = request.get("path");
         String path = raw == null ? "" : String.valueOf(raw);
         return path.startsWith("/") ? path : "/" + path;
+    }
+
+    static List<Map.Entry<String, String>> queryParameters(String rawQuery) {
+        List<Map.Entry<String, String>> parameters = new ArrayList<>();
+        if (rawQuery == null || rawQuery.isEmpty()) return parameters;
+        for (String pair : rawQuery.split("&")) {
+            if (pair.isEmpty()) continue;
+            int separator = pair.indexOf('=');
+            String name = separator < 0 ? pair : pair.substring(0, separator);
+            String value = separator < 0 ? "" : pair.substring(separator + 1);
+            parameters.add(Map.entry(URLDecoder.decode(name, StandardCharsets.UTF_8), URLDecoder.decode(value, StandardCharsets.UTF_8)));
+        }
+        return parameters;
     }
 
     // Puth sends the request body base64 encoded in "data".
