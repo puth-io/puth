@@ -9,6 +9,8 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "devDependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "vitepress": "^1.6.4"
   }
 }

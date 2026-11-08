@@ -1,77 +1,77 @@
 ---
 layout: home
 title: Browser testing with native clients
-hero:
-  name: Puth
-  text: Write native, repeatable and debuggable browser tests
-  tagline: A realtime GUI, snapshots and Laravel integration. See every step of your test run and investigate failures from CI on your own machine.
-  actions:
-    - theme: brand
-      text: Get started
-      link: /guide/getting-started
-    - theme: alt
-      text: Laravel integration
-      link: /guide/laravel
 ---
 
-<div class="puth-home">
-<div class="puth-preview">
+<HomePage>
+<template #laravel>
 
 ```php
-use Puth\Laravel\Browser;
-use Tests\PuthTestCase;
-
-class ExampleBrowserTest extends PuthTestCase
+public function test_visit_website()
 {
-    public function test_visit_website()
-    {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('https://playground.puth.dev');
-            $browser->assertSee('Puth');
-        });
+    $this->browse(function (Browser $browser) {
+        $browser->visit('https://playground.puth.dev')
+            ->assertSee('Puth');
+    });
+}
+```
+
+</template>
+<template #spring>
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class HomePageTest {
+    @Autowired
+    MockMvc mockMvc;
+
+    @RegisterExtension
+    PuthPortalExtension puth = PuthPortalExtension.forMockMvc(
+        () -> "http://127.0.0.1:7345", Map::of, () -> mockMvc);
+
+    @Test
+    void shows_home(Browser browser) {
+        browser.visit("http://localhost")
+            .assertSee("Puth");
     }
 }
 ```
 
-<img src="/assets/image/puth-welcome.png" alt="Puth GUI showing browser test commands alongside the browser viewport">
-</div>
+</template>
+<template #php>
 
-<section class="puth-section">
-<div>
+```php
+$context = \Puth\Context::create('http://127.0.0.1:7345');
+$browser = $context->createBrowserShim();
 
-## <span>Same</span> interfaces. <br>No learning curve.
+$browser->visit('https://playground.puth.dev');
+echo $browser->text('body');
+```
 
-Puth provides a replacement for Laravel Dusk. Install the Laravel integration, configure your PuthTestCase and move your existing browser tests over at your own pace.
+</template>
+<template #java>
 
-[Start with Laravel →](/guide/laravel)
+```java
+Context context = Context.create("http://127.0.0.1:7345");
+Browser browser = context.createBrowserShim();
 
-</div>
-<img src="/assets/image/puth-code.png" alt="A Laravel browser test using Puth's familiar fluent API" loading="lazy">
-</section>
+browser.visit("https://playground.puth.dev")
+    .assertSee("Puth");
+```
 
-<section class="puth-section replay">
-<img src="/assets/image/snapshot-dd.gif" alt="Dragging an exported snapshot into the Puth GUI to inspect a recorded test" loading="lazy">
-<div>
+</template>
+<template #js>
 
-## Failing tests in CI/CD? <br><span>Replay</span> the test locally.
+```ts
+import { Context } from '@puth/client';
 
-Snapshots capture the viewport, executed commands, console output and errors. Save failed test snapshots as CI artifacts, then drag and drop a snapshot into your local Puth GUI to see what went wrong.
+const context = await Context.create('http://127.0.0.1:7345');
+const browser = await context.createBrowserShim();
 
-[Set up CI and snapshots →](/guide/ci-cd)
+await browser.visit('https://playground.puth.dev');
+await browser.assertSee('Puth');
+```
 
-</div>
-</section>
-
-<section class="puth-section">
-<div>
-
-## <span>Run</span> via Docker <br>or install locally.
-
-Run Puth with npm, Docker or Podman. The server provides both the browser API and the web GUI, so your tests can connect to a local instance or a dedicated machine.
-
-[Run your first Puth server →](/guide/getting-started#start-the-server)
-
-</div>
-<img src="/assets/image/puth-docker.png" alt="Starting a Puth server with Docker" loading="lazy">
-</section>
-</div>
+</template>
+</HomePage>

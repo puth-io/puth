@@ -45,3 +45,9 @@ test('Laravel-only results are labeled and excluded pages remain excluded', asyn
   assert.match(await render('# Laravel cookies\n\nEncrypted cookies.', 'guide/laravel-cookies.md'), /Laravel cookies · Laravel <a/);
   assert.equal(await render('---\nsearch: false\n---\n# Hidden\n\nPrivate.', 'guide/hidden.md'), '');
 });
+
+test('Spring Boot variants and pages are labeled', async () => {
+  const html = await render('# Cookies\n\n<SdkContent sdk="spring">\n\nMockMvc cookies.\n\n</SdkContent>\n', 'guide/cookies.md');
+  assert.match(html, /<strong>Spring Boot<\/strong>/);
+  assert.match(await render('# Spring Boot integration\n\nJUnit.', 'guide/spring-boot.md'), /Spring Boot integration · Spring Boot <a/);
+});

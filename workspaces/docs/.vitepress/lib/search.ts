@@ -1,5 +1,5 @@
 import type { DefaultTheme } from 'vitepress';
-import { isLaravelPage } from './sdk';
+import { client, pageSdk } from './sdk';
 
 function decodeAttribute(value: string): string {
   return value.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'")
@@ -14,14 +14,15 @@ export const sdkSearch: DefaultTheme.LocalSearchOptions = {
   // not execute Vue components while creating its local search index.
   _render(src, env, md) {
     const source = src
-      .replace(/<SdkContent sdk="(php|laravel)">/g, (_, sdk) => `\n\n**${sdk === 'php' ? 'PHP' : 'Laravel'}**\n\n`)
+      .replace(/<SdkContent sdk="(php|laravel|spring)">/g, (_, sdk) => `\n\n**${{ php: 'PHP', laravel: 'Laravel', spring: 'Spring Boot' }[sdk as string]}**\n\n`)
       .replace(/<\/SdkContent>/g, '')
       .replace(/<SdkCall php="([^"]*)" laravel="([^"]*)"\s*\/>/g, (_, php, laravel) => {
         return `Laravel: \`${decodeAttribute(laravel)}\`; PHP: \`${decodeAttribute(php)}\``;
       });
     const html = md.render(source, env);
     if (env.frontmatter?.search === false) return '';
-    const label = isLaravelPage('/' + env.relativePath.replace(/\.md$/, '')) ? 'Laravel' : 'Laravel / PHP';
+    const fixed = pageSdk('/' + env.relativePath.replace(/\.md$/, ''));
+    const label = fixed ? client(fixed).label : 'Laravel / PHP';
     // VitePress reads heading text before its trailing anchor link.
     return html.replace(/(<h1\b[^>]*>)([\s\S]*?)(<a\b)/,
       (_, opening, title, anchor) => `${opening}${title.trimEnd()} · ${label} ${anchor}`);
