@@ -11,7 +11,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Supplier;
@@ -25,19 +24,19 @@ final class PortalProxies {
         return request -> {
             try {
                 String method = String.valueOf(request.getOrDefault("method", "GET"));
-                String path = String.valueOf(request.getOrDefault("path", "/"));
-                String body = request.get("body") == null ? null : Arrays.toString(Base64.getDecoder().decode(String.valueOf(request.get("body"))));
+                String path = requestPath(request);
+                byte[] body = requestBody(request);
                 @SuppressWarnings("unchecked") Map<String, List<String>> headers = coerceHeaders(request.get("headers"));
 
                 URI base = baseUriSupplier.get();
-                String url = base.toString().replaceAll("/$", "") + (path.startsWith("/") ? path : "/" + path);
+                String url = base.toString().replaceAll("/$", "") + path;
 
                 HttpRequest.Builder rb = HttpRequest.newBuilder(URI.create(url))
                         .timeout(Duration.ofSeconds(30))
                         .method(method.toUpperCase(Locale.ROOT),
-                                (body == null || body.isEmpty())
+                                body.length == 0
                                         ? HttpRequest.BodyPublishers.noBody()
-                                        : HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
+                                        : HttpRequest.BodyPublishers.ofByteArray(body));
 
                 headers.forEach((k, vs) -> {
                     if (k == null) return;
@@ -68,18 +67,19 @@ final class PortalProxies {
             try {
                 MockMvc mockMvc = Objects.requireNonNull(mockMvcSupplier.get(), "mockMvcSupplier returned null");
                 String method = String.valueOf(request.getOrDefault("method", "GET"));
-                String path = String.valueOf(request.getOrDefault("path", "/"));
-                String body = request.get("body") == null ? null : String.valueOf(request.get("body"));
+                String path = requestPath(request);
+                byte[] body = requestBody(request);
                 @SuppressWarnings("unchecked") Map<String, List<String>> headers = coerceHeaders(request.get("headers"));
 
-                MockHttpServletRequestBuilder rb = MockMvcRequestBuilders.request(HttpMethod.valueOf(method.toUpperCase()), path);
+                // A URI, not a URI template: query strings and braces in paths are passed as they are.
+                MockHttpServletRequestBuilder rb = MockMvcRequestBuilders.request(HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), URI.create(path));
                 headers.forEach((k, vs) -> {
                     if (k == null) return;
                     String key = k.trim();
                     if (key.equalsIgnoreCase("content-length")) return;
                     for (String v : vs) if (v != null) rb.header(key, v);
                 });
-                if (body != null) rb.content(body);
+                if (body.length > 0) rb.content(body);
 
                 MockHttpServletResponse res = mockMvc.perform(rb).andReturn().getResponse();
 
@@ -101,6 +101,20 @@ final class PortalProxies {
                 return portalFailure(e);
             }
         };
+    }
+
+    // The path relative to the portal prefix, including the query. The prefix itself arrives as "".
+    static String requestPath(Map<String, Object> request) {
+        Object raw = request.get("path");
+        String path = raw == null ? "" : String.valueOf(raw);
+        return path.startsWith("/") ? path : "/" + path;
+    }
+
+    // Puth sends the request body base64 encoded in "data".
+    static byte[] requestBody(Map<String, Object> request) {
+        Object data = request.get("data");
+        if (data == null || String.valueOf(data).isEmpty()) return new byte[0];
+        return Base64.getDecoder().decode(String.valueOf(data));
     }
 
     // No HTTP response exists here, so this must not look like a server's own 5xx response.
