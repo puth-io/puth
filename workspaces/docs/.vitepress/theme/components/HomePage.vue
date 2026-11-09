@@ -154,7 +154,7 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
       <div class="stage-fade" aria-hidden="true" />
       <div class="stage-inner">
         <div class="stage-text">
-          <h1 id="home-title">See what your browser tests do.</h1>
+          <h1 id="home-title">See what your<br>browser tests do.</h1>
           <p>
             Native browser tests for Laravel, Java and Node.js. Every command shows up in a realtime GUI, and a failure
             from CI opens on your own machine. <a href="/guide/migration-from-dusk">Migrating from Dusk?</a>
@@ -287,18 +287,19 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
   -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, .35) 0%, rgba(0, 0, 0, .5) 35%, #000 75%);
   mask-image: linear-gradient(90deg, rgba(0, 0, 0, .35) 0%, rgba(0, 0, 0, .5) 35%, #000 75%);
 }
-.stage-text { position: relative; z-index: 2; display: flex; flex: 1 1 380px; flex-direction: column; gap: 22px; min-width: 0; max-width: 470px; }
+.stage-text { position: relative; z-index: 2; display: flex; flex: 1 1 440px; flex-direction: column; gap: 22px; min-width: 0; max-width: 470px; }
 .stage-gui { flex: 2 1 640px; min-width: 0; padding-top: 6px; }
 .stage h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 500; letter-spacing: -.025em; color: #fff; }
 .stage p { margin: 0; font-size: 15.5px; line-height: 1.65; color: #dbeafe; }
 .stage p a { color: #eff6ff; text-decoration: underline; text-underline-offset: 4px; }
-.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+/* The install command stays next to the button; only narrow screens move it below as a whole. */
+.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
 .cta {
   display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--puth-primary); color: #fff;
   font-family: var(--vp-font-family-mono); font-size: 13.5px; font-weight: 500; transition: background-color .2s;
 }
 .cta:hover { background: #1d4ed8; }
-.install { font-family: var(--vp-font-family-mono); font-size: 12.5px; color: #dbeafe; }
+.install { font-family: var(--vp-font-family-mono); font-size: 12px; white-space: nowrap; color: #dbeafe; }
 
 .code-card {
   display: flex; flex-direction: column; margin: 8px -56px 0 0; overflow: hidden;
