@@ -103,7 +103,7 @@ const logo = withBase('/assets/image/puth-logo-blue.png');
 .rail-fill { flex: 1; }
 .rail-dot { width: 7px; height: 7px; margin-bottom: 6px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .18); }
 
-.run { display: flex; flex: none; flex-direction: column; width: 300px; min-height: 0; border-right: 1px solid rgba(163, 163, 163, .1); background: #161616; }
+.run { display: flex; flex: none; flex-direction: column; width: 268px; min-height: 0; border-right: 1px solid rgba(163, 163, 163, .1); background: #161616; }
 .run-status { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px dashed #333; font-family: var(--vp-font-family-mono); font-size: 11px; color: #a3a3a3; }
 .passed { color: #86efac; }
 .run-title { padding: 10px 12px 8px; font-size: 14px; font-weight: 500; }
@@ -144,7 +144,7 @@ const logo = withBase('/assets/image/puth-logo-blue.png');
   border: 1px solid rgba(163, 163, 163, .12); border-radius: 7px; background: #0a0a0a; font-family: var(--vp-font-family-mono); font-size: 10.5px; color: #d4d4d4;
 }
 .stage {
-  display: flex; flex: 1; align-items: stretch; justify-content: center; min-height: 0; padding: 14px;
+  display: flex; flex: 1; align-items: stretch; justify-content: center; min-height: 0; padding: 10px;
   background-color: #0a0a0a; background-image: radial-gradient(rgba(163, 163, 163, .12) .75px, transparent 1.1px); background-size: 12px 12px;
 }
 .page-frame {
@@ -153,16 +153,17 @@ const logo = withBase('/assets/image/puth-logo-blue.png');
 }
 .app-bar { display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 14px; border-bottom: 1px solid #27272a; background: #1b1b1f; font-size: 11px; font-weight: 600; }
 .avatar { width: 18px; height: 18px; border-radius: 50%; background: #4338ca; }
-.login { display: flex; justify-content: center; padding-top: 22px; }
-.login-card { display: flex; flex-direction: column; gap: 9px; width: 46%; padding: 14px; border: 1px solid #2e2e33; border-radius: 8px; background: #1b1b1f; font-size: 10px; }
+.login { display: flex; justify-content: center; padding: 26px 16px 0; }
+/* Keeps a usable width in the narrow viewport next to the hero text. */
+.login-card { display: flex; flex-direction: column; gap: 10px; width: min(260px, 100%); padding: 16px; box-sizing: border-box; border: 1px solid #2e2e33; border-radius: 8px; background: #1b1b1f; font-size: 10px; }
 .login-title { font-size: 13px; font-weight: 600; }
 .field { position: relative; display: flex; flex-direction: column; gap: 4px; color: #a1a1aa; }
 .input { display: flex; align-items: center; height: 22px; padding: 0 7px; border: 1px solid #3f3f46; border-radius: 4px; background: #111113; color: #e4e4e7; }
 .input.dots { letter-spacing: 2px; }
 .button { display: flex; align-items: center; justify-content: center; height: 24px; margin-top: 2px; border-radius: 4px; background: #4f46e5; color: #fff; font-weight: 600; }
-.dashboard { display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; }
+.dashboard { display: flex; flex-direction: column; gap: 12px; padding: 18px 16px; }
 .welcome { position: relative; align-self: flex-start; font-size: 17px; font-weight: 600; }
-.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
 .tiles span, .panel { height: 54px; border: 1px solid #27272a; border-radius: 6px; background: #1b1b1f; }
 .panel { height: 70px; }
 .hl::after { content: ''; position: absolute; inset: -4px; border: 2px solid #3b82f6; border-radius: 7px; background: rgba(59, 130, 246, .16); }
