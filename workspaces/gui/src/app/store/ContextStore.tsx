@@ -10,6 +10,10 @@ export default class ContextStore {
     
     commands: any[] = [];
     logs: any[] = [];
+    network: any[] = [];
+    annotations: any[] = [];
+    handoffs: any[] = [];
+    navigations: any[] = [];
     screencasts: any[] = [];
     unspecific: any[] = [];
     renderedEvents: any[] = [];
@@ -67,6 +71,10 @@ export default class ContextStore {
         makeObservable(this, {
             commands: observable,
             logs: observable,
+            network: observable,
+            annotations: observable,
+            handoffs: observable,
+            navigations: observable,
             screencasts: observable,
             unspecific: observable,
             group: observable,
@@ -86,6 +94,10 @@ export default class ContextStore {
             
             took: computed,
             isForeground: computed,
+            isAgent: computed,
+            isLive: computed,
+            handoff: computed,
+            toolCalls: computed,
         });
     }
     
@@ -114,6 +126,24 @@ export default class ContextStore {
         } else if (packet.type === 'log') {
             this.logs.push(packet);
             this.pushRenderedPacket(packet);
+        } else if (packet.type === 'request' || packet.type === 'response' || (packet.type === 'update' && packet.specific === 'request.failed')) {
+            this.network.push(packet);
+            // Requests are only shown once they finished or failed.
+            if (packet.type !== 'request') {
+                this.pushRenderedPacket(packet);
+            }
+        } else if (packet.type === 'annotation') {
+            // Marks from agents: tool calls, drafts and commands they made for themselves.
+            this.annotations.push(packet);
+            this.pushRenderedPacket(packet);
+        } else if (packet.type === 'navigation') {
+            // Splits the steps into the pages they ran on.
+            this.navigations.push(packet);
+            this.pushRenderedPacket(packet);
+        } else if (packet.type === 'handoff') {
+            this.handoffs.push(packet);
+            // Where the agent took over and handed back separates its steps from those of the test.
+            this.pushRenderedPacket(packet);
         } else if (packet.type === 'test') {
             if (packet.specific === 'status') {
                 this.test.status = packet.status;
@@ -132,20 +162,29 @@ export default class ContextStore {
         }
     }
     
+    /**
+     * Network packets carry no timestamp, only the time they finished.
+     */
+    private static eventTime(packet: any): number {
+        return packet.timestamp ?? packet.time?.finished ?? packet.time ?? 0;
+    }
+    
     private pushRenderedPacket(packet: any) {
-        if (this.renderedEvents.length === 0 || this.renderedEvents[this.renderedEvents.length - 1].timestamp < packet.timestamp) {
+        const time = ContextStore.eventTime(packet);
+        const count = this.renderedEvents.length;
+        if (count === 0 || ContextStore.eventTime(this.renderedEvents[count - 1]) <= time) {
             this.renderedEvents.push(packet);
         } else {
-            let index = this.renderedEvents.findIndex(item => item.timestamp > packet.timestamp);
+            let index = this.renderedEvents.findIndex(item => ContextStore.eventTime(item) > time);
             this.renderedEvents.splice(index, 0, packet);
         }
         
-        if (this.isForeground && this.followIncoming && this.preview !== null) {
-            let count = this.renderedEvents.length;
-            if (count !== 1) {
-                if (this.renderedEvents[count - 2].id === this.preview.activeCommand?.id) {
-                    this.preview.toggleCommand(this.renderedEvents[count - 1]);
-                }
+        // While the latest command is selected, a new command takes over the selection.
+        if (packet.type === 'command' && this.isForeground && this.followIncoming && this.preview !== null) {
+            const commands = this.renderedEvents.filter(event => event.type === 'command');
+            const count = commands.length;
+            if (count > 1 && commands[count - 2].id === this.preview.activeCommand?.id) {
+                this.preview.toggleCommand(commands[count - 1]);
             }
         }
     }
@@ -159,6 +198,10 @@ export default class ContextStore {
             structuredClone(toJS(this.original)),
             ...this.commands,
             ...this.logs,
+            ...this.network,
+            ...this.annotations,
+            ...this.handoffs,
+            ...this.navigations,
             ...this.screencasts,
             ...this.unspecific,
         ];
@@ -214,6 +257,28 @@ export default class ContextStore {
             minutes,
             seconds,
         };
+    }
+    
+    /**
+     * Sessions of the MCP server, which agents open to explore an application.
+     */
+    get isAgent(): boolean {
+        return this.group === 'mcp';
+    }
+    
+    get isLive(): boolean {
+        return (this.test.status ?? 'pending') === 'pending';
+    }
+    
+    /**
+     * Where a handoff of this test stands: waiting for an agent, claimed by one, or ended.
+     */
+    get handoff(): {state: 'waiting'|'claimed'|'ended', name: string, reason?: string}|undefined {
+        return this.handoffs[this.handoffs.length - 1];
+    }
+    
+    get toolCalls(): number {
+        return this.annotations.filter(annotation => annotation.kind === 'tool').length;
     }
     
     get isForeground(): boolean {

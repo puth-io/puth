@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/jetbrains-mono';
 import './index.css';
 import {runInAction} from "mobx";
 import DropzoneStore from "./app/store/DropzoneStore.tsx";

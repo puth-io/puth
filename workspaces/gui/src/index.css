@@ -84,44 +84,69 @@
   }
 }
 
-.context-event-table tbody td {
-  @apply border-y-4;
-  @apply border-solid;
-  /*@apply border-y-transparent;*/
-  border-color: #282a32;
-  box-sizing: content-box;
-}
-.context-event-table tbody tr.step td {
-  @apply bg-context-step;
-}
-.context-event-table tbody tr.step:hover td,
-.context-event-table tbody tr.step.active td {
-  @apply bg-context-step-selected;
-}
-
 html {
   color-scheme: dark;
-  font-family: system-ui, sans-serif;
+  font-family: 'Geist Variable', Geist, system-ui, sans-serif;
   font-size: 16px;
 }
 
 body {
-  font-size: 12px;
+  font-size: 13px;
+  background: #0a0a0a;
+  color: #fafafa;
+}
+
+/* Code and arguments are shown as written, so the mono font draws no ligatures. */
+.font-mono, code {
+  font-variant-ligatures: none;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 0.75rem;
+  width: 0.625rem;
+  height: 0.625rem;
 }
 ::-webkit-scrollbar-track {
-  background: inherit;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.10);
-  border-radius: 0.125rem;
+  background: rgba(163, 163, 163, 0.16);
+  border-radius: 0.3125rem;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background-color: rgba(163, 163, 163, 0.3);
+}
+
+/* The dot grid behind the viewport and the dithered blue of the empty state. */
+.shell-dots {
+  background-color: #0a0a0a;
+  background-image: radial-gradient(rgba(163, 163, 163, 0.12) 0.75px, transparent 1.1px);
+  background-size: 12px 12px;
+}
+.shell-hero {
+  background:
+    radial-gradient(60% 70% at 80% 0%, rgba(96, 165, 250, 0.45), transparent 70%),
+    linear-gradient(180deg, #1e3a8a 0%, #1e40af 38%, #172554 100%);
+}
+/* Dots stay in the upper right, away from the text. */
+.shell-hero-dots {
+  background-image: radial-gradient(rgba(191, 219, 254, 0.4) 0.75px, transparent 1.1px);
+  background-size: 4px 4px;
+  -webkit-mask-image: radial-gradient(70% 90% at 100% 0%, #000 0%, rgba(0, 0, 0, 0.4) 45%, transparent 75%);
+  mask-image: radial-gradient(70% 90% at 100% 0%, #000 0%, rgba(0, 0, 0, 0.4) 45%, transparent 75%);
+}
+/* Discrete noise, blended in soft light like the website's dithered blue. */
+.shell-hero-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='1' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1'/%3E%3CfeFuncG type='discrete' tableValues='0 1'/%3E%3CfeFuncB type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  mix-blend-mode: soft-light;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.shell-hero-scrim {
+  background: linear-gradient(0deg, rgba(12, 18, 50, 0.75) 0%, rgba(12, 18, 50, 0.35) 55%, transparent 100%);
 }
 
 /*:root {*/

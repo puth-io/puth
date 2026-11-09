@@ -141,21 +141,23 @@ describe('Snapshot replay', () => {
         const live = await openGui(instance);
         await connect(live, instance);
         await live.waitForText('failed checkout');
-        await live.click('.bg-context-step');
-        await live.waitFor('tr.command');
+        await live.click('[puth="history-item"]');
+        await live.waitFor('[puth="step"]');
         const snapshot = await exportActiveContext(live);
 
         const gui = await openGui(instance);
         await importFile(gui, 'failed.puth', snapshot);
 
         await gui.waitForText('failed checkout');
+        await gui.click('[puth="tab-console"]');
         await gui.assertSee('recorded console message');
+        await gui.click('[puth="tab-steps"]');
         await gui.assertSee('#does-not-exist');
         await gui.assertVisible('[data-messagetype="error"]');
         await gui.assertSeeIn('[data-messagetype="error"]', 'Waited 200ms for selector');
 
-        await gui.click('tr.command:has(+ tr [data-messagetype="error"])');
-        await gui.assertVisible('tr.command.active:has(+ tr [data-messagetype="error"])');
+        await gui.click('[puth="step"][data-failed]');
+        await gui.assertVisible('[puth="step"][data-failed][data-active]');
         await gui.assertVisible('img[src^="blob:"], img[src^="data:"]');
     }, 40000);
 
@@ -202,7 +204,8 @@ describe('Snapshot replay', () => {
         const live = await openGui(instance);
         await connect(live, instance);
         await live.waitForText('long run');
-        await live.click('.bg-context-step');
+        await live.click('[puth="history-item"]');
+        await live.click('[puth="tab-console"]');
         await live.waitForText('Later packets are missing');
         const snapshot = await exportActiveContext(live);
 
@@ -210,8 +213,103 @@ describe('Snapshot replay', () => {
         await importFile(gui, 'truncated.puth', snapshot);
 
         await gui.waitForText('long run');
+        await gui.click('[puth="tab-console"]');
         await gui.assertSee('Later packets are missing from this recording.');
     }, 40000);
+});
+
+describe('Agent sessions', () => {
+    const command = (id: string, func: string, args: unknown[], timestamp: number) => ({
+        id,
+        type: 'command',
+        context: { id: 'context-1' },
+        on: { type: 'Browser', path: [] },
+        func,
+        args,
+        errors: [],
+        snapshots: {},
+        time: { started: timestamp, finished: timestamp + 5, took: 5, elapsed: timestamp },
+        timestamp,
+    });
+    const annotation = (id: string, timestamp: number, extra: object) => ({ id, type: 'annotation', context: { id: 'context-1' }, timestamp, ...extra });
+
+    it('groups steps by tool call and hides what the server did for itself', async () => {
+        const instance = await startInstance();
+        const gui = await openGui(instance);
+
+        await importFile(gui, 'agent.puth', encode([
+            contextPacket({ group: 'mcp', test: { name: 'agent run', status: 'pending' } }),
+            annotation('a1', 2, { kind: 'tool', tool: 'puth_run', summary: 'visit, see' }),
+            command('c1', 'setTimeout', [3000], 3),
+            command('c2', 'visit', ['http://app.test/login'], 4),
+            annotation('a2', 5, { kind: 'quiet', quiet: true }),
+            command('c3', 'evaluate', ['outline()'], 6),
+            annotation('a3', 7, { kind: 'quiet', quiet: false }),
+            annotation('a4', 8, { kind: 'draft', format: 'laravel', name: 'Opens the login', code: "$browser->visit('/login');" }),
+        ]));
+
+        await gui.waitForText('agent run');
+        await gui.assertSeeIn('[puth="tool-call"]', 'puth_run');
+        await gui.assertSeeIn('[puth="draft"]', 'Opens the login');
+        assert.strictEqual(await gui.evaluate(`document.querySelectorAll('[puth="step"]').length`), 1);
+        await gui.assertSeeIn('[puth="step"]', 'visit');
+    }, 30000);
+
+    it('separates the steps of a test from those of the agent it handed off to', async () => {
+        const instance = await startInstance();
+        const gui = await openGui(instance);
+        const handoff = (id: string, timestamp: number, state: string) => ({ id, type: 'handoff', context: { id: 'context-1' }, timestamp, state, name: 'logged in' });
+
+        await importFile(gui, 'handoff.puth', encode([
+            contextPacket(),
+            command('c1', 'visit', ['http://app.test/login'], 2),
+            handoff('h1', 3, 'waiting'),
+            handoff('h2', 4, 'claimed'),
+            annotation('a1', 5, { kind: 'tool', tool: 'puth_run', summary: 'click' }),
+            command('c2', 'click', ['#save'], 6),
+            handoff('h3', 7, 'ended'),
+            command('c3', 'assertSee', ['Saved'], 8),
+        ]));
+
+        await gui.waitForText('crafted run');
+        await gui.assertSeeIn('[puth="handoff"]', 'Handed back to the test');
+        await gui.assertSee('Before the handoff');
+        await gui.assertSee('After the handoff');
+        assert.strictEqual(await gui.evaluate(`document.querySelectorAll('[puth="step"]').length`), 3);
+    }, 30000);
+});
+
+describe('Steps', () => {
+    it('are split into the pages they ran on', async () => {
+        const instance = await startInstance();
+        const gui = await openGui(instance);
+        const command = (id: string, func: string, args: unknown[], started: number) => ({
+            id, type: 'command', context: { id: 'context-1' }, on: { type: 'Browser', path: [] }, func, args, errors: [], snapshots: {},
+            time: { started, finished: started + 10, took: 10, elapsed: started }, timestamp: started,
+        });
+        const navigation = (id: string, timestamp: number, url: string, extra = {}) => ({ id, type: 'navigation', context: { id: 'context-1' }, timestamp, url, ...extra });
+
+        await importFile(gui, 'pages.puth', encode([
+            contextPacket(),
+            navigation('n0', 2, 'about:blank'),
+            command('c1', 'visit', ['http://app.test/login'], 10),
+            navigation('n1', 15, 'http://app.test/login'),
+            command('c2', 'click', ['#submit'], 30),
+            navigation('n2', 35, 'http://app.test/dashboard'),
+            command('c3', 'assertSee', ['Welcome'], 50),
+            command('c4', 'setContent', ['<title>Cart</title>'], 60),
+            navigation('n3', 65, 'about:blank', { initiator: 'setContent', title: 'Cart' }),
+            command('c5', 'assertSee', ['Cart'], 80),
+        ]));
+
+        await gui.waitForText('crafted run');
+        const dividers = JSON.parse(await gui.evaluate(`JSON.stringify([...document.querySelectorAll('[puth="page-divider"]')].map((divider) => divider.innerText.replace(/\\s+/g, ' ').trim()))`));
+        assert.deepEqual(dividers, ['→ app.test/login', '→ /dashboard', '→ Cart setContent']);
+
+        // A page opened by a command sits above it, one a command led to below it.
+        const order = JSON.parse(await gui.evaluate(`JSON.stringify([...document.querySelectorAll('[puth="page-divider"], [puth="step"]')].map((element) => element.matches('[puth="page-divider"]') ? 'page' : element.innerText.split(/\\s+/)[1]))`));
+        assert.deepEqual(order, ['page', 'visit', 'click', 'page', 'assertSee', 'page', 'setContent', 'assertSee']);
+    }, 30000);
 });
 
 describe('Snapshot import errors', () => {
