@@ -118,7 +118,7 @@ onBeforeUnmount(() => clearTimeout(closeTimer));
 .framework { font-weight: 500; }
 .popover { position: absolute; top: 100%; right: 0; z-index: 30; padding-top: 10px; }
 .panel {
-  display: flex; width: 500px; max-width: calc(100vw - 32px); overflow: hidden; white-space: normal;
+  display: flex; width: 572px; max-width: calc(100vw - 32px); overflow: hidden; white-space: normal;
   border: 1px solid var(--puth-border); border-radius: 10px; background: var(--puth-surface);
   box-shadow: 0 20px 50px rgba(0, 0, 0, .6);
 }
