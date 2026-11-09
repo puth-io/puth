@@ -17,8 +17,8 @@ browser.press("Save");
 browser.waitForTextIn("#status", "Saved");
 ```
 ```ts
-await browser.press('Save');
-await browser.waitForTextIn('#status', 'Saved');
+await browser.press('Save')
+    .waitForTextIn('#status', 'Saved');
 ```
 
 ## Automatic waiting
@@ -60,8 +60,7 @@ $browser->setTimeout(5000)->setTimeoutMultiplier(2);
 browser.setTimeout(5000).setTimeoutMultiplier(2);
 ```
 ```ts
-await browser.setTimeout(5000);
-await browser.setTimeoutMultiplier(2);
+await browser.setTimeout(5000).setTimeoutMultiplier(2);
 ```
 
 ## Element waits
@@ -85,8 +84,8 @@ browser.waitFor("[puth=\"toast\"]");
 browser.waitUntilMissing("[puth=\"toast\"]");
 ```
 ```ts
-await browser.waitFor('[puth="toast"]');
-await browser.waitUntilMissing('[puth="toast"]');
+await browser.waitFor('[puth="toast"]')
+    .waitUntilMissing('[puth="toast"]');
 ```
 
 Use CSS selectors for `$browser->waitFor()` and `$browser->waitUntilMissing()`: these server helpers pass selectors directly to Puppeteer. Unlike `$browser->click()` and `$browser->waitForTextIn()`, they do not expand `@` shortcuts or apply the resolver prefix. Attribute and enabled/disabled waits also need CSS selectors.

@@ -80,8 +80,8 @@ browser.assertHasCookie("preference")
 Raw-cookie assertions reject when the check fails. They do not encrypt or decrypt cookie values.
 
 ```ts
-await browser.assertHasCookie('preference');
-await browser.assertCookieValue('preference', 'dark');
+await browser.assertHasCookie('preference')
+    .assertCookieValue('preference', 'dark');
 ```
 
 </SdkContent>

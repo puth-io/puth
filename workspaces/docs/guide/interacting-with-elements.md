@@ -26,8 +26,8 @@ browser.click("@save");
 browser.rightClick("#menu");
 ```
 ```ts
-await browser.click('@save');
-await browser.rightClick('#menu');
+await browser.click('@save')
+    .rightClick('#menu');
 ```
 
 `$browser->moveMouse(xOffset, yOffset)` is not supported.
@@ -76,8 +76,8 @@ browser.type("password", "secretx")
 <SdkContent sdk="js">
 
 ```ts
-await browser.type('password', 'secretx');
-await browser.keys('#password', ['{Backspace}']);
+await browser.type('password', 'secretx')
+    .keys('#password', ['{Backspace}']);
 ```
 
 </SdkContent>
@@ -99,8 +99,8 @@ browser.select("country", "US");
 browser.check("terms");
 ```
 ```ts
-await browser.select('country', 'US');
-await browser.check('terms');
+await browser.select('country', 'US')
+    .check('terms');
 ```
 
 ## Buttons
@@ -121,9 +121,9 @@ browser.waitForText("Changes saved");
 browser.assertSee("Changes saved");
 ```
 ```ts
-await browser.press('Save');
-await browser.waitForText('Changes saved');
-await browser.assertSee('Changes saved');
+await browser.press('Save')
+    .waitForText('Changes saved')
+    .assertSee('Changes saved');
 ```
 
 ## Mouse and drag

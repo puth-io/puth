@@ -75,8 +75,8 @@ const context = await Context.create('http://127.0.0.1:7345', { snapshot: true }
 const cleanup: Record<string, unknown> = { immediately: true };
 try {
     const browser = await context.createBrowserShim();
-    await browser.visit('https://playground.puth.dev');
-    await browser.assertSee('Puth');
+    await browser.visit('https://playground.puth.dev')
+        .assertSee('Puth');
 } catch (error) {
     await context.testFailed();
     cleanup.save = { to: 'file' };

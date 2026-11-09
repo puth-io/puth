@@ -208,7 +208,7 @@ This reference documents the Java client's Browser. Calls return the Browser, so
 
 <SdkContent sdk="js">
 
-This reference documents the Node.js client's Browser. Every call returns a promise, so await each one; assertions reject when they fail.
+This reference documents the Node.js client's Browser. Every call returns a promise, and assertions reject when they fail. Calls that return the Browser chain under one `await`: they run in order and stop at the first failure. A call that returns a value ends the chain, like `await browser.visit(url).title()`.
 
 </SdkContent>
 
