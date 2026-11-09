@@ -1,5 +1,11 @@
 # @puth/gui
 
+## 0.2.1
+
+### Patch Changes
+
+- dda5c04: The Docker image moved to the GitHub Container Registry: `ghcr.io/puth-io/puth`. New versions are no longer published to Docker Hub.
+
 ## 0.2.0
 
 ### Minor Changes
