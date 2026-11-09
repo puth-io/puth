@@ -26,9 +26,9 @@ browser.assertDialogOpened("Are you sure?");
 browser.acceptDialog();
 ```
 ```ts
-await browser.click('#delete');
-await browser.assertDialogOpened('Are you sure?');
-await browser.acceptDialog();
+await browser.click('#delete')
+    .assertDialogOpened('Are you sure?')
+    .acceptDialog();
 ```
 
 ## Prompt input
@@ -47,8 +47,8 @@ browser.click("#rename");
 browser.acceptDialog("New name");
 ```
 ```ts
-await browser.click('#rename');
-await browser.acceptDialog('New name');
+await browser.click('#rename')
+    .acceptDialog('New name');
 ```
 
 `$browser->typeInDialog()` queues text; it does not close the prompt. Call `$browser->acceptDialog()` to submit that text, or `$browser->dismissDialog()` to cancel. The cached text is cleared after either action.
@@ -66,9 +66,9 @@ browser.assertDialogOpened("Are you sure?");
 browser.dismissDialog();
 ```
 ```ts
-await browser.click('#delete');
-await browser.assertDialogOpened('Are you sure?');
-await browser.dismissDialog();
+await browser.click('#delete')
+    .assertDialogOpened('Are you sure?')
+    .dismissDialog();
 ```
 
 Accept or dismiss every dialog your test opens so it can continue interacting with the page.

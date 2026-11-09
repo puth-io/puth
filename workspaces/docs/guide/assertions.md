@@ -27,9 +27,9 @@ browser.assertTitleContains("Settings");
 browser.assertPathIs("/settings");
 ```
 ```ts
-await browser.visit('https://app.test/settings');
-await browser.assertTitleContains('Settings');
-await browser.assertPathIs('/settings');
+await browser.visit('https://app.test/settings')
+    .assertTitleContains('Settings')
+    .assertPathIs('/settings');
 ```
 
 Use `$browser->assertTitle()` for an exact title match and `$browser->assertTitleContains()` for a partial match. URL helpers let you check the path, host, scheme, port, query parameters or fragment independently.
@@ -43,8 +43,8 @@ browser.assertPathIs("/orders");
 browser.assertQueryStringHas("status", "open");
 ```
 ```ts
-await browser.assertPathIs('/orders');
-await browser.assertQueryStringHas('status', 'open');
+await browser.assertPathIs('/orders')
+    .assertQueryStringHas('status', 'open');
 ```
 
 `$browser->assertUrlIs()` accepts a full URL or a path. A full URL without a query string can match a page that has query parameters, so assert those parameters separately when they matter.
@@ -66,10 +66,10 @@ browser.assertTextIs("#status", "Saved");
 browser.assertDontSeeIn("#alerts", "Payment failed");
 ```
 ```ts
-await browser.assertSee('Dashboard');
-await browser.assertSeeIn('#account-menu', 'Sign out');
-await browser.assertTextIs('#status', 'Saved');
-await browser.assertDontSeeIn('#alerts', 'Payment failed');
+await browser.assertSee('Dashboard')
+    .assertSeeIn('#account-menu', 'Sign out')
+    .assertTextIs('#status', 'Saved')
+    .assertDontSeeIn('#alerts', 'Payment failed');
 ```
 
 Use `$browser->assertSourceHas()` for HTML source and `$browser->assertScript(expression, expected)` for a JavaScript result. If content loads asynchronously, see [waiting and sync](./waiting-and-sync).
@@ -93,12 +93,12 @@ browser.assertChecked("terms");
 browser.assertSelected("country", "US");
 ```
 ```ts
-await browser.type('email', 'you@example.com');
-await browser.check('terms');
-await browser.select('country', 'US');
-await browser.assertInputValue('email', 'you@example.com');
-await browser.assertChecked('terms');
-await browser.assertSelected('country', 'US');
+await browser.type('email', 'you@example.com')
+    .check('terms')
+    .select('country', 'US')
+    .assertInputValue('email', 'you@example.com')
+    .assertChecked('terms')
+    .assertSelected('country', 'US');
 ```
 
 Other helpers check radio selections, available select options, enabled or disabled buttons, and focused fields. See the [Browser reference](/api/browser#assertions) for the method list.

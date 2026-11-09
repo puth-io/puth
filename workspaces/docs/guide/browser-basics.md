@@ -28,7 +28,7 @@ Create `context` with `Context.create(serverUrl)`, then use `context.createBrows
 
 <SdkContent sdk="js">
 
-Create `context` with `await Context.create(serverUrl)`, then use `await context.createBrowserShim()` to obtain `browser`. Every call returns a promise, so await each one. See [Getting started](./getting-started#connect-a-client) for a complete example.
+Create `context` with `await Context.create(serverUrl)`, then use `await context.createBrowserShim()` to obtain `browser`. Every call returns a promise. Calls that return the Browser chain under one `await`, like `await browser.visit(url).assertSee('Welcome')`. See [Getting started](./getting-started#connect-a-client) for a complete example.
 
 </SdkContent>
 
@@ -47,10 +47,10 @@ browser.waitForLocation("/settings");
 browser.assertTitleContains("Settings");
 ```
 ```ts
-await browser.visit('https://app.test');
-await browser.clickLink('Settings');
-await browser.waitForLocation('/settings');
-await browser.assertTitleContains('Settings');
+await browser.visit('https://app.test')
+    .clickLink('Settings')
+    .waitForLocation('/settings')
+    .assertTitleContains('Settings');
 ```
 
 `$browser->refresh()` reloads the current page. `$browser->back()` and `$browser->forward()` navigate its history. Use `$browser->blank()` to load `about:blank`, or `$browser->setContent(html)` to replace the current document with HTML supplied by your test.
@@ -88,9 +88,9 @@ browser.visit("https://app.test");
 browser.assertVisible("#mobile-menu");
 ```
 ```ts
-await browser.resize(390, 844);
-await browser.visit('https://app.test');
-await browser.assertVisible('#mobile-menu');
+await browser.resize(390, 844)
+    .visit('https://app.test')
+    .assertVisible('#mobile-menu');
 ```
 
 `$browser->viewport()` reads the current viewport. `$browser->maximize()`, `$browser->bounds()`, `$browser->setBounds()` and `$browser->move()` control the browser window. These helpers operate on pages, not iframe-scoped browsers.

@@ -144,7 +144,7 @@ Install the client in your project:
 npm install --save-dev @puth/client
 ```
 
-Create a context, then a Browser shim. Every call returns a promise, and assertions reject when they fail. This works with any test runner:
+Create a context, then a Browser shim. Every call returns a promise, and assertions reject when they fail. Calls that return the browser can be chained under one `await`: they run one after another and stop at the first failure. This works with any test runner:
 
 ```ts
 import { Context } from '@puth/client';
@@ -152,8 +152,8 @@ import { Context } from '@puth/client';
 const context = await Context.create('http://127.0.0.1:7345');
 try {
     const browser = await context.createBrowserShim();
-    await browser.visit('https://playground.puth.dev');
-    await browser.assertSee('Puth');
+    await browser.visit('https://playground.puth.dev')
+        .assertSee('Puth');
 } finally {
     await context.destroy({ immediately: true });
 }
