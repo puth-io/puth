@@ -70,9 +70,6 @@ export default defineConfig({
       },
     ],
     socialLinks: [{ icon: 'github', link: 'https://github.com/puth-io/puth' }],
-    editLink: {
-      pattern: 'https://github.com/puth-io/puth/edit/master/workspaces/docs/:path',
-    },
     search: { provider: 'local', options: sdkSearch },
     outline: { label: 'On this page' },
     docFooter: { prev: '< Previous', next: 'Next >' },
