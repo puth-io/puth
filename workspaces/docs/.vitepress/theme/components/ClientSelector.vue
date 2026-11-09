@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { useSdkState } from '../sdk';
 import { client, clients, languages, plannedLanguages, type Sdk } from '../../lib/sdk';
 
-const { sdk, fixed, select } = useSdkState();
+const { sdk, select } = useSdkState();
 const open = ref(false);
 const language = ref<string>('PHP');
 const root = ref<HTMLElement>();
@@ -12,7 +12,6 @@ const frameworks = computed(() => clients.filter(c => c.language === language.va
 let closeTimer: ReturnType<typeof setTimeout> | undefined;
 
 function show() {
-  if (fixed.value) return;
   clearTimeout(closeTimer);
   if (!open.value) language.value = current.value.language;
   open.value = true;
@@ -51,10 +50,8 @@ onBeforeUnmount(() => clearTimeout(closeTimer));
     <button
       type="button"
       class="trigger"
-      :disabled="!!fixed"
       :aria-expanded="open"
       aria-haspopup="true"
-      :title="fixed ? `This page is for ${current.label}` : undefined"
       @click="toggle"
     >
       <span class="language">{{ current.language }}</span>
@@ -110,8 +107,7 @@ onBeforeUnmount(() => clearTimeout(closeTimer));
   border: 1px solid var(--puth-border); border-radius: 8px; background: var(--puth-surface);
   color: var(--vp-c-text-1); font-size: 13px; cursor: pointer; transition: border-color .2s;
 }
-.trigger:hover:not(:disabled), .trigger[aria-expanded="true"] { border-color: var(--puth-border-hover); }
-.trigger:disabled { cursor: default; opacity: .7; }
+.trigger:hover, .trigger[aria-expanded="true"] { border-color: var(--puth-border-hover); }
 .trigger:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
 .language { color: var(--vp-c-text-2); }
 .slash { color: #525252; }

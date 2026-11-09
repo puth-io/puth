@@ -2,7 +2,7 @@
 import DefaultTheme from 'vitepress/theme';
 import { nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import { useRouter } from 'vitepress';
-import { isDocsPath, isSdk, pageSdk, sdkHref, sdkParam, type Sdk } from '../lib/sdk';
+import { clientSidebar, isDocsPath, isSdk, pageSdk, sdkHref, sdkParam, type Sdk } from '../lib/sdk';
 import { sdkKey } from './sdk';
 import ClientSelector from './components/ClientSelector.vue';
 import DocHeader from './components/DocHeader.vue';
@@ -65,7 +65,14 @@ async function sync() {
 function select(value: Sdk) {
   preferred.value = value;
   remember(value);
-  if (fixed.value) return;
+  if (fixed.value) {
+    // A client-only page has nothing for another client: open that client's integration, or getting started.
+    if (value !== fixed.value) {
+      const page = clientSidebar[value]?.[0]?.link ?? '/guide/getting-started';
+      void router.go(`${page}?sdk=${value}`);
+    }
+    return;
+  }
   const url = new URL(window.location.href);
   if (isDocsPath(url.pathname)) {
     url.searchParams.set('sdk', value);
