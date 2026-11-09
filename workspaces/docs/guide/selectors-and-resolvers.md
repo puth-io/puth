@@ -1,6 +1,7 @@
 ---
 title: Selectors and resolvers
 description: How Puth resolves selectors before querying the page.
+sdks: [java, js]
 ---
 
 # Selectors and resolvers
@@ -24,6 +25,14 @@ Add a stable attribute to your application markup:
 $browser->click('@save');
 // resolves to: body [puth="save"]
 ```
+```java
+browser.click("@save");
+// resolves to: body [puth="save"]
+```
+```ts
+await browser.click('@save');
+// resolves to: body [puth="save"]
+```
 
 ## Prefix and page elements
 
@@ -36,6 +45,22 @@ $browser->setResolverPageElements([
         '@save' => 'button[type="submit"]',
     ]);
 $browser->click('@save');
+```
+```java
+browser.setResolverPrefix("#app")
+    .setResolverPageElements(Map.of(
+        "@nav", "nav[role=\"navigation\"]",
+        "@save", "button[type=\"submit\"]"
+    ))
+    .click("@save");
+```
+```ts
+await browser.setResolverPrefix('#app');
+await browser.setResolverPageElements({
+    '@nav': 'nav[role="navigation"]',
+    '@save': 'button[type="submit"]',
+});
+await browser.click('@save');
 ```
 
 ## Special cases

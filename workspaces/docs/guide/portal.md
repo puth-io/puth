@@ -1,3 +1,7 @@
+---
+sdks: [java, spring, js]
+---
+
 # Portal and detours
 
 Portal intercepts browser requests and sends them to the connected client for handling. Configure matching URLs per context through `supports.portal.urlPrefixes`. Requests that do not match a prefix continue normally.
@@ -11,23 +15,7 @@ Portal intercepts browser requests and sends them to the connected client for ha
 
 Setting `detour` to `false` keeps normal portal handling enabled while preventing the fallback route.
 
-## Change settings after creation
-
-Contexts expose these methods:
-
-- `$context->enablePortal()`
-- `$context->disablePortal()`
-- `$context->enableDetour()`
-- `$context->disableDetour()`
-
-For example:
-
-```php
-$context->enablePortal();
-$context->disableDetour();
-```
-
-URL prefix matching still applies after portal is enabled.
+Both options are set when the context is created and cannot be changed afterwards. URL prefix matching applies while portal is enabled.
 
 ## Client defaults
 
@@ -48,5 +36,23 @@ $context = \Puth\Context::create('http://127.0.0.1:7345', [
 ```
 
 Portal forwards matching requests to the client, so use it only when your client has a request handler configured. A standalone context is not a Laravel application request handler.
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+Portal needs a client that answers the forwarded requests. For a Spring Boot application, `PuthPortalExtension` answers them through MockMvc and configures the prefixes; see the [Spring Boot integration](./spring-boot#register-the-extension). A plain Java context has no request handler, so leave its URL prefixes empty.
+
+</SdkContent>
+
+<SdkContent sdk="spring">
+
+`PuthPortalExtension` creates contexts with portal enabled, answers matching requests through MockMvc and lets all other requests load normally. See [Register the extension](./spring-boot#register-the-extension) for the prefixes and options.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+The Node.js client cannot answer portal requests yet. Leave the URL prefixes empty, so every request loads normally from the application.
 
 </SdkContent>

@@ -1,6 +1,7 @@
 ---
 title: Waiting and sync
 description: Timeouts and wait helpers.
+sdks: [java, js]
 ---
 
 # Waiting and sync
@@ -10,6 +11,14 @@ Wait for a specific result when an interaction starts an asynchronous update. Th
 ```php
 $browser->press('Save');
 $browser->waitForTextIn('#status', 'Saved');
+```
+```java
+browser.press("Save");
+browser.waitForTextIn("#status", "Saved");
+```
+```ts
+await browser.press('Save');
+await browser.waitForTextIn('#status', 'Saved');
 ```
 
 ## Automatic waiting
@@ -28,6 +37,12 @@ After an action, a navigation can start a moment later. The next call that does 
 ```php
 $context = \Puth\Context::create('http://127.0.0.1:7345', ['timeouts' => ['actionSettle' => 0]]);
 ```
+```java
+Context context = Context.create("http://127.0.0.1:7345", Map.of("timeouts", Map.of("actionSettle", 0)));
+```
+```ts
+const context = await Context.create('http://127.0.0.1:7345', { timeouts: { actionSettle: 0 } });
+```
 
 Pass `force` to `click` to skip the checks, or set the `actionability` Browser option to `false` to skip them for a whole Browser.
 
@@ -40,6 +55,13 @@ Browser wait timeouts are in milliseconds. The default Browser timeout is 3000 m
 
 ```php
 $browser->setTimeout(5000)->setTimeoutMultiplier(2);
+```
+```java
+browser.setTimeout(5000).setTimeoutMultiplier(2);
+```
+```ts
+await browser.setTimeout(5000);
+await browser.setTimeoutMultiplier(2);
 ```
 
 ## Element waits
@@ -58,6 +80,14 @@ A hidden element can still exist in the DOM. Use `$browser->waitUntilMissing()` 
 $browser->waitFor('[puth="toast"]');
 $browser->waitUntilMissing('[puth="toast"]');
 ```
+```java
+browser.waitFor("[puth=\"toast\"]");
+browser.waitUntilMissing("[puth=\"toast\"]");
+```
+```ts
+await browser.waitFor('[puth="toast"]');
+await browser.waitUntilMissing('[puth="toast"]');
+```
 
 Use CSS selectors for `$browser->waitFor()` and `$browser->waitUntilMissing()`: these server helpers pass selectors directly to Puppeteer. Unlike `$browser->click()` and `$browser->waitForTextIn()`, they do not expand `@` shortcuts or apply the resolver prefix. Attribute and enabled/disabled waits also need CSS selectors.
 
@@ -71,10 +101,16 @@ Use CSS selectors for `$browser->waitFor()` and `$browser->waitUntilMissing()`: 
 ```php
 $browser->waitForLocation('/checkout');
 ```
+```java
+browser.waitForLocation("/checkout");
+```
+```ts
+await browser.waitForLocation('/checkout');
+```
 
 ## Custom waits
 
-The generated PHP client exposes the server’s wait helper as `$browser->_waitUntil()`. Use it to pass arguments and explicit Puppeteer options. It waits until the page function returns a truthy value:
+The clients expose the server’s wait helper as `$browser->_waitUntil()`. Use it to pass arguments and explicit Puppeteer options. It waits until the page function returns a truthy value:
 
 ```php
 $browser->_waitUntil(
@@ -82,6 +118,22 @@ $browser->_waitUntil(
     [],
     'App did not boot in time',
     ['timeout' => 5000],
+);
+```
+```java
+browser.waitUntil(
+    "() => window.__booted === true",
+    new Object[]{},
+    "App did not boot in time",
+    Map.of("timeout", 5000)
+);
+```
+```ts
+await browser.waitUntil(
+    '() => window.__booted === true',
+    [],
+    'App did not boot in time',
+    { timeout: 5000 },
 );
 ```
 

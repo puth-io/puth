@@ -1,11 +1,36 @@
 ---
 title: Context
 description: Context lifecycle and server helpers.
+sdks: [java, js]
 ---
 
 # Context
 
-The Context object manages the browser session lifecycle and server-side helpers. Calls use the PHP Context object. In Laravel tests, access it as `$this->context`; in standalone PHP, create it with `\Puth\Context::create($serverUrl, $options)`.
+The Context object manages the browser session lifecycle and server-side helpers.
+
+<SdkContent sdk="laravel">
+
+In Laravel tests, access it as `$this->context`.
+
+</SdkContent>
+
+<SdkContent sdk="php">
+
+In standalone PHP, create it with `\Puth\Context::create($serverUrl, $options)`.
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+Create it with `Context.create(serverUrl, options)`. With the [Spring Boot integration](/guide/spring-boot), the extension creates it for each test.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+Create it with `await Context.create(serverUrl, options)`.
+
+</SdkContent>
 
 ## Browser lifecycle
 
@@ -28,7 +53,4 @@ The Context object manages the browser session lifecycle and server-side helpers
 
 ## Portal settings
 
-- `$context->enablePortal()` / `$context->disablePortal()` change request interception.
-- `$context->enableDetour()` / `$context->disableDetour()` change the fallback for unreadable request bodies.
-
-See [portal and detours](/guide/portal) for context options and Laravel defaults.
+The `portal` and `detour` options are set when the context is created and cannot be changed afterwards. See [portal and detours](/guide/portal) for the options and each client's defaults.

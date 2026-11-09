@@ -1,6 +1,7 @@
 ---
 title: Cookies
 description: Read, write and delete browser cookies with Puth.
+sdks: [java, js]
 ---
 
 # Cookies
@@ -17,6 +18,20 @@ $browser->setCookie([
     ['name' => 'preference', 'value' => 'dark', 'url' => 'https://app.test'],
 ]);
 $cookie = $browser->getCookieByName('preference');
+```
+```java
+browser.visit("https://app.test");
+browser.setCookie(new Object[]{
+    Map.of("name", "preference", "value", "dark", "url", "https://app.test"),
+});
+Object cookie = browser.getCookieByName("preference");
+```
+```ts
+await browser.visit('https://app.test');
+await browser.setCookie([
+    { name: 'preference', value: 'dark', url: 'https://app.test' },
+]);
+const cookie = await browser.getCookieByName('preference');
 ```
 
 `$browser->getCookieByName()` returns the cookie object when it exists. Inspect that object for its value, domain and path.
@@ -49,12 +64,40 @@ These assertions do not encrypt or decrypt cookie values.
 
 </SdkContent>
 
+<SdkContent sdk="java">
+
+Raw-cookie assertions throw when the check fails. They do not encrypt or decrypt cookie values.
+
+```java
+browser.assertHasCookie("preference")
+    .assertCookieValue("preference", "dark");
+```
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+Raw-cookie assertions reject when the check fails. They do not encrypt or decrypt cookie values.
+
+```ts
+await browser.assertHasCookie('preference');
+await browser.assertCookieValue('preference', 'dark');
+```
+
+</SdkContent>
+
 ## Delete a cookie
 
 Remove a cookie for the current page:
 
 ```php
 $browser->deleteCookie('preference');
+```
+```java
+browser.deleteCookie("preference");
+```
+```ts
+await browser.deleteCookie('preference');
 ```
 
 <SdkContent sdk="laravel">
@@ -69,6 +112,22 @@ $browser->assertPlainCookieMissing('preference');
 
 ```php
 $browser->_assertCookieMissing('preference');
+```
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+```java
+browser.assertCookieMissing("preference");
+```
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+```ts
+await browser.assertCookieMissing('preference');
 ```
 
 </SdkContent>

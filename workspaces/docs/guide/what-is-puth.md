@@ -1,6 +1,7 @@
 ---
 title: What is Puth?
 description: Browser testing with native clients, a realtime GUI and recorded test snapshots.
+sdks: [java, js]
 ---
 
 # What is Puth?
@@ -21,7 +22,7 @@ Save failed test snapshots as CI artifacts, then drag a `.puth` file into your l
 
 ## Choose a client
 
-Use the SDK selector to switch this documentation between Laravel and standalone PHP. The selected client changes examples, method signatures and lifecycle guidance. Other clients are in development.
+Use the client selector to switch this documentation between Laravel, Spring Boot, plain PHP, plain Java and Node.js. The selected client changes examples, method signatures and lifecycle guidance.
 
 <SdkContent sdk="laravel">
 
@@ -32,6 +33,18 @@ Puth's Laravel package provides Dusk-style browser methods and integrates with `
 <SdkContent sdk="php">
 
 The standalone PHP client connects directly to the Puth server. You create and release contexts explicitly; Laravel configuration, encrypted-cookie helpers and automatic test artifacts do not apply. The client is still in development; see [Getting started](./getting-started#connect-a-client) for its current limitations.
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+The Java client connects directly to the Puth server and works with JUnit. You create and release contexts explicitly, or let the [Spring Boot integration](./spring-boot) do it for a Spring application. See [Getting started](./getting-started#connect-a-client) for a first test.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+The Node.js client connects directly to the Puth server and works with any test runner. You create and release contexts explicitly. See [Getting started](./getting-started#connect-a-client) for a first test.
 
 </SdkContent>
 

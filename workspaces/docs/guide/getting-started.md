@@ -1,5 +1,5 @@
 ---
-sdks: [spring]
+sdks: [spring, java, js]
 ---
 
 # Getting started
@@ -103,6 +103,63 @@ try {
 ```
 
 `$context->destroy()` releases the context and its browsers. Standalone clients manage their own lifecycle; there is no Laravel test case to clean up automatically.
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+The Java client is not published to Maven Central yet. Install it from a checkout of the Puth repository and add it to your test dependencies, as described in [Install the Java client](./spring-boot#install-the-java-client).
+
+Create a context, then a Browser shim. Calls return the Browser, so they chain, and assertions throw when they fail:
+
+```java
+import io.puth.client.Context;
+import io.puth.client.remote.Browser;
+import org.junit.jupiter.api.Test;
+
+class ExampleTest {
+    @Test
+    void shows_puth() {
+        Context context = Context.create("http://127.0.0.1:7345");
+        try {
+            Browser browser = context.createBrowserShim();
+            browser.visit("https://playground.puth.dev")
+                .assertSee("Puth");
+        } finally {
+            context.destroy();
+        }
+    }
+}
+```
+
+`context.destroy()` releases the context and its browsers. For Spring Boot applications, the [Spring Boot integration](./spring-boot) creates and destroys contexts for you.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+Install the client in your project:
+
+```sh
+npm install --save-dev @puth/client
+```
+
+Create a context, then a Browser shim. Every call returns a promise, and assertions reject when they fail. This works with any test runner:
+
+```ts
+import { Context } from '@puth/client';
+
+const context = await Context.create('http://127.0.0.1:7345');
+try {
+    const browser = await context.createBrowserShim();
+    await browser.visit('https://playground.puth.dev');
+    await browser.assertSee('Puth');
+} finally {
+    await context.destroy({ immediately: true });
+}
+```
+
+`context.destroy()` releases the context and its browsers.
 
 </SdkContent>
 

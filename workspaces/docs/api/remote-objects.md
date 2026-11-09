@@ -1,6 +1,7 @@
 ---
 title: Pages and elements
 description: Page and ElementHandle methods supplied by the standard plugin.
+sdks: [java, js]
 ---
 
 # Pages and elements
@@ -8,6 +9,14 @@ description: Page and ElementHandle methods supplied by the standard plugin.
 The Browser shim is a high-level testing API. You can also access remote Puppeteer objects, including a Page and its ElementHandles. Puth's standard plugin extends these objects; a method registered on a Page or ElementHandle is not automatically a Browser shim method.
 
 ## Get the page or an element
+
+<SdkContent sdk="java js">
+
+The Java and Node.js clients do not expose remote Page and ElementHandle objects yet. Use the [Browser API](./browser), which covers navigation, element interaction and page data.
+
+</SdkContent>
+
+<SdkContent sdk="laravel php">
 
 The Browser's `page` property exposes its underlying Page. The PHP client's `$page->get()` is an alias for Puppeteer's element lookup:
 
@@ -33,5 +42,7 @@ These examples show which object receives the call:
 | Keyboard | `$keyboard->press($key)`, `$keyboard->down($key)`, `$keyboard->up($key)` |
 
 The plugin also exposes helpers such as `$element->children()`, `$element->siblings()` and `$element->tagName()`. These are remote object calls, separate from similarly named Browser methods.
+
+</SdkContent>
 
 For most browser tests, start with the [Browser API](./browser). Use remote objects when you need direct access to a page, element or keyboard behavior that the shim does not expose.

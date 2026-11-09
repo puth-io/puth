@@ -1,6 +1,7 @@
 ---
 title: Client support
 description: What each client supports and how it is tested.
+sdks: [java, js]
 ---
 
 # Client support
