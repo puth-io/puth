@@ -100,6 +100,26 @@ describe('HTTP interfaces', () => {
         await context.destroy({ immediately: true });
     });
 
+    it('records the pages a test went through for the GUI', async () => {
+        const context = await Context.create(client, { snapshot: true });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl());
+        await browser.evaluate(`history.pushState({}, '', '/within')`);
+        await browser.setContent('<title>Cart</title><h1>Cart</h1>');
+        await browser.setContent('<title>Receipt</title><h1>Paid</h1>');
+
+        await vi.waitFor(async () => {
+            const pages = (await context.getSnapshotsByType('navigation'))
+                .filter(({ url }) => url.startsWith('http'))
+                .map(({ url }) => new URL(url).pathname);
+            assert.includeMembers(pages, ['/', '/within']);
+        });
+        // setContent keeps the address, so its title tells the pages apart.
+        const contents = (await context.getSnapshotsByType('navigation')).filter(({ initiator }) => initiator === 'setContent');
+        assert.deepEqual(contents.map(({ title }) => title), ['Cart', 'Receipt']);
+        await context.destroy({ immediately: true });
+    });
+
     it('tracks network summaries and page errors on request', async () => {
         const context = await Context.create(client, { track: ['network'] });
         const browser = await context.createBrowserShim();
