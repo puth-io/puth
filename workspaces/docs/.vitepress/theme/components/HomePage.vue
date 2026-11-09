@@ -265,7 +265,18 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
 
 .stage { margin: 0 calc(50% - 50vw); padding: 56px 0 72px; }
 .stage-fade { position: absolute; inset: auto 0 0; z-index: 0; height: 160px; background: linear-gradient(180deg, transparent, #0a0a0a); pointer-events: none; }
-.stage-inner { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 32px; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+/* The background reaches the edges, the content lines up with the rest of the page. */
+.stage-inner { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 32px; max-width: calc(var(--puth-container) + 48px); margin: 0 auto; padding: 0 24px; box-sizing: border-box; }
+/* Dots and grain fade out behind the text, so it stays easy to read. */
+.stage::before {
+  -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, .12) 0%, rgba(0, 0, 0, .25) 35%, #000 75%);
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, .12) 0%, rgba(0, 0, 0, .25) 35%, #000 75%);
+}
+.stage::after {
+  opacity: .28;
+  -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, .35) 0%, rgba(0, 0, 0, .5) 35%, #000 75%);
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, .35) 0%, rgba(0, 0, 0, .5) 35%, #000 75%);
+}
 .stage-text { position: relative; z-index: 2; display: flex; flex: 1 1 380px; flex-direction: column; gap: 22px; min-width: 0; max-width: 470px; }
 .stage-gui { flex: 2 1 640px; min-width: 0; padding-top: 6px; }
 .stage h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 500; letter-spacing: -.025em; color: #fff; }
