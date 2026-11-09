@@ -226,6 +226,12 @@ error Uncaught TypeError: cart is undefined
 
 The summary lists what went wrong in the order it happened, so an error that came first reads as the cause. `view` lists all `commands`, `console` output or `network` activity, and `command` shows one command with its full arguments. Commands leave out what test runners do around a test, such as creating the browser and reporting the result, unless you pass `all=true`; the rest keep their numbers. `frame` returns the page after a command as an image, and `file` reads a `.puth` file instead, such as a CI artifact. `query` matches test names and classes. Recordings stay available until the instance restarts or evicts them.
 
+## Watching agents in the GUI
+
+The **Agents** view of the [GUI](./screenshots-and-debugging) lists agent sessions, live ones first, and tests an agent took over. A session shows its steps grouped by tool call, with failed steps, console output and requests where they happened, and the drafts it exported next to the steps they were made of. The server leaves out what it does for itself, such as reading the page outline. **Follow** keeps the newest step selected while a session runs. Closed sessions stay listed for ten minutes, longer if you pin them.
+
+![An agent session in the GUI, with its steps grouped by tool call and the draft it exported](/assets/image/puth-agents.png)
+
 ## Lifecycle
 
 - Sessions record with snapshots enabled and have portal and detours disabled. To use the portal, [take over a test](#taking-over-a-test).

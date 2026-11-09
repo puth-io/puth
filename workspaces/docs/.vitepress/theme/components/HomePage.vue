@@ -118,7 +118,7 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
             <li>Opens in your local GUI by drag and drop</li>
           </ul>
         </div>
-        <img :src="image('snapshot-dd.gif')" alt="Dragging an exported snapshot into the Puth GUI to inspect a recorded test" loading="lazy">
+        <img :src="image('snapshot-dd.gif')" alt="Dragging an exported snapshot into the Puth GUI to inspect a recorded test" width="1200" height="675" loading="lazy">
       </div>
       <div class="card-foot end">
         <a href="/guide/ci-cd">Set up CI and snapshots<span class="arrow" aria-hidden="true">→</span></a>

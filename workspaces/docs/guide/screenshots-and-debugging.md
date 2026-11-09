@@ -40,4 +40,8 @@ The standalone client does not assign a filename or save screenshots automatical
 
 Open the local GUI at `http://localhost:7345` and drop a `.puth` file into it to inspect the captured run. Step through commands and compare the viewport with the console output and errors.
 
+![A snapshot of a failed test opened in the GUI, with the failing step selected](/assets/image/puth-replay.png)
+
+Imported snapshots are listed under **Local snapshots** in the side rail, apart from the tests of a connected instance. The GUI needs no connection to open them.
+
 See [CI/CD and snapshots](./ci-cd) to save failed test snapshots and collect them as artifacts. In the examples above, screenshot files are saved by the PHP test process; `.puth` snapshots are saved by the Puth server, which may run on a different machine.
