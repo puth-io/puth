@@ -231,7 +231,7 @@ class Browser extends RemoteObject
 
     /**
      * @debug-gen-original-name "setContent"
-     * @debug-gen-original-is-async false
+     * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["this"]
      * @debug-gen-original-parameter html {"type":"string","isOptional":false}
      * @debug-gen-original-parameter options {"type":"WaitForOptions","isOptional":false,"initializer":{"type":"object","members":[]}}
