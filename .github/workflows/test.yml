@@ -199,12 +199,14 @@ jobs:
         run: npm run ci:browser:install --workspace workspaces/puth
       - name: build image
         run: docker build -f docker/Dockerfile -t puth-test-image .
+      # The release job has no browser on the runner, so only the image may have one here.
+      - name: hide runner browser
+        run: mv workspaces/puth/.cache "$RUNNER_TEMP/puth-cache"
       - name: test image
-        run: |
-          docker run --name=puth --detach --network host puth-test-image
-          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
-          docker stop puth
+        run: ./docker/test-image.sh puth-test-image
+      - name: restore runner browser
+        if: ${{ always() }}
+        run: mv "$RUNNER_TEMP/puth-cache" workspaces/puth/.cache || true
       - name: container logs
         if: ${{ failure() }}
         run: docker logs puth

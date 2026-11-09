@@ -41,10 +41,10 @@ jobs:
           npm run build --workspace workspaces/core
           npm run build --workspace workspaces/clients/js/client
           npm run build --workspace workspaces/puth
-          container_id=$(docker run --detach --network host puth-test-image)
-          timeout 10 bash -c 'until $(curl --output /dev/null --silent --fail http://127.0.0.1:7345); do printf "." && sleep 1; done'
-          PUTH_URL=http://127.0.0.1:7345 npm run test:only:remote --workspace workspaces/puth
-          docker stop $container_id
+          ./docker/test-image.sh puth-test-image
+      - name: container logs
+        if: ${{ failure() }}
+        run: docker logs puth || true
       - name: push image
         run: |
           echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
