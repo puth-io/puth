@@ -180,6 +180,8 @@ body { background: #0a0a0a; }
   .VPNavBar .content-body { gap: 12px; }
   .VPNavBar .menu { order: -1; margin-right: auto; margin-left: 20px; }
   .VPNavBar .search { flex-grow: 0; padding-left: 0; }
+  /* A wide field reads as search at a glance, like on the home page design. */
+  .VPNavBar .DocSearch-Button { width: clamp(180px, 22vw, 280px); justify-content: space-between; }
 }
 .VPNavBarMenuLink { font-size: 14px !important; font-weight: 400 !important; color: var(--vp-c-text-2) !important; }
 .VPNavBarMenuLink:hover,
