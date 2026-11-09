@@ -2,15 +2,11 @@ import { describe, assert, expect } from 'vitest';
 import { envs, fixtureUrl, testFn } from './helper';
 import { Constructors } from '@puth/core';
 
-if (process.env.TEST_ONLY_REMOTE) {
-    puthContextTests(envs[1]);
-} else if (process.env.TEST_ONLY_LOCAL) {
-    puthContextTests(envs[0]);
-} else {
-    envs.forEach((env) => {
-        puthContextTests(env);
-    });
-}
+const selectedEnvs = process.env.TEST_ONLY_REMOTE ? [envs[1]] : process.env.TEST_ONLY_LOCAL ? [envs[0]] : envs;
+
+selectedEnvs.forEach((env) => {
+    puthContextTests(env);
+});
 
 function puthContextTests(env) {
     const test = testFn(env);
@@ -54,7 +50,7 @@ function puthContextTests(env) {
 }
 
 describe('Failed expectations', () => {
-    envs.forEach((env) => {
+    selectedEnvs.forEach((env) => {
         const test = testFn(env);
 
         test(`reject the call [${env[0]}]`, async ({ puth: { context } }) => {
