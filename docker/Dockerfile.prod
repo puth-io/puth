@@ -1,5 +1,7 @@
 FROM node:24-slim
 
+LABEL org.opencontainers.image.source="https://github.com/puth-io/puth"
+
 RUN apt-get update && \
     apt-get clean && \
     apt-get install -y ca-certificates \
