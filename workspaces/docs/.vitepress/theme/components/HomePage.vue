@@ -1,18 +1,139 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { withBase } from 'vitepress';
 import { useSdkState } from '../sdk';
 import { client, clients, type Sdk } from '../../lib/sdk';
+import GuiMock from './GuiMock.vue';
 
 const { preferred, select } = useSdkState();
 const current = computed(() => client(preferred.value));
-const files: Record<Sdk, string> = {
-  laravel: 'tests/Browser/ExampleTest.php',
-  spring: 'src/test/java/HomePageTest.java',
-  php: 'tests/ExampleTest.php',
-  java: 'src/test/java/ExampleTest.java',
-  js: 'tests/example.test.ts',
+
+// The same login test in every client. A line with a number is the step of that number in the GUI.
+type Line = [text: string, step?: number];
+const tests: Record<Sdk, { file: string; origin: string; lines: Line[] }> = {
+  laravel: {
+    file: 'tests/Browser/LoginTest.php',
+    origin: 'https://app.test',
+    lines: [
+      ['public function test_user_can_log_in(): void'],
+      ['{'],
+      ['    $this->browse(function (Browser $browser) {'],
+      ["        $browser->visit('/login')", 1],
+      ["            ->type('email', 'ada@example.com')", 2],
+      ["            ->type('password', 'secret')", 3],
+      ["            ->press('Log in')", 4],
+      ["            ->assertPathIs('/dashboard')", 5],
+      ["            ->assertSee('Welcome back, Ada');", 6],
+      ['    });'],
+      ['}'],
+    ],
+  },
+  spring: {
+    file: 'src/test/java/LoginTest.java',
+    origin: 'http://localhost',
+    lines: [
+      ['@Test'],
+      ['void user_can_log_in(Browser browser) {'],
+      ['    browser.visit("http://localhost/login")', 1],
+      ['        .type("email", "ada@example.com")', 2],
+      ['        .type("password", "secret")', 3],
+      ['        .press("Log in")', 4],
+      ['        .assertPathIs("/dashboard")', 5],
+      ['        .assertSee("Welcome back, Ada");', 6],
+      ['}'],
+    ],
+  },
+  php: {
+    file: 'tests/LoginTest.php',
+    origin: 'https://app.test',
+    lines: [
+      ['public function test_user_can_log_in(): void'],
+      ['{'],
+      ['    $browser = $this->context->createBrowserShim();'],
+      ["    $browser->visit('https://app.test/login')", 1],
+      ["        ->type('email', 'ada@example.com')", 2],
+      ["        ->type('password', 'secret')", 3],
+      ["        ->press('Log in')", 4],
+      ["        ->assertPathIs('/dashboard')", 5],
+      ["        ->assertSee('Welcome back, Ada');", 6],
+      ['}'],
+    ],
+  },
+  java: {
+    file: 'src/test/java/LoginTest.java',
+    origin: 'https://app.test',
+    lines: [
+      ['@Test'],
+      ['void user_can_log_in() {'],
+      ['    Browser browser = context.createBrowserShim();'],
+      ['    browser.visit("https://app.test/login")', 1],
+      ['        .type("email", "ada@example.com")', 2],
+      ['        .type("password", "secret")', 3],
+      ['        .press("Log in")', 4],
+      ['        .assertPathIs("/dashboard")', 5],
+      ['        .assertSee("Welcome back, Ada");', 6],
+      ['}'],
+    ],
+  },
+  js: {
+    file: 'tests/login.test.ts',
+    origin: 'https://app.test',
+    lines: [
+      ["test('user can log in', async () => {"],
+      ["    await browser.visit('https://app.test/login');", 1],
+      ["    await browser.type('email', 'ada@example.com');", 2],
+      ["    await browser.type('password', 'secret');", 3],
+      ["    await browser.press('Log in');", 4],
+      ["    await browser.assertPathIs('/dashboard');", 5],
+      ["    await browser.assertSee('Welcome back, Ada');", 6],
+      ['});'],
+    ],
+  },
 };
+const test = computed(() => tests[preferred.value]);
+
+// Colors code like the docs: strings, variables, annotations, keywords, calls and types.
+const KEYWORDS = new Set(['public', 'function', 'void', 'await', 'async', 'test']);
+function tokens(line: string) {
+  const out: { text: string; kind: string }[] = [];
+  const re = /('[^']*'|"[^"]*")|(\$\w+)|(@\w+)|([A-Za-z_]\w*)|(\s+|[^\sA-Za-z_$'"@]+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(line))) {
+    let kind = 'tx';
+    if (match[1]) kind = 'str';
+    else if (match[2]) kind = 'var';
+    else if (match[3]) kind = 'at';
+    else if (match[4]) {
+      const next = line.slice(re.lastIndex).trimStart()[0];
+      kind = KEYWORDS.has(match[4]) ? 'kw' : next === '(' ? 'fn' : /^[A-Z]/.test(match[4]) ? 'type' : 'tx';
+    }
+    out.push({ text: match[0], kind });
+  }
+  return out;
+}
+const lines = computed(() => test.value.lines.map(([text, step]) => ({ tokens: tokens(text), step })));
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// The hero plays through the steps until the reader points at one, unless they prefer less motion.
+const step = ref(4);
+let timer: ReturnType<typeof setInterval> | undefined;
+function stop() {
+  clearInterval(timer);
+  timer = undefined;
+}
+function pick(n: number) {
+  stop();
+  step.value = n;
+}
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+  step.value = 1;
+  timer = setInterval(() => { step.value = step.value % 6 + 1; }, 1800);
+});
+onBeforeUnmount(stop);
+
 const steps = computed(() => [
   { title: 'Start the server', command: 'docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1' },
   { title: `Install the ${current.value.label} client`, command: current.value.install },
@@ -29,56 +150,60 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
 
 <template>
   <div class="puth-home">
-    <section class="hero puth-dither puth-dither-strong">
-      <div class="hero-windows" aria-hidden="true"><span /><span /></div>
-      <div class="hero-body">
-        <h1>Browser tests you can see.<br>Failures you can understand.</h1>
-        <p>
-          Write native, repeatable browser tests. Watch every step in a realtime GUI, and replay failures from CI on
-          your own machine. <a href="/guide/migration-from-dusk">Migrating from Dusk?</a>
-        </p>
-        <a class="cta" href="/guide/getting-started">
-          Get started
-          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-        </a>
-      </div>
-      <div class="hero-command"><span aria-hidden="true">&gt;</span><span>{{ current.install }}</span></div>
-    </section>
-
-    <section class="home-card" aria-labelledby="home-write">
-      <div class="card-head"><span class="card-label">Write a test</span><span class="card-index">01 / 05</span></div>
-      <div class="card-body">
-        <h2 id="home-write">One test, every client.</h2>
-        <div class="write">
-          <div class="client-tabs" role="tablist" aria-label="Client">
-            <button
-              v-for="item in clients"
-              :key="item.id"
-              type="button"
-              role="tab"
-              :aria-selected="item.id === preferred"
-              :class="{ active: item.id === preferred }"
-              @click="select(item.id)"
-            >
-              <span>{{ item.label }}</span><span class="tab-language">{{ item.language }}</span>
-            </button>
+    <section class="stage puth-dither puth-dither-strong" aria-labelledby="home-title">
+      <div class="stage-fade" aria-hidden="true" />
+      <div class="stage-inner">
+        <div class="stage-text">
+          <h1 id="home-title">See what your browser tests do.</h1>
+          <p>
+            Native browser tests for Laravel, Java and Node.js. Every command shows up in a realtime GUI, and a failure
+            from CI opens on your own machine. <a href="/guide/migration-from-dusk">Migrating from Dusk?</a>
+          </p>
+          <div class="cta-row">
+            <a class="cta" href="/guide/getting-started">
+              Get started
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+            <span class="install"><span aria-hidden="true">&gt;</span> {{ current.install }}</span>
           </div>
-          <div class="code-panel">
-            <div class="code-file">{{ files[preferred] }}</div>
-            <div class="code-slot" role="tabpanel">
-              <slot :name="preferred" />
+
+          <div class="code-card">
+            <div class="code-tabs" role="tablist" aria-label="Client">
+              <button
+                v-for="item in clients"
+                :key="item.id"
+                type="button"
+                role="tab"
+                :aria-selected="item.id === preferred"
+                :class="{ active: item.id === preferred }"
+                @click="select(item.id)"
+              >{{ item.label }}</button>
             </div>
+            <div class="code-file">{{ test.file }}</div>
+            <div class="code-lines" role="tabpanel">
+              <div
+                v-for="(line, index) in lines"
+                :key="`${preferred}-${index}`"
+                :class="['line', { stepped: line.step, active: line.step === step }]"
+                @mouseenter="line.step && pick(line.step)"
+              >
+                <button v-if="line.step" type="button" class="line-step" :aria-label="`Show step ${line.step} in the GUI`" @click="pick(line.step)" @focus="pick(line.step)">{{ pad(line.step) }}</button>
+                <span v-else class="line-step" aria-hidden="true" />
+                <code><span v-for="(token, t) in line.tokens" :key="t" :class="token.kind">{{ token.text }}</span></code>
+              </div>
+            </div>
+            <div class="code-foot"><span>Point at a line to see its step</span><span>Run <b>{{ current.run }}</b></span></div>
           </div>
         </div>
-      </div>
-      <div class="card-foot">
-        <span class="commands"><span>Install <b>{{ current.install }}</b></span><span>Run <b>{{ current.run }}</b></span></span>
-        <a href="/guide/getting-started">Getting started<span class="arrow" aria-hidden="true">→</span></a>
+
+        <div class="stage-gui">
+          <GuiMock :step="step" :origin="test.origin" @pick="pick" />
+        </div>
       </div>
     </section>
 
     <section class="features" aria-labelledby="home-why">
-      <div class="section-head"><h2 id="home-why" class="card-label">Why Puth</h2><span class="card-index">02 / 05</span></div>
+      <div class="section-head"><h2 id="home-why" class="card-label">Why Puth</h2><span class="card-index">01 / 03</span></div>
       <div class="feature-grid">
         <div v-for="feature in features" :key="feature.title" class="home-card feature">
           <div class="feature-icon" aria-hidden="true">
@@ -90,24 +215,8 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
       </div>
     </section>
 
-    <section class="home-card" aria-labelledby="home-gui">
-      <div class="card-head"><span class="card-label sky">The GUI</span><span class="card-index">03 / 05</span></div>
-      <div class="card-body tight">
-        <h2 id="home-gui">See every step as it runs.</h2>
-        <p class="lead">Commands stream in on the left while the live viewport shows the page. Console output and errors are recorded with each command.</p>
-      </div>
-      <div class="browser-frame">
-        <div class="browser-bar" aria-hidden="true"><span /><span /><span /><span class="address">127.0.0.1:7345</span></div>
-        <img :src="image('puth-welcome.png')" alt="Puth GUI showing browser test commands alongside the browser viewport" width="1600" height="900">
-      </div>
-      <div class="card-foot">
-        <span>Commands · Viewport · Console</span>
-        <a href="/guide/screenshots-and-debugging">Screenshots and debugging<span class="arrow" aria-hidden="true">→</span></a>
-      </div>
-    </section>
-
     <section class="home-card" aria-labelledby="home-snapshots">
-      <div class="card-head"><span class="card-label indigo">Snapshots</span><span class="card-index">04 / 05</span></div>
+      <div class="card-head"><span class="card-label indigo">Snapshots</span><span class="card-index">02 / 03</span></div>
       <div class="card-body split">
         <div class="split-text">
           <h2 id="home-snapshots">Failing in CI? Replay it locally.</h2>
@@ -126,18 +235,18 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
     </section>
 
     <section class="home-card" aria-labelledby="home-start">
-      <div class="card-head"><span class="card-label">Quick start</span><span class="card-index">05 / 05</span></div>
+      <div class="card-head"><span class="card-label">Quick start</span><span class="card-index">03 / 03</span></div>
       <div class="card-body split">
         <div class="split-text narrow">
           <h2 id="home-start">Your first run in three steps.</h2>
           <p class="lead">One server provides the browser API and the web GUI. Run it next to your tests or on a dedicated machine.</p>
         </div>
         <ol class="rail">
-          <li v-for="(step, index) in steps" :key="step.title">
+          <li v-for="(item, index) in steps" :key="item.title">
             <span class="rail-number" :class="{ first: index === 0 }" aria-hidden="true">{{ index + 1 }}</span>
             <div>
-              <div class="rail-title">{{ step.title }}</div>
-              <code class="rail-command">{{ step.command }}</code>
+              <div class="rail-title">{{ item.title }}</div>
+              <code class="rail-command">{{ item.command }}</code>
             </div>
           </li>
         </ol>
@@ -150,51 +259,59 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
 </template>
 
 <style scoped>
-.puth-home { display: flex; flex-direction: column; gap: 32px; max-width: var(--puth-container); margin: 0 auto; padding: 16px 24px 0; box-sizing: content-box; }
+.puth-home { display: flex; flex-direction: column; gap: 32px; max-width: var(--puth-container); margin: 0 auto; padding: 0 24px; box-sizing: content-box; }
+/* The stage reaches the edges of the window, the page itself never scrolls sideways. */
+:global(.VPHome) { overflow-x: clip; }
 
-.hero { position: relative; display: flex; flex-direction: column; min-height: 520px; padding: 64px 40px 32px; border-radius: 10px; box-sizing: border-box; }
-.hero-windows span {
-  position: absolute; z-index: 1; width: 560px; height: 340px; border-radius: 10px;
-  background-image: radial-gradient(rgba(147, 197, 253, .55) .75px, transparent 1.1px); background-size: 4px 4px;
-}
-.hero-windows span:first-child { right: 40px; bottom: -40px; background-color: rgba(23, 37, 84, .55); }
-.hero-windows span:last-child { right: 120px; bottom: -90px; background-color: rgba(15, 23, 63, .75); background-image: radial-gradient(rgba(147, 197, 253, .35) .75px, transparent 1.1px); }
-.hero-body { position: relative; z-index: 2; margin-top: auto; max-width: 640px; }
-.hero h1 {
-  margin: 0; font-size: 44px; line-height: 1.1; font-weight: 500; letter-spacing: -.02em;
-  background: linear-gradient(180deg, #eff6ff, rgba(219, 234, 254, .8)); -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.hero p { margin: 22px 0 0; max-width: 560px; font-size: 16px; line-height: 1.7; color: rgba(219, 234, 254, .85); }
-.hero p a { color: #eff6ff; text-decoration: underline; text-underline-offset: 4px; }
+.stage { margin: 0 calc(50% - 50vw); padding: 56px 0 72px; }
+.stage-fade { position: absolute; inset: auto 0 0; z-index: 0; height: 160px; background: linear-gradient(180deg, transparent, #0a0a0a); pointer-events: none; }
+.stage-inner { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 32px; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.stage-text { position: relative; z-index: 2; display: flex; flex: 1 1 380px; flex-direction: column; gap: 22px; min-width: 0; max-width: 470px; }
+.stage-gui { flex: 2 1 640px; min-width: 0; padding-top: 6px; }
+.stage h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 500; letter-spacing: -.025em; color: #fff; }
+.stage p { margin: 0; font-size: 15.5px; line-height: 1.65; color: #dbeafe; }
+.stage p a { color: #eff6ff; text-decoration: underline; text-underline-offset: 4px; }
+.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
 .cta {
-  display: inline-flex; align-items: center; gap: 10px; margin-top: 26px; padding: 10px 16px;
-  background: var(--puth-primary); color: #fff; font-family: var(--vp-font-family-mono); font-size: 13.5px; font-weight: 500; transition: background-color .2s;
+  display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--puth-primary); color: #fff;
+  font-family: var(--vp-font-family-mono); font-size: 13.5px; font-weight: 500; transition: background-color .2s;
 }
 .cta:hover { background: #1d4ed8; }
-.hero-command { position: relative; z-index: 2; display: flex; gap: 12px; margin-top: 48px; overflow-x: auto; white-space: nowrap; font-family: var(--vp-font-family-mono); font-size: 12.5px; color: rgba(219, 234, 254, .85); }
+.install { font-family: var(--vp-font-family-mono); font-size: 12.5px; color: #dbeafe; }
+
+.code-card {
+  display: flex; flex-direction: column; margin: 8px -56px 0 0; overflow: hidden;
+  border: 1px solid rgba(163, 163, 163, .14); border-radius: 10px; background: #0a0a0a; box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+}
+.code-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; border-bottom: 1px dashed #333; }
+.code-tabs button {
+  height: 28px; padding: 0 10px; border: 1px solid transparent; border-radius: 6px; color: var(--vp-c-text-2); font-size: 12.5px;
+  cursor: pointer; transition: color .2s, background-color .2s;
+}
+.code-tabs button:hover { color: var(--vp-c-text-1); }
+.code-tabs button.active { border-color: rgba(96, 165, 250, .45); background: rgba(37, 99, 235, .12); color: var(--vp-c-text-1); }
+.code-tabs button:focus-visible, .line-step:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
+.code-file { padding: 7px 16px; border-bottom: 1px dashed #333; font-family: var(--vp-font-family-mono); font-size: 11px; color: var(--vp-c-text-2); }
+.code-lines { min-height: 300px; padding: 12px 0; overflow-x: auto; font-family: var(--vp-font-family-mono); font-size: 13px; line-height: 1.6; }
+.line { display: flex; align-items: center; gap: 12px; min-height: 26px; padding-right: 14px; white-space: pre; transition: background-color .2s; }
+.line.stepped { cursor: pointer; }
+.line.active { background: rgba(37, 99, 235, .14); box-shadow: inset 2px 0 0 #60a5fa; }
+.line-step { flex: none; width: 22px; padding: 0; border: 0; background: none; text-align: right; font-family: inherit; font-size: 10.5px; color: #525252; cursor: pointer; }
+.line.active .line-step { color: #93c5fd; }
+.line code { font-family: inherit; font-size: inherit; color: #a3a3a3; background: none; padding: 0; }
+.str { color: #7dd3fc; }
+.var { color: #fafafa; }
+.at { color: #a3a3a3; }
+.kw { color: #a5b4fc; }
+.fn { color: #93c5fd; }
+.type { color: #e5e5e5; }
+.code-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 9px 16px; border-top: 1px dashed #333; font-family: var(--vp-font-family-mono); font-size: 11.5px; color: var(--vp-c-text-2); }
+.code-foot b { font-weight: 400; color: var(--vp-c-text-1); }
 
 .puth-home h2 { margin: 0; font-size: 26px; line-height: 1.25; font-weight: 500; letter-spacing: -.01em; color: var(--vp-c-text-1); }
 .card-body { position: relative; padding: 28px 24px; }
-.card-body.tight { padding-bottom: 0; }
 .lead { margin: 10px 0 24px; max-width: 640px; font-size: 15px; line-height: 1.7; color: var(--vp-c-text-2); }
 .lead code { padding: 1px 5px; border-radius: 4px; background: rgba(163, 163, 163, .12); font-family: var(--vp-font-family-mono); font-size: 13px; color: var(--vp-c-text-1); }
-
-.write { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 24px; }
-.client-tabs { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.client-tabs button {
-  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: 8px;
-  color: var(--vp-c-text-2); font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; transition: background-color .2s, color .2s;
-}
-.client-tabs button span:first-child { flex: 1; }
-.client-tabs button:hover { color: var(--vp-c-text-1); }
-.client-tabs button.active { border-color: rgba(96, 165, 250, .45); background: rgba(37, 99, 235, .12); color: var(--vp-c-text-1); }
-.client-tabs button:focus-visible { outline: 2px solid var(--vp-c-brand-1); outline-offset: 2px; }
-.tab-language { font-family: var(--vp-font-family-mono); font-size: 11px; color: var(--vp-c-text-2); }
-.code-panel { flex: 3 1 560px; min-width: 0; overflow: hidden; border: 1px solid rgba(163, 163, 163, .1); border-radius: 10px; background: #0a0a0a; }
-.code-file { padding: 9px 16px; border-bottom: 1px dashed #333; font-family: var(--vp-font-family-mono); font-size: 11.5px; color: var(--vp-c-text-2); }
-.code-slot { min-height: 270px; }
-.code-slot :deep(div[class*='language-']) { margin: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; }
-.code-slot :deep(span.lang), .code-slot :deep(button.copy) { display: none; }
 
 .features { display: flex; flex-direction: column; gap: 16px; }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px; }
@@ -208,12 +325,6 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
   border: 1px solid rgba(96, 165, 250, .3); color: #93c5fd; background-color: rgba(37, 99, 235, .12);
   background-image: radial-gradient(rgba(147, 197, 253, .35) .7px, transparent 1px); background-size: 4px 4px;
 }
-
-.browser-frame { position: relative; margin: 0 24px; overflow: hidden; border: 1px solid rgba(163, 163, 163, .14); border-bottom: 0; border-radius: 10px 10px 0 0; background: #0a0a0a; }
-.browser-bar { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-bottom: 1px dashed #333; }
-.browser-bar span:not(.address) { width: 9px; height: 9px; border-radius: 50%; background: #404040; }
-.address { display: flex; align-items: center; flex: 1; max-width: 360px; height: 24px; margin-left: 14px; padding: 0 10px; border-radius: 6px; background: #171717; font-family: var(--vp-font-family-mono); font-size: 11.5px; color: var(--vp-c-text-2); }
-.browser-frame img { display: block; width: 100%; height: auto; }
 
 .split { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
 .split > img { flex: 1 1 520px; min-width: 0; width: 100%; height: auto; border: 1px solid rgba(163, 163, 163, .14); border-radius: 10px; }
@@ -240,11 +351,15 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
   font-family: var(--vp-font-family-mono); font-size: 13px; color: #d4d4d4;
 }
 
+/* Below this width text, code and GUI stack, so the code no longer overlaps the GUI. */
+@media (max-width: 1099px) {
+  .stage-text { max-width: none; }
+  .code-card { margin-right: 0; }
+}
 @media (max-width: 767px) {
-  .hero { min-height: 0; padding: 48px 20px 24px; }
-  .hero h1 { font-size: 32px; }
-  .hero-windows { display: none; }
+  .stage { padding: 40px 0 56px; }
+  .stage h1 { font-size: 32px; }
+  .stage-inner { padding: 0 16px; }
   .card-body { padding: 24px 18px; }
-  .browser-frame { margin: 0 18px; }
 }
 </style>
