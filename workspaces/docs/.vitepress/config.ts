@@ -16,8 +16,8 @@ export default defineConfig({
     logo: '/assets/image/puth-logo-blue.png',
     nav: [
       { text: 'Guide', link: '/guide/getting-started', activeMatch: '^/guide/(?!mcp|example-laravel)' },
-      { text: 'API', link: '/api/browser', activeMatch: '^/api/' },
       { text: 'Agents', link: '/guide/mcp', activeMatch: '^/guide/(mcp|example-laravel)' },
+      { text: 'API', link: '/api/browser', activeMatch: '^/api/' },
     ],
     sidebar: [
       {
