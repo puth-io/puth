@@ -263,7 +263,9 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
 /* The stage reaches the edges of the window, the page itself never scrolls sideways. */
 :global(.VPHome) { overflow-x: clip; }
 
-.stage { margin: 0 calc(50% - 50vw); padding: 56px 0 150px; }
+.stage { margin: 0 calc(50% - 50vw) -96px; padding: 56px 0 150px; }
+/* The next section starts in the dark end of the fade, so the fade does not leave a gap. */
+.stage + * { position: relative; z-index: 1; }
 /* Lies above the dots and grain of the dither, so the stage fades into the page instead of ending at an edge.
    It passes through the navy the stage ends in, a neutral black would turn the blue grey on the way. */
 .stage-fade {
