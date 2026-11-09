@@ -13,7 +13,7 @@ This matrix reflects what the test suites cover. Every client talks to the same 
 | Readiness | Primary | Supported | Beta | Beta |
 | Generated `Browser` and `Context` | Yes | Yes | Yes | Yes |
 | Browser suite | 80 tests | 19 tests | 45 tests | Runs in Puth's suite, including its GUI tests |
-| Tested in CI with | PHP 8.2 to 8.4, Laravel 12 and 13 | PHP 8.2 to 8.4 | Java 17 | Node 24 |
+| Tested in CI with | PHP 8.2 to 8.5, Laravel 12 and 13 | PHP 8.2 to 8.4 | Java 17 | Node 24 |
 | Portal | Tested end to end | Not supported | Tested end to end with Spring Boot | Not supported |
 | MCP test drafts | Run by real test runner | Run by real test runner | Not available | Not available |
 | Documentation | Complete | Partial | Minimal | Minimal |

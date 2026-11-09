@@ -186,7 +186,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ 8.2, 8.3, 8.4 ]
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
         laravel: [ '12.*', '13.*' ]
         phpunit: [ 11, 12 ]
         collision: [ 8 ]
@@ -199,9 +199,10 @@ jobs:
           - php: 8.3
             laravel: '13.*'
         include:
-          # Track Laravel's development branch for the next major release.
+          # Track Laravel's development branch for the next major release. It has no version of its own, so it is
+          # installed as 13.99.0: packages like puth/laravel, Tinker and Collision accept that, and the code is master.
           - php: 8.4
-            laravel: dev-master
+            laravel: dev-master as 13.99.0
             phpunit: 12
             collision: 8
             experimental: true
