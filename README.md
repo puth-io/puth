@@ -11,7 +11,7 @@ Features:
 - MCP server for exploring applications and drafting tests with agents
 - See for yourself in the Screenshot. What you see can be automatically exported in your CI/CD if a test fails for example. Simply drag and drop the snapshot file into your locally running GUI
 
-![GUI Preview](assets/gui-preview_2024-11.png)
+![A snapshot of a failed test opened in the Puth GUI, with the failing step selected](workspaces/docs/public/assets/image/puth-replay.png)
 
 Known problems:
 - The preview in the GUI is slightly delayed, the actual delay depends on what function is called and on system performance. The slower the system, the bigger the potential delay. The problem being that the browser always renders after the DOM changes but Puth finishes the call when the DOM actions are done, not when the result of the actions are rendered.
