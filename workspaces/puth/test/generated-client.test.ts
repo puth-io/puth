@@ -25,6 +25,40 @@ describe('Generated client', () => {
         assert.strictEqual(await browser.setTimeout(100), browser);
     });
 
+    it('chains calls', async () => {
+        assert.strictEqual(await browser.setTimeout(100).visit(fixtureUrl()).assertTitle('Playground | Puth'), browser);
+    });
+
+    it('ends a chain with a value', async () => {
+        assert.strictEqual(await browser.visit(fixtureUrl()).title(), 'Playground | Puth');
+    });
+
+    it('chains into generated objects', async () => {
+        await browser.withinIframe('#iframe-example').assertUrlIs(fixtureUrl());
+    });
+
+    it('stops a chain at the first failure', async () => {
+        await browser.evaluate('window.chained = 0');
+
+        await expect(
+            browser
+                .setTimeout(100)
+                .assertUrlIs('http://not.the.url/')
+                .evaluate('window.chained = 1'),
+        ).rejects.toBeInstanceOf(ExpectationFailedError);
+        assert.strictEqual(await browser.evaluate('window.chained'), 0);
+    });
+
+    it('chains from context creation', async () => {
+        const created = Context.create(instance.http.url.replace(/\/$/, ''));
+
+        try {
+            await created.createBrowserShim().visit(fixtureUrl()).assertTitle('Playground | Puth');
+        } finally {
+            await (await created).destroy({ immediately: true });
+        }
+    });
+
     it('returns values', async () => {
         assert.strictEqual(await browser.title(), 'Playground | Puth');
         assert.strictEqual(await browser.evaluate('1 + 1'), 2);

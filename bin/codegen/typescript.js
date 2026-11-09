@@ -71,13 +71,20 @@ function emitParameter(parameter) {
     return `${parameter.name}${parameter.isOptional ? '?' : ''}: ${type}`;
 }
 
+// Calls that return the object itself or another generated object can be chained: browser.visit(url).click(selector).
+function isChainable(type) {
+    return type === 'this' || classes.some(({name}) => name === type);
+}
+
 function emitMethod({name, parameters, returns}) {
-    const returnType = [...new Set(returns.map(mapType))].join('|') || 'void';
+    const types = [...new Set(returns.map(mapType))];
+    const returnType = types.join('|') || 'void';
+    const wrapper = types.length === 1 && isChainable(types[0]) ? 'Chain' : 'Promise';
     const signature = parameters.map(emitParameter).join(', ');
     const args = parameters.map(parameter => parameter.name).join(', ');
 
     return [
-        `    ${name}(${signature}): Promise<${returnType}> {`,
+        `    ${name}(${signature}): ${wrapper}<${returnType}> {`,
         `        return this.callFunc('${name}', [${args}]);`,
         '    }',
     ].join('\n');
@@ -93,7 +100,7 @@ function emitClass(cls) {
 
     const content = [
         HEADER,
-        `import {${base}, type RemoteHandle} from '../RemoteObject';`,
+        `import {${base}, type Chain, type RemoteHandle} from '../RemoteObject';`,
         ...references.map(name => `import {type ${name}} from './${name}';`),
         '',
         `export class ${cls.name} extends ${base} {`,
