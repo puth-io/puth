@@ -264,8 +264,9 @@ const image = (name: string) => withBase(`/assets/image/${name}`);
 :global(.VPHome) { overflow-x: clip; }
 
 .stage { margin: 0 calc(50% - 50vw); padding: 56px 0 72px; }
-/* Lies above the dots and grain of the dither, so the stage fades into the page instead of ending at an edge. */
-.stage-fade { position: absolute; inset: auto 0 0; z-index: 1; height: 240px; background: linear-gradient(180deg, rgba(10, 10, 10, 0), rgba(10, 10, 10, .7) 60%, #0a0a0a); pointer-events: none; }
+/* Lies above the dots and grain of the dither, so the stage fades into the page instead of ending at an edge.
+   It passes through the navy the stage ends in, a neutral black would turn the blue grey on the way. */
+.stage-fade { position: absolute; inset: auto 0 0; z-index: 1; height: 240px; background: linear-gradient(180deg, rgba(23, 37, 84, 0), rgba(23, 37, 84, .85) 45%, rgba(14, 20, 40, .95) 75%, #0a0a0a); pointer-events: none; }
 /* The background reaches the edges, the content lines up with the rest of the page. */
 .stage-inner { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 32px; max-width: calc(var(--puth-container) + 48px); margin: 0 auto; padding: 0 24px; box-sizing: border-box; }
 /* Dots and grain fade out behind the text, so it stays easy to read. */
