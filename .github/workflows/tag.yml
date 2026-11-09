@@ -21,6 +21,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      # npm accepts a publish before the version can be installed, so the image
+      # build waits until the registry serves it.
+      - name: wait for npm release
+        timeout-minutes: 30
+        run: |
+          version="${GITHUB_REF_NAME#puth@}"
+          until [ "$(npm view "puth@$version" version 2>/dev/null)" = "$version" ]; do
+            echo "Waiting for puth@$version on npm..."
+            sleep 20
+          done
+          echo "puth@$version is available"
       - name: build image
         run: |
           docker build --file docker/Dockerfile.prod --build-arg TAG=$(echo $GITHUB_REF_NAME | cut -c6-) --tag puth-test-image .
