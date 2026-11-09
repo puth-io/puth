@@ -23,8 +23,8 @@ label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color:
 input, select { height: 34px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px; font: inherit; }
 h2 { font-weight: 600; }
 button { height: 36px; border: 0; border-radius: 6px; background: #0f172a; color: #fff; font: inherit; cursor: pointer; }
-.error { display: flex; align-items: center; justify-content: center; gap: 18px; height: 100vh; background: #ffffff; color: #64748b; font-size: 18px; letter-spacing: .04em; }
-.error span:first-child { padding-right: 18px; border-right: 1px solid #cbd5e1; }
+.error { display: flex; align-items: center; justify-content: center; gap: 18px; height: 100vh; background: #141417; color: #a1a1aa; font-size: 18px; letter-spacing: .04em; }
+.error span:first-child { padding-right: 18px; border-right: 1px solid #3f3f46; }
 </style></head><body><header>Playground</header>${body}<script>${script}</script></body></html>`;
 
 const loginPage = (fails) => page('Log in', `
@@ -37,7 +37,7 @@ const loginPage = (fails) => page('Log in', `
 document.getElementById('submit').addEventListener('click', () => {
   ${fails
     ? `console.error('POST /login 500 (Internal Server Error)');
-  document.body.style.background = '#ffffff';
+  document.body.style.background = '#141417';
   document.body.innerHTML = '<div class="error"><span>500</span><span>SERVER ERROR</span></div>';`
     : `document.querySelector('main').innerHTML = '<div class="card"><h2 style="margin:0">Dashboard</h2><p>Welcome back, Ada.</p><button id="logout">Log out</button></div>';
   document.getElementById('logout').addEventListener('click', () => { document.querySelector('main').innerHTML = '<div class="card"><a href="#">Log in</a></div>'; });`}
