@@ -1,5 +1,14 @@
 # puth
 
+## 0.9.1
+
+### Patch Changes
+
+- dda5c04: The Docker image moved to the GitHub Container Registry: `ghcr.io/puth-io/puth`. New versions are no longer published to Docker Hub.
+- 0539d10: Show a README on the npm package page.
+- Updated dependencies [dda5c04]
+  - @puth/gui@0.2.1
+
 ## 0.9.0
 
 ### Minor Changes
