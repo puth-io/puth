@@ -57,6 +57,10 @@ The volume preserves snapshots from the container so you can keep them as [CI ar
 
 Visit `http://localhost:7345` while the server is running. The GUI shows browser activity and can open exported snapshot files by drag and drop.
 
+![The Puth GUI with a failed test: its steps on the left, the page at the failing step on the right](/assets/image/puth-welcome.png)
+
+Each test lists its steps, split into the pages they ran on. Hover a step to see the page at that moment, click it to keep it, and switch between the page before and after it. Console output and requests sit collapsed under the step that caused them, and a failed test starts with a summary that leads to the failing step.
+
 ## Connect a client
 
 <SdkContent sdk="laravel">
