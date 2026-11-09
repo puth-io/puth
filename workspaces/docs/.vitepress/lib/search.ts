@@ -14,12 +14,16 @@ export const sdkSearch: DefaultTheme.LocalSearchOptions = {
   // not execute Vue components while creating its local search index.
   _render(src, env, md) {
     const source = src
-      .replace(/<SdkContent sdk="(php|laravel|spring)">/g, (_, sdk) => `\n\n**${{ php: 'PHP', laravel: 'Laravel', spring: 'Spring Boot' }[sdk as string]}**\n\n`)
+      .replace(/<SdkContent sdk="([a-z ]+)">/g, (_, sdks: string) => {
+        const labels: Record<string, string> = { php: 'PHP', laravel: 'Laravel', spring: 'Spring Boot', java: 'Java', js: 'Node.js' };
+        return `\n\n**${sdks.split(' ').map(sdk => labels[sdk] ?? sdk).join(' / ')}**\n\n`;
+      })
       .replace(/<\/SdkContent>/g, '')
       .replace(/<SdkCall php="([^"]*)" laravel="([^"]*)"\s*\/>/g, (_, php, laravel) => {
         return `Laravel: \`${decodeAttribute(laravel)}\`; PHP: \`${decodeAttribute(php)}\``;
       });
-    const html = md.render(source, env);
+    // Method references in prose are components on the page, the index keeps their PHP form.
+    const html = md.render(source, env).replace(/<SdkRef code="([^"]*)" \/>/g, (_, code) => `<code>${code}</code>`);
     if (env.frontmatter?.search === false) return '';
     const fixed = pageSdk('/' + env.relativePath.replace(/\.md$/, ''));
     const label = fixed ? client(fixed).label : 'Laravel / PHP';

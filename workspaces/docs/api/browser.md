@@ -1,11 +1,12 @@
 ---
 title: Browser
 description: Browser shim methods and client naming differences.
+sdks: [java, js]
 ---
 
 # Browser
 
-The calls below use the selected PHP client's names. For lower-level Page and ElementHandle methods, see [Pages and elements](./remote-objects). Default values are shown in signatures; examples in the [browser guides](/guide/browser-basics) show how to call them.
+The calls below use the selected client's names. For lower-level Page and ElementHandle methods, see [Pages and elements](./remote-objects). Default values are shown in signatures; examples in the [browser guides](/guide/browser-basics) show how to call them.
 
 <SdkContent sdk="php">
 
@@ -196,6 +197,18 @@ Laravel adds helpers such as `$browser->withinFrame($selector, $callback)` and n
 <SdkContent sdk="php">
 
 This reference documents the standalone PHP remote Browser. Framework wrappers are documented separately under [Laravel integration](/guide/laravel).
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+This reference documents the Java client's Browser. Calls return the Browser, so they chain, and assertions throw when they fail. Optional parameters are overloads.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+This reference documents the Node.js client's Browser. Every call returns a promise, so await each one; assertions reject when they fail.
 
 </SdkContent>
 

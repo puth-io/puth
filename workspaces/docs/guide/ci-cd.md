@@ -1,3 +1,7 @@
+---
+sdks: [java, js]
+---
+
 # CI/CD and snapshots
 
 Run Puth alongside your application and test runner in CI. Docker or Podman includes the compatible Chrome version, which avoids downloading a browser on every run. See [getting started](./getting-started#start-the-server) for server installation options.
@@ -35,6 +39,54 @@ try {
 ```
 
 Unlike the Laravel test case, the standalone PHP client does not interpret the `CI` variable to save failures automatically.
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+Enable snapshot recording when creating the context. Report a failure and request a saved snapshot before cleanup:
+
+```java
+Context context = Context.create("http://127.0.0.1:7345", Map.of("snapshot", true));
+Map<String, Object> cleanup = new HashMap<>(Map.of("immediately", true));
+try {
+    Browser browser = context.createBrowserShim();
+    browser.visit("https://playground.puth.dev")
+        .assertSee("Puth");
+} catch (Throwable error) {
+    context.testFailed();
+    cleanup.put("save", Map.of("to", "file"));
+    throw error;
+} finally {
+    context.destroy(cleanup);
+}
+```
+
+The client does not interpret the `CI` variable to save failures automatically. In a JUnit suite, a [`TestWatcher`](https://junit.org/junit5/docs/current/api/org.junit.jupiter.api/org/junit/jupiter/api/extension/TestWatcher.html) extension can do this for every test.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+Enable snapshot recording when creating the context. Report a failure and request a saved snapshot before cleanup:
+
+```ts
+const context = await Context.create('http://127.0.0.1:7345', { snapshot: true });
+const cleanup: Record<string, unknown> = { immediately: true };
+try {
+    const browser = await context.createBrowserShim();
+    await browser.visit('https://playground.puth.dev');
+    await browser.assertSee('Puth');
+} catch (error) {
+    await context.testFailed();
+    cleanup.save = { to: 'file' };
+    throw error;
+} finally {
+    await context.destroy(cleanup);
+}
+```
+
+The client does not interpret the `CI` variable to save failures automatically.
 
 </SdkContent>
 

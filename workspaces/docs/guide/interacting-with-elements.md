@@ -1,6 +1,7 @@
 ---
 title: Interacting with elements
 description: Click, type, select, drag, and hover.
+sdks: [java, js]
 ---
 
 # Interacting with elements
@@ -19,6 +20,14 @@ Use Browser methods to interact with page elements. Create a Browser through the
 ```php
 $browser->click('@save');
 $browser->rightClick('#menu');
+```
+```java
+browser.click("@save");
+browser.rightClick("#menu");
+```
+```ts
+await browser.click('@save');
+await browser.rightClick('#menu');
 ```
 
 `$browser->moveMouse(xOffset, yOffset)` is not supported.
@@ -55,6 +64,24 @@ $browser->_keys('#password', ['{Backspace}']);
 
 </SdkContent>
 
+<SdkContent sdk="java">
+
+```java
+browser.type("password", "secretx")
+    .keys("#password", new String[]{"{Backspace}"});
+```
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+```ts
+await browser.type('password', 'secretx');
+await browser.keys('#password', ['{Backspace}']);
+```
+
+</SdkContent>
+
 Wrap special keys in braces, for example `{Backspace}` or `{Enter}`. A bare string such as `Backspace` types that word. Multiple arguments are sent in sequence; combine modifiers and keys in one string, such as `{Control}{a}`.
 
 ## Forms
@@ -66,6 +93,14 @@ Wrap special keys in braces, for example `{Backspace}` or `{Enter}`. A bare stri
 ```php
 $browser->select('country', 'US');
 $browser->check('terms');
+```
+```java
+browser.select("country", "US");
+browser.check("terms");
+```
+```ts
+await browser.select('country', 'US');
+await browser.check('terms');
 ```
 
 ## Buttons
@@ -79,6 +114,16 @@ After submitting a form, wait for the result your application shows. A button be
 $browser->press('Save');
 $browser->waitForText('Changes saved');
 $browser->assertSee('Changes saved');
+```
+```java
+browser.press("Save");
+browser.waitForText("Changes saved");
+browser.assertSee("Changes saved");
+```
+```ts
+await browser.press('Save');
+await browser.waitForText('Changes saved');
+await browser.assertSee('Changes saved');
 ```
 
 ## Mouse and drag

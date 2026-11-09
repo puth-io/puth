@@ -1,6 +1,7 @@
 ---
 title: Browser basics
 description: Navigate pages, inspect the current URL and work with frames.
+sdks: [java, js]
 ---
 
 # Browser basics
@@ -19,6 +20,18 @@ Create `$context` with `\Puth\Context::create($serverUrl)`, then use `$context->
 
 </SdkContent>
 
+<SdkContent sdk="java">
+
+Create `context` with `Context.create(serverUrl)`, then use `context.createBrowserShim()` to obtain `browser`. Calls return the Browser, so they chain. See [Getting started](./getting-started#connect-a-client) for a complete example.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+Create `context` with `await Context.create(serverUrl)`, then use `await context.createBrowserShim()` to obtain `browser`. Every call returns a promise, so await each one. See [Getting started](./getting-started#connect-a-client) for a complete example.
+
+</SdkContent>
+
 ## Navigate a page
 
 ```php
@@ -26,6 +39,18 @@ $browser->visit('https://app.test');
 $browser->clickLink('Settings');
 $browser->waitForLocation('/settings');
 $browser->assertTitleContains('Settings');
+```
+```java
+browser.visit("https://app.test");
+browser.clickLink("Settings");
+browser.waitForLocation("/settings");
+browser.assertTitleContains("Settings");
+```
+```ts
+await browser.visit('https://app.test');
+await browser.clickLink('Settings');
+await browser.waitForLocation('/settings');
+await browser.assertTitleContains('Settings');
 ```
 
 `$browser->refresh()` reloads the current page. `$browser->back()` and `$browser->forward()` navigate its history. Use `$browser->blank()` to load `about:blank`, or `$browser->setContent(html)` to replace the current document with HTML supplied by your test.
@@ -57,6 +82,16 @@ $browser->resize(390, 844);
 $browser->visit('https://app.test');
 $browser->assertVisible('#mobile-menu');
 ```
+```java
+browser.resize(390, 844);
+browser.visit("https://app.test");
+browser.assertVisible("#mobile-menu");
+```
+```ts
+await browser.resize(390, 844);
+await browser.visit('https://app.test');
+await browser.assertVisible('#mobile-menu');
+```
 
 `$browser->viewport()` reads the current viewport. `$browser->maximize()`, `$browser->bounds()`, `$browser->setBounds()` and `$browser->move()` control the browser window. These helpers operate on pages, not iframe-scoped browsers.
 
@@ -87,12 +122,42 @@ $browser->assertSee('Order');
 
 </SdkContent>
 
+<SdkContent sdk="java">
+
+`browser.withinIframe()` returns a separate Browser scoped to the iframe. Keep the outer Browser to continue on the page:
+
+```java
+Browser frame = browser.withinIframe("#checkout-frame");
+frame.click("#pay");
+browser.assertSee("Order");
+```
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+`browser.withinIframe()` returns a separate Browser scoped to the iframe. Keep the outer Browser to continue on the page:
+
+```ts
+const frame = await browser.withinIframe('#checkout-frame');
+await frame.click('#pay');
+await browser.assertSee('Order');
+```
+
+</SdkContent>
+
 ## Evaluate JavaScript
 
 Use `$browser->evaluate()` to read state that is not exposed through an existing helper. Code runs in the browser page:
 
 ```php
 $count = $browser->evaluate('document.querySelectorAll(".item").length');
+```
+```java
+var count = browser.evaluate("document.querySelectorAll(\".item\").length");
+```
+```ts
+const count = await browser.evaluate('document.querySelectorAll(".item").length');
 ```
 
 ## Browser lifecycle
@@ -106,6 +171,18 @@ Laravel's test case creates browsers for `$this->browse()` callbacks and destroy
 <SdkContent sdk="php">
 
 Call `$browser->quit()` to close its browser context. When finished with the Puth test context, call `$context->destroy()` to release remaining resources. Use a `finally` block so cleanup runs after failures too.
+
+</SdkContent>
+
+<SdkContent sdk="java">
+
+Call `browser.quit()` to close its browser context, and `context.destroy()` to release the Puth test context. Do both in an `@AfterEach` method or a `finally` block, so cleanup runs after failures too.
+
+</SdkContent>
+
+<SdkContent sdk="js">
+
+Call `await browser.quit()` to close its browser context, and `await context.destroy()` to release the Puth test context. Do both in an `afterEach` hook or a `finally` block, so cleanup runs after failures too.
 
 </SdkContent>
 

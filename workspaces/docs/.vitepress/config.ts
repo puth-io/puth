@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress';
 import { sdkSearch } from './lib/search';
+import { sdkVariants } from './lib/variants';
 
 export default defineConfig({
   lang: 'en-US',
@@ -8,6 +9,11 @@ export default defineConfig({
   cleanUrls: true,
   appearance: 'force-dark',
   srcExclude: ['README.md'],
+  markdown: {
+    config(md) {
+      md.use(sdkVariants);
+    },
+  },
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/assets/image/puth-logo-blue.png' }],
     ['meta', { name: 'theme-color', content: '#0a0a0a' }],

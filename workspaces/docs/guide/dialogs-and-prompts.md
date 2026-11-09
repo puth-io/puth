@@ -1,6 +1,7 @@
 ---
 title: Dialogs and prompts
 description: Handling alerts, confirms, and prompts.
+sdks: [java, js]
 ---
 
 # Dialogs and prompts
@@ -19,6 +20,16 @@ $browser->click('#delete');
 $browser->assertDialogOpened('Are you sure?');
 $browser->acceptDialog();
 ```
+```java
+browser.click("#delete");
+browser.assertDialogOpened("Are you sure?");
+browser.acceptDialog();
+```
+```ts
+await browser.click('#delete');
+await browser.assertDialogOpened('Are you sure?');
+await browser.acceptDialog();
+```
 
 ## Prompt input
 
@@ -31,6 +42,14 @@ The current Browser API supports two ways to supply prompt text:
 $browser->click('#rename');
 $browser->acceptDialog('New name');
 ```
+```java
+browser.click("#rename");
+browser.acceptDialog("New name");
+```
+```ts
+await browser.click('#rename');
+await browser.acceptDialog('New name');
+```
 
 `$browser->typeInDialog()` queues text; it does not close the prompt. Call `$browser->acceptDialog()` to submit that text, or `$browser->dismissDialog()` to cancel. The cached text is cleared after either action.
 
@@ -40,6 +59,16 @@ $browser->acceptDialog('New name');
 $browser->click('#delete');
 $browser->assertDialogOpened('Are you sure?');
 $browser->dismissDialog();
+```
+```java
+browser.click("#delete");
+browser.assertDialogOpened("Are you sure?");
+browser.dismissDialog();
+```
+```ts
+await browser.click('#delete');
+await browser.assertDialogOpened('Are you sure?');
+await browser.dismissDialog();
 ```
 
 Accept or dismiss every dialog your test opens so it can continue interacting with the page.

@@ -58,13 +58,35 @@ export function client(sdk: Sdk): Client {
   return clients.find(c => c.id === sdk)!;
 }
 
-/** The variant shown for a client on a page that has the given variants. */
+/** The variant shown for a client on a page that has the given variants. Spring Boot uses the Java client. */
 export function contentSdk(sdk: Sdk, available: readonly Sdk[] = defaultContentSdks): Sdk {
-  return available.includes(sdk) ? sdk : 'php';
+  if (available.includes(sdk)) return sdk;
+  if (sdk === 'spring' && available.includes('java')) return 'java';
+  return 'php';
 }
 
 export function hasOwnExamples(sdk: Sdk, available: readonly Sdk[] = defaultContentSdks): boolean {
-  return available.includes(sdk);
+  return contentSdk(sdk, available) !== 'php' || sdk === 'php' || sdk === 'laravel';
+}
+
+/** The language of a client's code blocks. */
+export type CodeLanguage = 'php' | 'java' | 'ts';
+export function codeLanguage(sdk: Sdk): CodeLanguage {
+  if (sdk === 'java' || sdk === 'spring') return 'java';
+  if (sdk === 'js') return 'ts';
+  return 'php';
+}
+
+/**
+ * Writes a PHP method reference, like `$browser->_keys($selector, $keys = [])`, as the Java and JavaScript clients
+ * call it: `browser.keys(selector, keys = [])`. Their methods have no underscore prefix.
+ */
+export function clientCall(php: string, sdk: Sdk): string {
+  if (codeLanguage(sdk) === 'php') return php;
+  return php
+    .replace(/\$(\w+)->_?/g, '$1.')
+    .replace(/->_?/g, '.')
+    .replace(/\$(\w+)/g, '$1');
 }
 
 export function pageSdks(frontmatter: { sdks?: unknown }): readonly Sdk[] {
