@@ -1,5 +1,21 @@
 # @puth/client-laravel
 
+## 0.11.0
+
+### Minor Changes
+
+- e9aa8d8: Add `Context.handoff()` and `$browser->handoff()` in Laravel. A test can set up what it needs, then hand its browser to another client while it keeps answering portal requests, and continues once the browser is released. `GET /contexts` lists what an instance knows about, and `GET /context/:id/snapshot` now also serves finished contexts. Failed requests record why they failed.
+
+### Patch Changes
+
+- Updated dependencies [82893ed]
+- Updated dependencies [cf13b4d]
+- Updated dependencies [e0c9813]
+- Updated dependencies [e6f04bb]
+- Updated dependencies [e9aa8d8]
+- Updated dependencies [201e0a4]
+  - @puth/client-php@0.9.0
+
 ## 0.10.3
 
 ### Patch Changes
