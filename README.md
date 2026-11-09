@@ -26,11 +26,11 @@ You can run Puth either via docker image or via npm package (node >v24 and bun >
 
 ### Docker
 
-You can find Puth on [Dockerhub](https://hub.docker.com/r/puthio/puth). **Keep in mind** if you run Puth in a Docker
+The image is published to the [GitHub Container Registry](https://github.com/puth-io/puth/pkgs/container/puth). **Keep in mind** if you run Puth in a Docker
 container you can access the hosts network via `host.docker.internal` (for linux add `--add-host=host.docker.internal:host-gateway`).
 
 ```bash
-docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1
+docker run -it --rm -p 127.0.0.1:7345:7345 ghcr.io/puth-io/puth
 ```
 
 ### npm

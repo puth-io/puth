@@ -135,7 +135,7 @@ onMounted(() => {
 onBeforeUnmount(stop);
 
 const steps = computed(() => [
-  { title: 'Start the server', command: 'docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1' },
+  { title: 'Start the server', command: 'docker run -it --rm -p 127.0.0.1:7345:7345 ghcr.io/puth-io/puth' },
   { title: `Install the ${current.value.label} client`, command: current.value.install },
   { title: 'Open the GUI, run your tests', command: current.value.run },
 ]);

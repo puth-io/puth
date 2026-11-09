@@ -20,7 +20,7 @@ npm install --global puth
 puth start
 ```
 
-Puth is also available as a Docker image, [`puthio/puth`](https://hub.docker.com/r/puthio/puth).
+Puth is also available as a Docker image, [`ghcr.io/puth-io/puth`](https://github.com/puth-io/puth/pkgs/container/puth).
 
 Read the [documentation](https://puth.io) for the clients, configuration and the GUI.
 

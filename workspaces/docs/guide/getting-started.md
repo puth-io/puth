@@ -32,8 +32,10 @@ Puth checks `~/.cache/puth` and `.cache/puppeteer` relative to the server's work
 ### Docker
 
 ```sh
-docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth:0.7.1
+docker run -it --rm -p 127.0.0.1:7345:7345 ghcr.io/puth-io/puth
 ```
+
+`latest` follows the newest release. To keep CI reproducible, pin a version from the [package page](https://github.com/puth-io/puth/pkgs/container/puth), for example `ghcr.io/puth-io/puth:0.9.0`.
 
 When a browser running in Docker needs to reach an application on your host, use `host.docker.internal`. On Linux, add `--add-host=host.docker.internal:host-gateway` to the Docker command.
 
@@ -44,7 +46,7 @@ The OCI image includes Chrome and can also run with Podman. To start it alongsid
 ```yaml
 services:
   puth:
-    image: puthio/puth:0.7.1
+    image: ghcr.io/puth-io/puth
     ports:
       - '127.0.0.1:7345:7345'
     volumes:

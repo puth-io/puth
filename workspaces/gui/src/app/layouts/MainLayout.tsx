@@ -54,7 +54,7 @@ const ConnectState = () => (
                     <Card label={'Start a server'} labelClass={'text-accent-blue'} link={['Getting started', `${DOCS}/getting-started`]}>
                         <p className={'text-sm leading-relaxed text-ink-muted'}>One container serves the browser API and this GUI.</p>
                         <code className={'mt-3.5 block overflow-x-auto whitespace-nowrap rounded-lg border border-white/10 bg-shell-main px-3.5 py-3 font-mono text-[12.5px] text-ink-body'}>
-                            docker run -it --rm -p 127.0.0.1:7345:7345 puthio/puth
+                            docker run -it --rm -p 127.0.0.1:7345:7345 ghcr.io/puth-io/puth
                         </code>
                     </Card>
                     <Card label={'Replay from CI'} labelClass={'text-indigo-300'} link={['Snapshots in CI', `${DOCS}/ci-cd`]}>
