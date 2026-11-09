@@ -101,6 +101,8 @@ Test methods can declare these parameters:
 
 When a test fails, the extension marks its context as failed before destroying it, so the GUI and its snapshot show the test as failed.
 
+Failed Puth assertions throw JUnit's `AssertionFailedError`, so they count as test failures. JUnit does not count assertions, so the extension publishes the number of passed Puth assertions as the test's `puth.assertions` report entry, which IDEs and JUnit's reporting show. `context.getAssertionCount()` returns it in tests without the extension.
+
 ## Use a running server
 
 `PuthPortalExtension.forRandomPort(puthUrl, options, baseUri)` sends portal requests over HTTP to a running application instead of MockMvc, for example one started with `@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)`. Use it when a test needs a real HTTP server rather than MockMvc's simulated requests.

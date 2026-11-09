@@ -70,6 +70,20 @@ public class Context extends io.puth.client.remote.Context {
 
     private RemoteObject.PortalRequestHandler portalRequestHandler;
 
+    private final java.util.concurrent.atomic.AtomicInteger assertionCount = new java.util.concurrent.atomic.AtomicInteger();
+
+    /**
+     * Returns how many assertions passed on the server for this context. JUnit has no assertion count of its own;
+     * {@link io.puth.client.junit.PuthPortalExtension} reports this as the "puth.assertions" report entry.
+     */
+    public int getAssertionCount() {
+        return assertionCount.get();
+    }
+
+    void addToAssertionCount(int count) {
+        assertionCount.addAndGet(count);
+    }
+
     public RemoteObject.PortalRequestHandler getPortalRequestHandler() {
         return portalRequestHandler;
     }
