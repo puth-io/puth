@@ -427,8 +427,17 @@ export class Browser {
         throw new ExpectationFailed('$browser->moveMouse() is not supported by Puth and might never be, please use a different approach.');
     }
 
-    public setContent(html: string, options: WaitForOptions = {}): Promise<this> {
-        return this.site.setContent(html, options).then(this.self);
+    public async setContent(html: string, options: WaitForOptions = {}): Promise<this> {
+        await this.site.setContent(html, options);
+
+        if (! this.isFrame) {
+            this.context.recordNavigation(this.page.url(), {
+                initiator: 'setContent',
+                title: await this.page.title().catch(() => ''),
+            });
+        }
+
+        return this;
     }
 
     public blank(): Promise<this> {

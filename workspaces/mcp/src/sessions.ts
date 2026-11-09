@@ -45,6 +45,7 @@ export class Session {
 
     private queue: Promise<unknown> = Promise.resolve();
     private invalidated = false;
+    private annotations = true;
 
     constructor(
         private readonly manager: SessionManager,
@@ -104,6 +105,35 @@ export class Session {
             throw error;
         } finally {
             clearTimeout(timer);
+        }
+    }
+
+    /**
+     * Tells the recording what the agent does next, so the GUI can group commands by tool call. Instances without
+     * annotations still work, they only show the commands.
+     */
+    async annotate(annotation: Record<string, unknown>) {
+        if (! this.annotations) {
+            return;
+        }
+
+        try {
+            // annotate() is meant for this server only, so the generated clients do not know it.
+            await (this.context as any).callFunc('annotate', [annotation]);
+        } catch {
+            this.annotations = false;
+        }
+    }
+
+    /**
+     * Commands the server makes for itself, like reading the page outline, are hidden in the GUI.
+     */
+    async quietly<T>(operation: () => Promise<T>): Promise<T> {
+        await this.annotate({ kind: 'quiet', quiet: true });
+        try {
+            return await operation();
+        } finally {
+            await this.annotate({ kind: 'quiet', quiet: false });
         }
     }
 

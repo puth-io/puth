@@ -1,6 +1,7 @@
 import {v4} from 'uuid';
 import {
     Dialog,
+    Frame,
     Page,
     Target,
     ConsoleMessage,
@@ -461,6 +462,13 @@ class Context extends Generic {
             });
         });
 
+        // The GUI splits the steps of a test into the pages they ran on, also after navigations within a document.
+        this.registerEventListenerOn(page, 'framenavigated', (frame: Frame) => {
+            if (frame === page.mainFrame()) {
+                this.recordNavigation(frame.url());
+            }
+        });
+
         if (this.options?.supports?.portal != null && this.isPortalEnabled) {
             let cdp: CDPSession = await this.cdps(page);
             this.registerEventListenerOn(
@@ -760,6 +768,7 @@ class Context extends Generic {
         const handoff = new PortalHandoff(this, browser, this.handoffResponse, options);
         this.handoffResponse = undefined;
         this.portalHandoff = handoff;
+        this.recordHandoff('waiting');
 
         // Requests the test did not answer yet belong to it, like the last ones of the page it opened.
         this.callStacks.forEach((stack) => {
@@ -774,11 +783,68 @@ class Context extends Generic {
             return undefined;
         }
         this.portalHandoff.state = 'claimed';
+        this.recordHandoff('claimed');
 
         return {
             context: this.serialize(),
             browser: this.returnCached(this.portalHandoff.browser),
         };
+    }
+
+    /**
+     * Records that the main frame shows another page. A page set with setContent keeps its address, so its title
+     * tells it apart.
+     */
+    public recordNavigation(url: string, details: {initiator?: string, title?: string} = {}) {
+        if (! this.shouldSnapshot) {
+            return;
+        }
+
+        this.puth.snapshotHandler.pushToCache(this, {
+            id: v4(),
+            type: 'navigation',
+            context: this.serialize(),
+            timestamp: Date.now(),
+            url,
+            ...details,
+        });
+    }
+
+    /**
+     * Records where a handoff stands, so the GUI can show who drives the test.
+     */
+    public recordHandoff(state: 'waiting'|'claimed'|'ended', reason?: string) {
+        if (! this.shouldSnapshot) {
+            return;
+        }
+
+        this.puth.snapshotHandler.pushToCache(this, {
+            id: v4(),
+            type: 'handoff',
+            context: this.serialize(),
+            timestamp: Date.now(),
+            state,
+            name: this.portalHandoff?.name ?? '',
+            reason,
+        });
+    }
+
+    /**
+     * Marks what drives the context next, like a tool call of an agent, so the GUI can group the commands after it.
+     * Used by the MCP server.
+     */
+    public annotate(annotation: Record<string, unknown> = {}) {
+        if (! this.shouldSnapshot) {
+            return;
+        }
+
+        this.puth.snapshotHandler.pushToCache(this, {
+            ...annotation,
+            id: v4(),
+            type: 'annotation',
+            context: this.serialize(),
+            timestamp: Date.now(),
+        });
     }
 
     // @codegen

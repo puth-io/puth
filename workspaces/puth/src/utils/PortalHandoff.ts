@@ -94,6 +94,7 @@ export class PortalHandoff {
         }
         this.endReason = reason;
         clearTimeout(this.timer);
+        this.context.recordHandoff('ended', reason);
 
         // Whatever the test did not get to goes back to the stacks, for the calls it makes next.
         const unsent = this.inFlight ? this.queue.splice(1) : this.queue.splice(0);

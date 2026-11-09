@@ -798,6 +798,14 @@ describe('Taking over a test', () => {
         assert.strictEqual(await result, 'released');
         assert.match(closed.text, /^closed, the test finished:\nsuccessful "logged in test"/);
         assert.strictEqual(await browser.url(), fixtureAltUrl());
+
+        // The GUI shows who drives the test from these.
+        const handoffs = await context.getSnapshotsByType('handoff');
+        assert.deepEqual(handoffs.map(({ state, name, reason }) => [state, name, reason ?? null]), [
+            ['waiting', 'dashboard', null],
+            ['claimed', 'dashboard', null],
+            ['ended', 'dashboard', 'released'],
+        ]);
         await context.destroy({ immediately: true });
     }, 20000);
 
@@ -834,6 +842,31 @@ describe('puth_export', () => {
 
         const packets = decode(readFileSync(text), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
         assert.strictEqual(packets[0].type, 'context');
+    }, 20000);
+
+    it('marks tool calls, its own commands and drafts for the GUI', async () => {
+        const { tool, session, run } = await start();
+        const sessionId = await session();
+        await run(sessionId, { op: 'see', text: 'Puth' });
+        await tool('puth_inspect', { sessionId, find: 'puth' });
+        await tool('puth_export', { sessionId, format: 'laravel', name: 'Sees Puth' });
+
+        const { text } = await tool('puth_export', { sessionId, format: 'snapshot' });
+        const packets = decode(readFileSync(text), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        const annotations = packets.filter(({ type }) => type === 'annotation');
+
+        assert.deepEqual(annotations.filter(({ kind }) => kind === 'tool').map(({ tool }) => tool), [
+            'puth_session_create', 'puth_run', 'puth_inspect',
+        ]);
+        assert.strictEqual(annotations.find(({ tool }) => tool === 'puth_run').summary, 'see');
+        const draft = annotations.find(({ kind }) => kind === 'draft');
+        assert.strictEqual(draft.name, 'Sees Puth');
+        assert.include(draft.code, "assertSee('Puth')");
+
+        // Every outline read of the server is enclosed in a quiet pair.
+        const quiet = annotations.filter(({ kind }) => kind === 'quiet').map(({ quiet }) => quiet);
+        assert.isAbove(quiet.length, 0);
+        assert.deepEqual(quiet, quiet.map((_, index) => index % 2 === 0));
     }, 20000);
 
     it('saves a snapshot of a failure that the GUI shows', async () => {

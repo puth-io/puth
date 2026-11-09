@@ -111,7 +111,7 @@ export function createServer(config: Config) {
         const lines: string[] = [];
 
         try {
-            const outline = JSON.parse(await session.browser.evaluate(outlineScript(null)));
+            const outline = JSON.parse(await session.quietly(() => session.browser.evaluate(outlineScript(null))));
             const known = session.known;
             const navigated = outline.url !== known.url;
             const observable = observableLines(outline);
@@ -221,6 +221,7 @@ export function createServer(config: Config) {
                 : `took over "${session.handoffName}" from ${session.handoffTest}, its login and data apply`;
 
             return session.run(async () => {
+                await session.annotate({ kind: 'tool', tool: 'puth_session_create', summary: target ?? '' });
                 if (viewport !== undefined) {
                     await session.browser.resize(viewport.width, viewport.height);
                 }
@@ -261,7 +262,11 @@ export function createServer(config: Config) {
         async ({ sessionId, steps }) => {
             const session = sessions.get(sessionId);
 
-            return session.run(() => runSteps(session, steps as Step[]));
+            return session.run(async () => {
+                await session.annotate({ kind: 'tool', tool: 'puth_run', summary: bound(steps.map(({ op }) => op).join(', '), 200), steps: steps.length });
+
+                return runSteps(session, steps as Step[]);
+            });
         },
     );
 
@@ -273,6 +278,7 @@ export function createServer(config: Config) {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
+                await session.annotate({ kind: 'tool', tool: 'puth_pages', summary: select === undefined ? 'list' : `select ${select}` });
                 if (select !== undefined) {
                     session.browser = await session.browser.onPage(select);
                     session.pageIndex = select;
@@ -302,8 +308,13 @@ export function createServer(config: Config) {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
+                await session.annotate({
+                    kind: 'tool',
+                    tool: 'puth_inspect',
+                    summary: [text ? 'text' : 'outline', selector, find && `find "${find}"`, kind].filter(Boolean).join(' '),
+                });
                 if (text) {
-                    const visible = String(await session.browser.evaluate(textScript(selector ?? null)));
+                    const visible = String(await session.quietly(() => session.browser.evaluate(textScript(selector ?? null))));
                     const searched = find === undefined
                         ? visible
                         : visible.split('\n').filter(line => line.toLowerCase().includes(find.toLowerCase())).join('\n');
@@ -311,7 +322,7 @@ export function createServer(config: Config) {
                     return reply(bound(searched, 8000) || (find === undefined ? 'no visible text' : 'no matches in the visible text'));
                 }
 
-                const outline = JSON.parse(await session.browser.evaluate(outlineScript(selector ?? null)));
+                const outline = JSON.parse(await session.quietly(() => session.browser.evaluate(outlineScript(selector ?? null))));
                 if (outline.missing) {
                     throw new ToolError('INVALID_REQUEST', `Nothing matches [${selector}].`);
                 }
@@ -343,6 +354,7 @@ export function createServer(config: Config) {
             const session = sessions.get(sessionId);
 
             return session.run(async () => {
+                await session.annotate({ kind: 'tool', tool: 'puth_screenshot', summary: selector ?? 'page' });
                 const options = { type: 'jpeg', quality: 60, encoding: 'base64' };
                 const target = selector === undefined ? session.browser : await session.browser.firstOrFail(selector);
                 const data = await (target as any).screenshot(options) as string;
@@ -536,6 +548,9 @@ export function createServer(config: Config) {
                     sessionId: session.id,
                     fragment: session.handoff,
                 });
+
+                // The draft shows up next to the steps it was made of.
+                await session.annotate({ kind: 'draft', tool: 'puth_export', format, name, code, steps: selected.length });
 
                 return reply(code);
             });
