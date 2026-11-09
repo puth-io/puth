@@ -1,5 +1,11 @@
 # @puth/core
 
+## 0.0.3
+
+### Patch Changes
+
+- 50a59a4: Version snapshots and show why an import failed. Importing a damaged file used to leave the GUI on "Importing snapshot..." forever, and rejected files only logged to the console. Files without a version keep importing as version 1.
+
 ## 0.0.2
 
 ### Patch Changes
