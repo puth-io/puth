@@ -2,6 +2,11 @@
   "name": "@puth/gui",
   "type": "module",
   "version": "0.1.4",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/puth-io/puth.git",
+    "directory": "workspaces/gui"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

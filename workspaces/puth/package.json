@@ -75,7 +75,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/puth-io/puth"
+    "url": "git+https://github.com/puth-io/puth.git",
+    "directory": "workspaces/puth"
   },
   "homepage": "https://puth.io",
   "license": "SEE LICENSE IN LICENCE"

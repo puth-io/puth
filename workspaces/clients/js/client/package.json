@@ -1,6 +1,11 @@
 {
   "name": "@puth/client",
   "version": "0.0.2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/puth-io/puth.git",
+    "directory": "workspaces/clients/js/client"
+  },
   "author": {
     "name": "Sebastian Uehlin",
     "email": "s.uehlin@proton.me"

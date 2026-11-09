@@ -1,6 +1,11 @@
 {
   "name": "@puth/mcp",
   "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/puth-io/puth.git",
+    "directory": "workspaces/mcp"
+  },
   "description": "MCP server for exploring applications and authoring tests with Puth",
   "author": {
     "name": "Sebastian Uehlin",
