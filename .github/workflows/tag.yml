@@ -7,13 +7,10 @@ on:
       - '@puth/client-php@*'
       - '@puth/client-laravel@*'
 
+# Tags are only created after the tests passed on master (see changeset.yml).
 jobs:
-  call-workflow-test:
-    uses: ./.github/workflows/test.yml
-
   # PUTH ###############################################################################################################
   release-image-puth:
-    needs: [call-workflow-test]
     if: startsWith(github.ref, 'refs/tags/puth@')
     runs-on: ubuntu-latest
     permissions:
@@ -82,7 +79,6 @@ jobs:
   # PHP ################################################################################################################
   release-client-php:
     if: startsWith(github.ref, 'refs/tags/@puth/client-php@')
-    needs: [call-workflow-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +98,6 @@ jobs:
   # LARAVEL ############################################################################################################
   release-client-laravel:
     if: startsWith(github.ref, 'refs/tags/@puth/client-laravel@')
-    needs: [call-workflow-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

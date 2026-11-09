@@ -1,16 +1,24 @@
 name: Changeset
 
+# Runs after the tests passed on master, so npm releases and their tags only
+# exist for tested commits. tag.yml relies on this and does not test again.
 on:
-  workflow_call:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+    branches: [master]
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
     name: Release
+    # Only pushes to this repository: a pull request from a fork branch named
+    # master also matches the branch filter.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,6 +28,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
+         ref: ${{ github.event.workflow_run.head_sha }}
          token: ${{ secrets.REPO_SCOPED_TOKEN }}
          persist-credentials: false
 
