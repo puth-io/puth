@@ -57,6 +57,7 @@ public class PuthPortalExtension implements BeforeEachCallback, AfterEachCallbac
     @Override
     public void afterEach(ExtensionContext ctx) {
         Context context = getContext(ctx);
+        ctx.publishReportEntry("puth.assertions", String.valueOf(context.getAssertionCount()));
         if (ctx.getExecutionException().isPresent()) {
             context.testFailed();
         }

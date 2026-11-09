@@ -146,10 +146,10 @@ public class RemoteObject {
         if (typeObj == null) throw new RuntimeException("Server response: body.type not defined!");
         String type = String.valueOf(typeObj);
 
-        // Handle meta.assertions (if provided) — no-op hook (kept for parity with PHP)
+        // Assertions that passed on the server, counted like PHPUnit's addToAssertionCount().
         Map<String, Object> meta = (Map<String, Object>) generic.get("meta");
-        if (meta != null && meta.containsKey("assertions")) {
-            // If your test framework supports counting assertions, hook it up here.
+        if (meta != null && meta.get("assertions") instanceof Number assertions && context != null) {
+            context.addToAssertionCount(assertions.intValue());
         }
 
         if ("ServerRequest".equals(type)) {
