@@ -30,9 +30,6 @@
       ],
       "@/app/store/PreviewStore": [
         "./src/app/store/PreviewStore"
-      ],
-      "@/app/components/Command": [
-        "./src/app/components/Command/Command"
       ]
     }
   },

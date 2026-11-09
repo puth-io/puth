@@ -90,6 +90,11 @@ class PreviewStore {
     }
     
     get activeScreencast() {
+        // Without a selected step, show how the page looked last.
+        if (! this._activeCommand) {
+            const screencasts = this.context.screencasts;
+            return screencasts[screencasts.length - 1] ?? null;
+        }
         if (this.state === SnapshotState.AFTER) {
             if (this.screencast.inBetween.length > 0) {
                 return this.screencast.inBetween[this.screencast.inBetween.length - 1];

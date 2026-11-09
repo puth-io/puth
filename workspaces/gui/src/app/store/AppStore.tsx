@@ -43,7 +43,11 @@ export default class AppStore {
         },
     };
     
-    view: 'local'|'instance' = 'instance';
+    view: 'local'|'instance'|'agents' = 'instance';
+    
+    agentsActive: ContextStore|null = null;
+    // Pinned agent sessions stay listed after they closed.
+    pinned: string[] = [];
     
     importErrors: string[] = [];
     
@@ -61,6 +65,11 @@ export default class AppStore {
             dragAndDropped: observable,
             settings: observable,
             view: observable,
+            agentsActive: observable,
+            pinned: observable,
+            togglePinned: action,
+            agents: computed,
+            liveAgents: computed,
             importErrors: observable,
             
             tryConnectingTo: action,
@@ -96,18 +105,42 @@ export default class AppStore {
     
     get history() {
         if (this.view === 'instance') {
-            return this.active.connection?.contexts ?? [];
+            return (this.active.connection?.contexts ?? []).filter(context => ! context.isAgent);
+        }
+        if (this.view === 'agents') {
+            return this.agents;
         }
         
         return this.dragAndDropped.contexts;
+    }
+    
+    /**
+     * Agent sessions, and tests an agent took over with a handoff, which hold what the agent did.
+     */
+    get agents(): ContextStore[] {
+        return (this.active.connection?.contexts ?? [])
+            .filter(context => context.isAgent || context.handoffs.some(handoff => handoff.state === 'claimed'));
+    }
+    
+    get liveAgents(): number {
+        return this.agents.filter(context => context.isLive).length;
     }
     
     get activeContext() {
         if (this.view === 'instance') {
             return this.active.connection?.active.context;
         }
+        if (this.view === 'agents') {
+            return this.agentsActive ?? undefined;
+        }
         
         return this.dragAndDropped.active;
+    }
+    
+    togglePinned(context: ContextStore) {
+        this.pinned = this.pinned.includes(context.id)
+            ? this.pinned.filter(id => id !== context.id)
+            : [...this.pinned, context.id];
     }
     
     get previewStore() {
@@ -127,6 +160,10 @@ export default class AppStore {
     }
     
     setActive(context: ContextStore) {
+        if (this.view === 'agents') {
+            this.agentsActive = context;
+            return;
+        }
         if (this.view === 'instance') {
             if (! this.active.connection) {
                 return;
@@ -142,7 +179,7 @@ export default class AppStore {
         this.dragAndDropped.active = context;
     }
     
-    setView(view: 'local'|'instance') {
+    setView(view: 'local'|'instance'|'agents') {
         this.view = view;
     }
     

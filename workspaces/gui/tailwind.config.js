@@ -20,7 +20,33 @@ module.exports = {
       fontSize: {
         xxs: '0.625rem',
       },
+      fontFamily: {
+        sans: ['"Geist Variable"', 'Geist', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono Variable"', '"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
       colors: {
+        // Columns of the app shell, from the side rail to the viewport.
+        shell: {
+          rail: '#101010',
+          side: '#161616',
+          bar: '#121212',
+          main: '#0a0a0a',
+          line: 'rgba(163, 163, 163, 0.1)',
+          control: 'rgba(163, 163, 163, 0.16)',
+        },
+        ink: {
+          DEFAULT: '#fafafa',
+          body: '#d4d4d4',
+          muted: '#a3a3a3',
+          faint: '#737373',
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+          blue: '#60a5fa',
+          sky: '#93c5fd',
+          code: '#7dd3fc',
+        },
         lighter: "rgb(255 255 255 / 6%)",
         light: "rgb(255 255 255 / 16%)",
         success: "#4fc49f",
@@ -47,10 +73,6 @@ module.exports = {
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
