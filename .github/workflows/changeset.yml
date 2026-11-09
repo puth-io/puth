@@ -1,24 +1,31 @@
 name: Changeset
 
-# Runs after the tests passed on master, so npm releases and their tags only
+# A push to master updates the "Version Packages" pull request. Publishing only
+# runs after the tests passed on master, so npm releases and their tags only
 # exist for tested commits. tag.yml relies on this and does not test again.
 on:
+  push:
+    branches:
+      - master
   workflow_run:
     workflows: [Tests]
     types: [completed]
     branches: [master]
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+# Separate groups, so a later push never cancels a pending publish.
+concurrency: ${{ github.workflow }}-${{ github.event_name }}
 
 jobs:
   release:
-    name: Release
-    # Only pushes to this repository: a pull request from a fork branch named
-    # master also matches the branch filter.
+    name: ${{ github.event_name == 'workflow_run' && 'Publish' || 'Version' }}
+    # Publish only for pushes to this repository: a pull request from a fork
+    # branch named master also matches the branch filter.
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
+      github.event_name == 'push' || (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -28,7 +35,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
-         ref: ${{ github.event.workflow_run.head_sha }}
+         ref: ${{ github.event.workflow_run.head_sha || github.sha }}
          token: ${{ secrets.REPO_SCOPED_TOKEN }}
          persist-credentials: false
 
@@ -40,10 +47,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Without a publish script, changesets/action only updates the pull request.
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: npm run release
+          publish: ${{ github.event_name == 'workflow_run' && 'npm run release' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_SCOPED_TOKEN }}
