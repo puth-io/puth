@@ -94,10 +94,39 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: java-client
+          # The client depends on Spring Boot 3, which requires Java 17.
+          - name: java-client | Temurin | JDK 17
             client_dir: workspaces/clients/java/client
+            java-version: '17'
+            distribution: temurin
+          - name: java-client | Temurin | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: temurin
+          - name: java-client | Temurin | JDK 25
+            client_dir: workspaces/clients/java/client
+            java-version: '25'
+            distribution: temurin
+          - name: java-client | Corretto | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: corretto
+          - name: java-client | Liberica | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: liberica
+          - name: java-client | Microsoft | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: microsoft
+          - name: java-client | Zulu | JDK 21
+            client_dir: workspaces/clients/java/client
+            java-version: '21'
+            distribution: zulu
           - name: java-spring
             client_dir: workspaces/clients/java/workspaces/spring
+            java-version: '17'
+            distribution: temurin
             # The example depends on the client from this checkout.
             install_client: true
     steps:
@@ -118,11 +147,11 @@ jobs:
           npm run build
       - name: download browser
         run: npm run ci:browser:install --workspace workspaces/puth
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ matrix.java-version }} (${{ matrix.distribution }})
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          distribution: ${{ matrix.distribution }}
           cache: maven
           cache-dependency-path: ${{ matrix.client_dir }}/pom.xml
       - name: test
@@ -138,7 +167,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
+          # Artifact names must not contain "|", which the job names use.
+          name: ${{ matrix.install_client && 'java-spring' || 'java-client' }}-${{ matrix.distribution }}-jdk${{ matrix.java-version }}
           path: |
             workspaces/puth/puth.log
             workspaces/puth/puth.cdp.log
