@@ -4,7 +4,6 @@ namespace Puth\Laravel\Concerns;
 
 use Closure;
 use Illuminate\Support\Collection;
-use PHPUnit\Runner\Version;
 use Puth\Laravel\Browser;
 use ReflectionFunction;
 use Throwable;
@@ -240,11 +239,7 @@ trait ProvidesBrowser
      */
     protected function getCallerName()
     {
-        $name = version_compare(Version::id(), '10', '>=')
-            ? $this->name()
-            : $this->getName(false);
-        
-        return str_replace('\\', '_', get_class($this)) . '_' . $name;
+        return str_replace('\\', '_', get_class($this)) . '_' . $this->name();
     }
     
     public function getLaunchOptions(): array

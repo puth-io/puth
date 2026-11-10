@@ -3,7 +3,6 @@
 namespace Puth\Laravel\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\App;
 
 /**
  * This file is a direct copy or contains substantial parts of the Laravel/Dusk
@@ -60,12 +59,7 @@ class InstallCommand extends Command
             $this->createSourceDirectory();
         }
         
-        $stubs = [];
-        if (str_starts_with(App::version(), '11')) {
-            $stubs['PuthTestCaseLV11.stub'] = base_path('tests/PuthTestCase.php');
-        } else {
-            $stubs['PuthTestCase.stub'] = base_path('tests/PuthTestCase.php');
-        }
+        $stubs = ['PuthTestCase.stub' => base_path('tests/PuthTestCase.php')];
         
         foreach ($stubs as $stub => $file) {
             if (!is_file($file)) {
