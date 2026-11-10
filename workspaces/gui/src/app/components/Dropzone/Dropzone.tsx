@@ -1,5 +1,5 @@
 import {useContext, useState} from 'react';
-import './Dropzone.scss';
+import './Dropzone.css';
 import {observer} from 'mobx-react-lite';
 import {useDropzone} from 'react-dropzone';
 import {runInAction} from 'mobx';

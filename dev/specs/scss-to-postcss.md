@@ -18,11 +18,11 @@ application and the fixtures have no SCSS.
 
 ## Work
 
-- [ ] Delete `colors.scss`. Before that, confirm with a build that nothing
+- [x] Delete `colors.scss`. Before that, confirm with a build that nothing
   resolves it and that none of its class names appear in `src/`.
-- [ ] Rename `Dropzone.scss` to `Dropzone.css` and update the import in
+- [x] Rename `Dropzone.scss` to `Dropzone.css` and update the import in
   `Dropzone.tsx`. `&.active` is valid for `postcss-nesting` as written.
-- [ ] Remove `sass` from `workspaces/gui/package.json` and update
+- [x] Remove `sass` from `workspaces/gui/package.json` and update
   `package-lock.json`.
 
 The `prism-sass` and `prism-scss` imports in `Code.tsx` are syntax highlighting
