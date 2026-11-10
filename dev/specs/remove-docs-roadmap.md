@@ -8,10 +8,10 @@ not the `origin/docs` branch.
 
 ## Work
 
-- [ ] Delete `workspaces/docs/guide/roadmap.md`.
-- [ ] `workspaces/docs/.vitepress/config.ts`: remove the sidebar group
+- [x] Delete `workspaces/docs/guide/roadmap.md`.
+- [x] `workspaces/docs/.vitepress/config.ts`: remove the sidebar group
   `Project`, whose only item is the roadmap.
-- [ ] `workspaces/docs/README.md`: drop "and roadmap context" from the
+- [x] `workspaces/docs/README.md`: drop "and roadmap context" from the
   description of the guide.
 
 No other page links to `/guide/roadmap`, and the docs tests (`sdk.test.ts`,

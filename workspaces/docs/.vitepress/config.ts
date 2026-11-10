@@ -64,10 +64,6 @@ export default defineConfig({
           { text: 'Pages and elements', link: '/api/remote-objects' },
         ],
       },
-      {
-        text: 'Project',
-        items: [{ text: 'Roadmap', link: '/guide/roadmap' }],
-      },
     ],
     socialLinks: [{ icon: 'github', link: 'https://github.com/puth-io/puth' }],
     search: { provider: 'local', options: sdkSearch },
