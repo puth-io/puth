@@ -32,16 +32,28 @@ Most waiting happens without asking for it, following the model of [Cypress](htt
 
 An action succeeds even if the page closes because of it. Work that could not happen because the page closed fails with `PageClosed`.
 
-After an action, a navigation can start a moment later. The next call that does not retry on its own therefore waits `timeouts.actionSettle` milliseconds, 20 by default, and `0` turns this off. Both timeouts are context options:
+A page can announce a navigation just after the action that caused it returned, for example after a submitted form. Before the next call that does not retry on its own, Puth therefore checks with the page once, which takes well under a millisecond, and then pauses for the page load. A navigation that starts later, from a timer or after a request finished, cannot be detected this way. Follow such an action with a wait or an assertion for the next page:
 
 ```php
-$context = \Puth\Context::create('http://127.0.0.1:7345', ['timeouts' => ['actionSettle' => 0]]);
+$browser->press('Continue')->assertPathIs('/next')->type('name', 'Puth');
 ```
 ```java
-Context context = Context.create("http://127.0.0.1:7345", Map.of("timeouts", Map.of("actionSettle", 0)));
+browser.press("Continue").assertPathIs("/next").type("name", "Puth");
 ```
 ```ts
-const context = await Context.create('http://127.0.0.1:7345', { timeouts: { actionSettle: 0 } });
+await browser.press('Continue').assertPathIs('/next').type('name', 'Puth');
+```
+
+`timeouts.actionSettle` additionally holds back that call for the given milliseconds after an action, `0` by default. Both timeouts are context options:
+
+```php
+$context = \Puth\Context::create('http://127.0.0.1:7345', ['timeouts' => ['actionSettle' => 50]]);
+```
+```java
+Context context = Context.create("http://127.0.0.1:7345", Map.of("timeouts", Map.of("actionSettle", 50)));
+```
+```ts
+const context = await Context.create('http://127.0.0.1:7345', { timeouts: { actionSettle: 50 } });
 ```
 
 Pass `force` to `click` to skip the checks, or set the `actionability` Browser option to `false` to skip them for a whole Browser.

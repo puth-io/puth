@@ -70,12 +70,12 @@ describe('PageStability', () => {
     it('waits no longer than the configured time after an action', async () => {
         stability.actionFinished();
 
-        expect(await isSettled(stability.settled(5000, 20), 20)).toBe(true);
+        expect(await isSettled(stability.settled(5000, true, 20), 20)).toBe(true);
     });
 
     it('gives an action time to start a navigation', async () => {
         stability.actionFinished();
-        const settled = stability.settled(5000, 20);
+        const settled = stability.settled(5000, true, 20);
 
         expect(await isSettled(settled, 10)).toBe(false);
         stability.navigationRequested({ ...main, disposition: 'currentTab' });
@@ -83,6 +83,41 @@ describe('PageStability', () => {
         expect(await isSettled(settled, 100)).toBe(false);
         stability.loadingStopped(main);
         expect(await isSettled(settled)).toBe(true);
+    });
+
+    it('receives a navigation that the page announced just after an action', async () => {
+        let answer!: () => void;
+        stability = new PageStability(MAIN, undefined, () => new Promise<void>(resolve => { answer = resolve; }));
+        stability.actionFinished();
+        const settled = stability.settled(5000, true);
+
+        expect(await isSettled(settled, 100)).toBe(false);
+        stability.navigationRequested({ ...main, disposition: 'currentTab' });
+        answer();
+        expect(await isSettled(settled, 100)).toBe(false);
+        stability.loadingStarted(main);
+        stability.loadingStopped(main);
+        expect(await isSettled(settled)).toBe(true);
+    });
+
+    it('asks the page once per action', async () => {
+        const roundTrip = vi.fn(async () => {});
+        stability = new PageStability(MAIN, undefined, roundTrip);
+
+        await stability.settled(5000, true);
+        stability.actionFinished();
+        await stability.settled(5000);
+        await stability.settled(5000, true);
+        await stability.settled(5000, true);
+
+        expect(roundTrip).toHaveBeenCalledTimes(1);
+    });
+
+    it('continues when the page does not answer after an action', async () => {
+        stability = new PageStability(MAIN, undefined, () => new Promise(() => {}));
+        stability.actionFinished();
+
+        expect(await isSettled(stability.settled(1000, true), 1000)).toBe(true);
     });
 
     it('continues after the timeout and does not wait for that load again', async () => {

@@ -13,16 +13,26 @@ export class PageStability {
     private loading = false;
     private requestedAt?: number;
     private actionFinishedAt = 0;
+    private actionUnflushed = false;
     private waiters = new Set<() => void>();
 
-    constructor(mainFrameId: string, private readonly logger?: Logger) {
+    constructor(
+        mainFrameId: string,
+        private readonly logger?: Logger,
+        private readonly roundTrip: () => Promise<unknown> = async () => {},
+    ) {
         this.mainFrameId = mainFrameId;
     }
 
     static async track(cdp: CDPSession, register: (event: string, handler: (event: any) => void) => void, logger?: Logger) {
         await cdp.send('Page.enable');
         const { frameTree } = await cdp.send('Page.getFrameTree');
-        const stability = new PageStability(frameTree.frame.id, logger);
+        // The page answers after it sent the events it emitted before, like the navigation a click requested.
+        const stability = new PageStability(
+            frameTree.frame.id,
+            logger,
+            () => cdp.send('Runtime.evaluate', { expression: '0', returnByValue: true }),
+        );
 
         register('Page.frameRequestedNavigation', event => stability.navigationRequested(event));
         register('Page.frameStartedLoading', event => stability.loadingStarted(event));
@@ -60,13 +70,22 @@ export class PageStability {
 
     actionFinished() {
         this.actionFinishedAt = Date.now();
+        this.actionUnflushed = true;
     }
 
     // Stops waiting once the page finished or the timeout ran out. A slow page should fail on what the call expects.
-    // An action can start a navigation shortly after it returned, like a submitted form, which actionSettle allows for.
-    async settled(timeout: number, actionSettle = 0): Promise<void> {
+    // A navigation that an action requested, like a submitted form, can be announced just after the action returned.
+    // One round trip to the page receives it. Navigations started later, from a timer or after a request, need a wait or
+    // an assertion, or actionSettle milliseconds.
+    async settled(timeout: number, afterAction = false, actionSettle = 0): Promise<void> {
         const deadline = Date.now() + timeout;
-        const remainingDelay = this.actionFinishedAt + actionSettle - Date.now();
+
+        if (afterAction && this.actionUnflushed) {
+            this.actionUnflushed = false;
+            await this.flush(timeout);
+        }
+
+        const remainingDelay = afterAction ? this.actionFinishedAt + actionSettle - Date.now() : 0;
 
         if (remainingDelay > 0) {
             await this.wait(remainingDelay);
@@ -91,6 +110,16 @@ export class PageStability {
 
     private get transitioning() {
         return this.loading || (this.requestedAt !== undefined && this.requestedRemaining > 0);
+    }
+
+    // A page that does not answer, like one that is busy, should fail on the call itself.
+    private async flush(timeout: number) {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        await Promise.race([
+            this.roundTrip().catch(() => {}),
+            new Promise<void>(resolve => { timer = setTimeout(resolve, timeout); }),
+        ]);
+        clearTimeout(timer);
     }
 
     private wait(delay: number) {

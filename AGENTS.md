@@ -99,8 +99,10 @@ classifies its methods, so add new ones there.
   page succeeds even if the page closes because of it.
 - Calls pause while the main frame loads a new document, for up to
   `timeouts.pageLoad` milliseconds. After an action, the next call that does not
-  retry on its own also waits `timeouts.actionSettle` milliseconds, because a
-  navigation can start shortly after the action returned.
+  retry on its own first makes one CDP round trip to the page, because a page
+  can announce a navigation just after the action returned. Navigations started
+  later, from a timer or after a request, need a wait or an assertion.
+  `timeouts.actionSettle` (0 by default) adds a fixed delay on top.
 - Functions sent to the page must not contain named functions: `tsx` wraps them in
   a helper that only exists on the server, and Vitest does not catch this.
 

@@ -111,6 +111,20 @@ function helperRoutes(urls) {
                     .end('<!doctype html><title>Slow page</title><h1 id="slow">Slow page</h1>');
             }, Number(url.searchParams.get('ms') ?? 300));
         },
+        // /form?step=1&ms=0 is a form whose next step has the same field, answered after ms milliseconds
+        '/form': (req, res, url) => {
+            const step = Number(url.searchParams.get('step') ?? 1);
+            const next = `/form?step=${step + 1}&ms=${Number(url.searchParams.get('ms') ?? 0)}`;
+            setTimeout(() => {
+                res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }).end(
+                    `<!doctype html><title>Step ${step}</title>`
+                    + `<form method="post" action="${next}"><input id="name" name="name"><button id="submit">Submit</button></form>`
+                    + `<a id="link" href="${next}">Next</a>`
+                    + `<button id="assign" type="button" onclick="location.href = '${next}'">Assign</button>`
+                    + `<button id="later" type="button" onclick="setTimeout(() => location.href = '${next}', 0)">Later</button>`,
+                );
+            }, step === 1 ? 0 : Number(url.searchParams.get('ms') ?? 0));
+        },
         // /closable offers a button that closes the window, which only works in opened windows
         '/closable': (req, res) => {
             res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })

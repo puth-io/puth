@@ -78,11 +78,10 @@ describe('Page transitions', () => {
     };
 
     it('hold back the call after an action for the configured time', async () => {
-        const { browser, client } = await open('<p>idle</p>', { timeouts: { actionSettle: 200 } });
+        const { browser } = await open('<p>idle</p>', { timeouts: { actionSettle: 200 } });
         await browser.evaluate('1');
 
         assert.isAtLeast(await timed(() => browser.evaluate('1')), 150);
-        assert.exists(client);
     });
 
     it('do not hold back calls that retry on their own', async () => {
@@ -94,8 +93,8 @@ describe('Page transitions', () => {
         assert.isBelow(await timed(() => browser.title()), 300);
     });
 
-    it('can be turned off after actions', async () => {
-        const { browser } = await open('<p>idle</p>', { timeouts: { actionSettle: 0 } });
+    it('do not hold back a chain of actions on an idle page', async () => {
+        const { browser } = await open('<p>idle</p>');
         const elapsed = await timed(async () => {
             for (let i = 0; i < 20; i++) {
                 await browser.evaluate('1');

@@ -91,7 +91,7 @@ const DEFAULT_PORTAL_TIMEOUT = 120 * 1000;
 
 const DEFAULT_PAGE_LOAD_TIMEOUT = 30 * 1000;
 
-const DEFAULT_ACTION_SETTLE_TIMEOUT = 20;
+const DEFAULT_ACTION_SETTLE_TIMEOUT = 0;
 
 const PAGE_CLOSING_CALLS = ['close', 'quit'];
 
@@ -1119,7 +1119,7 @@ class Context extends Generic {
         // Runs after the call became active, a loading page might need it to reach the client through the portal.
         if (stability !== undefined && ! PAGE_CLOSING_CALLS.includes(name) && ! this.isPageBlockedByDialog(call.stack!.page)) {
             // Calls that retry find out about a late navigation on their own.
-            await stability.settled(this.pageLoadTimeout, retries ? 0 : this.actionSettleTimeout);
+            await stability.settled(this.pageLoadTimeout, ! retries, this.actionSettleTimeout);
         }
 
         try {
