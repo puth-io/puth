@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "pkgroll --clean-dist",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "node ../../bin/check-dist.mjs"
   },
   "files": [
     "dist/"

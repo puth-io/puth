@@ -64,7 +64,7 @@
     "test:only:plugins": "vitest 'tst/plugins/**/*.ts",
     "test:only:translation": "vitest test/translation/**/*.ts",
     "test:api": "vitest test/api.test.ts",
-    "prepublishOnly": "(cd ../core && npm run build) && (cd ../clients/js/client && npm run build) && (cd ../mcp && npm run build) && npm run build && (cd ../gui && npm run build) && npm run ci:browser:install && npm test",
+    "prepublishOnly": "node ../../bin/check-dist.mjs && npm run ci:browser:install && npm test",
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
     "image:install": "npm install && cd gui && npm install",
