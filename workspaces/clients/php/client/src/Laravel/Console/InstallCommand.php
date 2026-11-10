@@ -69,7 +69,7 @@ class InstallCommand extends Command
         
         foreach ($stubs as $stub => $file) {
             if (!is_file($file)) {
-                copy(__DIR__ . '/../../stubs/' . $stub, $file);
+                copy(__DIR__ . '/../../../stubs/' . $stub, $file);
             }
         }
         

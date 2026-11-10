@@ -10,7 +10,7 @@ This matrix reflects what the test suites cover. Every client talks to the same 
 
 | | Laravel | PHP | Java | JavaScript/TypeScript |
 | --- | --- | --- | --- | --- |
-| Package | `puth/laravel` | `puth/php` | `io.puth` client | `@puth/client` |
+| Package | `puth/php` | `puth/php` | `io.puth` client | `@puth/client` |
 | Readiness | Primary | Supported | Beta | Beta |
 | Generated `Browser` and `Context` | Yes | Yes | Yes | Yes |
 | Browser suite | 80 tests | 19 tests | 45 tests | Runs in Puth's suite, including its GUI tests |

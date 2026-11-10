@@ -17,7 +17,6 @@
     </testsuites>
     <coverage processUncoveredFiles="true">
         <include>
-            <directory suffix=".php">./vendor/puth/laravel/src</directory>
             <directory suffix=".php">./vendor/puth/php/src</directory>
         </include>
     </coverage>

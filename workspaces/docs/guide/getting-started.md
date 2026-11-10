@@ -67,7 +67,7 @@ Each test lists its steps, split into the pages they ran on. Hover a step to see
 
 <SdkContent sdk="laravel">
 
-Follow [Laravel setup](./laravel) to install `puth/laravel`, configure the server address and run your first `$this->browse()` test.
+Follow [Laravel setup](./laravel) to install `puth/php`, configure the server address and run your first `$this->browse()` test.
 
 </SdkContent>
 

@@ -232,7 +232,7 @@ jobs:
             laravel: '13.*'
         include:
           # Track Laravel's development branch for the next major release. It has no version of its own, so it is
-          # installed as 13.99.0: packages like puth/laravel, Tinker and Collision accept that, and the code is master.
+          # installed as 13.99.0: packages like puth/php, Tinker and Collision accept that, and the code is master.
           - php: 8.4
             laravel: dev-master as 13.99.0
             phpunit: 12

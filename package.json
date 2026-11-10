@@ -13,7 +13,6 @@
     "workspaces/mcp",
     "workspaces/clients/java/client",
     "workspaces/clients/php/client",
-    "workspaces/clients/php/laravel",
     "workspaces/docs"
   ],
   "dependencies": {

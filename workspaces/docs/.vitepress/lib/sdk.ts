@@ -16,7 +16,7 @@ export interface Client {
 }
 
 export const clients: Client[] = [
-  { id: 'laravel', label: 'Laravel', language: 'PHP', status: 'Primary', description: 'Dusk-style API, runs with php artisan test.', install: 'composer require --dev puth/laravel', run: 'php artisan test' },
+  { id: 'laravel', label: 'Laravel', language: 'PHP', status: 'Primary', description: 'Dusk-style API, runs with php artisan test.', install: 'composer require --dev puth/php', run: 'php artisan test' },
   { id: 'spring', label: 'Spring Boot', language: 'Java', status: 'Beta', description: 'JUnit extension that serves your app through MockMvc.', install: 'io.puth.client:client (Maven)', run: 'mvn test' },
   { id: 'php', label: 'Plain PHP', language: 'PHP', status: 'Supported', description: 'Standalone client for any PHPUnit project.', install: 'composer require --dev puth/php', run: 'vendor/bin/phpunit' },
   { id: 'java', label: 'Plain Java', language: 'Java', status: 'Beta', description: 'Standalone client for JUnit.', install: 'io.puth.client:client (Maven)', run: 'mvn test' },

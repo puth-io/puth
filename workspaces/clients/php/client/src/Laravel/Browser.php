@@ -550,7 +550,7 @@ class Browser extends \Puth\RemoteObjects\Browser
     public function ensurejQueryIsAvailable()
     {
         if ($this->evaluate('window.jQuery == null')) {
-            $this->evaluate(file_get_contents(__DIR__.'/../misc/jquery.js'));
+            $this->evaluate(file_get_contents(__DIR__.'/../../misc/jquery.js'));
         }
     }
 

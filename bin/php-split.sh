@@ -17,6 +17,5 @@ function remote()
 }
 
 remote php puth-io/php.git
-remote laravel puth-io/laravel.git
 
 split "$@"

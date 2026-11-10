@@ -1,3 +1,85 @@
 # Puth PHP client
 
 This is the PHP client for Puth.
+
+```bash
+composer require --dev puth/php
+```
+
+## Laravel
+
+The package includes the Laravel integration. Laravel discovers `Puth\Laravel\PuthServiceProvider` on its own, and plain PHP projects install no Laravel packages.
+
+### Installation
+
+After installing the package, run the `puth:install` Artisan command.
+
+```bash
+php artisan puth:install
+```
+
+### Upgrading from `puth/laravel`
+
+The Laravel integration was published as `puth/laravel` until version 0.11. Replace `puth/laravel` with `puth/php` in
+the `require-dev` section of `composer.json` and run `composer update`. Class names such as `Puth\Laravel\Browser`
+stay the same, so tests need no changes.
+
+### Configuration
+
+You can find the configuration file for this package in `config/puth.php`.
+
+### Example Browser Test
+
+```php
+use Tests\PuthTestCase;
+use Puth\Laravel\Browser;
+
+class ExampleBrowserTest extends PuthTestCase
+{
+    function test_visit_website()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('https://playground.puth.dev')
+                ->assertSee('Puth');
+        });
+    }
+}
+```
+
+### Transition from Dusk
+
+The Laravel integration provides a full replacement for Dusk.
+
+Another difference is that it does not start the browser process. For that you need to run `puth` (e.g. in
+Docker) and point the client to the `puth` instance.
+
+Some exception messages changed, mostly the ones thrown by assert functions, e.g. instead of `Element [body #not-existing-element] not found` you will see `Waited 200ms for selector [body body #not-existing-element]` when calling `$browser->assertVisible('body #not-existing-element')`.
+
+#### Portal
+
+- Portal routes all requests through the testcase process, therefore every browser request that goes to the application will act on the currently authenticated user. E.g. if you call `$this->actingAs()`, your browser requests will also be authenticated as that user.
+- Portal and detour handling are disabled by default. Enable both for a test case with the `PuthEnablePortal` trait:
+
+```php
+use Puth\Laravel\PuthEnablePortal;
+use Tests\PuthTestCase;
+
+class ExampleBrowserTest extends PuthTestCase
+{
+    use PuthEnablePortal;
+}
+```
+
+Values returned by `getContextOptions()` can still override the `portal` or `detour` context option individually.
+
+#### Changes
+
+- `$browser->keys()`: This method now uses the [puppeteer keymap](https://pptr.dev/api/puppeteer.keyinput) (instead of the php-webdriver keymap) is used (when using modifier keys you can only type/press american keyboard layout keys)
+- `$browser->typeInDialog(selector, value)`: Use the accept method instead which takes a value `$browser->acceptDialog(value)`
+- console logs are different from Dusk console logs. They now contain more information but the underlying json structure changed.
+
+- `$this->driver->executeScript()` becomes `$this->evaluate()`
+
+#### Unsupported
+
+- `$browser->moveMouse($xOffset, $yOffset)`: Puppeteer only simulates a mouse but doesn't expose the internal tracking state so we can't move the mouse by an offset

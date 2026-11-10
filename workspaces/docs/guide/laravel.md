@@ -1,13 +1,17 @@
 # Laravel
 
-The `puth/laravel` package integrates Puth with Laravel browser tests.
+The `puth/php` package integrates Puth with Laravel browser tests. Laravel discovers its service provider on its own.
 
 ## Install
 
 ```sh
-composer require --dev puth/laravel
+composer require --dev puth/php
 php artisan puth:install
 ```
+
+::: tip Upgrading from `puth/laravel`
+The Laravel integration moved into `puth/php` with version 0.12. Replace `puth/laravel` with `puth/php` in the `require-dev` section of `composer.json` and run `composer update`. Class names such as `Puth\Laravel\Browser` stay the same, so tests need no changes.
+:::
 
 Configure the integration in `config/puth.php`. Start the [Puth server](./getting-started#start-the-server) separately and point the client to that instance.
 

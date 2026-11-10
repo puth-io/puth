@@ -21,6 +21,10 @@ class BackTrace
                 if (str_contains($frame['file'], 'vendor/phpunit/phpunit')) {
                     return false;
                 }
+                // The Laravel integration was a package of its own, whose frames were always shown
+                if (str_contains(str_replace('\\', '/', $frame['file']), '/src/Laravel/')) {
+                    return true;
+                }
                 // used when released
                 if (str_contains($frame['file'], 'puth/php/src')) {
                     return false;
