@@ -11,4 +11,7 @@ PUTH_INSTANCE_URL=http://127.0.0.1:7345 PUTH_APP_URL=http://laravel:8080 npx @pu
 A repository with several applications names them with `PUTH_APP_URLS="shop=http://shop:8080 admin=http://admin:8080"`,
 and sessions choose one with the `app` parameter of `puth_session_create`.
 
+It speaks MCP over stdio. `puth-mcp --http` serves the same tools over Streamable HTTP at
+`http://127.0.0.1:7346/mcp` instead.
+
 See the [MCP guide](https://puth.io/guide/mcp) for configuration, tools and the workflow.

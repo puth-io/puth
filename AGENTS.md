@@ -51,7 +51,8 @@ Read [the MCP guide](workspaces/docs/guide/mcp.md) for configuration, tools and
 network addressing. `.claude/skills/puth` describes these workflows for Claude
 Code. Add new operations to `workspaces/mcp/src/operations.ts`, which also defines
 their PHP translations. Tool results and schemas stay in the context of agents, so
-keep them short and only report what is new.
+keep them short and only report what is new. `workspaces/puth/test/mcp/tools.json` holds the
+schemas agents see; update it on purpose when a tool changes.
 
 ## Releases
 

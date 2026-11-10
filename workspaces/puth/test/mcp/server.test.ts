@@ -1,4 +1,5 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -6,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { decode } from '@msgpack/msgpack';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Context, RemotePuthClient } from '@puth/client';
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest';
 import { fixtureAltUrl, fixtureUrl, makePuthServer } from '../helper';
@@ -13,6 +15,38 @@ import { LiveViewSnapshotPlugin } from '../../src/plugins/LiveViewPlugin';
 import { PUTH_EXTENSION_CODEC } from '../../src/handlers/WebsocketHandler';
 
 const cli = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../mcp/src/cli.ts');
+
+// server-http.test.ts runs these tests again over HTTP.
+const TRANSPORT = process.env.PUTH_MCP_TEST_TRANSPORT ?? 'stdio';
+
+/**
+ * Starts puth-mcp --http on a free port. Stopping it plays the part of an MCP client that stops its stdio server.
+ */
+async function startHttpServer(env: Record<string, string>) {
+    const child = spawn(process.execPath, ['--import', 'tsx', cli, '--http'], {
+        env: { ...env, PUTH_MCP_PORT: '0' },
+        stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    let output = '';
+    const url = await new Promise<string>((resolve, reject) => {
+        child.stderr!.on('data', (chunk) => {
+            output += chunk;
+            const match = output.match(/listening at (\S+\/mcp)/);
+            if (match) {
+                resolve(match[1]);
+            }
+        });
+        child.once('exit', () => reject(new Error(`puth-mcp --http exited: ${output}`)));
+    });
+    const stop = async () => {
+        if (child.exitCode === null) {
+            child.kill('SIGTERM');
+            await once(child, 'exit');
+        }
+    };
+
+    return { url: new URL(url), stop };
+}
 
 const cleanups: (() => unknown)[] = [];
 let directory: string;
@@ -45,18 +79,17 @@ async function startInstance(port = 0) {
 }
 
 async function connect(instanceUrl: string, environment: Record<string, string> = {}) {
-    const transport = new StdioClientTransport({
-        command: process.execPath,
-        args: ['--import', 'tsx', cli],
-        stderr: 'pipe',
-        env: {
-            PATH: process.env.PATH!,
-            PUTH_INSTANCE_URL: instanceUrl,
-            PUTH_APP_URL: fixtureUrl().replace(/\/$/, ''),
-            PUTH_ARTIFACT_DIR: directory,
-            ...environment,
-        },
-    });
+    const env = {
+        PATH: process.env.PATH!,
+        PUTH_INSTANCE_URL: instanceUrl,
+        PUTH_APP_URL: fixtureUrl().replace(/\/$/, ''),
+        PUTH_ARTIFACT_DIR: directory,
+        ...environment,
+    };
+    const http = TRANSPORT === 'http' ? await startHttpServer(env) : undefined;
+    const transport = http === undefined
+        ? new StdioClientTransport({ command: process.execPath, args: ['--import', 'tsx', cli], stderr: 'pipe', env })
+        : new StreamableHTTPClientTransport(http.url);
     const client = new Client({ name: 'test', version: '1.0.0' });
     const protocolErrors: Error[] = [];
     client.onerror = (error) => protocolErrors.push(error);
@@ -64,10 +97,11 @@ async function connect(instanceUrl: string, environment: Record<string, string> 
     await client.connect(transport);
 
     let closed = false;
-    const close = () => {
+    const close = async () => {
         if (! closed) {
             closed = true;
-            return client.close();
+            await client.close();
+            await http?.stop();
         }
     };
     cleanups.push(close);

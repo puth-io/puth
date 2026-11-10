@@ -110,6 +110,20 @@ Most clients take the same command and environment, usually in a form like this:
 
 To run it in a container next to Puth, set `PUTH_INSTANCE_URL=http://puth:7345`.
 
+### HTTP
+
+`puth-mcp --http` serves the same tools over Streamable HTTP at `http://127.0.0.1:7346/mcp`, for clients that connect to a URL instead of starting a command. Start it before the agent, on the machine the agent works on: screenshots, snapshots, uploaded files and `.puth` files are local paths of the server.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PUTH_MCP_HOST` | `127.0.0.1` | Address to listen on |
+| `PUTH_MCP_PORT` | `7346` | Port to listen on, `0` picks a free one |
+| `PUTH_MCP_ORIGINS` | none | Browser origins allowed besides loopback ones, separated by commas |
+
+Every request is answered with JSON, and there are no MCP sessions. All agents of one server share its browser sessions, so `puth_status` lists them all. Requests from a browser origin that is not loopback or listed are rejected, which protects a local server from DNS rebinding. Other variables are the same as over stdio.
+
+`createMcpApp(config)` from `@puth/mcp` returns the H3 app, to serve it from your own process.
+
 ## Workflow
 
 1. Start the environment: `docker compose up --build --wait puth laravel`.

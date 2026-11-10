@@ -10,12 +10,20 @@ export type Config = {
     operationTimeout: number;
     idleTimeout: number;
     startHint: string;
+    // Only used by puth-mcp --http.
+    http: { host: string, port: number, allowedOrigins: string[] };
 };
 
 const positive = (value: string|undefined, fallback: number) => {
     const parsed = Number(value);
 
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const port = (value: string|undefined, fallback: number) => {
+    const parsed = Number(value);
+
+    return value !== undefined && value !== '' && Number.isInteger(parsed) && parsed >= 0 && parsed < 65536 ? parsed : fallback;
 };
 
 const withoutSlash = (url: string) => url.replace(/\/$/, '');
@@ -53,6 +61,12 @@ export function readConfig(environment: NodeJS.ProcessEnv = process.env): Config
         operationTimeout: positive(environment.PUTH_MCP_OPERATION_TIMEOUT, 30 * 1000),
         idleTimeout: positive(environment.PUTH_MCP_IDLE_TIMEOUT, 30 * 60 * 1000),
         startHint: environment.PUTH_START_HINT || 'puth start',
+        http: {
+            host: environment.PUTH_MCP_HOST || '127.0.0.1',
+            // 0 lets the system pick a free port, which puth-mcp reports.
+            port: port(environment.PUTH_MCP_PORT, 7346),
+            allowedOrigins: (environment.PUTH_MCP_ORIGINS ?? '').split(/[\s,]+/).filter(Boolean).map(withoutSlash),
+        },
     };
 }
 

@@ -1,8 +1,9 @@
 import { writeFile } from 'node:fs/promises';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
+import { z } from 'zod/v4';
+import packageJson from '../package.json' with { type: 'json' };
 import { type App, appOf, type Config } from './config';
 import { createDraft } from './drafts';
+import { McpProtocol, type ToolResult } from './protocol';
 import { type ErrorCode, ToolError, toToolError } from './errors';
 import { DEFAULT_TIMEOUT, type OperationKind, operationKind, operationSummary, runOperation, type Step, stepSchema, validateStep } from './operations';
 import { MAX_CHANGES, observableLines, outlineChanges, outlineScript, textScript } from './outline';
@@ -76,21 +77,21 @@ const age = (time: number) => {
 
 export function createServer(config: Config) {
     const sessions = new SessionManager(config);
-    const server = new McpServer({ name: 'puth', version: '0.0.0' }, { instructions: INSTRUCTIONS });
+    const server = new McpProtocol({ name: 'puth', version: packageJson.version }, INSTRUCTIONS);
 
     const tool = <Shape extends z.ZodRawShape>(
         name: string,
         description: string,
         inputSchema: Shape,
-        handler: (input: z.infer<z.ZodObject<Shape>>) => Promise<any>,
+        handler: (input: z.infer<z.ZodObject<Shape>>) => Promise<ToolResult>,
     ) => {
-        server.registerTool(name, { description, inputSchema }, (async (input: any) => {
+        server.registerTool(name, { description, inputSchema }, async (input) => {
             try {
                 return await handler(input);
             } catch (error) {
                 return failure(toToolError(error, config));
             }
-        }) as any);
+        });
     };
 
     const isAbsolute = (url: string) => /^[a-z][a-z0-9+.-]*:/i.test(url);

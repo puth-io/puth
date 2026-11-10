@@ -1,0 +1,471 @@
+[
+  {
+    "name": "puth_status",
+    "description": "Show the connection, sessions and tests waiting for a handoff.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_session_create",
+    "description": "Create an isolated browser session, or take over a test that called handoff().",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "default": "MCP session"
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "Relative URLs use the application URL"
+        },
+        "app": {
+          "type": "string",
+          "description": "Application from puth_status, the default without"
+        },
+        "viewport": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 7680
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 4320
+            }
+          },
+          "required": [
+            "width",
+            "height"
+          ],
+          "additionalProperties": false
+        },
+        "handoff": {
+          "type": "string",
+          "description": "Id from puth_contexts of a test waiting for a handoff"
+        }
+      },
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_session_close",
+    "description": "Close a session. A test that handed off continues, and its result is reported if it finishes within a few seconds.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sessionId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_run",
+    "description": "Run steps in order on the selected page and stop at the first failure. Actions wait until their target can be acted on and never repeat; assertions and waits retry for timeout ms (3000). Operations: visit(url) back() forward() reload() click(selector) press(text) clickLink(text) type(selector,text) select(selector,value) check(selector) uncheck(selector) hover(selector) drag(selector,to) scroll(selector) keys(selector,keys) upload(selector,file) dialog(response) evaluate(script) waitFor(selector) waitGone(selector) waitText(text) waitTextGone(text) waitUrl(url) waitEnabled(selector) waitDisabled(selector) see(text) dontSee(text) seeIn(selector,text) textIs(selector,text) title(text) urlIs(url) pathIs(url) visible(selector) missing(selector) value(selector,value) checked(selector) notChecked(selector) count(selector,count). evaluate takes a JavaScript expression and returns its JSON value. text in press and clickLink is the visible text. seeIn checks that an element contains text, textIs that it is exactly that text.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "visit",
+                  "back",
+                  "forward",
+                  "reload",
+                  "click",
+                  "press",
+                  "clickLink",
+                  "type",
+                  "select",
+                  "check",
+                  "uncheck",
+                  "hover",
+                  "drag",
+                  "scroll",
+                  "keys",
+                  "upload",
+                  "dialog",
+                  "evaluate",
+                  "waitFor",
+                  "waitGone",
+                  "waitText",
+                  "waitTextGone",
+                  "waitUrl",
+                  "waitEnabled",
+                  "waitDisabled",
+                  "see",
+                  "dontSee",
+                  "seeIn",
+                  "textIs",
+                  "title",
+                  "urlIs",
+                  "pathIs",
+                  "visible",
+                  "missing",
+                  "value",
+                  "checked",
+                  "notChecked",
+                  "count"
+                ]
+              },
+              "selector": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "value": {
+                "type": "string",
+                "maxLength": 10000
+              },
+              "url": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "to": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "file": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "keys": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "maxItems": 50
+              },
+              "script": {
+                "type": "string",
+                "maxLength": 20000
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "response": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "dismiss"
+                ]
+              },
+              "timeout": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 25000
+              }
+            },
+            "required": [
+              "op"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "sessionId",
+        "steps"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_pages",
+    "description": "List open pages, or select the one later tools use.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "select": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "sessionId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_inspect",
+    "description": "Outline the selected page in document order: headings (#), alerts (!), and interactive elements as: kind \"label\" selector =value flags. Use selector to look at a part of the page, find to search it, text for its visible text.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "selector": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Limit to this element"
+        },
+        "text": {
+          "type": "boolean",
+          "default": false,
+          "description": "Return the visible text instead"
+        },
+        "find": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Only lines containing this, ignoring case"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "heading",
+            "alert",
+            "text",
+            "button",
+            "link",
+            "input",
+            "select"
+          ],
+          "description": "Only lines of this kind"
+        },
+        "cursor": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 60
+        }
+      },
+      "required": [
+        "sessionId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_screenshot",
+    "description": "Capture the selected page or one element as an image, and save it as an artifact. Prefer puth_inspect, images cost far more.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "selector": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "sessionId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_events",
+    "description": "Read console, errors or network activity of a session. network shows failed requests, HTTP errors and page or API calls, all=true adds the rest.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "console",
+            "errors",
+            "network"
+          ]
+        },
+        "all": {
+          "type": "boolean",
+          "default": false
+        },
+        "cursor": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 30
+        }
+      },
+      "required": [
+        "sessionId",
+        "type"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_contexts",
+    "description": "List tests and sessions this Puth instance knows about, including finished ones, newest first. Read one with puth_context.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "failed",
+            "successful",
+            "pending"
+          ]
+        },
+        "query": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Part of the test name or group"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_context",
+    "description": "Read what a test recorded: id from puth_contexts or a session, or a .puth file. view summary shows what went wrong in order, commands, console and network list everything; commands leaves out what test runners do around a test unless all=true. command shows one command with its full arguments. frame returns the page as an image after that command number, -1 for the last one.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string",
+          "description": "Path to a .puth snapshot"
+        },
+        "view": {
+          "type": "string",
+          "enum": [
+            "summary",
+            "commands",
+            "console",
+            "network"
+          ],
+          "default": "summary"
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "command": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Show one command with its full arguments"
+        },
+        "all": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also list commands test runners make around a test"
+        },
+        "cursor": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        }
+      },
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "puth_export",
+    "description": "Export a snapshot file, the recorded steps, or a php or laravel test draft of the passed steps. After a handoff, a draft holds only the steps for that test. Drafts are unverified until the real test suite passed them.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "snapshot",
+            "steps",
+            "php",
+            "laravel"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "default": "Recorded workflow"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxItems": 1000,
+          "description": "Step numbers, by default all passed steps"
+        }
+      },
+      "required": [
+        "sessionId",
+        "format"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  }
+]
