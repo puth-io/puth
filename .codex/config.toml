@@ -3,4 +3,4 @@
 [mcp_servers.puth]
 command = "npm"
 args = ["--silent", "run", "mcp"]
-env_vars = ["PUTH_INSTANCE_URL", "PUTH_APP_URL", "PUTH_ARTIFACT_DIR"]
+env_vars = ["PUTH_INSTANCE_URL", "PUTH_APP_URL", "PUTH_APP_URLS", "PUTH_ARTIFACT_DIR", "PUTH_START_HINT"]

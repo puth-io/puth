@@ -26,7 +26,7 @@
     "dev": "bunx concurrently \"bun run dev:server\" \"bun run dev:client\"",
     "release": "npm run build && changeset publish",
     "docs:dev": "npm -w @puth/docs run dev",
-    "mcp": "PUTH_APP_URL=${PUTH_APP_URL:-http://laravel:8080} node workspaces/mcp/dist/cli.mjs",
+    "mcp": "PUTH_APP_URL=${PUTH_APP_URL:-http://laravel:8080} PUTH_START_HINT=${PUTH_START_HINT:-\"docker compose up --build --wait puth laravel\"} node workspaces/mcp/dist/cli.mjs",
     "docs:build": "npm -w @puth/docs run build",
     "docs:preview": "npm -w @puth/docs run preview"
   },

@@ -9,7 +9,7 @@ Start with `puth_status`. If no instance answers, run the command it reports. Do
 
 ## Explore or check something
 
-1. `puth_session_create` with a `url`. Relative URLs use the application URL.
+1. `puth_session_create` with a `url`. Relative URLs use the application URL. With several applications in `puth_status`, pass `app`, one session per application.
 2. `puth_inspect` once to learn the page. Use `selector` for a part of it, and `find` to search it.
 3. `puth_run` with all steps you can already name. Assertions retry and actions wait, so do not add waits or sleeps out of caution.
 4. Read the `+` and `-` lines of the result. They say what changed, including text in quotes, so inspect again only if you need more.

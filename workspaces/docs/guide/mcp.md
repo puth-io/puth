@@ -17,7 +17,9 @@ Start Puth, then point your MCP client at the server over stdio.
 | --- | --- | --- |
 | `PUTH_INSTANCE_URL` | `http://127.0.0.1:7345` | Puth instance to connect to |
 | `PUTH_APP_URL` | none | Base for relative URLs, which never resolve against the current page |
+| `PUTH_APP_URLS` | none | Further applications as `name=url` pairs, see [several applications](#several-applications) |
 | `PUTH_ARTIFACT_DIR` | `.puth/agent-artifacts` | Screenshots and snapshots, in one folder per session |
+| `PUTH_START_HINT` | `puth start` | Command that errors suggest when no Puth instance answers |
 
 Keep secrets out of committed configuration. Add the artifact directory to your `.gitignore`.
 
@@ -36,6 +38,16 @@ In this repository's Compose environment:
 | In a Compose service | `http://puth:7345` | `http://laravel:8080` |
 
 `puth_status` reports both, along with the instance it reached.
+
+### Several applications
+
+A repository with more than one application names them in `PUTH_APP_URLS`, as `name=url` pairs separated by spaces or commas:
+
+```sh
+PUTH_APP_URLS="shop=http://shop:8080 admin=http://admin:8080"
+```
+
+The first application is the default. `PUTH_APP_URL` keeps working and adds an application named `default`, which then comes first. `puth_session_create` takes an `app` name, and relative URLs of that session and its Laravel drafts use that application. Without `app`, a session starting on an absolute URL, or taking over a test, gets the application whose URL that page starts with, and otherwise the default. An application cannot change within a session; open a second session instead. An invalid entry stops the server with a message that names it.
 
 ### Claude Code
 
@@ -74,7 +86,7 @@ This repository also includes `.codex/config.toml`, which [Codex](https://develo
 [mcp_servers.puth]
 command = "npm"
 args = ["--silent", "run", "mcp"]
-env_vars = ["PUTH_INSTANCE_URL", "PUTH_APP_URL", "PUTH_ARTIFACT_DIR"]
+env_vars = ["PUTH_INSTANCE_URL", "PUTH_APP_URL", "PUTH_APP_URLS", "PUTH_ARTIFACT_DIR", "PUTH_START_HINT"]
 ```
 
 ### Other MCP clients
@@ -116,7 +128,7 @@ See the [Laravel example](./example-laravel) for a complete run. This repository
 | Tool | Purpose |
 | --- | --- |
 | `puth_status` | Connection, sessions and tests waiting for a handoff |
-| `puth_session_create` | Create a session, or take over a test with `handoff` |
+| `puth_session_create` | Create a session for an `app`, or take over a test with `handoff` |
 | `puth_session_close` | Close a session. Closing it again succeeds, and a test that handed off continues |
 | `puth_run` | Run steps in order, stopping at the first failure |
 | `puth_inspect` | Outline the page, a part of it, or its visible text |

@@ -6,7 +6,13 @@ import { createServer } from './server';
 // stdout belongs to the MCP protocol, so everything else has to go to stderr.
 console.log = console.error;
 
-const config = readConfig();
+let config: ReturnType<typeof readConfig>;
+try {
+    config = readConfig();
+} catch (error: any) {
+    console.error(`puth-mcp: ${error.message}`);
+    process.exit(1);
+}
 const { server, sessions } = createServer(config);
 
 let closing = false;

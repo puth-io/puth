@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { type Config } from './config';
+import { type App, appOf, type Config } from './config';
 import { createDraft } from './drafts';
 import { type ErrorCode, ToolError, toToolError } from './errors';
 import { DEFAULT_TIMEOUT, type OperationKind, operationKind, operationSummary, runOperation, type Step, stepSchema, validateStep } from './operations';
@@ -88,20 +88,49 @@ export function createServer(config: Config) {
             try {
                 return await handler(input);
             } catch (error) {
-                return failure(toToolError(error, config.instanceUrl));
+                return failure(toToolError(error, config));
             }
         }) as any);
     };
 
-    const resolveUrl = (url: string) => {
-        if (/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+    const isAbsolute = (url: string) => /^[a-z][a-z0-9+.-]*:/i.test(url);
+
+    const resolveUrl = (url: string, app: App|undefined) => {
+        if (isAbsolute(url)) {
             return url;
         }
-        if (config.appUrl === undefined) {
+        if (app === undefined) {
             throw new ToolError('INVALID_REQUEST', `Relative URL [${url}] needs PUTH_APP_URL to be configured.`);
         }
 
-        return new URL(url, `${config.appUrl}/`).toString();
+        return new URL(url, `${app.url}/`).toString();
+    };
+
+    const namedApp = (name: string) => {
+        const app = config.apps.find(app => app.name === name);
+        if (app === undefined) {
+            throw new ToolError('INVALID_REQUEST', config.apps.length === 0
+                ? `There is no application [${name}], configure them with PUTH_APP_URLS.`
+                : `There is no application [${name}]. Known: ${config.apps.map(({ name }) => name).join(', ')}.`);
+        }
+
+        return app;
+    };
+
+    const severalApps = config.apps.length > 1;
+
+    const appLines = () => {
+        const reachable = 'opened by the browser, so it has to be reachable from where Puth runs Chrome';
+        const [first] = config.apps;
+
+        if (! severalApps) {
+            const shown = first === undefined ? 'not configured' : first.name === 'default' ? first.url : `${first.name} ${first.url}`;
+            return [`app ${shown} (relative URLs resolve against it, not the current page; ${reachable})`];
+        }
+
+        return config.apps.map((app, index) => index === 0
+            ? `app ${app.name} ${app.url} default (relative URLs resolve against the app of their session, not the current page; ${reachable})`
+            : `app ${app.name} ${app.url}`);
     };
 
     /**
@@ -130,7 +159,7 @@ export function createServer(config: Config) {
 
             session.known = { url: outline.url, title: outline.title, lines: observable };
         } catch (error) {
-            const toolError = toToolError(error, config.instanceUrl);
+            const toolError = toToolError(error, config);
             lines.push(toolError.code === 'DIALOG_OPEN'
                 ? '! a dialog is open, answer it with the dialog operation'
                 : `! could not report page changes: ${bound(toolError.message, 200)}`);
@@ -149,7 +178,7 @@ export function createServer(config: Config) {
 
         for (const [index, input] of steps.entries()) {
             const step = input.url !== undefined && ['visit', 'waitUrl'].includes(input.op)
-                ? { ...input, url: resolveUrl(input.url) }
+                ? { ...input, url: resolveUrl(input.url, session.app) }
                 : input;
             const kind = operationKind(step);
 
@@ -168,7 +197,7 @@ export function createServer(config: Config) {
                     values.push(`= ${bound(String(value))}`);
                 }
             } catch (error) {
-                const toolError = toToolError(error, config.instanceUrl, EXPECTATION_CODES[kind]);
+                const toolError = toToolError(error, config, EXPECTATION_CODES[kind]);
                 session.record({ kind, step, outcome: 'failed', error: toolError.message });
 
                 const invalidated = toolError.code === 'OPERATION_TIMEOUT' || toolError.code === 'SESSION_LOST' || toolError.code === 'INSTANCE_UNAVAILABLE';
@@ -196,9 +225,9 @@ export function createServer(config: Config) {
 
             return reply(
                 `connected ${config.instanceUrl} puth ${health.version} instance ${health.instanceId.slice(0, 8)}`,
-                `app ${config.appUrl ?? 'not configured'} (relative URLs resolve against it, not the current page; opened by the browser, so it has to be reachable from where Puth runs Chrome)`,
+                ...appLines(),
                 `artifacts ${config.artifactDirectory}`,
-                ...sessions.list().map(({ id, journal }) => `session ${id} ${journal.length} steps`),
+                ...sessions.list().map(({ id, app, journal }) => `session ${id}${severalApps ? ` ${app?.name}` : ''} ${journal.length} steps`),
                 ...waiting.map(({ id, name, handoff }) => `handoff ${id.slice(0, 8)} "${handoff?.name || name}"`),
             );
         },
@@ -210,17 +239,29 @@ export function createServer(config: Config) {
         {
             name: z.string().min(1).max(200).default('MCP session'),
             url: z.string().max(4000).optional().describe('Relative URLs use the application URL'),
+            app: z.string().optional().describe('Application from puth_status, the default without'),
             viewport: z.object({ width: z.number().int().min(100).max(7680), height: z.number().int().min(100).max(4320) }).optional(),
             handoff: z.string().optional().describe('Id from puth_contexts of a test waiting for a handoff'),
         },
-        async ({ name, url, viewport, handoff }) => {
-            const target = url === undefined ? undefined : resolveUrl(url);
+        async ({ name, url, viewport, handoff, app }) => {
+            const chosen = app === undefined ? undefined : namedApp(app);
+            if (url !== undefined && ! isAbsolute(url) && config.apps.length === 0) {
+                resolveUrl(url, undefined);
+            }
+
             const session = handoff === undefined ? await sessions.create(name) : await sessions.claim(handoff);
             const origin = handoff === undefined
                 ? undefined
                 : `took over "${session.handoffName}" from ${session.handoffTest}, its login and data apply`;
 
             return session.run(async () => {
+                // Without a name, the page the session starts on tells which application it is about.
+                const start = handoff !== undefined
+                    ? String(await session.quietly(() => session.browser.evaluate('location.href')).catch(() => ''))
+                    : url !== undefined && isAbsolute(url) ? url : '';
+                session.app = chosen ?? appOf(config.apps, start) ?? config.apps[0];
+
+                const target = url === undefined ? undefined : resolveUrl(url, session.app);
                 await session.annotate({ kind: 'tool', tool: 'puth_session_create', summary: target ?? '' });
                 if (viewport !== undefined) {
                     await session.browser.resize(viewport.width, viewport.height);
@@ -543,7 +584,7 @@ export function createServer(config: Config) {
                     target: format,
                     name,
                     steps: selected,
-                    appUrl: config.appUrl,
+                    appUrl: session.app?.url,
                     artifacts: session.artifacts,
                     sessionId: session.id,
                     fragment: session.handoff,

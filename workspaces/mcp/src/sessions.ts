@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { Browser, Context, RemoteContext, RemotePuthClient } from '@puth/client';
-import { type Config } from './config';
+import { type App, type Config } from './config';
 import { instanceUnavailable, ToolError } from './errors';
 import { type OperationKind, type Step } from './operations';
 
@@ -39,6 +39,9 @@ export class Session {
 
     pageIndex = 0;
     lastActivity = Date.now();
+
+    // Relative URLs of the session and its drafts use this application.
+    app?: App;
 
     // What the agent knows about the page, so results only have to report what changed.
     known: { url?: string, title?: string, lines: string[] } = { lines: [] };
@@ -162,10 +165,10 @@ export class SessionManager {
 
     async health(): Promise<Health> {
         const response = await fetch(`${this.config.instanceUrl}/health`).catch(() => {
-            throw instanceUnavailable(this.config.instanceUrl);
+            throw instanceUnavailable(this.config);
         });
         if (! response.ok) {
-            throw instanceUnavailable(this.config.instanceUrl);
+            throw instanceUnavailable(this.config);
         }
 
         return response.json();
@@ -181,7 +184,7 @@ export class SessionManager {
 
     async contexts(): Promise<KnownContext[]> {
         const response = await fetch(`${this.config.instanceUrl}/contexts`).catch(() => {
-            throw instanceUnavailable(this.config.instanceUrl);
+            throw instanceUnavailable(this.config);
         });
 
         return response.json();

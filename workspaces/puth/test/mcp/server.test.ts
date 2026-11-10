@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -215,7 +216,100 @@ describe('puth_status', () => {
 
         assert.isTrue(isError);
         assert.match(text, /^ERR INSTANCE_UNAVAILABLE: /);
-        assert.include(text, 'docker compose up');
+        assert.include(text, 'Start it with: puth start');
+    }, 20000);
+
+    it('uses the start hint of the project', async () => {
+        const { tool } = await connect('http://127.0.0.1:9', { PUTH_START_HINT: 'docker compose up --wait puth' });
+
+        assert.include((await tool('puth_status')).text, 'Start it with: docker compose up --wait puth');
+    }, 20000);
+});
+
+describe('Applications', () => {
+    const main = fixtureUrl().replace(/\/$/, '');
+    const alt = fixtureAltUrl().replace(/\/$/, '');
+    const apps = { PUTH_APP_URL: '', PUTH_APP_URLS: `main=${main}, alt=${alt}` };
+    const at = (text: string) => text.match(/^at (\S+)/m)?.[1];
+
+    it('resolve relative URLs against the application of the session', async () => {
+        const { tool, run } = await start(apps);
+
+        const first = await tool('puth_session_create', { url: '/first' });
+        const second = await tool('puth_session_create', { url: '/second', app: 'alt' });
+        const secondId = second.text.match(/^session (\w+)/)![1];
+
+        assert.strictEqual(at(first.text), `${main}/first`);
+        assert.strictEqual(at(second.text), `${alt}/second`);
+        assert.strictEqual(at((await run(secondId, { op: 'visit', url: '/third' })).text), `${alt}/third`);
+
+        const { text } = await tool('puth_status');
+        assert.include(text, `app main ${main} default (relative URLs resolve against the app of their session`);
+        assert.include(text, `\napp alt ${alt}\n`);
+        assert.include(text, `session ${secondId} alt 2 steps`);
+        assert.strictEqual(text.match(/opened by the browser/g)?.length, 1);
+    }, 20000);
+
+    it('refuse an unknown name', async () => {
+        const { instance, tool } = await start(apps);
+
+        const { isError, text } = await tool('puth_session_create', { url: '/', app: 'shop' });
+
+        assert.isTrue(isError);
+        assert.strictEqual(text, 'ERR INVALID_REQUEST: There is no application [shop]. Known: main, alt.');
+        assert.lengthOf(instance.diagnostics().contexts, 0);
+    }, 20000);
+
+    it('are found by the absolute URL a session starts on', async () => {
+        const { session, run } = await start(apps);
+        const sessionId = await session({ url: `${alt}/first` });
+
+        assert.strictEqual(at((await run(sessionId, { op: 'visit', url: '/second' })).text), `${alt}/second`);
+    }, 20000);
+
+    it('are found by the page of a test that handed off', async () => {
+        const { url, tool, run } = await start(apps);
+        const context = await Context.create(new RemotePuthClient(url), { snapshot: true, test: { name: 'alt test' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(`${alt}/dashboard`);
+        const result = context.handoff(browser, { name: 'alt' });
+        await vi.waitFor(async () => assert.include((await tool('puth_contexts')).text, 'handoff:waiting'));
+
+        const { text } = await tool('puth_session_create', { handoff: context.getRepresentation().id });
+        const sessionId = text.match(/^session (\w+)/)![1];
+
+        assert.strictEqual(at((await run(sessionId, { op: 'visit', url: '/settings' })).text), `${alt}/settings`);
+        await tool('puth_session_close', { sessionId });
+        await result;
+        await context.destroy({ immediately: true });
+    }, 20000);
+
+    it('give Laravel drafts of every application relative paths', async () => {
+        const { tool, run } = await start(apps);
+
+        for (const app of ['main', 'alt']) {
+            const { text } = await tool('puth_session_create', { url: '/first', app });
+            const sessionId = text.match(/^session (\w+)/)![1];
+            await run(sessionId, { op: 'visit', url: '/second' });
+
+            const draft = (await tool('puth_export', { sessionId, format: 'laravel' })).text;
+
+            assert.include(draft, "visit('/first')");
+            assert.include(draft, "visit('/second')");
+            assert.notInclude(draft, 'http://');
+            assert.notInclude(draft, 'leaves the application');
+        }
+    }, 30000);
+
+    it('stop the server when an entry is invalid', () => {
+        const result = spawnSync(process.execPath, ['--import', 'tsx', cli], {
+            env: { PATH: process.env.PATH!, PUTH_APP_URLS: `main=${main} admin` },
+            encoding: 'utf8',
+            timeout: 15000,
+        });
+
+        assert.strictEqual(result.status, 1);
+        assert.include(result.stderr, 'PUTH_APP_URLS: [admin] is not name=url');
     }, 20000);
 });
 

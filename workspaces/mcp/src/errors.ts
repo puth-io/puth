@@ -23,15 +23,15 @@ export class ToolError extends Error {
     }
 }
 
-const STARTUP_HINT = 'Start it with: docker compose up --build --wait puth laravel';
+type Instance = { instanceUrl: string, startHint: string };
 
-export const instanceUnavailable = (url: string) =>
-    new ToolError('INSTANCE_UNAVAILABLE', `No Puth instance answers at ${url}. ${STARTUP_HINT}`);
+export const instanceUnavailable = ({ instanceUrl, startHint }: Instance) =>
+    new ToolError('INSTANCE_UNAVAILABLE', `No Puth instance answers at ${instanceUrl}. Start it with: ${startHint}`);
 
 /**
  * Failed expectations get the code of what was attempted, everything else depends on what went wrong.
  */
-export function toToolError(error: any, instanceUrl: string, expectationCode: ErrorCode = 'OPERATION_FAILED'): ToolError {
+export function toToolError(error: any, instance: Instance, expectationCode: ErrorCode = 'OPERATION_FAILED'): ToolError {
     if (error instanceof ToolError) {
         return error;
     }
@@ -39,7 +39,7 @@ export function toToolError(error: any, instanceUrl: string, expectationCode: Er
     const message = String(error?.message ?? error);
 
     if (message.includes('fetch failed') || error?.cause?.code === 'ECONNREFUSED') {
-        return instanceUnavailable(instanceUrl);
+        return instanceUnavailable(instance);
     }
     if (message.includes('ContextNotFound')) {
         return new ToolError('SESSION_LOST', 'The Puth instance does not know this session anymore, it probably restarted. Create a new session.');
