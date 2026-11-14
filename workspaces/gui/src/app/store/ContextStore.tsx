@@ -1,5 +1,5 @@
-import {action, computed, makeObservable, observable, toJS} from 'mobx';
-import {Constructors} from '@puth/core';
+import {action, computed, makeObservable, observable, observableShallow, toJS} from 'mobx';
+import {Constructors, type DomPoint} from '@puth/core';
 import {encode} from '@msgpack/msgpack';
 import {Connection, PUTH_EXTENSION_CODEC} from './ConnectionStore';
 import PreviewStore from '@/app/store/PreviewStore';
@@ -15,6 +15,10 @@ export default class ContextStore {
     handoffs: any[] = [];
     navigations: any[] = [];
     screencasts: any[] = [];
+    /** The DOM recording, in the order it arrived. */
+    dom: any[] = [];
+    domResources: any[] = [];
+    private domByDoc = new Map<string, any[]>();
     unspecific: any[] = [];
     renderedEvents: any[] = [];
     private responseContentByPacketId = new Map<string, Uint8Array>();
@@ -76,6 +80,9 @@ export default class ContextStore {
             handoffs: observable,
             navigations: observable,
             screencasts: observable,
+            // Recordings get large, the packets themselves never change.
+            dom: observableShallow,
+            domResources: observableShallow,
             unspecific: observable,
             group: observable,
             test: observable,
@@ -151,6 +158,16 @@ export default class ContextStore {
             this.unspecific.push(packet);
         } else if (packet.type === 'screencasts') {
             this.screencasts.push(packet);
+        } else if (packet.type === 'dom') {
+            this.dom.push(packet);
+            let list = this.domByDoc.get(packet.doc);
+            if (list === undefined) {
+                list = [];
+                this.domByDoc.set(packet.doc, list);
+            }
+            list.push(packet);
+        } else if (packet.type === 'dom-resource') {
+            this.domResources.push(packet);
         } else {
             console.log('unhandled event packet', packet);
             this.unspecific.push(packet);
@@ -203,6 +220,8 @@ export default class ContextStore {
             ...this.handoffs,
             ...this.navigations,
             ...this.screencasts,
+            ...this.dom,
+            ...this.domResources,
             ...this.unspecific,
         ];
         
@@ -228,8 +247,38 @@ export default class ContextStore {
             : this.responseContentByPacketId.get(packet.contentReference));
     }
 
+    /** The keyframes and batches of one recorded document, in order. */
+    domPacketsOf(doc: string): any[] {
+        return this.domByDoc.get(doc) ?? [];
+    }
+
+    /** Where the DOM recording of a page, or of any page, ends. */
+    latestDomPoint(page?: number): DomPoint|null {
+        for (let i = this.dom.length - 1; i >= 0; i--) {
+            const packet = this.dom[i];
+            if (page === undefined || packet.page === page) {
+                return {page: packet.page, doc: packet.doc, seq: packet.seq};
+            }
+        }
+        return null;
+    }
+
+    /** Where the DOM recording of a page stood at a time, for commands without a point of their own. */
+    domPointAt(time: number, page?: number): DomPoint|null {
+        let point: DomPoint|null = null;
+        for (const packet of this.dom) {
+            if (packet.timestamp > time) {
+                break;
+            }
+            if (page === undefined || packet.page === page) {
+                point = {page: packet.page, doc: packet.doc, seq: packet.seq};
+            }
+        }
+        return point;
+    }
+
     private registerResponseContent(packet: any): void {
-        if (packet.type !== 'response') {
+        if (packet.type !== 'response' && packet.type !== 'dom-resource') {
             return;
         }
 

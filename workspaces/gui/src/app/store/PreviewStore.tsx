@@ -1,6 +1,6 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import Events from '../Events';
-import {ICommand, SnapshotMode, SnapshotState} from '@puth/core';
+import {type DomPoint, ICommand, SnapshotMode, SnapshotState} from '@puth/core';
 import ContextStore from '@/app/store/ContextStore';
 
 class PreviewStore {
@@ -26,7 +26,9 @@ class PreviewStore {
         highlightCommandState: SnapshotState.AFTER,
     };
     
-    _mode: SnapshotMode = SnapshotMode.FRAME;
+    _mode: SnapshotMode = SnapshotMode.DOM;
+    /** Set when the replay frame isn't controlled by the replay worker, then frames are shown instead. */
+    replayUnavailable = false;
     _state: SnapshotState = SnapshotState.AFTER;
     
     _lastActiveScreencastUrl: string|null = null;
@@ -45,6 +47,7 @@ class PreviewStore {
             screencast: observable,
             _mode: observable,
             _state: observable,
+            replayUnavailable: observable,
             
             clear: action,
             resetHighlightInterval: action,
@@ -68,6 +71,10 @@ class PreviewStore {
             // activeContext: computed,
             mode: computed,
             state: computed,
+            hasDom: computed,
+            showsDom: computed,
+            domPoint: computed,
+            visiblePage: computed,
         });
         
         this.registerEvents();
@@ -81,6 +88,55 @@ class PreviewStore {
         this._mode = mode;
     }
     
+    get hasDom() {
+        return this.context.dom.length > 0;
+    }
+
+    get showsDom() {
+        return this.mode === SnapshotMode.DOM && this.hasDom && ! this.replayUnavailable;
+    }
+
+    /**
+     * The point of the DOM recording the preview shows. A command's Before is where the recording stood when it
+     * started, its After is the Before of the next command on the same page, or where that page's recording ends.
+     */
+    get domPoint(): DomPoint|null {
+        if (! this.hasDom) {
+            return null;
+        }
+        const command: any = this.visibleCommand;
+        if (! command) {
+            return this.context.latestDomPoint();
+        }
+
+        const before: DomPoint|undefined = command.dom?.before;
+        const page = before?.page;
+        if (this.visibleHighlightState === SnapshotState.BEFORE) {
+            return before ?? this.context.domPointAt(command.time.started, page);
+        }
+
+        const commands = this.context.commands;
+        const index = commands.findIndex((item: any) => item.id === command.id);
+        for (let i = index + 1; i < commands.length; i++) {
+            const next: DomPoint|undefined = commands[i].dom?.before;
+            if (next !== undefined && (page === undefined || next.page === page)) {
+                return next;
+            }
+        }
+        return this.context.latestDomPoint(page);
+    }
+
+    /** Address and size of the page the preview shows. */
+    get visiblePage(): {url: string, viewport: {width: number, height: number}}|undefined {
+        if (this.showsDom && this.domPoint !== null) {
+            const keyframe = this.context.domPacketsOf(this.domPoint.doc).find((packet: any) => packet.kind === 'keyframe');
+            if (keyframe !== undefined) {
+                return {url: keyframe.data.url, viewport: {width: keyframe.data.viewport[0], height: keyframe.data.viewport[1]}};
+            }
+        }
+        return this.visibleScreencast?.page;
+    }
+
     get state() {
         return this._state;
     }
