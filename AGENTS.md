@@ -2,11 +2,14 @@
 
 This is a Bun/Node monorepo. The server is `workspaces/puth`; shared code is in
 `workspaces/core`; the GUI is `workspaces/gui`; client libraries live in
-`workspaces/clients/`. `workspaces/zstd-decoder` (`@puth/zstd-decoder`) is zstd's decoder built to
-WebAssembly, committed as a binary; its README documents how it was built. Don't
-rebuild or replace `zstd-decoder.wasm` as a side effect of other work. Recordings
-are msgpack compressed with zstd wherever they leave Puth: `.puth` files, the
-snapshot interface and the websocket. The GUI decodes them with `@puth/zstd-decoder`.
+`workspaces/clients/`. `workspaces/zstd-decoder` and `workspaces/zstd-encoder`
+(`@puth/zstd-decoder`, `@puth/zstd-encoder`) are zstd built to WebAssembly,
+committed as binaries. Their READMEs document how they are built, locally with
+Docker; there is no CI job for them. Don't rebuild or replace their `.wasm` files
+as a side effect of other work. Recordings are msgpack compressed with zstd
+wherever they leave Puth: `.puth` files, the snapshot interface and the websocket.
+The GUI decodes them with the decoder and compresses its exports with the encoder,
+which it loads only when something is exported.
 
 - Use the root workspace commands and target a package with `npm -w <package> run <script>`.
 - `npm run build` builds the primary published packages. Use `npm run dev:server`,

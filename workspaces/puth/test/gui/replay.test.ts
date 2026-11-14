@@ -1,3 +1,4 @@
+import { zstdDecompressSync } from 'node:zlib';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -182,7 +183,10 @@ describe('Snapshot replay', () => {
         ]));
         await gui.waitForText('crafted run');
 
-        const exported = decode(await exportActiveContext(gui), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        // Exports are compressed like the files Puth saves.
+        const file = await exportActiveContext(gui);
+        assert.deepEqual(Array.from(file.subarray(0, 4)), [0x28, 0xb5, 0x2f, 0xfd]);
+        const exported = decode(zstdDecompressSync(file), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
         const packet = (id: string) => exported.find((item) => item.id === id);
 
         assert.deepEqual(Array.from(packet('first').content), Array.from(body));

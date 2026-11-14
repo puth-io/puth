@@ -14,7 +14,20 @@ const zstd = () => decoder ??= fetch(wasmUrl)
 export const isZstd = (data: Uint8Array) =>
     data.length >= 4 && data[0] === 0x28 && data[1] === 0xb5 && data[2] === 0x2f && data[3] === 0xfd;
 
-/** Recordings from Puth are msgpack compressed with zstd; files the GUI exported are plain msgpack. */
+/** Recordings are msgpack compressed with zstd; files of earlier GUIs may be plain msgpack. */
 export async function decompressRecording(data: Uint8Array): Promise<Uint8Array> {
     return isZstd(data) ? (await zstd())(data) : data;
+}
+
+let encoder: Promise<(data: Uint8Array) => Uint8Array>|undefined;
+
+// Loaded the first time something is exported, so the GUI doesn't carry the encoder until then.
+const zstdEncoder = () => encoder ??= Promise.all([
+    import('@puth/zstd-encoder'),
+    import('@puth/zstd-encoder/zstd-encoder.wasm?url'),
+]).then(async ([{createZstdEncoder}, {default: url}]) => createZstdEncoder(await (await fetch(url)).arrayBuffer()));
+
+/** Compresses a recording like Puth saves .puth files: msgpack compressed with zstd. */
+export async function compressRecording(data: Uint8Array): Promise<Uint8Array> {
+    return (await zstdEncoder())(data);
 }

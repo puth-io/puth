@@ -27,6 +27,7 @@
       "react-dom": ["./node_modules/@types/react-dom"],
       "react-dom/*": ["./node_modules/@types/react-dom/*"],
       "@puth/zstd-decoder": ["../zstd-decoder/src/zstd.ts"],
+      "@puth/zstd-encoder": ["../zstd-encoder/src/zstd.ts"],
       "@/app/store/ContextStore": [
         "./src/app/store/ContextStore.ts"
       ],
