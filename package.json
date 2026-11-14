@@ -8,6 +8,7 @@
   "workspaces": [
     "workspaces/core",
     "workspaces/zstd-decoder",
+    "workspaces/zstd-encoder",
     "workspaces/puth",
     "workspaces/gui",
     "workspaces/clients/js/client",
@@ -21,7 +22,7 @@
     "diff-match-patch": "^1.0.5"
   },
   "scripts": {
-    "build": "npm -w @puth/core run build && npm -w @puth/zstd-decoder run build && npm -w @puth/gui run build && npm -w @puth/client run build && npm -w puth run build && npm -w @puth/mcp run build",
+    "build": "npm -w @puth/core run build && npm -w @puth/zstd-decoder run build && npm -w @puth/zstd-encoder run build && npm -w @puth/gui run build && npm -w @puth/client run build && npm -w puth run build && npm -w @puth/mcp run build",
     "dev:client": "npm -w @puth/gui run dev",
     "dev:server": "npm -w puth run dev",
     "dev": "bunx concurrently \"bun run dev:server\" \"bun run dev:client\"",
