@@ -1,5 +1,29 @@
 # @puth/client-php
 
+## 0.12.0
+
+### Minor Changes
+
+- 7436000: - `evaluate()` calls the source of a function with its arguments, like Puppeteer: `evaluate('(a, b) => a + b', [1, 2])` returns `3`. Other sources stay expressions.
+  - The new `pause(milliseconds)` waits on the server, so the portal keeps answering requests of the page meanwhile. In PHP it is `_pause()`; Laravel's `pause()`, and therefore `waitUsing()`, use it instead of `usleep()`.
+  - A selector that starts with the resolver prefix is no longer prefixed again, so `text('body')` no longer looks for `body body`.
+  - `clickAtXPath()` accepts parenthesised expressions such as `(//button)[last()]`.
+  - Binary results such as screenshots are sent as `application/octet-stream`, so the PHP and Java clients save PNG bytes instead of `GenericObject(…)`, and the JS client returns a `Uint8Array` instead of failing to parse JSON.
+- a1700ad: The Laravel integration moved from `puth/laravel` into `puth/php`, so there is one PHP package with one version. This release is 0.12.0, above the last versions of both packages. Replace `puth/laravel` with `puth/php` in `composer.json`; class names such as `Puth\Laravel\Browser` stay the same and Laravel still discovers the service provider. Plain PHP projects install no Laravel packages, and Laravel versions below 12 are declared as a conflict.
+
+### Patch Changes
+
+- aaf7881: `php artisan puth:install` now writes a `tests/PuthTestCase.php` that works on Laravel 12 and 13. It used the `CreatesApplication` trait, which new applications no longer have, on every version but 11.
+- 7436000: Portal fixes:
+  
+  - A detoured request, such as a multipart upload, reaches the client with its headers. They are sent as a plain object, without the `host` and `puth-portal-*` headers of the detour.
+  - Detours have their own listener on an ephemeral loopback port, and only that address counts as public in Chrome. Chrome no longer blocks a detour from a page that is not a secure context, while such pages still cannot reach the API, the websocket, or other local services.
+  - Laravel serves static files with the type of their extension, so Vite bundles that sniff as `text/x-java` load as JavaScript.
+  - Laravel sets `QUERY_STRING`, so `getQueryString()` and `fullUrl()` keep the query.
+  - Laravel passes the cookies of the browser to the application, parsed without changing their names. Cookies set by the test take precedence.
+  - Multipart names are nested like PHP does for `$_POST` and `$_FILES`, for example `files[0]` and `meta[a][b]`, and a subclass can override `parseMultipart()`.
+  - Binary request bodies reach the client byte for byte. They were read as text, which lost every byte that is not UTF-8. Multipart bodies with files from memory no longer need a detour; files from disk still take it.
+
 ## 0.9.0
 
 ### Minor Changes
