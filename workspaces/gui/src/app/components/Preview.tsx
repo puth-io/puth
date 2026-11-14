@@ -2,7 +2,7 @@ import {observer} from 'mobx-react-lite';
 import {runInAction} from 'mobx';
 import {useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {AppContext} from '../../shared/Contexts.tsx';
-import {FRAME_URL, ReplayView, replayWorker} from '../replay/Replay.ts';
+import {domPointKey, FRAME_URL, ReplayView, replayWorker} from '../replay/Replay.ts';
 import type PreviewStore from '@/app/store/PreviewStore';
 
 export const Preview = observer(function Preview() {
@@ -55,6 +55,7 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
     const [viewport, setViewport] = useState<[number, number]>([1280, 720]);
     const [width, setWidth] = useState(0);
     const point = preview.domPoint;
+    const pointKey = point === null ? null : domPointKey(point);
 
     // The worker has to control the frame from its first request, so the frame loads once it is active.
     const [src, setSrc] = useState<string|undefined>(undefined);
@@ -90,7 +91,7 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
         if (loaded && point !== null) {
             view.current?.show(preview.context, point);
         }
-    }, [loaded, point?.doc, point?.seq, preview.context]);
+    }, [loaded, pointKey, preview.context]);
 
     useLayoutEffect(() => {
         const element = container.current;
@@ -119,8 +120,7 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
                     sandbox={'allow-same-origin'}
                     title={'Page at the selected step'}
                     {...{puth: 'replay-frame'}}
-                    data-doc={point?.doc}
-                    data-seq={point?.seq}
+                    data-point={pointKey ?? undefined}
                     className={'absolute left-0 top-0 origin-top-left border-0'}
                     style={{width: `${viewportWidth}px`, height: `${viewportHeight}px`, transform: `scale(${scale})`}}
                 />

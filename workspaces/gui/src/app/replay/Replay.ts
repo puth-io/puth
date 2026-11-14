@@ -6,6 +6,15 @@ export const FRAME_URL = '/__replay/frame.html';
 const CACHE = 'puth-replay-v1';
 const BODY = '/__replay/body/';
 
+/**
+ * Identifies a point with the documents of its frames: two points can share the top document's batch and still
+ * differ in a frame, like before and after a frame navigated.
+ */
+export function domPointKey(point: DomPoint): string {
+    const frames = Object.entries(point.frames ?? {}).sort(([a], [b]) => a < b ? -1 : 1).map(([doc, seq]) => doc + ':' + seq);
+    return [point.doc + ':' + point.seq, ...frames].join(' ');
+}
+
 type ResourceMap = Record<string, [hash: string, status: number, contentType: string]>;
 
 /**
@@ -196,7 +205,7 @@ export class ReplayView {
         await this.renderFrames(context, point, time);
 
         // Tells tests and tools which point the frame shows, once it does, frames included.
-        this.frame.setAttribute('data-shown', point.doc + ':' + point.seq);
+        this.frame.setAttribute('data-shown', domPointKey(point));
         const [width, height] = this.replay.viewport;
         this.onShown([width, height]);
     }
@@ -208,7 +217,7 @@ export class ReplayView {
         }
 
         await Promise.all(this.replay.frames().map(async ([owner, element]) => {
-            const doc = domFrameDocument(links, owner, point.frames, time);
+            const doc = domFrameDocument(links, owner, point.frames, time, (candidate) => domSeqAt(context.domPacketsOf(candidate), time) !== undefined);
             if (doc === undefined) {
                 return;
             }

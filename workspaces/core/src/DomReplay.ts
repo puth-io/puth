@@ -360,13 +360,15 @@ export type {DomScroll};
 
 /**
  * The document an iframe element shows at a point of its parent's recording: one the point flushed, or else the last
- * one linked to the element before time.
+ * one linked to the element before time that had recorded something by then. A frame that started navigating is
+ * linked to its new document before that document sent anything, and until then still shows the old one.
  */
 export function domFrameDocument(
     links: {owner: number, doc: string, timestamp: number}[],
     owner: number,
     frames: Record<string, number>|undefined,
     time: number,
+    recorded: (doc: string) => boolean = () => true,
 ): string|undefined {
     let flushed: string|undefined;
     let before: string|undefined;
@@ -377,7 +379,7 @@ export function domFrameDocument(
         if (frames !== undefined && link.doc in frames) {
             flushed = link.doc;
         }
-        if (link.timestamp <= time) {
+        if (link.timestamp <= time && recorded(link.doc)) {
             before = link.doc;
         }
     }
