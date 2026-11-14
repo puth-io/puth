@@ -7,6 +7,7 @@
   },
   "workspaces": [
     "workspaces/core",
+    "workspaces/zstd",
     "workspaces/puth",
     "workspaces/gui",
     "workspaces/clients/js/client",
