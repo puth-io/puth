@@ -139,6 +139,11 @@ jobs:
             client_dir: workspaces/clients/java/client
             java-version: '25'
             distribution: temurin
+          # The newest release, while it is not an LTS line.
+          - name: java-client | Temurin | JDK 27
+            client_dir: workspaces/clients/java/client
+            java-version: '27'
+            distribution: temurin
           - name: java-client | Corretto | JDK 21
             client_dir: workspaces/clients/java/client
             java-version: '21'
