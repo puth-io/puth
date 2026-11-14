@@ -97,7 +97,7 @@ jobs:
           path: /root/.cache/composer/files
       - name: setup php & composer
         uses: shivammathur/setup-php@v2
-        wito ltth:
+        with:
           php-version: ${{ matrix.php }}
           extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
           tools: composer:v2
