@@ -36,15 +36,23 @@ ZSTD_initDStream ZSTD_decompressStream ZSTD_DStreamInSize ZSTD_DStreamOutSize ma
 | zstd | 1.5.7, `zstd-1.5.7.tar.gz`, SHA-256 `eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3` |
 | Signing key of the release | `4EF4AC63455FC9F4545D9B7DEF8FE99528B52FFD` (`signing@zstd.net`) |
 | Toolchain | Debian trixie (`debian:trixie`), clang 19.1.7, lld, wasi-libc, binaryen's `wasm-opt` |
-| `zstd-decoder.wasm` | 73,552 bytes, SHA-256 `6a1f218ab5c2251f9c3f7a8dd0e3368e4d70b23b3341fba98c22255a3fbb66b9` |
+| `zstd-decoder.wasm` | 67,129 bytes, SHA-256 `820993b2bc4c953e7a766a5818983b82a3fc116e849bd7b828b7bcadfaece64a` |
 
 Measured in Chrome against the JavaScript packages, it decoded a 2.8 MB recording at about 1.65 GB/s, as fast as
-or faster than all of them, and with the wrapper it is 29 KB gzipped.
+or faster than all of them, and it is 25 KB gzipped.
+
+### The allocator
+
+The only part of wasi-libc a build would use is its allocator, dlmalloc, 8 KB of code. `alloc.c` replaces it with
+a bump allocator: memory is handed out in order and starts over once nothing is allocated anymore. The wrapper
+frees everything it allocates after each call, and so does zstd, so every call reuses memory from the start.
+That made the module 2.6 KB smaller gzipped, at the same speed. Memory a call needed stays with the module, as it
+would with any allocator in WebAssembly.
 
 ## Building it
 
 The build runs in a `debian:trixie` container, so nothing is installed on the host. Building the same version
-with the same toolchain gives the same file; three builds in a row matched the SHA-256 above. Debian updates
+with the same toolchain gives the same file; two builds in a row matched the SHA-256 above. Debian updates
 trixie's packages over time, so a later build may use another clang and produce other bytes.
 
 1. Download the release, its checksum and its signature into an empty directory:
@@ -64,12 +72,12 @@ trixie's packages over time, so a later build may use another clang and produce 
    gpg --verify zstd-1.5.7.tar.gz.sig zstd-1.5.7.tar.gz
    ```
 
-3. Copy `build.sh` from this directory next to the tarball and run it in a container. It checks the tarball's
-   SHA-256, combines zstd's decoder with zstd's `combine.py`, compiles it with clang to `wasm32-wasi`, optimizes it
-   with `wasm-opt`, and prints the file's size, SHA-256, imports and exports:
+3. Copy `build.sh` and `alloc.c` from this directory next to the tarball and run the script in a container. It
+   checks the tarball's SHA-256, combines zstd's decoder with zstd's `combine.py`, compiles it with `alloc.c` with
+   clang to `wasm32-wasi`, optimizes it with `wasm-opt`, and prints the file's size, SHA-256, imports and exports:
 
    ```sh
-   cp /path/to/puth/workspaces/zstd-decoder/build.sh .
+   cp /path/to/puth/workspaces/zstd-decoder/build.sh /path/to/puth/workspaces/zstd-decoder/alloc.c .
    docker run --rm -v "$PWD":/w -w /w debian:trixie sh build.sh
    ```
 
@@ -80,8 +88,9 @@ The container writes as root, so the files it creates in the directory belong to
 
 ### The flags
 
-- `--target=wasm32-wasi --sysroot=/usr`: Debian installs wasi-libc for this target under `/usr`. The decoder
-  only uses its `malloc`, `free` and memory functions, none of the WASI system calls, so the module has no imports.
+- `--target=wasm32-wasi --sysroot=/usr`: Debian installs wasi-libc for this target under `/usr`. With the
+  allocator from `alloc.c`, the decoder uses none of its code beyond what clang turns into single WebAssembly
+  instructions, and none of the WASI system calls, so the module has no imports.
 - `-nostartfiles -Wl,--no-entry`: a library without a `main`.
 - `-Wl,--export=…`: only the functions the wrapper calls stay, `--gc-sections` drops the rest.
 - `-O3 -flto -mbulk-memory`: optimized for speed, with memory copies as single WebAssembly instructions.
