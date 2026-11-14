@@ -1,5 +1,33 @@
 # puth
 
+## 0.10.0
+
+### Minor Changes
+
+- 2ededa1: The call after an action no longer waits 20ms. It makes one round trip to the page instead, which receives a navigation that the action requested, such as a submitted form, and costs well under a millisecond. A navigation that starts later, from a timer or after a request, needs a wait or an assertion before the next action. `timeouts.actionSettle` now defaults to `0` and still adds a fixed delay when set.
+- 7436000: - `evaluate()` calls the source of a function with its arguments, like Puppeteer: `evaluate('(a, b) => a + b', [1, 2])` returns `3`. Other sources stay expressions.
+  - The new `pause(milliseconds)` waits on the server, so the portal keeps answering requests of the page meanwhile. In PHP it is `_pause()`; Laravel's `pause()`, and therefore `waitUsing()`, use it instead of `usleep()`.
+  - A selector that starts with the resolver prefix is no longer prefixed again, so `text('body')` no longer looks for `body body`.
+  - `clickAtXPath()` accepts parenthesised expressions such as `(//button)[last()]`.
+  - Binary results such as screenshots are sent as `application/octet-stream`, so the PHP and Java clients save PNG bytes instead of `GenericObject(…)`, and the JS client returns a `Uint8Array` instead of failing to parse JSON.
+- 149699a: Puth uses Puppeteer 25 and Chrome 157. `puth browser install` unpacks Chrome without the `unzip` command, and it installs again when an earlier download left an incomplete folder behind. Downloads through an HTTP proxy need the optional `proxy-agent` package now. The other dependencies of both packages are updated, among them h3 2.0 and zod 4.
+
+### Patch Changes
+
+- 7436000: Portal fixes:
+  
+  - A detoured request, such as a multipart upload, reaches the client with its headers. They are sent as a plain object, without the `host` and `puth-portal-*` headers of the detour.
+  - Detours have their own listener on an ephemeral loopback port, and only that address counts as public in Chrome. Chrome no longer blocks a detour from a page that is not a secure context, while such pages still cannot reach the API, the websocket, or other local services.
+  - Laravel serves static files with the type of their extension, so Vite bundles that sniff as `text/x-java` load as JavaScript.
+  - Laravel sets `QUERY_STRING`, so `getQueryString()` and `fullUrl()` keep the query.
+  - Laravel passes the cookies of the browser to the application, parsed without changing their names. Cookies set by the test take precedence.
+  - Multipart names are nested like PHP does for `$_POST` and `$_FILES`, for example `files[0]` and `meta[a][b]`, and a subclass can override `parseMultipart()`.
+  - Binary request bodies reach the client byte for byte. They were read as text, which lost every byte that is not UTF-8. Multipart bodies with files from memory no longer need a detour; files from disk still take it.
+- Updated dependencies [7436000]
+- Updated dependencies [0f79d22]
+  - @puth/client@0.2.0
+  - @puth/gui@0.3.0
+
 ## 0.9.1
 
 ### Patch Changes
