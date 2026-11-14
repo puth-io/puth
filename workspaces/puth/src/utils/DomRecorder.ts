@@ -14,7 +14,7 @@ export type DomRecorderPacket = {
     doc: string;
     seq: number;
     data: any;
-    marker?: string;
+    strings?: string[];
 };
 
 export type DomFrameLink = {
@@ -245,12 +245,12 @@ export class DomRecorder {
      * Sends what changed since the last batch in every frame and returns where the recording stands. Without a
      * recorder in the top frame, like while the page navigates, there is nothing to tell.
      */
-    async flush(marker?: string): Promise<DomPoint|undefined> {
+    async flush(): Promise<DomPoint|undefined> {
         if (this.disposed) {
             return undefined;
         }
 
-        const expression = `globalThis.__puthRecorder && globalThis.__puthRecorder.flush(${JSON.stringify(marker ?? null)})`;
+        const expression = 'globalThis.__puthRecorder && globalThis.__puthRecorder.flush()';
         const flushed = await Promise.all([...this.frames].map(async ([id, frame]) => {
             if (frame.session === undefined || frame.contextId === undefined) {
                 return undefined;

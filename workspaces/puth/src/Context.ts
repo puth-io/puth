@@ -272,7 +272,7 @@ class Context extends Generic {
         }
 
         // The last command's After is the state the pages ended in.
-        await Promise.all([...this.domRecorders.values()].map(recorder => recorder.flush('end')));
+        await Promise.all([...this.domRecorders.values()].map(recorder => recorder.flush()));
 
         try {
             if (options?.save) {
@@ -592,7 +592,8 @@ class Context extends Generic {
             (message: DomRecorderPacket) => this.puth.snapshotHandler.pushToCache(this, {
                 id: v4(),
                 type: 'dom',
-                context: this.serialize(),
+                // DOM packets are many and small, the GUI only needs to know their context.
+                context: {id: this.id},
                 timestamp: Date.now(),
                 page: index,
                 ...message,
@@ -600,7 +601,7 @@ class Context extends Generic {
             (link: DomFrameLink) => this.puth.snapshotHandler.pushToCache(this, {
                 id: v4(),
                 type: 'dom-frame',
-                context: this.serialize(),
+                context: {id: this.id},
                 timestamp: Date.now(),
                 page: index,
                 ...link,
@@ -627,7 +628,7 @@ class Context extends Generic {
             this.puth.snapshotHandler.pushToCache(this, {
                 id: v4(),
                 type: 'dom-resource',
-                context: this.serialize(),
+                context: {id: this.id},
                 timestamp: Date.now(),
                 // The document refers to the address it requested, which may have redirected.
                 urls: [...request.redirectChain().map(redirect => redirect.url()), response.url()],
@@ -1233,7 +1234,7 @@ class Context extends Generic {
         // Where the page's DOM stands when the command starts. The GUI shows it as the command's Before, and as the
         // After of the command before it. The flush is a round trip to the page, so it also receives a navigation the
         // last action announced, and page stability doesn't need one of its own.
-        let before = await recorder?.flush(call.command!.id);
+        let before = await recorder?.flush();
         if (before !== undefined) {
             stability?.flushed();
         }
@@ -1243,7 +1244,7 @@ class Context extends Generic {
             // Calls that retry find out about a late navigation on their own.
             const transitioned = await stability.settled(this.pageLoadTimeout, ! retries, this.actionSettleTimeout);
             if (transitioned && recorder !== undefined) {
-                before = await recorder.flush(call.command!.id);
+                before = await recorder.flush();
             }
         }
         if (before !== undefined) {

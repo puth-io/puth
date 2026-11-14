@@ -10,6 +10,9 @@
  * between them. Batches carry the current state of what changed, not the records' history, because records arrive
  * after the fact.
  *
+ * Size: nodes are flat token lists, and strings go into a table of the document once they repeat, which every
+ * message extends with what it added. Tag and attribute names go in right away, there are few of them.
+ *
  * Kept as a string: tsx and pkgroll wrap named functions in a helper that only exists on the server.
  */
 export const DOM_RECORDER_SOURCE = String.raw`(() => {
@@ -27,6 +30,9 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     const BATCH_DELAY = 50;
     const MAX_RECORDS = 20000;
     const MIN_KEYFRAME_DISTANCE = 128 * 1024;
+    // Longer strings rarely repeat. Strings seen once are only remembered up to a limit.
+    const MAX_TABLE_STRING = 200;
+    const MAX_SEEN_ONCE = 20000;
 
     const ids = new WeakMap();
     let nextId = 1;
@@ -45,6 +51,45 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     const scrollers = new Map();
     const scrollSent = new Map();
     let viewportSent = '';
+
+    // The document's string table, started anew with every keyframe. A string slot holds the index of a string in
+    // it, or the string itself.
+    let table = new Map();
+    let added = [];
+    let seenOnce = new Set();
+    const resetTable = () => {
+        table = new Map();
+        added = [];
+        seenOnce = new Set();
+    };
+    const name = (string) => {
+        let index = table.get(string);
+        if (index === undefined) {
+            index = table.size;
+            table.set(string, index);
+            added.push(string);
+        }
+        return index;
+    };
+    // A string that isn't a name goes into the table on its second occurrence, so unique ones never take a slot.
+    const string = (value) => {
+        const index = table.get(value);
+        if (index !== undefined) {
+            return index;
+        }
+        if (value.length > MAX_TABLE_STRING) {
+            return value;
+        }
+        if (seenOnce.has(value)) {
+            seenOnce.delete(value);
+            return name(value);
+        }
+        if (seenOnce.size >= MAX_SEEN_ONCE) {
+            seenOnce.clear();
+        }
+        seenOnce.add(value);
+        return value;
+    };
 
     const idOf = (node) => {
         let id = ids.get(node);
@@ -108,56 +153,54 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         return css;
     };
 
-    const attributesOf = (element) => {
-        const list = [];
-        for (const attribute of element.attributes) {
-            if (element.localName === 'input' && attribute.name === 'value' && masked(element)) {
-                list.push('value', '•'.repeat(attribute.value.length));
-            } else {
-                list.push(attribute.name, attribute.value);
-            }
+    // Pairs of name and value; a masked input never shows its value attribute either.
+    const attributesOf = (element, out) => {
+        const attributes = element.attributes;
+        const hide = element.localName === 'input' && masked(element);
+        for (let i = 0; i < attributes.length; i++) {
+            const attribute = attributes[i];
+            out.push(name(attribute.name), hide && attribute.name === 'value' ? '\u2022'.repeat(attribute.value.length) : string(attribute.value));
         }
-        return list;
+        return out;
     };
 
+    // Appends a node in pre-order and returns whether it did; other node types are left out.
+    //   element:            id, 1, tag, namespace, attribute count, (name, value)..., props, child count, children...
+    //   text and comment:   id, 3 or 8, data
+    //   doctype:            id, 10, name, public id, system id
     // Every node it serializes goes into fresh, so changes inside it aren't sent again in the same batch.
-    const serialize = (node, fresh) => {
+    const serialize = (node, fresh, out) => {
         const type = node.nodeType;
         if (type === 3 || type === 8) {
             fresh && fresh.add(node);
-            return [idOf(node), type, node.data];
+            out.push(idOf(node), type, string(node.data));
+            return true;
         }
         if (type === 10) {
             fresh && fresh.add(node);
-            return [idOf(node), 10, node.name, node.publicId, node.systemId];
+            out.push(idOf(node), 10, string(node.name), string(node.publicId), string(node.systemId));
+            return true;
         }
         if (type !== 1) {
-            return null;
+            return false;
         }
 
         fresh && fresh.add(node);
         const id = idOf(node);
-        const name = node.localName;
+        const tag = node.localName;
         const namespace = node.namespaceURI === SVG ? 1 : node.namespaceURI === MATHML ? 2 : 0;
-        const children = [];
-        if (namespace !== 0 || ! NO_CHILDREN.has(name)) {
-            for (let child = node.firstChild; child !== null; child = child.nextSibling) {
-                const serialized = serialize(child, fresh);
-                if (serialized !== null) {
-                    children.push(serialized);
-                }
-            }
-        }
+        out.push(id, 1, name(namespace === 0 ? tag : node.tagName), namespace, node.attributes.length);
+        attributesOf(node, out);
 
         let props = 0;
-        if (namespace === 0 && CONTROLS.has(name)) {
+        if (namespace === 0 && CONTROLS.has(tag)) {
             const state = controlState(node);
             controls.set(id, [node, JSON.stringify(state)]);
             props = {value: state[0]};
             if (state[1] !== null) props.checked = state[1];
             if (state[2] !== null) props.selectedIndex = state[2];
             if (state[3] !== null) props.selected = state[3];
-        } else if (namespace === 0 && name === 'style') {
+        } else if (namespace === 0 && tag === 'style') {
             const list = rules(node);
             const count = list ? list.length : 0;
             styles.set(id, [node, sheetKey(list)]);
@@ -166,8 +209,20 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
                 props = {css: cssOf(list)};
             }
         }
+        out.push(props);
 
-        return [id, 1, namespace === 0 ? name : node.tagName, attributesOf(node), children, props, namespace];
+        const countAt = out.length;
+        out.push(0);
+        let count = 0;
+        if (namespace !== 0 || ! NO_CHILDREN.has(tag)) {
+            for (let child = node.firstChild; child !== null; child = child.nextSibling) {
+                if (serialize(child, fresh, out)) {
+                    count++;
+                }
+            }
+        }
+        out[countAt] = count;
+        return true;
     };
 
     const viewport = () => [window.innerWidth, window.innerHeight, window.devicePixelRatio];
@@ -194,9 +249,14 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         return changed;
     };
 
-    const post = (kind, data, marker) => {
+    const post = (kind, data) => {
         seq++;
-        const message = JSON.stringify({kind: kind, doc: docId, seq: seq, data: data, marker: marker});
+        const packet = {kind: kind, doc: docId, seq: seq, data: data};
+        if (added.length > 0) {
+            packet.strings = added;
+            added = [];
+        }
+        const message = JSON.stringify(packet);
         if (kind === 'keyframe') {
             keyframeSize = message.length;
             sinceKeyframe = 0;
@@ -206,18 +266,19 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         send(message);
     };
 
-    const keyframe = (marker) => {
+    const keyframe = () => {
         observer.takeRecords();
         records = [];
         overflow = false;
         controls.clear();
         styles.clear();
+        resetTable();
 
-        const root = [];
+        // A list of nodes: their count, then the nodes.
+        const root = [0];
         for (let child = doc.firstChild; child !== null; child = child.nextSibling) {
-            const serialized = serialize(child, null);
-            if (serialized !== null) {
-                root.push(serialized);
+            if (serialize(child, null, root)) {
+                root[0]++;
             }
         }
 
@@ -232,7 +293,7 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             root: root,
             viewport: size,
             scroll: scroll,
-        }, marker);
+        });
     };
 
     const inDocumentOrder = (a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
@@ -242,14 +303,14 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         records = [];
 
         const parents = new Set();
-        const added = new Set();
+        const addedNodes = new Set();
         const attributes = new Set();
         const texts = new Set();
         for (const record of list) {
             if (record.type === 'childList') {
                 parents.add(record.target);
                 for (const node of record.addedNodes) {
-                    added.add(node);
+                    addedNodes.add(node);
                 }
             } else if (record.type === 'attributes') {
                 attributes.add(record.target);
@@ -268,27 +329,26 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             if (fresh.has(parent) || (parent.nodeType === 1 && parent.namespaceURI !== SVG && parent.namespaceURI !== MATHML && NO_CHILDREN.has(parent.localName))) {
                 continue;
             }
-            const children = [];
+            // A list of children: a node the replay has already is its negative id, a new one is serialized.
+            const children = [0];
             for (let child = parent.firstChild; child !== null; child = child.nextSibling) {
-                if (ids.has(child) && ! added.has(child)) {
-                    children.push(ids.get(child));
-                } else {
-                    const serialized = serialize(child, fresh);
-                    if (serialized !== null) {
-                        children.push(serialized);
-                    }
+                if (ids.has(child) && ! addedNodes.has(child)) {
+                    children.push(-ids.get(child));
+                    children[0]++;
+                } else if (serialize(child, fresh, children)) {
+                    children[0]++;
                 }
             }
             ops.push([1, ids.get(parent), children]);
         }
         for (const element of attributes) {
             if (known(element)) {
-                ops.push([2, ids.get(element), attributesOf(element)]);
+                ops.push([2, ids.get(element), attributesOf(element, [])]);
             }
         }
         for (const node of texts) {
             if (known(node) && ! (node.parentNode && node.parentNode.localName === 'script')) {
-                ops.push([3, ids.get(node), node.data]);
+                ops.push([3, ids.get(node), string(node.data)]);
             }
         }
 
@@ -336,32 +396,32 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         return ops;
     };
 
-    const start = (marker) => {
+    const start = () => {
         if (started) {
             return false;
         }
         started = true;
         observer.observe(doc, {childList: true, attributes: true, characterData: true, subtree: true});
-        keyframe(marker);
+        keyframe();
         return true;
     };
 
     // Sends what changed since the last flush. Returns where the recording stands afterwards.
-    const flush = (marker) => {
+    const flush = () => {
         clearTimeout(timer);
         timer = 0;
         listen();
-        if (! start(marker)) {
+        if (! start()) {
             if (overflow) {
-                keyframe(marker);
+                keyframe();
             } else {
                 const ops = changes();
                 // Once the changes since the last keyframe grow larger than one, a keyframe replaces them: it is
                 // smaller, and the GUI starts there when it jumps.
                 if (ops.length > 0 && sinceKeyframe + JSON.stringify(ops).length > Math.max(keyframeSize, MIN_KEYFRAME_DISTANCE)) {
-                    keyframe(marker);
+                    keyframe();
                 } else if (ops.length > 0) {
-                    post('changes', ops, marker);
+                    post('changes', ops);
                 }
             }
         }
@@ -399,7 +459,7 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     const onResize = schedule;
     // A navigation sends what changed last. Only beforeunload is early enough: a binding call during pagehide or
     // unload no longer reaches Puth, because the navigation committed already.
-    const onLeave = () => flush('leave');
+    const onLeave = () => flush();
     // document.open(), which Puppeteer's setContent uses, removes every listener of the window. Adding the same
     // listener again does nothing, so each flush adds them back.
     const listen = () => {
@@ -416,7 +476,7 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         flush: flush,
         resync: () => {
             start();
-            keyframe('resync');
+            keyframe();
             return {doc: docId, seq: seq};
         },
         doc: docId,

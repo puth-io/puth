@@ -58,13 +58,13 @@ async function record(options = {}) {
     };
 
     const replayed = async (point: { doc: string, seq: number }) => {
-        const list = domPackets().filter((packet) => packet.doc === point.doc).map(({ kind, seq, data }) => ({ kind, seq, data }));
+        const list = domPackets().filter((packet) => packet.doc === point.doc).map(({ kind, seq, data, strings }) => ({ kind, seq, data, strings }));
         return replay.evaluate(`(() => {
             const packets = window.domPacketsUntil(${JSON.stringify(list)}, ${point.seq});
             const doc = document.getElementById('replay').contentDocument;
             const replay = new window.DomReplay(doc);
-            replay.build(packets[0].data);
-            for (const packet of packets.slice(1)) replay.apply(packet.data);
+            replay.build(packets[0].data, packets[0].strings);
+            for (const packet of packets.slice(1)) replay.apply(packet.data, packet.strings);
             return (${NORMALIZE})(doc);
         })()`);
     };
@@ -72,14 +72,14 @@ async function record(options = {}) {
     // Evaluates expression with the rebuilt document as doc, in a frame of the recorded viewport's size, after the
     // scroll positions were restored.
     const replayedState = async (point: { doc: string, seq: number }, expression: string) => {
-        const list = domPackets().filter((packet) => packet.doc === point.doc).map(({ kind, seq, data }) => ({ kind, seq, data }));
+        const list = domPackets().filter((packet) => packet.doc === point.doc).map(({ kind, seq, data, strings }) => ({ kind, seq, data, strings }));
         return replay.evaluate(`(() => {
             const packets = window.domPacketsUntil(${JSON.stringify(list)}, ${point.seq});
             const frame = document.getElementById('replay');
             const doc = frame.contentDocument;
             const replay = new window.DomReplay(doc);
-            replay.build(packets[0].data);
-            for (const packet of packets.slice(1)) replay.apply(packet.data);
+            replay.build(packets[0].data, packets[0].strings);
+            for (const packet of packets.slice(1)) replay.apply(packet.data, packet.strings);
             frame.style.cssText = 'border: 0; width: ' + replay.viewport[0] + 'px; height: ' + replay.viewport[1] + 'px';
             doc.documentElement.getBoundingClientRect();
             replay.restoreScroll();
@@ -289,7 +289,7 @@ describe('DOM recording', () => {
         cleanups.push(() => new Promise((resolve) => server.close(resolve)));
         const port = (server.address() as any).port;
 
-        const { browser, context, packets, domPackets, replayed } = await record();
+        const { browser, context, packets, domPackets, replayed, replayedState } = await record();
         await browser.visit(`http://127.0.0.1:${port}/top`);
         // The frames' own script and loads settle, then a command takes a point.
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -313,27 +313,13 @@ describe('DOM recording', () => {
 
         // Each frame document is linked to the iframe element in its parent that shows it.
         const links = packets().filter((packet) => packet.type === 'dom-frame');
-        const element = (parentDoc: string, owner: number) => {
-            const find = (nodes: any[]): any => {
-                for (const node of nodes) {
-                    if (typeof node !== 'object' || node === null) continue;
-                    if (node[0] === owner && node[1] === 1) return node;
-                    const found = node[1] === 1 ? find(node[4]) : undefined;
-                    if (found) return found;
-                }
-            };
-            for (const packet of domPackets().filter((candidate) => candidate.doc === parentDoc)) {
-                const found = packet.kind === 'keyframe' ? find(packet.data.root) : find(packet.data.flatMap((change) => change[0] === 1 ? change[2] : []));
-                if (found) return found;
-            }
-        };
         const linkOf = (path: string) => links.find((link) => urlOf(link.doc).endsWith(path));
         for (const [path, id, parentPath] of [['/same', 'same', '/top'], ['/cross', 'cross', '/top'], ['/deep', 'deep', '/cross'], ['blank', 'blank', '/top']]) {
             const link = linkOf(path);
             assert.isDefined(link, path);
             assert.isTrue(urlOf(link.parentDoc).endsWith(parentPath), path);
-            const attributes = element(link.parentDoc, link.owner)[3];
-            assert.strictEqual(attributes[attributes.indexOf('id') + 1], id, path);
+            const last = domPackets().filter((packet) => packet.doc === link.parentDoc).at(-1);
+            assert.strictEqual(await replayedState({ doc: link.parentDoc, seq: last.seq }, `replay.nodeOf(${link.owner}).id`), id, path);
         }
 
         // Typed values of a frame from another origin never leave it.
@@ -344,6 +330,39 @@ describe('DOM recording', () => {
         const crossDoc = linkOf('/cross').doc;
         const masked = packets().filter((packet) => packet.type === 'command').at(-1).dom.before.frames[crossDoc];
         assert.include(await replayed({ doc: crossDoc, seq: masked }), 'value="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"');
+    }, 30000);
+
+    it('keeps a string table per document across batches and keyframes', async () => {
+        const { browser, check, domPackets } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent('<ul id="list"></ul><div id="many"></div>');
+        const add = (text: string) => browser.evaluate(`document.getElementById('list').appendChild(Object.assign(document.createElement('li'), {
+            className: 'entry shared-class', title: ${JSON.stringify(text)}, textContent: ${JSON.stringify(text)} }))`);
+
+        // Seen once: inline. Seen again in a later batch: added to the table. Then referred to by index.
+        await add('first');
+        await check();
+        await add('second');
+        await check();
+        await add('third');
+        await check();
+        const tables = domPackets().filter((packet) => packet.strings?.includes('entry shared-class'));
+        assert.lengthOf(tables, 1, 'the value went into the table once');
+        assert.notInclude(JSON.stringify(domPackets().at(-1).data), 'entry shared-class', 'and is referred to by index since');
+
+        // A keyframe starts a new table, which later batches extend.
+        await browser.evaluate(`(() => { const many = document.getElementById('many'); for (let i = 0; i < 25000; i++) many.append(document.createElement('i')); })()`);
+        await check();
+        await add('fourth');
+        await check();
+        await add('fifth');
+        await check();
+
+        // Strings that never repeat never take a slot.
+        const unique = Array.from({ length: 50 }, (_, i) => `unique value ${i}`);
+        await browser.evaluate(`(() => { for (const text of ${JSON.stringify(unique)}) document.getElementById('list').appendChild(Object.assign(document.createElement('b'), { title: text })); })()`);
+        await check();
+        assert.isFalse(domPackets().some((packet) => packet.strings?.some((string) => string.startsWith('unique value'))));
     }, 30000);
 
     it('records nothing with dom set to false', async () => {
