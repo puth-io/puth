@@ -40,8 +40,11 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     // Form controls and <style> elements whose state can change without a mutation record.
     const controls = new Map();
     const styles = new Map();
-    const scrolled = new Map();
-    let resized = false;
+    // Elements that scrolled once, and what was sent last. Scroll and resize events only fire with the next frame,
+    // so positions and the viewport are compared on every flush instead.
+    const scrollers = new Map();
+    const scrollSent = new Map();
+    let viewportSent = '';
 
     const idOf = (node) => {
         let id = ids.get(node);
@@ -67,12 +70,22 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         ? element.type === 'password' || /(^|\s)cc-/.test(element.getAttribute('autocomplete') || '') || (crossOrigin && ! UNTYPED.has(element.type))
         : crossOrigin && element.localName === 'textarea';
 
+    // [value, checked, selectedIndex, selected options of a multiple select]
     const controlState = (element) => {
         const value = element.value;
+        const select = element.localName === 'select';
+        let selected = null;
+        if (select && element.multiple) {
+            selected = [];
+            for (let i = 0; i < element.options.length; i++) {
+                if (element.options[i].selected) selected.push(i);
+            }
+        }
         return [
-            masked(element) ? '•'.repeat(value.length) : value,
+            masked(element) ? '\u2022'.repeat(value.length) : value,
             element.localName === 'input' ? element.checked : null,
-            element.localName === 'select' ? element.selectedIndex : null,
+            select && selected === null ? element.selectedIndex : null,
+            selected,
         ];
     };
 
@@ -83,6 +96,10 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             return null;
         }
     };
+    // A sheet whose rules a script changed has another count, or another first or last rule.
+    const sheetKey = (list) => list === null || list.length === 0
+        ? '0'
+        : list.length + '|' + list[0].cssText + '|' + list[list.length - 1].cssText;
     const cssOf = (list) => {
         let css = '';
         for (let i = 0; i < list.length; i++) {
@@ -135,14 +152,15 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         let props = 0;
         if (namespace === 0 && CONTROLS.has(name)) {
             const state = controlState(node);
-            controls.set(id, [node, state]);
+            controls.set(id, [node, JSON.stringify(state)]);
             props = {value: state[0]};
             if (state[1] !== null) props.checked = state[1];
             if (state[2] !== null) props.selectedIndex = state[2];
+            if (state[3] !== null) props.selected = state[3];
         } else if (namespace === 0 && name === 'style') {
             const list = rules(node);
             const count = list ? list.length : 0;
-            styles.set(id, [node, count]);
+            styles.set(id, [node, sheetKey(list)]);
             // Rules a script inserted through the CSSOM, which leave the element's text empty.
             if (count > 0 && node.textContent.trim() === '') {
                 props = {css: cssOf(list)};
@@ -153,6 +171,28 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     };
 
     const viewport = () => [window.innerWidth, window.innerHeight, window.devicePixelRatio];
+
+    // Scroll positions that changed since they were sent, or all of them for a keyframe. Id 0 is the window.
+    const scrollChanges = (all) => {
+        const changed = [];
+        const check = (id, x, y) => {
+            const key = x + ',' + y;
+            if (all || scrollSent.get(id) !== key) {
+                scrollSent.set(id, key);
+                changed.push([id, x, y]);
+            }
+        };
+        check(0, window.scrollX, window.scrollY);
+        for (const [id, element] of scrollers) {
+            if (! element.isConnected) {
+                scrollers.delete(id);
+                scrollSent.delete(id);
+            } else {
+                check(id, element.scrollLeft, element.scrollTop);
+            }
+        }
+        return changed;
+    };
 
     const post = (kind, data, marker) => {
         seq++;
@@ -170,7 +210,6 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         observer.takeRecords();
         records = [];
         overflow = false;
-        resized = false;
         controls.clear();
         styles.clear();
 
@@ -182,22 +221,16 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             }
         }
 
-        const scroll = [[0, window.scrollX, window.scrollY]];
-        for (const [id, element] of scrolled) {
-            if (element.isConnected) {
-                scroll.push([id, element.scrollLeft, element.scrollTop]);
-            } else {
-                scrolled.delete(id);
-            }
-        }
-        scrolled.clear();
+        const scroll = scrollChanges(true);
+        const size = viewport();
+        viewportSent = size.join(',');
 
         post('keyframe', {
             url: location.href,
             base: doc.baseURI,
             document: idOf(doc),
             root: root,
-            viewport: viewport(),
+            viewport: size,
             scroll: scroll,
         }, marker);
     };
@@ -267,11 +300,11 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
                 continue;
             }
             const state = controlState(element);
-            const last = entry[1];
-            if (state[0] !== last[0] || state[1] !== last[1] || state[2] !== last[2]) {
-                entry[1] = state;
+            const key = JSON.stringify(state);
+            if (key !== entry[1]) {
+                entry[1] = key;
                 if (! fresh.has(element)) {
-                    ops.push([4, id, state[0], state[1], state[2]]);
+                    ops.push([4, id, state[0], state[1], state[2], state[3]]);
                 }
             }
         }
@@ -282,26 +315,22 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
                 continue;
             }
             const list = rules(element);
-            const count = list ? list.length : 0;
-            if (count !== entry[1]) {
-                entry[1] = count;
+            const key = sheetKey(list);
+            if (key !== entry[1]) {
+                entry[1] = key;
                 if (! fresh.has(element)) {
                     ops.push([6, id, list ? cssOf(list) : '']);
                 }
             }
         }
 
-        for (const [id, element] of scrolled) {
-            if (element === window) {
-                ops.push([7, 0, window.scrollX, window.scrollY]);
-            } else if (element.isConnected && ids.has(element)) {
-                ops.push([7, id, element.scrollLeft, element.scrollTop]);
-            }
+        for (const [id, x, y] of scrollChanges(false)) {
+            ops.push([7, id, x, y]);
         }
-        scrolled.clear();
-        if (resized) {
-            resized = false;
-            ops.push([8].concat(viewport()));
+        const size = viewport();
+        if (size.join(',') !== viewportSent) {
+            viewportSent = size.join(',');
+            ops.push([8].concat(size));
         }
 
         return ops;
@@ -362,14 +391,12 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     });
 
     const onScroll = (event) => {
-        const target = event.target === doc ? window : event.target;
-        scrolled.set(target === window ? 0 : idOf(target), target);
+        if (event.target !== doc && event.target.nodeType === 1) {
+            scrollers.set(idOf(event.target), event.target);
+        }
         schedule();
     };
-    const onResize = () => {
-        resized = true;
-        schedule();
-    };
+    const onResize = schedule;
     // A navigation sends what changed last. Only beforeunload is early enough: a binding call during pagehide or
     // unload no longer reaches Puth, because the navigation committed already.
     const onLeave = () => flush('leave');

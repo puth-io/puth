@@ -31,6 +31,8 @@ export type DomProps = {
     value?: string;
     checked?: boolean;
     selectedIndex?: number;
+    /** The selected options of a select that allows several. */
+    selected?: number[];
     /** Rules a script added to a <style> element through the CSSOM, like CSS-in-JS libraries do. */
     css?: string;
 };
@@ -56,7 +58,7 @@ export type DomChange =
     | [op: DomOp.CHILDREN, parent: number, children: (number | DomNode)[]]
     | [op: DomOp.ATTRIBUTES, element: number, attributes: string[]]
     | [op: DomOp.TEXT, node: number, data: string]
-    | [op: DomOp.CONTROL, element: number, value: string | null, checked: boolean | null, selectedIndex: number | null]
+    | [op: DomOp.CONTROL, element: number, value: string | null, checked: boolean | null, selectedIndex: number | null, selected?: number[] | null]
     | [op: DomOp.CSS, element: number, css: string]
     | [op: DomOp.SCROLL, ...DomScroll]
     | [op: DomOp.VIEWPORT, ...DomViewport];

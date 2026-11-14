@@ -199,6 +199,13 @@ export class ReplayView {
                 this.replay.apply(packet.data);
             }
         }
+        // Positions near the end of a page only fit into a frame of the recorded size. Nested frames have the size the
+        // rebuilt page around them gives them, the top frame is sized here before the preview catches up.
+        if (this.depth === 0) {
+            const [width, height] = this.replay.viewport;
+            this.frame.style.width = `${width}px`;
+            this.frame.style.height = `${height}px`;
+        }
         this.replay.restoreScroll();
         this.shown = {doc: point.doc, keyframe: keyframe.seq, seq: point.seq};
 
