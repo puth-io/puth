@@ -1,3 +1,4 @@
+import {compressRecording} from '../util/Zstd';
 import {action, computed, makeObservable, observable, observableShallow, toJS} from 'mobx';
 import {Constructors, type DomPoint} from '@puth/core';
 import {encode} from '@msgpack/msgpack';
@@ -313,8 +314,9 @@ export default class ContextStore {
         }
     }
     
-    blob() {
-        return new Blob([encode(this.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})]);
+    // Like the files Puth saves: msgpack compressed with zstd.
+    async blob() {
+        return new Blob([await compressRecording(encode(this.packets(), {extensionCodec: PUTH_EXTENSION_CODEC})) as BlobPart]);
     }
     
     get took() {
