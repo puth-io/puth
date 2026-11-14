@@ -72,11 +72,15 @@ export type DomKeyframe = {
     scroll: DomScroll[];
 };
 
-/** A point in a page's DOM recording: the state after batch seq of document doc. */
+/**
+ * A point in a page's DOM recording: the state after batch seq of the top document doc, and of the documents in
+ * its frames after the batches in frames.
+ */
 export type DomPoint = {
     page: number;
     doc: string;
     seq: number;
+    frames?: Record<string, number>;
 };
 
 /** One message of a recorder, recorded as it arrived. */
@@ -88,6 +92,20 @@ export type IDomPacket = {
     doc: string;
     seq: number;
 } & ({kind: 'keyframe', data: DomKeyframe} | {kind: 'changes', data: DomChange[]});
+
+/**
+ * Which document an iframe element shows: the element with id owner in document parentDoc shows document doc,
+ * from the time this arrived until another document is linked to the same element.
+ */
+export type IDomFrame = {
+    id: string;
+    type: 'dom-frame';
+    timestamp: number;
+    page: number;
+    parentDoc: string;
+    owner: number;
+    doc: string;
+};
 
 /** A response body the replay serves to the rebuilt document, like a stylesheet, font or image. */
 export type IDomResource = {

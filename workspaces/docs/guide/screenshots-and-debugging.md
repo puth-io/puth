@@ -75,11 +75,11 @@ Imported snapshots are listed under **Local snapshots** in the side rail, apart 
 
 ### The recorded DOM
 
-With snapshots enabled, Puth records the DOM of each page: a full copy when a document loads, then the changes, sent by the page at the start of every command. Selecting a step shows its page rebuilt from that recording, **Before** as it was when the step started and **After** as it was when the next step on the same page started. Unlike a screenshot this is exact, because it does not depend on when the browser painted.
+With snapshots enabled, Puth records the DOM of each page and of every frame in it, also frames of other sites and frames in frames: a full copy when a document loads, then the changes, sent by the page at the start of every command. Selecting a step shows its page rebuilt from that recording, **Before** as it was when the step started and **After** as it was when the next step on the same page started. Unlike a screenshot this is exact, because it does not depend on when the browser painted.
 
-The rebuilt page runs no scripts and loads nothing from the network: stylesheets, fonts and images are served from the recording, also when the application is gone, so an imported snapshot looks the same on any machine. Values in password fields and card number fields (`autocomplete="cc-…"`) are masked before they leave the page.
+The rebuilt page runs no scripts and loads nothing from the network: stylesheets, fonts and images are served from the recording, also when the application is gone, so an imported snapshot looks the same on any machine. Values in password fields and card number fields (`autocomplete="cc-…"`) are masked before they leave the page, and so is every typed value in a frame whose origin differs from a page above it, like a payment form.
 
-Some content is not part of the recording and shows up empty or unstyled: `<canvas>` drawings, video frames, the contents of iframes and shadow roots, and stylesheets that scripts construct (`adoptedStyleSheets`). Media queries follow the browser the GUI runs in. Record frames for such pages.
+Some content is not part of the recording and shows up empty or unstyled: `<canvas>` drawings, video frames, the contents of shadow roots, and stylesheets that scripts construct (`adoptedStyleSheets`). Media queries follow the browser the GUI runs in. Record frames for such pages.
 
 ### Recorded frames
 

@@ -6,6 +6,7 @@ const XLINK = 'http://www.w3.org/1999/xlink';
 // Attributes the replay never applies as they are, because they would load, navigate or run something.
 const REWRITTEN_PREFIX = 'data-puth-replay-';
 const NO_CHILDREN = new Set(['script', 'noscript', 'template', 'iframe', 'frame', 'object', 'embed']);
+const FRAMES = new Set(['iframe', 'frame']);
 const STRIPPED_RELS = /(^|\s)(preconnect|dns-prefetch|prerender|prefetch|modulepreload)(\s|$)/i;
 
 /**
@@ -23,7 +24,11 @@ export class DomReplay {
     viewport: DomViewport = [0, 0, 1];
     private scroll = new Map<number, [number, number]>();
 
-    constructor(doc: Document) {
+    /**
+     * frameSrc is the page recorded iframes load instead of their own, so a caller can build the documents they
+     * showed into them. Without it, iframes stay empty.
+     */
+    constructor(doc: Document, private readonly options: {frameSrc?: string} = {}) {
         this.doc = doc;
         this.base = doc.createElement('base');
         this.own.add(this.base);
@@ -130,6 +135,17 @@ export class DomReplay {
                 element.scrollTop = y;
             }
         }
+    }
+
+    /** The iframe elements of the rebuilt document with their recorded ids. */
+    frames(): [number, HTMLIFrameElement][] {
+        const frames: [number, HTMLIFrameElement][] = [];
+        this.nodes.forEach((node, id) => {
+            if (node !== undefined && node.nodeType === DomNodeType.ELEMENT && FRAMES.has((node as Element).localName) && node.isConnected) {
+                frames.push([id, node as HTMLIFrameElement]);
+            }
+        });
+        return frames;
     }
 
     /** The node a recorded id stands for, like the target of a command. */
@@ -245,6 +261,13 @@ export class DomReplay {
             }
         }
 
+        // The sandbox has to be in place before the frame navigates, which it does once src is set and it is inserted.
+        if (this.options.frameSrc !== undefined && FRAMES.has(element.localName)) {
+            wanted.delete('src');
+            wanted.set('sandbox', 'allow-same-origin');
+            wanted.set('src', this.options.frameSrc);
+        }
+
         for (const attribute of [...element.attributes]) {
             if (! wanted.has(attribute.name)) {
                 element.removeAttributeNode(attribute);
@@ -274,7 +297,8 @@ export class DomReplay {
         if (lower.startsWith('on')) {
             return [null, value];
         }
-        if ((tag === 'iframe' || tag === 'frame') && (lower === 'src' || lower === 'srcdoc')) {
+        // A recorded sandbox could make a frame's origin opaque, which the replay can't build into.
+        if (FRAMES.has(tag) && (lower === 'src' || lower === 'srcdoc' || lower === 'sandbox')) {
             return [REWRITTEN_PREFIX + lower, value];
         }
         if ((tag === 'script' || tag === 'embed') && lower === 'src') {
@@ -333,3 +357,41 @@ export function domPacketsUntil<T extends {kind: string, seq: number}>(packets: 
 }
 
 export type {DomScroll};
+
+/**
+ * The document an iframe element shows at a point of its parent's recording: one the point flushed, or else the last
+ * one linked to the element before time.
+ */
+export function domFrameDocument(
+    links: {owner: number, doc: string, timestamp: number}[],
+    owner: number,
+    frames: Record<string, number>|undefined,
+    time: number,
+): string|undefined {
+    let flushed: string|undefined;
+    let before: string|undefined;
+    for (const link of links) {
+        if (link.owner !== owner) {
+            continue;
+        }
+        if (frames !== undefined && link.doc in frames) {
+            flushed = link.doc;
+        }
+        if (link.timestamp <= time) {
+            before = link.doc;
+        }
+    }
+    return flushed ?? before;
+}
+
+/** The last batch of a document that arrived until time. */
+export function domSeqAt(packets: {seq: number, timestamp: number}[], time: number): number|undefined {
+    let seq: number|undefined;
+    for (const packet of packets) {
+        if (packet.timestamp > time) {
+            break;
+        }
+        seq = packet.seq;
+    }
+    return seq;
+}

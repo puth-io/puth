@@ -472,6 +472,52 @@ describe('DOM replay', () => {
         await gui.waitUntil(inReplay(`doc.getElementById('logo').naturalWidth === 8`));
     }, 60000);
 
+    it('rebuilds frames of other sites, nested', async () => {
+        // 127.0.0.1 and localhost are different sites, so cross and deep run in processes of their own.
+        const server = http.createServer((request, response) => {
+            const port = (server.address() as any).port;
+            const pages = {
+                '/top': `<h1>top</h1><iframe id="same" src="/same"></iframe><iframe id="cross" src="http://localhost:${port}/cross"></iframe><iframe id="blank"></iframe>`
+                    + `<script>document.getElementById('blank').contentDocument.body.innerHTML = '<b>blank content</b>'</script>`,
+                '/same': `<p id="p">same</p><script>setTimeout(() => document.getElementById('p').textContent = 'same changed', 50)</script>`,
+                '/cross': `<p>cross</p><iframe id="deep" src="http://127.0.0.1:${port}/deep"></iframe>`,
+                '/deep': `<p>deep</p>`,
+            };
+            response.writeHead(200, { 'content-type': 'text/html' }).end(pages[request.url] ?? '');
+        });
+        await new Promise<void>((resolve) => server.listen(0, '0.0.0.0', resolve));
+        cleanups.push(() => new Promise((resolve) => server.close(resolve)));
+        const port = (server.address() as any).port;
+
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'frame run' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(`http://127.0.0.1:${port}/top`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await browser.evaluate('1');
+        await context.destroy({ immediately: true });
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('frame run');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+        await showStep(gui, -1, 'before');
+
+        const frame = (path: string) => `doc.getElementById(${path.split('/').map((id) => JSON.stringify(id)).join(').contentDocument.getElementById(')}).contentDocument`;
+        await gui.waitUntil(inReplay(`${frame('cross/deep')}.body.innerText === 'deep'`));
+        assert.strictEqual(await gui.evaluate(inReplay(`${frame('cross')}.querySelector('p').innerText`)), 'cross');
+        assert.strictEqual(await gui.evaluate(inReplay(`${frame('same')}.getElementById('p').innerText`)), 'same changed');
+        assert.strictEqual(await gui.evaluate(inReplay(`${frame('blank')}.body.innerText`)), 'blank content');
+
+        // Every nested replay frame is controlled by the replay worker, so nothing in them reaches the network.
+        for (const path of ['same', 'cross', 'cross/deep', 'blank']) {
+            assert.isTrue(await gui.evaluate(inReplay(`${frame(path)}.defaultView.navigator.serviceWorker.controller !== null`)), path);
+            const escaped = await gui.evaluate(inReplay(`JSON.stringify(${frame(path)}.defaultView.performance.getEntriesByType('resource').filter((entry) => entry.workerStart === 0).map((entry) => entry.name))`));
+            assert.deepEqual(JSON.parse(escaped), [], path);
+        }
+    }, 60000);
+
     it('runs no script and follows no link of the recorded page', async () => {
         const instance = await startInstance();
         const context = await createContext(instance, { snapshot: true, test: { name: 'script run' } });

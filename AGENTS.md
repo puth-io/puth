@@ -117,7 +117,10 @@ classifies its methods, so add new ones there.
 ## DOM recording
 
 With snapshots on, `utils/DomRecorder.ts` injects the recorder in
-`utils/DomRecorderSource.ts` into an isolated world of each page's top frame. The
+`utils/DomRecorderSource.ts` into an isolated world of every frame. Frames of
+other sites run in their own process: the page's session auto-attaches to them,
+installs the recorder before they run and always resumes them, also on errors. A
+`dom-frame` packet links a frame's document to its iframe element. The
 GUI rebuilds documents with `DomReplay` from `@puth/core`; the format is in
 `workspaces/core/src/Dom.ts`.
 
@@ -134,7 +137,9 @@ GUI rebuilds documents with `DomReplay` from `@puth/core`; the format is in
 - The GUI's replay frame is controlled by `public/__replay/sw.js`, which answers all
   of its requests from the recording. A frame it doesn't control is never built.
   `DomReplay` neutralizes iframes, scripts, refreshes and link hints while it
-  creates elements; nothing recorded may load or navigate.
+  creates elements; nothing recorded may load or navigate. Recorded iframes
+  become nested replay frames with their own `?depth=` address, because Chrome
+  doesn't load a frame whose address two ancestors have.
 - Frames (screencasts) are off unless a context sets `frames` or calls
   `enableFrames()`; the GUI crops them to the viewport with CSS.
 
