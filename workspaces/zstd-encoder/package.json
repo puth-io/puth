@@ -1,0 +1,31 @@
+{
+  "name": "@puth/zstd-encoder",
+  "version": "0.0.0",
+  "description": "zstd's encoder built to WebAssembly from the official release, small, with every compression level.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/puth-io/puth.git",
+    "directory": "workspaces/zstd-encoder"
+  },
+  "license": "SEE LICENSE IN README.md",
+  "types": "./dist/zstd.d.mts",
+  "module": "./dist/zstd.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/zstd.d.mts",
+      "default": "./dist/zstd.mjs"
+    },
+    "./zstd-encoder.wasm": "./zstd-encoder.wasm"
+  },
+  "scripts": {
+    "build": "pkgroll --clean-dist",
+    "prepublishOnly": "node ../../bin/check-dist.mjs",
+    "test": "node --test test/*.test.ts"
+  },
+  "files": [
+    "dist/",
+    "zstd-encoder.wasm",
+    "LICENSE-zstd"
+  ]
+}
