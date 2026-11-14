@@ -1,11 +1,11 @@
-# @puth/zstd
+# @puth/zstd-decoder
 
 zstd's decoder, built to WebAssembly from the official zstd release, with a TypeScript wrapper that checks
-every result. Puth's GUI reads recordings with it.
+every result. It only decodes; it can't compress. Puth's GUI reads recordings with it.
 
 ```ts
-import { createZstdDecoder } from '@puth/zstd';
-import wasmUrl from '@puth/zstd/zstd-decoder.wasm?url';
+import { createZstdDecoder } from '@puth/zstd-decoder';
+import wasmUrl from '@puth/zstd-decoder/zstd-decoder.wasm?url';
 
 const decode = await createZstdDecoder(await (await fetch(wasmUrl)).arrayBuffer(), { maxSize: 512 * 1024 * 1024 });
 const bytes = decode(compressed);
@@ -13,7 +13,7 @@ const bytes = decode(compressed);
 
 The wrapper throws for input that is not a valid zstd stream, and never decodes more than `maxSize` bytes,
 whatever size a frame claims. Frames without a content size, as streaming compressors write them, are decoded
-as a stream. `npm -w @puth/zstd run test` checks this with Node's zstd.
+as a stream. `npm -w @puth/zstd-decoder run test` checks this with Node's zstd.
 
 ## Why an own build
 
@@ -69,7 +69,7 @@ trixie's packages over time, so a later build may use another clang and produce 
    with `wasm-opt`, and prints the file's size, SHA-256, imports and exports:
 
    ```sh
-   cp /path/to/puth/workspaces/zstd/build.sh .
+   cp /path/to/puth/workspaces/zstd-decoder/build.sh .
    docker run --rm -v "$PWD":/w -w /w debian:trixie sh build.sh
    ```
 

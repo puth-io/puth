@@ -16,7 +16,7 @@ export default defineConfig({
         alias: [
             {find: "@puth/core", replacement: path.resolve(import.meta.dirname, "../core/src/index.ts")},
             // Only the module itself: its zstd-decoder.wasm comes from the package, like for any other dependency.
-            {find: /^@puth\/zstd$/, replacement: path.resolve(import.meta.dirname, "../zstd/src/zstd.ts")},
+            {find: /^@puth\/zstd-decoder$/, replacement: path.resolve(import.meta.dirname, "../zstd-decoder/src/zstd.ts")},
             {find: "@/app/store/ContextStore", replacement: path.resolve(import.meta.dirname, "./src/app/store/ContextStore")},
             {find: "@/app/store/AppStore", replacement: path.resolve(import.meta.dirname, "./src/app/store/AppStore")},
             {find: "@/app/store/PreviewStore", replacement: path.resolve(import.meta.dirname, "./src/app/store/PreviewStore")},

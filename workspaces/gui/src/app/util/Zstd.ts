@@ -1,5 +1,5 @@
-import {createZstdDecoder, type ZstdDecode} from '@puth/zstd';
-import wasmUrl from '@puth/zstd/zstd-decoder.wasm?url';
+import {createZstdDecoder, type ZstdDecode} from '@puth/zstd-decoder';
+import wasmUrl from '@puth/zstd-decoder/zstd-decoder.wasm?url';
 
 // Puth's instance keeps up to 1 GiB of recordings, all of which a connection can receive at once.
 const MAX_SIZE = 1536 * 1024 * 1024;
