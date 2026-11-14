@@ -31,7 +31,7 @@ export class StdioTransport implements Transport {
         args: string[],
         env: Record<string, string>,
         cwd?: string,
-        stderr?: 'pipe'|'inherit',
+        stderr?: 'pipe'|'inherit'|'ignore',
     }) {}
 
     start(receive: (line: string) => void) {

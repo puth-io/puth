@@ -1,14 +1,13 @@
 // Records test runs with different outcomes on a Puth instance, so the GUI has something to show.
 // Every page comes from setContent, nothing is loaded from a server.
 //
-//   docker compose run --rm --no-deps -e PUTH_URL=http://puth:7345 node-test node dev/gui-scenarios.mjs
+//   docker compose run --rm --no-deps -e PUTH_URL=http://puth:7345 node-test node --import tsx dev/gui-scenarios.mjs
 //
 // Then open the GUI (`docker compose up -d gui`, http://localhost:5173) and connect to
 // ws://127.0.0.1:7345/websocket. Runs are kept by the instance until it restarts.
 
 import { Context, RemotePuthClient } from '@puth/client';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { McpClient, StdioTransport } from '../workspaces/puth/test/mcp/client.ts';
 
 const instanceUrl = (process.env.PUTH_URL ?? 'http://127.0.0.1:7345').replace(/\/$/, '');
 const client = new RemotePuthClient(instanceUrl);
@@ -213,16 +212,15 @@ await run('test_visit_website', '', async (b) => {
 
 // Agents work through the MCP server, built into workspaces/mcp/dist by the setup.
 async function agent() {
-    const transport = new StdioClientTransport({
+    const mcp = new McpClient(new StdioTransport({
         command: process.execPath,
         args: ['workspaces/mcp/dist/cli.mjs'],
         stderr: 'ignore',
         env: { PATH: process.env.PATH, PUTH_INSTANCE_URL: instanceUrl, PUTH_ARTIFACT_DIR: '/tmp/puth-gui-scenarios' },
-    });
-    const mcp = new Client({ name: 'gui-scenarios', version: '1.0.0' });
-    await mcp.connect(transport);
+    }));
+    await mcp.connect();
     const tool = async (name, args = {}) => {
-        const result = await mcp.callTool({ name, arguments: args });
+        const result = await mcp.callTool(name, args);
         return result.content.find(({ type }) => type === 'text')?.text ?? '';
     };
     return { tool, close: () => mcp.close() };

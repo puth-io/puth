@@ -1,3 +1,0 @@
-#!/bin/bash
-
-act --pull=false -P ubuntu-latest=puth:act-latest --artifact-server-path /tmp/artifacts "$@"
