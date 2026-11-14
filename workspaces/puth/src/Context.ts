@@ -702,7 +702,7 @@ class Context extends Generic {
         return psuri.stack.handlePortalResponse(data.response, res);
     }
     
-    public portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, path: string, cdp: CDPSession) {
+    public async portalRequestDetourToCatcher(psuri: string, {requestId, request}: Protocol.Fetch.RequestPausedEvent, path: string, cdp: CDPSession) {
         let headers: Protocol.Fetch.HeaderEntry[] = [];
         for (let key of Object.keys(request.headers)) {
             headers.push({name: key, value: request.headers[key]});
@@ -712,9 +712,9 @@ class Context extends Generic {
         headers.push({name: 'puth-portal-url', value: encodeURI(request.url)});
         headers.push({name: 'puth-portal-path', value: encodeURI(path)});
 
-        let addr = this.puth.http.url;
+        let addr = await this.puth.detourUrl();
         if (addr == undefined) {
-            throw new Error('Unreachable');
+            throw new Error('Portal detours need a served Puth instance.');
         }
 
         // Keep cache identities stable for the same source, but separate

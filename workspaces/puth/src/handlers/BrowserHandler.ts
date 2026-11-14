@@ -58,9 +58,15 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
             return this.createContextRef(ref, context);
         }
 
+        // Pages that are not a secure context may not request loopback. Detoured portal requests do, so their
+        // listener alone counts as public. Every other local address stays protected.
+        const detourUrl = await this.puth.detourUrl();
+        const detourAddressSpace = detourUrl ? [`--ip-address-space-overrides=${new URL(detourUrl).host}=public`] : [];
+
         let userDataDir = tmp.dirSync({unsafeCleanup: true});
         options.args = [
             ...chromeDefaultArgs,
+            ...detourAddressSpace,
             '--no-sandbox',
             '--user-data-dir=' + userDataDir.name,
             ...(options.args ?? []),

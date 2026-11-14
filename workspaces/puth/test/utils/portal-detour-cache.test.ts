@@ -25,7 +25,7 @@ describe('detour browser cache', () => {
         server.listen(0, '127.0.0.1');
         await once(server, 'listening');
         const base = `http://127.0.0.1:${(server.address() as any).port}/`;
-        const puth = { http: { url: base }, logger: { debug() {} } } as any;
+        const puth = { detourUrl: async () => base, logger: { debug() {} } } as any;
         let context = new Context(puth);
         let portalPath: string | undefined;
         const page = await browser.newPage();

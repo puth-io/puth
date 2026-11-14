@@ -75,6 +75,11 @@ handled, while all other paused requests continue normally.
   example, oversized or multipart requests). Set it to `false` to keep normal
   portal handling but prevent that request from being rerouted through
   `/portal/detour`.
+- Detours go to their own listener on an ephemeral `127.0.0.1` port, which serves
+  nothing else. Chrome launches with `--ip-address-space-overrides` marking only
+  that address as public, because pages that are not a secure context may not
+  request loopback. Do not disable `LocalNetworkAccessChecks` instead: with
+  `--disable-cors` any page could then reach the API and the websocket.
 - A client that gets no HTTP response at all answers with
   `error: {reason, message}` instead of `status` and `body`, where `reason` is a
   CDP `Network.ErrorReason`. Direct requests fail through `Fetch.failRequest`;

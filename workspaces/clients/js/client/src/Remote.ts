@@ -207,6 +207,9 @@ export const RemoteContext = magicClassMethods(
 
 // Turns a server response into what the caller gets, for dynamic and generated objects alike.
 export function resolveResponse(on, context, response) {
+    if (response instanceof Uint8Array) {
+        return response;
+    }
     if (response?.type === 'GenericObject') {
         return createRemoteObject(context, response) ?? new MagicCustomObject(new Remote(context, response), {skip: true});
     } else if (response?.type === 'GenericObjects') {

@@ -6,7 +6,7 @@
 Portal fixes:
 
 - A detoured request, such as a multipart upload, reaches the client with its headers. They are sent as a plain object, without the `host` and `puth-portal-*` headers of the detour.
-- Chrome starts with `LocalNetworkAccessChecks` disabled, so it no longer blocks a detour to a loopback Puth instance from a page that is not a secure context.
+- Detours have their own listener on an ephemeral loopback port, and only that address counts as public in Chrome. Chrome no longer blocks a detour from a page that is not a secure context, while such pages still cannot reach the API, the websocket, or other local services.
 - Laravel serves static files with the type of their extension, so Vite bundles that sniff as `text/x-java` load as JavaScript.
 - Laravel sets `QUERY_STRING`, so `getQueryString()` and `fullUrl()` keep the query.
 - Laravel passes the cookies of the browser to the application, parsed without changing their names. Cookies set by the test take precedence.

@@ -7,6 +7,15 @@ const catchBrokenPipe = (error) => {
     throw error;
 };
 
+// Binary results, such as screenshots, arrive as bytes. Everything else is JSON.
+function body(response: Response): Promise<unknown> {
+    if (response.headers.get('content-type')?.includes('application/octet-stream')) {
+        return response.arrayBuffer().then(buffer => new Uint8Array(buffer));
+    }
+
+    return response.json();
+}
+
 export class RemotePuthClient {
     private readonly externalUri: string;
     private options: any;
@@ -35,7 +44,7 @@ export class RemotePuthClient {
     
     async contextCall(rpcPacket) {
         return await this.request('PATCH', '/context/call', rpcPacket)
-            .then(res => res.json())
+            .then(body)
             .catch(catchBrokenPipe);
     }
     

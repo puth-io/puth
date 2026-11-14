@@ -49,6 +49,13 @@ describe('Generated client', () => {
         assert.strictEqual(await browser.evaluate('window.chained'), 0);
     });
 
+    it('returns screenshots as PNG bytes', async () => {
+        const image = await browser.screenshot();
+
+        assert.instanceOf(image, Uint8Array);
+        assert.deepEqual([...image.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+    });
+
     it('chains from context creation', async () => {
         const created = Context.create(instance.http.url.replace(/\/$/, ''));
 

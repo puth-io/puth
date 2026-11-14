@@ -108,6 +108,7 @@ function onClientDisconnect(event: H3.H3Event, callback: () => void) {
 export class Puth {
     // @ts-ignore
     #http: Server;
+    #detourHttp?: Server;
     #logger: BaseLogger;
     #emitter: Emitter<PuthEvents>;
     #browserHandler: IBrowserHandler;
@@ -238,7 +239,14 @@ export class Puth {
         h3.patch('/portal/response', event => event.req.json().then(
             data => deferTracked(event, data, handle => this.portalResponse(data, handle)),
         ));
-        h3.all('/portal/detour/**', async (event) => {
+        // Detours get their own listener on loopback. Chrome blocks requests from insecure pages to loopback, and
+        // only this listener is exempted, so pages still cannot reach the API or the websocket of this server.
+        const detourApp = new H3.H3({
+            onError: (error) => {
+                this.logger.error(error);
+            },
+        });
+        detourApp.all('/portal/detour/**', async (event) => {
             let cid = event.req.headers.get('puth-portal-context-id');
             let psuri = event.req.headers.get('puth-portal-psuri');
             let url = event.req.headers.get('puth-portal-url');
@@ -351,6 +359,12 @@ export class Puth {
                 },
             }));
         }
+
+        this.#detourHttp = H3.serve(detourApp, {
+            hostname: '127.0.0.1',
+            port: 0,
+            silent: true,
+        });
 
         this.#http = H3.serve(h3, {
             hostname,
@@ -517,6 +531,7 @@ export class Puth {
     async destroy(): Promise<any> {
         await Promise.allSettled([
             this.http?.close(true),
+            this.#detourHttp?.close(true),
             ...Object.values(this.#contexts).map(context => context.destroy({immediately: true})),
         ]);
 
@@ -579,6 +594,13 @@ export class Puth {
 
     get http() {
         return this.#http;
+    }
+
+    /**
+     * Where Chrome sends detoured portal requests, once the listener is ready. Undefined without serve().
+     */
+    async detourUrl(): Promise<string|undefined> {
+        return (await this.#detourHttp?.ready())?.url;
     }
 
     on<Key extends keyof PuthEvents>(type: Key, handler: Handler<PuthEvents[Key]>): void;
