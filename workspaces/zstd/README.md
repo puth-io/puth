@@ -1,7 +1,7 @@
 # @puth/zstd
 
 zstd's decoder, built to WebAssembly from the official zstd release, with a TypeScript wrapper that checks
-every result. Private for now; it is not published to npm.
+every result. Puth's GUI reads recordings with it.
 
 ```ts
 import { createZstdDecoder } from '@puth/zstd';
