@@ -38,6 +38,38 @@ jobs:
       - name: test
         run: npm run test --workspace workspaces/puth
 
+  # Every supported LTS line and the newest release, except 24, which test-puth-node tests. Puth needs Node 24 or
+  # newer (engines in package.json). Update the list with the schedule at https://github.com/nodejs/Release.
+  test-puth-node-versions:
+    needs: [ test-puth-node ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 26
+    name: puth | node ${{ matrix.node-version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '${{ matrix.node-version }}'
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          key: node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            /home/runner/.npm
+            workspaces/puth/.cache
+      - name: install & build
+        run: |
+          npm ci
+          npm run build
+      - name: download browser
+        run: npm run ci:browser:install --workspace workspaces/puth
+      - name: test
+        run: npm run test --workspace workspaces/puth
+
   php:
     needs: [ test-puth-node ]
     runs-on: ubuntu-latest
