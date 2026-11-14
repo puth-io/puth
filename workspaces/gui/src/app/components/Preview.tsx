@@ -23,15 +23,18 @@ const FramePreview = observer(function FramePreview() {
         );
     }
 
+    // Frames are stored as Chrome sends them and can be taller than the viewport, so the viewport is cut from the top.
+    const viewport = app.previewStore?.visibleScreencast.page.viewport;
     return (
         <div
             className={'relative w-full overflow-hidden rounded-lg border border-white/18 shadow-[0_24px_60px_rgba(0,0,0,0.5)]'}
-            style={{maxWidth: `${app.previewStore?.visibleScreencast.page.viewport.width}px`}}
+            style={{maxWidth: viewport ? `${viewport.width}px` : undefined}}
         >
             <img
                 src={app.previewStore?.activeScreencastUrl}
                 alt={'Page at the selected step'}
-                className={'block w-full'}
+                className={'block w-full object-cover object-top'}
+                style={{aspectRatio: viewport ? `${viewport.width} / ${viewport.height}` : undefined}}
             />
             {app.settings.preview.darken && (
                 <div className={'pointer-events-none absolute inset-0 bg-black/50'}/>

@@ -7,6 +7,14 @@ export class Context extends ContextBase {
         return this.callFunc('createBrowserShim', [options, shimOptions]);
     }
 
+    enableFrames(): Promise<void> {
+        return this.callFunc('enableFrames', []);
+    }
+
+    disableFrames(): Promise<void> {
+        return this.callFunc('disableFrames', []);
+    }
+
     handoff(browser: Browser, options: Record<string, any> = {}): Promise<string> {
         return this.callFunc('handoff', [browser, options]);
     }

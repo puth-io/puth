@@ -135,6 +135,8 @@ GUI rebuilds documents with `DomReplay` from `@puth/core`; the format is in
   of its requests from the recording. A frame it doesn't control is never built.
   `DomReplay` neutralizes iframes, scripts, refreshes and link hints while it
   creates elements; nothing recorded may load or navigate.
+- Frames (screencasts) are off unless a context sets `frames` or calls
+  `enableFrames()`; the GUI crops them to the viewport with CSS.
 
 ## Client code generation
 

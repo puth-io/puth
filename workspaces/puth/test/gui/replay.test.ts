@@ -70,7 +70,7 @@ const paint = (browser, color: number) => browser.evaluate(`(() => {
 })()`);
 
 async function recordFailedRun(instance) {
-    const context = await createContext(instance, { snapshot: true, test: { name: 'failed checkout' } });
+    const context = await createContext(instance, { snapshot: true, frames: true, test: { name: 'failed checkout' } });
     const browser = await context.createBrowserShim();
 
     await browser.setTimeout(200);
@@ -166,6 +166,8 @@ describe('Snapshot replay', () => {
         await gui.assertVisible('[puth="replay-frame"]');
         await gui.click('[puth="view-frame"]');
         await gui.assertVisible('img[src^="blob:"], img[src^="data:"]');
+        // Frames are kept as Chrome sends them; the GUI shows the viewport from the top.
+        assert.strictEqual(await gui.evaluate(`getComputedStyle(document.querySelector('img[src^="blob:"]')).objectPosition`), '50% 0%');
     }, 40000);
 
     it('keeps repeated response content when importing and exporting', async () => {

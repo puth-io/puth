@@ -28,7 +28,7 @@ function makeInstance({ liveView = false } = {}) {
 }
 
 async function openPage(instance, options = {}) {
-    const remote = await instance.client.contextCreate({ snapshot: true, ...options });
+    const remote = await instance.client.contextCreate({ snapshot: true, frames: true, ...options });
     const browser = await remote.createBrowser();
     const page = (await browser.pages())[0];
     await page.goto(fixtureUrl());

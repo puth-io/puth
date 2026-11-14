@@ -55,6 +55,7 @@ type ContextEvents = {
     'call:apply:after': {command: ICommand|undefined, page: Page},
     'call:apply:error': {error: any, command: ICommand|undefined, page: Page},
     'call:expectation:error': {expectation: IExpectation, command: ICommand|undefined, page: Page},
+    'frames:changed': {enabled: boolean},
 }
 
 type ContextOptions = {
@@ -62,6 +63,8 @@ type ContextOptions = {
     detour: boolean|undefined;
     /** Records the DOM of each page for the GUI's Before/After views. On by default when snapshots are. */
     dom: boolean|undefined;
+    /** Records the frames Chrome paints, off by default. Context.enableFrames() turns them on later. */
+    frames: boolean|undefined;
     portal: boolean|undefined;
     snapshot: boolean|undefined;
     test: {
@@ -332,7 +335,7 @@ class Context extends Generic {
     }
     
     public async capturePageScreenshot(browser: Browser, initiator?: string) {
-        if (! this.shouldSnapshot) {
+        if (! this.isFramesEnabled) {
             return;
         }
 
@@ -798,6 +801,31 @@ class Context extends Generic {
 
     public get isDetourEnabled(): boolean {
         return this.options.detour !== false;
+    }
+
+    private framesEnabled?: boolean;
+
+    public get isFramesEnabled(): boolean {
+        return this.shouldSnapshot && (this.framesEnabled ?? this.options?.frames === true);
+    }
+
+    /**
+     * Records the frames Chrome paints from now on, in addition to the DOM. Useful for what the recorded DOM
+     * can't show, like canvas drawings or video.
+     */
+    // @codegen
+    public enableFrames(): void {
+        this.framesEnabled = true;
+        this.emit('frames:changed', {enabled: true});
+    }
+
+    /**
+     * Stops recording frames.
+     */
+    // @codegen
+    public disableFrames(): void {
+        this.framesEnabled = false;
+        this.emit('frames:changed', {enabled: false});
     }
 
     public get isDomEnabled(): boolean {

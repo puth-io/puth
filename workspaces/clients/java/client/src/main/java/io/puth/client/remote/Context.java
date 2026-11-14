@@ -31,6 +31,14 @@ public class Context extends RemoteObject {
         return (boolean) this.callFunc("destroy", new Object[]{options});
     }
 
+    public void enableFrames() {
+        this.callFunc("enableFrames", new Object[]{});
+    }
+
+    public void disableFrames() {
+        this.callFunc("disableFrames", new Object[]{});
+    }
+
     public String handoff(Browser browser) {
         return this.handoff(browser, Map.of());
     }

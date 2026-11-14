@@ -7,6 +7,7 @@ import { Puth } from '../src/Puth';
 import { PuthStandardPlugin } from '../src/plugins/PuthStandardPlugin';
 import { PUTH_EXTENSION_CODEC } from '../src/handlers/WebsocketHandler';
 import { fixtureUrl, installedBrowser, makeLocalPuthClient } from './helper';
+import { LiveViewSnapshotPlugin } from '../src/plugins/LiveViewPlugin';
 
 const cleanups: (() => unknown)[] = [];
 
@@ -74,4 +75,56 @@ describe('Diagnostics', () => {
         assert.strictEqual(diagnostics.recording.budgets.instance, 1024 * 1024 * 1024);
         assert.deepEqual(diagnostics.browsers, { pooled: 0, unused: 0, contexts: 0 });
     });
+});
+
+describe('Frames', () => {
+    async function run(options = {}) {
+        const client = makeLocalPuthClient();
+        cleanups.push(() => client.destroy());
+        client.use(PuthStandardPlugin);
+        client.use(LiveViewSnapshotPlugin);
+
+        let context!: any;
+        client.getPuth().on('context:created', (event) => { context = event.context; });
+        const remote = await client.contextCreate({ snapshot: true, ...options });
+        const browser = await remote.createBrowserShim();
+        await browser.visit(fixtureUrl());
+
+        const frames = () => client.getPuth().snapshotHandler.getAllCachedItemsFrom(context).filter((packet) => packet.type === 'screencasts').length;
+        // The screencast only sends frames while the page visibly changes.
+        let color = 0;
+        const paint = async (times = 8) => {
+            for (let i = 0; i < times; i++) {
+                await browser.evaluate(`document.body.style.background = 'rgb(${(color += 30) % 255}, 40, 90)'`);
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            }
+        };
+
+        return { remote, frames, paint };
+    }
+
+    it('are off unless a test turns them on', async () => {
+        const { frames, paint } = await run();
+        await paint();
+        assert.strictEqual(frames(), 0);
+    }, 20000);
+
+    it('are recorded with the frames option', async () => {
+        const { frames, paint } = await run({ frames: true });
+        await paint();
+        assert.isAbove(frames(), 0);
+    }, 20000);
+
+    it('can be turned on and off while a test runs', async () => {
+        const { remote, frames, paint } = await run();
+        await remote.enableFrames();
+        await paint();
+        assert.isAbove(frames(), 0);
+
+        await remote.disableFrames();
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const stopped = frames();
+        await paint();
+        assert.strictEqual(frames(), stopped);
+    }, 20000);
 });

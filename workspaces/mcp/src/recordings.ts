@@ -37,6 +37,7 @@ export type Recording = {
     responses: any[];
     failedRequests: any[];
     frames: any[];
+    navigations: any[];
 };
 
 export function parseRecording(packets: any[]): Recording {
@@ -52,6 +53,7 @@ export function parseRecording(packets: any[]): Recording {
         responses: ofType('response'),
         failedRequests: packets.filter(packet => packet?.specific === 'request.failed'),
         frames: ofType('screencasts'),
+        navigations: ofType('navigation'),
     };
 }
 
@@ -102,7 +104,7 @@ const MAX_SUMMARY_EVENTS = 8;
  * What went wrong, in the order it happened, so an error that came first reads as the cause of what failed later.
  */
 export function summarize(recording: Recording): string[] {
-    const { name, status, commands, logs, responses, failedRequests, frames } = recording;
+    const { name, status, commands, logs, responses, failedRequests, frames, navigations } = recording;
     const errors = logs.filter(isError);
     const steps = numberedCommands(commands);
     const failed = steps.flatMap(({ command, index }) => errorOf(command) === undefined ? [] : [{ time: timeOf(command), line: commandLine(command, index) }]);
@@ -114,7 +116,8 @@ export function summarize(recording: Recording): string[] {
         ...failedRequests.map(request => ({ time: timeOf(request), line: failedRequestLine(request) })),
         ...responses.filter(response => response.status >= 400).map(response => ({ time: timeOf(response), line: responseLine(response) })),
     ].sort((a, b) => a.time - b.time);
-    const last = frames.at(-1)?.page?.url;
+    // Frames are only recorded when a test turns them on, navigations always.
+    const last = navigations.at(-1)?.url ?? frames.at(-1)?.page?.url;
     // setContent replaces the page without navigating, so that page keeps about:blank as its address.
     const setDirectly = last === 'about:blank' && commands.some(({ func }) => func === 'setContent');
 

@@ -271,6 +271,8 @@ export class SessionManager {
 
         const context = await Context.create(this.client, {
             snapshot: true,
+            // Agents look at the frames of their sessions through puth_context.
+            frames: true,
             portal: false,
             detour: false,
             track: ['network'],

@@ -34,6 +34,7 @@ abstract class TestCase extends FoundationTestCase
         static::$debug = static::$debug ?: config('puth.debug', false);
 
         $puthFeaturePortalEnabled = $this->puthFeaturePortalEnabled ?? false;
+        $puthFeatureFramesEnabled = $this->puthFeatureFramesEnabled ?? false;
 
         $this->context = new Context(Puth::instanceUrl(), array_merge([
             'test' => [
@@ -41,6 +42,7 @@ abstract class TestCase extends FoundationTestCase
                 'group' => get_class($this),
             ],
             'snapshot' => true,
+            'frames' => $puthFeatureFramesEnabled,
             'debug' => static::$debug,
             'detour' => $puthFeaturePortalEnabled,
             'portal' => $puthFeaturePortalEnabled,
