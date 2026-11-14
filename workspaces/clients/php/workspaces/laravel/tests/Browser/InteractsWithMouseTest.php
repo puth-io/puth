@@ -85,4 +85,13 @@ class InteractsWithMouseTest extends PuthTestCase
             $browser->clickAtXPath('//*[@id="non-existing-element-id"]');
         });
     }
+
+    function test_click_at_parenthesised_xpath()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->setContent('<button onclick="document.title = \'first\'">Go</button><button onclick="document.title = \'last\'">Go</button>')
+                ->clickAtXPath("(//button[normalize-space(.)='Go'])[last()]")
+                ->waitUntil("document.title === 'last'", 3);
+        });
+    }
 }

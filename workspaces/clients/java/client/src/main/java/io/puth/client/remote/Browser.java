@@ -195,6 +195,10 @@ public class Browser extends RemoteObject {
         return (Browser) this.callFunc("scrollTo", new Object[]{selector});
     }
 
+    public Browser pause(int milliseconds) {
+        return (Browser) this.callFunc("pause", new Object[]{milliseconds});
+    }
+
     public void quit() {
         this.callFunc("quit", new Object[]{});
     }

@@ -53,7 +53,7 @@ The Laravel integration provides a full replacement for Dusk.
 Another difference is that it does not start the browser process. For that you need to run `puth` (e.g. in
 Docker) and point the client to the `puth` instance.
 
-Some exception messages changed, mostly the ones thrown by assert functions, e.g. instead of `Element [body #not-existing-element] not found` you will see `Waited 200ms for selector [body body #not-existing-element]` when calling `$browser->assertVisible('body #not-existing-element')`.
+Some exception messages changed, mostly the ones thrown by assert functions, e.g. instead of `Element [body #not-existing-element] not found` you will see `Waited 200ms for selector [body #not-existing-element]` when calling `$browser->assertVisible('body #not-existing-element')`.
 
 #### Portal
 

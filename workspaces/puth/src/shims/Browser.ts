@@ -120,6 +120,24 @@ export async function resolveValue(valueOfFunctionOrPromise: any, args = {}) {
     return valueOfFunctionOrPromise;
 }
 
+// Arrow functions and function expressions, which evaluate() calls instead of returning.
+const FUNCTION_SOURCE = /^\s*(async\s+)?(function\b|\([^()]*\)\s*=>|[\w$]+\s*=>)/;
+
+/**
+ * Scopes a selector to the prefix, unless it starts with the prefix already. Otherwise "body" would become
+ * "body body", which matches nothing.
+ */
+export function withPrefix(prefix: string, selector: string): string {
+    prefix = prefix.trim();
+    selector = selector.trim();
+
+    if (prefix === '' || (selector.startsWith(prefix) && !/^[\w-]/.test(selector.substring(prefix.length)))) {
+        return selector;
+    }
+
+    return `${prefix} ${selector}`.trim();
+}
+
 export class ExpectationFailed extends Error {
     readonly expected: any;
     readonly actual: any;
@@ -355,9 +373,8 @@ export class Browser {
     }
 
     public clickAtXPath(expression: string): Promise<this> {
-        expression = expression.startsWith('.') ? expression.substring(1) : expression;
-
-        const selector = `xpath//.${expression}`;
+        // Only a location path can be made relative, "(//a)[last()]" is a complete expression already.
+        const selector = `xpath//${expression.startsWith('/') ? '.' + expression : expression}`;
 
         return this.act(() => this.firstOrFail(selector), expression, (element) => element.click())
             .then(this.self);
@@ -531,7 +548,22 @@ export class Browser {
             return Promise.all(pageFunction.map((func, idx) => this.evaluate(func, args[idx] ?? [])));
         }
 
-        return this.site.evaluate(pageFunction, ...args);
+        // Like Puppeteer, the source of a function is called with the arguments. Other sources stay expressions,
+        // so statements keep working, and they are evaluated as one round trip.
+        const isFunction = FUNCTION_SOURCE.test(pageFunction);
+        if (args.length === 0 && !isFunction) {
+            return this.site.evaluate(pageFunction);
+        }
+
+        // Parentheses make "function () {}" an expression, a statement would need a name.
+        return this.site.evaluateHandle(isFunction ? `(${pageFunction})` : pageFunction).then(handle => this.site
+            .evaluate((value, ...values) => typeof value === 'function' ? value(...values) : value, handle, ...args)
+            .finally(() => void handle.dispose().catch(() => {})));
+    }
+
+    // Waits on the server, so the portal keeps answering the requests of the page meanwhile.
+    public pause(milliseconds: int): Promise<this> {
+        return new Promise(resolve => setTimeout(resolve, milliseconds)).then(this.self);
     }
 
     public async quit(): Promise<void> {
@@ -2162,7 +2194,7 @@ export class Browser {
             selector = selector.replace(/@(\S+)/g, `[${this.options.resolver.finder}="$1"]`);
         }
 
-        return (this.options.resolver.prefix + ' ' + selector).trim();
+        return withPrefix(this.options.resolver.prefix, selector);
     }
 
     private _waitForDialog(): Promise<Dialog> {

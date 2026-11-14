@@ -557,12 +557,14 @@ class Browser extends \Puth\RemoteObjects\Browser
     /**
      * Pause for the given amount of milliseconds.
      *
+     * Puth waits, not PHP, so requests of the page through the portal are still answered meanwhile.
+     *
      * @param int $milliseconds
      * @return $this
      */
     public function pause($milliseconds)
     {
-        usleep($milliseconds * 1000);
+        $this->_pause((int) $milliseconds);
 
         return $this;
     }

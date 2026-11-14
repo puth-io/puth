@@ -29,6 +29,20 @@ class BrowserTest extends PuthTestCase
         });
     }
     
+    function test_screenshot_is_a_png_file()
+    {
+        $path = base_path('tests/Browser/screenshots/browser-test-screenshot.png');
+        @unlink($path);
+        $this->beforeApplicationDestroyed(fn () => @unlink($path));
+
+        $this->browse(function (Browser $browser) use ($path) {
+            $browser->setContent('<p>Screenshot me</p>')->screenshot('browser-test-screenshot');
+
+            Assert::assertFileExists($path);
+            Assert::assertSame("\x89PNG", substr((string) file_get_contents($path), 0, 4));
+        });
+    }
+
     function test_browser_maximize()
     {
         $this->browse(function (Browser $browser) {

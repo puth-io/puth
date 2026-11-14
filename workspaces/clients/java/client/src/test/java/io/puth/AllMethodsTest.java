@@ -186,7 +186,7 @@ public class AllMethodsTest extends BaseTest {
 
         expectFailContains("Waited 500ms for selector [body a[href='https://notalink.io/']]",
                 () -> browser.assertSeeLink("https://notalink.io/"));
-        expectFailContains("Waited 500ms for selector [body body #not-existing-element]",
+        expectFailContains("Waited 500ms for selector [body #not-existing-element]",
                 () -> browser.assertVisible("body #not-existing-element"));
     }
 

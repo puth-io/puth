@@ -117,6 +117,16 @@ describe('Portal failures over HTTP', () => {
 
     const forwardedPsuri = async ({ call }) => ((await call.response.promise) as any).value.request.psuri;
 
+    it('forwards the headers of the page request as a plain object', async () => {
+        const session = await detourRequest();
+        const { headers } = ((await session.call.response.promise) as any).value.request;
+
+        // The client receives the request as JSON.
+        const forwarded = JSON.parse(JSON.stringify(headers));
+        assert.strictEqual(forwarded['content-type'], 'multipart/form-data; boundary=test');
+        assert.deepEqual(Object.keys(forwarded).filter((name) => name === 'host' || name.startsWith('puth-portal-')), []);
+    });
+
     it('reports a failure with a marked 502', async () => {
         const session = await detourRequest();
         const psuri = await forwardedPsuri(session);

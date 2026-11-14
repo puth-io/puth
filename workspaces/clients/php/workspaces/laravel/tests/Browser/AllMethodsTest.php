@@ -195,7 +195,7 @@ class AllMethodsTest extends PuthTestCase
             $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
 
             $inverse("Waited 500ms for selector [body a[href='https://notalink.io/']]", fn() => $browser->assertSeeLink('https://notalink.io/'));
-            $inverse('Waited 500ms for selector [body body #not-existing-element]', fn() => $browser->assertVisible('body #not-existing-element'));
+            $inverse('Waited 500ms for selector [body #not-existing-element]', fn() => $browser->assertVisible('body #not-existing-element'));
         });
     }
 

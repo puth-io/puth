@@ -167,7 +167,7 @@ abstract class TestCase extends FoundationTestCase
     {
         if ($portalRequest->path !== '/' && file_exists($staticFile = public_path($portalRequest->path))) {
             $content = file_get_contents($staticFile);
-            $mimeType = MimeType::detector()->detectMimeType($staticFile, $content);
+            $mimeType = MimeType::ofFile($staticFile, $content);
             return [
                 'body' => base64_encode($content),
                 'headers' => [
@@ -203,7 +203,8 @@ abstract class TestCase extends FoundationTestCase
 
     public function parsePortalRequest(object $portalRequest): Request
     {
-        $server = $this->transformHeadersToServerVars((array) $portalRequest->headers);
+        $headers = (array) $portalRequest->headers;
+        $server = $this->transformHeadersToServerVars($headers);
         $server['REQUEST_METHOD'] = strtoupper($portalRequest->method);
         $server['REQUEST_URI'] = $portalRequest->url;
         $server['REMOTE_ADDR'] = $portalRequest?->ip ?? '127.0.0.1';
@@ -213,14 +214,17 @@ abstract class TestCase extends FoundationTestCase
         if (isset($url['query'])) {
             parse_str($url['query'], $queryParams);
         }
+        $server['QUERY_STRING'] = $url['query'] ?? '';
         $server['HTTP_HOST'] = "{$url['host']}:" . ($url['port'] ?? '80');
 
-        $parsedCookies = [];
-        if (isset($headers['cookie'])) {
-            parse_str(str_replace('; ', '&', $headers['cookie']), $cookies);
+        $cookieHeader = '';
+        foreach ($headers as $name => $value) {
+            if (strtolower($name) === 'cookie') {
+                $cookieHeader = $value;
+            }
         }
-        $cookies = $this->prepareCookiesForRequest();
-        array_push($cookies, ...$parsedCookies);
+        // Cookies set by the test, for example with withCookie(), take precedence over the ones of the browser.
+        $cookies = array_merge(static::parseCookieHeader($cookieHeader), $this->prepareCookiesForRequest());
 
         $request = new Request(
             $queryParams, // GET
@@ -237,6 +241,29 @@ abstract class TestCase extends FoundationTestCase
         return $request;
     }
 
+    /**
+     * Parses a Cookie header like PHP fills $_COOKIE, except that names stay as they are. parse_str() would turn
+     * dots into underscores and brackets into arrays.
+     */
+    protected static function parseCookieHeader(string $header): array
+    {
+        $cookies = [];
+        foreach (explode(';', $header) as $pair) {
+            if (!str_contains($pair, '=')) {
+                continue;
+            }
+
+            [$name, $value] = explode('=', $pair, 2);
+            $name = trim($name);
+            // The browser sends the most specific cookie first, PHP keeps that one too.
+            if ($name !== '' && !array_key_exists($name, $cookies)) {
+                $cookies[$name] = urldecode(trim($value));
+            }
+        }
+
+        return $cookies;
+    }
+
     protected static function populateParametersFromBody(Request $request): void
     {
         $contentType = $request->headers->get('Content-Type', '');
@@ -250,9 +277,9 @@ abstract class TestCase extends FoundationTestCase
             parse_str($request->getContent(), $parsed);
             $request->request->replace($parsed);
         } else if (str_starts_with($contentType, 'multipart/form-data')) {
-            $boundary = self::extractBoundary($contentType);
+            $boundary = static::extractBoundary($contentType);
             if ($boundary) {
-                $parsed = self::parseMultipart($request->getContent(), $boundary);
+                $parsed = static::parseMultipart($request->getContent(), $boundary);
                 $request->request->replace($parsed['fields'] ?? []);
                 $request->files->replace($parsed['files'] ?? []);
             }
@@ -311,18 +338,49 @@ abstract class TestCase extends FoundationTestCase
                 $mime = $headers['content-type'] ?? 'application/octet-stream';
                 $file = new UploadedFile($tmpPath, $filename, $mime, null, true);
 
-                if (str_ends_with($name, '[]')) {
-                    $short = mb_substr($name, 0, -2);
-                    if (!array_key_exists($short, $result['files'])) $result['files'][$short] = [];
-                    $result['files'][$short][] = $file;
-                } else {
-                    $result['files'][$name] = $file;
-                }
+                static::setNestedValue($result['files'], $name, $file);
             } else {
-                $result['fields'][$name] = $content;
+                static::setNestedValue($result['fields'], $name, $content);
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Stores a value under a form name the way PHP fills $_POST and $_FILES: "a[b][]" is $target['a']['b'][].
+     */
+    protected static function setNestedValue(array &$target, string $name, mixed $value): void
+    {
+        if (!preg_match('/^([^\[]+)((?:\[[^\]]*\])+)$/', $name, $matches)) {
+            $target[$name] = $value;
+
+            return;
+        }
+
+        preg_match_all('/\[([^\]]*)\]/', $matches[2], $keys);
+
+        $current = &$target;
+        foreach ([$matches[1], ...$keys[1]] as $index => $key) {
+            $last = $index === count($keys[1]);
+            if ($key === '' && $index > 0) {
+                if ($last) {
+                    $current[] = $value;
+
+                    return;
+                }
+                $current[] = [];
+                $key = array_key_last($current);
+            } elseif ($last) {
+                $current[$key] = $value;
+
+                return;
+            }
+
+            if (!isset($current[$key]) || !is_array($current[$key])) {
+                $current[$key] = [];
+            }
+            $current = &$current[$key];
+        }
     }
 }

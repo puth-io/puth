@@ -134,6 +134,10 @@ export class Browser extends RemoteObject {
         return this.callFunc('evaluate', [pageFunction, args]);
     }
 
+    pause(milliseconds: number): Chain<this> {
+        return this.callFunc('pause', [milliseconds]);
+    }
+
     quit(): Promise<void> {
         return this.callFunc('quit', []);
     }

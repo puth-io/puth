@@ -395,6 +395,14 @@ class ElementResolver
             $selector = preg_replace('/@(\S+)/', '[dusk="$1"]', $selector);
         }
 
+        $selector = trim($selector);
+
+        // A selector that starts with the prefix is scoped already, "body body" would match nothing.
+        if ($this->prefix === '' || (str_starts_with($selector, $this->prefix)
+                && !preg_match('/^[\w-]/', substr($selector, strlen($this->prefix))))) {
+            return $selector;
+        }
+
         return trim($this->prefix.' '.$selector);
     }
 }

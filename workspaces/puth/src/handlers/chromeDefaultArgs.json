@@ -17,7 +17,7 @@
   "--disable-new-avatar-menu",
   "--disable-device-discovery-notifications",
   "--disable-infobars",
-  "--disable-features=HttpsUpgrades",
+  "--disable-features=HttpsUpgrades,LocalNetworkAccessChecks",
   "--disable-search-engine-choice-screen",
   "--disable-smooth-scrolling",
   "--disable-input-event-activation-protection",

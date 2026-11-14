@@ -160,6 +160,18 @@ var count = browser.evaluate("document.querySelectorAll(\".item\").length");
 const count = await browser.evaluate('document.querySelectorAll(".item").length');
 ```
 
+The source of a function is called with the arguments, like in Puppeteer:
+
+```php
+$sum = $browser->evaluate('(a, b) => a + b', [1, 2]);
+```
+```java
+var sum = browser.evaluate("(a, b) => a + b", new Object[]{1, 2});
+```
+```ts
+const sum = await browser.evaluate('(a, b) => a + b', [1, 2]);
+```
+
 ## Browser lifecycle
 
 <SdkContent sdk="laravel">

@@ -30,7 +30,8 @@ Generated assertion methods currently expect a bound Laravel test case when proc
 - `$browser->blank()` load `about:blank`.
 - `$browser->refresh(options?)` reload page.
 - `$browser->back(options?)` and `$browser->forward(options?)` history navigation.
-- `$browser->evaluate(pageFunction, args?)` run JS in page.
+- `$browser->evaluate(pageFunction, args?)` run JS in page; the source of a function is called with `args`.
+- <SdkCall php="$browser-&gt;_pause($milliseconds)" laravel="$browser-&gt;pause($milliseconds)" /> wait on the server, so the portal keeps answering requests of the page.
 - `$browser->quit()` close browser context.
 
 ## Window and viewport

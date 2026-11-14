@@ -103,4 +103,16 @@ HTML;
             $browser->moveMouse(0, 0);
         });
     }
+
+    function test_body_can_be_selected()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->setContent('<p>Hello</p>')
+                ->waitFor('body')
+                ->assertSeeIn('body', 'Hello');
+
+            Assert::assertSame('Hello', trim($browser->text('body')));
+            Assert::assertSame('Hello', trim($browser->text('body > p')));
+        });
+    }
 }

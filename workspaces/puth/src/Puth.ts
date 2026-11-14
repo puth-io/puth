@@ -72,6 +72,28 @@ function portalDetourResponse(failure: PortalFailure|undefined, status: number, 
     );
 }
 
+// Clients tell binary results, such as screenshots, from JSON by their content type.
+function binaryResponse(value: unknown): unknown {
+    if (value instanceof Uint8Array) {
+        return new Response(value as BodyInit, { headers: { 'content-type': 'application/octet-stream' } });
+    }
+
+    return value;
+}
+
+// Headers objects serialize to {}, so the client would get none. The host and the puth-portal-* headers belong to
+// the detour, not to the request of the page.
+function detourRequestHeaders(headers: Headers): Record<string, string> {
+    const plain: Record<string, string> = {};
+    headers.forEach((value, name) => {
+        if (name !== 'host' && !name.startsWith('puth-portal-')) {
+            plain[name] = value;
+        }
+    });
+
+    return plain;
+}
+
 // Request signals cannot tell this apart: they abort as soon as the request body was consumed.
 function onClientDisconnect(event: H3.H3Event, callback: () => void) {
     // @ts-ignore
@@ -195,7 +217,7 @@ export class Puth {
         const deferTracked = (event: H3.H3Event, data: any, handler: (handle: any) => unknown) => defer((handle: any) => {
             onClientDisconnect(event, () => this.#contexts[data.context?.id]?.clientDisconnected(handle));
             return handler(handle);
-        });
+        }).then(binaryResponse);
 
         h3.get('/health', () => this.health());
         h3.get('/diagnostics', () => this.diagnostics());
@@ -270,7 +292,7 @@ export class Puth {
                     url: decodeURI(url),
                     path: decodeURI(path ?? ''),
                     ip: event.req.ip,
-                    headers: event.req.headers,
+                    headers: detourRequestHeaders(event.req.headers),
                     // @ts-ignore
                     data,
                     method: event.req.method,

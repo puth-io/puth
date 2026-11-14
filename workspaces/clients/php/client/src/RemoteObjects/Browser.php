@@ -392,6 +392,19 @@ class Browser extends RemoteObject
     }
 
     /**
+     * Waits on the server, so the portal keeps answering the requests of the page meanwhile.
+     * 
+     * @debug-gen-original-name "pause"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["this"]
+     * @debug-gen-original-parameter milliseconds {"type":"int","isOptional":false}
+     */
+    public function _pause(int $milliseconds): Browser
+    {
+        return $this->callFunc('pause', [$milliseconds]);
+    }
+
+    /**
      * @debug-gen-original-name "quit"
      * @debug-gen-original-is-async true
      * @debug-gen-original-returns ["void"]
