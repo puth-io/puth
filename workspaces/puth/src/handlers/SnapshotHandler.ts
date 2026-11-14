@@ -204,7 +204,8 @@ export class SnapshotHandler extends BaseHandler {
     }
 
     private deduplicateResponseContent(recording: Recording, item: any): void {
-        if (item.type !== 'response' || ! (item.content instanceof Uint8Array)) {
+        // Network responses and the bodies the DOM replay serves share one store, a body is kept once.
+        if ((item.type !== 'response' && item.type !== 'dom-resource') || ! (item.content instanceof Uint8Array)) {
             return;
         }
 
