@@ -557,6 +557,46 @@ describe('DOM replay', () => {
         assert.strictEqual(await gui.evaluate(inner), 'page two');
     }, 60000);
 
+    it('restores scroll positions, also of frames and at the end of a page', async () => {
+        const server = http.createServer((request, response) => {
+            const pages = {
+                '/top': `<style>body { margin: 0 } #box { width: 200px; height: 80px; overflow: auto } #inner { height: 600px }
+                    #tall { height: 1500px }</style><div id="box"><div id="inner">box</div></div>
+                    <iframe id="frame" src="/frame" style="width: 300px; height: 120px"></iframe><div id="tall">tall</div>`,
+                '/frame': '<style>body { margin: 0; height: 1000px }</style><p>frame</p>',
+            };
+            response.writeHead(200, { 'content-type': 'text/html' }).end(pages[request.url] ?? '');
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        cleanups.push(() => new Promise((resolve) => server.close(resolve)));
+
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'scroll run' } });
+        const browser = await context.createBrowserShim();
+        await browser.resize(800, 600);
+        await browser.visit(`http://127.0.0.1:${(server.address() as any).port}/top`);
+        // As far down as the page goes, which a larger replay frame would cut short.
+        const expected = await browser.evaluate(`(() => {
+            scrollTo(0, document.documentElement.scrollHeight);
+            document.getElementById('box').scrollTop = 250;
+            document.getElementById('frame').contentWindow.scrollTo(0, 400);
+            return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() =>
+                resolve(JSON.stringify([scrollY, document.getElementById('box').scrollTop, document.getElementById('frame').contentWindow.scrollY])))));
+        })()`);
+        await browser.evaluate('1');
+        await context.destroy({ immediately: true });
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('scroll run');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+        await showStep(gui, -1, 'before');
+
+        assert.strictEqual(await gui.evaluate(inReplay(`JSON.stringify([doc.defaultView.scrollY, doc.getElementById('box').scrollTop,
+            doc.getElementById('frame').contentWindow.scrollY])`)), expected);
+    }, 60000);
+
     it('runs no script and follows no link of the recorded page', async () => {
         const instance = await startInstance();
         const context = await createContext(instance, { snapshot: true, test: { name: 'script run' } });

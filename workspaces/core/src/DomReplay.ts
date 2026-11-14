@@ -100,6 +100,7 @@ export class DomReplay {
                             value: change[2] ?? undefined,
                             checked: change[3] ?? undefined,
                             selectedIndex: change[4] ?? undefined,
+                            selected: change[5] ?? undefined,
                         });
                     }
                     break;
@@ -330,6 +331,12 @@ export class DomReplay {
         }
         if (props.selectedIndex !== undefined && 'selectedIndex' in control) {
             control.selectedIndex = props.selectedIndex;
+        }
+        if (props.selected !== undefined && 'options' in control) {
+            const selected = new Set(props.selected);
+            for (let i = 0; i < control.options.length; i++) {
+                control.options[i].selected = selected.has(i);
+            }
         }
         if (props.css !== undefined) {
             element.textContent = props.css;

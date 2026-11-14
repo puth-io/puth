@@ -17,7 +17,7 @@ export const NORMALIZE = String.raw`(doc) => {
         let line = pad + '<' + node.tagName.toLowerCase() + (attributes.length ? ' ' + attributes.join(' ') : '') + '>';
         if (['input', 'textarea', 'select'].includes(node.localName)) {
             line += ' value=' + JSON.stringify(node.value) + (node.localName === 'input' ? ' checked=' + node.checked : '')
-                + (node.localName === 'select' ? ' index=' + node.selectedIndex : '');
+                + (node.localName === 'select' ? ' index=' + node.selectedIndex + ' selected=' + [...node.options].filter((option) => option.selected).map((option) => option.index).join(',') : '');
         }
         // Rules count, not how they got there: the replay writes rules added through the CSSOM as text.
         if (node.localName === 'style') {

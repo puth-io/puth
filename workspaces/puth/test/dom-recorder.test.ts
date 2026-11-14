@@ -69,6 +69,31 @@ async function record(options = {}) {
         })()`);
     };
 
+    // Evaluates expression with the rebuilt document as doc, in a frame of the recorded viewport's size, after the
+    // scroll positions were restored.
+    const replayedState = async (point: { doc: string, seq: number }, expression: string) => {
+        const list = domPackets().filter((packet) => packet.doc === point.doc).map(({ kind, seq, data }) => ({ kind, seq, data }));
+        return replay.evaluate(`(() => {
+            const packets = window.domPacketsUntil(${JSON.stringify(list)}, ${point.seq});
+            const frame = document.getElementById('replay');
+            const doc = frame.contentDocument;
+            const replay = new window.DomReplay(doc);
+            replay.build(packets[0].data);
+            for (const packet of packets.slice(1)) replay.apply(packet.data);
+            frame.style.cssText = 'border: 0; width: ' + replay.viewport[0] + 'px; height: ' + replay.viewport[1] + 'px';
+            doc.documentElement.getBoundingClientRect();
+            replay.restoreScroll();
+            return ${expression};
+        })()`);
+    };
+
+    // The page's state read in its own main world, and the point of the command that read it.
+    const state = async (expression: string) => {
+        const expected = await browser.evaluate(expression);
+        const command = packets().filter((packet) => packet.type === 'command' && packet.func === 'evaluate').at(-1);
+        return { expected, point: command.dom.before };
+    };
+
     const check = async () => {
         const { expected, point } = await snapshot();
         assert.isDefined(point, 'the command has no DOM point');
@@ -76,7 +101,7 @@ async function record(options = {}) {
         return point;
     };
 
-    return { client, browser, context, packets, domPackets, check, replayed };
+    return { client, browser, context, packets, domPackets, check, replayed, replayedState, state };
 }
 
 describe('DOM recording', () => {
@@ -327,5 +352,138 @@ describe('DOM recording', () => {
         await browser.evaluate('1');
         assert.lengthOf(domPackets(), 0);
         assert.isUndefined(packets().find((packet) => packet.type === 'command').dom);
+    }, 30000);
+});
+
+describe('DOM recording of', () => {
+    // Scroll positions of a window and its document, for the recorded page and the replay alike.
+    const scroll = (win: string, doc: string) => `((win, doc) => JSON.stringify([win.scrollX, win.scrollY,
+        doc.getElementById('box').scrollLeft, doc.getElementById('box').scrollTop]))(${win}, ${doc})`;
+    const scrollPage = `<style>body { margin: 0 } #box { width: 200px; height: 100px; overflow: auto } #inner { width: 1000px; height: 1000px }
+        #tall { width: 3000px; height: 3000px }</style><div id="box"><div id="inner">inner</div></div><div id="tall">tall</div>`;
+    const frame = 'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))';
+
+    it('scroll positions of the window and of elements', async () => {
+        const { browser, state, replayedState } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(scrollPage);
+
+        // Scrolled by the page, with a frame for the scroll events.
+        await browser.evaluate(`(scrollTo(120, 500), document.getElementById('box').scrollTop = 300, document.getElementById('box').scrollLeft = 40, ${frame})`);
+        let { expected, point } = await state(scroll('window', 'document'));
+        assert.strictEqual(await replayedState(point, scroll('doc.defaultView', 'doc')), expected);
+
+        // Scrolled again right before the next command, before any scroll event fired.
+        await browser.evaluate(`(scrollTo(10, 900), document.getElementById('box').scrollTop = 120)`);
+        ({ expected, point } = await state(scroll('window', 'document')));
+        assert.strictEqual(await replayedState(point, scroll('doc.defaultView', 'doc')), expected);
+    }, 30000);
+
+    it('scroll positions in a new keyframe', async () => {
+        const { browser, state, replayedState, domPackets } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(scrollPage + '<div id="many"></div>');
+        await browser.evaluate(`(scrollTo(0, 700), document.getElementById('box').scrollTop = 250, ${frame})`);
+        await browser.evaluate('1');
+        const keyframes = domPackets().filter((packet) => packet.kind === 'keyframe').length;
+
+        // Too many changes at once make the next batch a keyframe, which has to carry the positions along.
+        await browser.evaluate(`(() => { const many = document.getElementById('many'); for (let i = 0; i < 25000; i++) many.append(document.createElement('i')); })()`);
+        const { expected, point } = await state(scroll('window', 'document'));
+        assert.isAbove(domPackets().filter((packet) => packet.kind === 'keyframe').length, keyframes);
+        assert.strictEqual(await replayedState(point, scroll('doc.defaultView', 'doc')), expected);
+    }, 30000);
+
+    it('the viewport', async () => {
+        const { browser, state, replayedState } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent('<p>viewport</p>');
+        await browser.resize(900, 640);
+
+        const { expected, point } = await state('JSON.stringify([innerWidth, innerHeight])');
+        assert.strictEqual(await replayedState(point, 'JSON.stringify(replay.viewport.slice(0, 2))'), expected);
+    }, 30000);
+
+    it('form state, however it changes', async () => {
+        const { browser, check } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<form id="form">
+            <input id="text" value="initial"><input type="checkbox" id="box">
+            <input type="radio" name="radio" value="a" id="a" checked><input type="radio" name="radio" value="b" id="b">
+            <select id="single"><option>a</option><option>b</option><option>c</option></select>
+            <select id="multiple" multiple><option>x</option><option selected>y</option><option>z</option></select>
+            <textarea id="area">default</textarea><input type="number" id="number"><input type="range" id="range" min="0" max="10">
+        </form>`);
+        await check();
+
+        // Set from code: no events, no attributes.
+        await browser.evaluate(`(() => {
+            document.getElementById('text').value = 'typed';
+            document.getElementById('box').checked = true;
+            document.getElementById('b').checked = true;
+            document.getElementById('single').value = 'c';
+            const multiple = document.getElementById('multiple');
+            multiple.options[0].selected = true;
+            multiple.options[1].selected = false;
+            multiple.options[2].selected = true;
+            document.getElementById('area').value = 'edited';
+            document.getElementById('number').value = '42';
+            document.getElementById('range').value = '7';
+        })()`);
+        await check();
+
+        await browser.evaluate(`document.getElementById('form').reset()`);
+        await check();
+
+        // A control that was never edited follows its value attribute.
+        await browser.evaluate(`document.getElementById('text').setAttribute('value', 'from the attribute')`);
+        await check();
+
+        // Typed for real.
+        await browser.type('#text', ' and typed');
+        await browser.select('#single', 'b');
+        await browser.check('#box');
+        await check();
+    }, 30000);
+
+    it('stylesheets changed through the CSSOM', async () => {
+        const { browser, check } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent('<style id="text">p { color: red }</style><style id="empty"></style><p>styled</p>');
+
+        await browser.evaluate(`(() => {
+            const sheet = document.getElementById('empty').sheet;
+            sheet.insertRule('p { margin: 3px }');
+            sheet.insertRule('.x { padding: 1px }', 1);
+        })()`);
+        await check();
+
+        await browser.evaluate(`(document.getElementById('empty').sheet.deleteRule(0), document.getElementById('text').sheet.insertRule('h1 { color: blue }'))`);
+        await check();
+
+        // As many rules as before, but other ones.
+        await browser.evaluate(`(document.getElementById('empty').sheet.deleteRule(0), document.getElementById('empty').sheet.insertRule('em { color: green }'))`);
+        await check();
+
+        await browser.evaluate(`document.getElementById('text').textContent = 'p { color: blue }'`);
+        await check();
+    }, 30000);
+
+    it('SVG, MathML, comments and the title', async () => {
+        const { browser, check } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<title>first</title><svg id="svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="50" height="50">
+            <defs><circle id="c" r="5"></circle><rect id="r" width="4" height="4"></rect></defs><use id="use" xlink:href="#c" x="10" y="10"></use>
+            <foreignObject width="20" height="20"><p>inside</p></foreignObject></svg><!-- a comment --><math><mi>x</mi><mo>+</mo></math>`);
+        await check();
+
+        await browser.evaluate(`(() => {
+            document.getElementById('use').setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#r');
+            document.getElementById('svg').appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'path')).setAttribute('d', 'M0 0 L5 5');
+            [...document.body.childNodes].find((node) => node.nodeType === 8).data = ' changed ';
+            document.title = 'second';
+            document.querySelector('mi').textContent = 'y';
+        })()`);
+        await check();
     }, 30000);
 });
