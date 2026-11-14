@@ -1,3 +1,4 @@
+import { compress } from './utils/Compression';
 import path, { join } from 'node:path';
 import { stat, readFile } from "node:fs/promises";
 import { createReadStream } from 'node:fs';
@@ -318,9 +319,15 @@ export class Puth {
                         }
                     }
                 },
+                // The GUI gets every recording first, compressed like a file. Packets recorded meanwhile wait.
                 open: (peer) => {
-                    this.websocketHandler.push(peer)
-                    peer.send(this.websocketHandler.serialize(this.snapshotHandler.getAllCachedItems()));
+                    this.websocketHandler.push(peer);
+                    void compress(this.websocketHandler.serialize(this.snapshotHandler.getAllCachedItems()))
+                        .then(recordings => this.websocketHandler.ready(peer, recordings))
+                        .catch(error => {
+                            this.logger.error({error}, 'Could not send the recordings to a websocket client');
+                            this.websocketHandler.ready(peer);
+                        });
                 },
                 close: (peer) => this.websocketHandler.pop(peer),
                 message: (peer, message) => {
@@ -454,7 +461,7 @@ export class Puth {
     }
 
     // Reads the recording without touching the context, so it can keep running.
-    public contextSnapshot(id: string): Response {
+    public async contextSnapshot(id: string): Promise<Response> {
         const context = this.knownContexts().find(known => known.id === id);
         if (context === undefined) {
             return Response.json(this.contextNotFound(id), { status: 404 });
@@ -462,7 +469,8 @@ export class Puth {
 
         const packets = this.snapshotHandler.getAllCachedItemsFrom(context);
 
-        return new Response(encode(packets, { extensionCodec: PUTH_EXTENSION_CODEC }) as BodyInit, {
+        // The same as a saved .puth file: msgpack compressed with zstd.
+        return new Response(await compress(encode(packets, { extensionCodec: PUTH_EXTENSION_CODEC })) as BodyInit, {
             headers: {
                 'content-type': 'application/octet-stream',
                 'content-disposition': `attachment; filename="snapshot-${context.createdAt}-${id}.puth"`,

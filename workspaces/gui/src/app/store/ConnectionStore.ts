@@ -1,3 +1,4 @@
+import {decompressRecording} from '../util/Zstd';
 import ContextStore from '@/app/store/ContextStore';
 import mitt, {Emitter, Handler} from 'mitt';
 import {makeAutoObservable} from 'mobx';
@@ -124,8 +125,11 @@ export class Connection {
                 this.connectionState = this.websocket.readyState;
                 reject({code: 'closed', reason: 'Connection closed'});
             };
+            // Compressed messages are decoded asynchronously, the order of messages has to stay.
             const onMessage = (event: {data: ArrayBuffer;}) => {
-                this.received(event.data);
+                this.incoming = this.incoming
+                    .then(() => this.received(event.data))
+                    .catch(error => console.error('[Connection] Could not read a message', error));
             };
             this.websocket.addEventListener('open', onOpen);
             this.websocket.addEventListener('close', onClose);
@@ -157,12 +161,14 @@ export class Connection {
         this.websocket.send(data);
     }
     
-    private received(binary: ArrayBuffer) {
+    private incoming: Promise<void> = Promise.resolve();
+    
+    private async received(binary: ArrayBuffer) {
         // pMark('packet.received');
         this.totalBytesReceived += binary.byteLength;
         let dateBeforeParse = Date.now();
         
-        let data = decode(binary, {extensionCodec: PUTH_EXTENSION_CODEC});
+        let data = decode(await decompressRecording(new Uint8Array(binary)), {extensionCodec: PUTH_EXTENSION_CODEC});
         
         // pMeasure('decode', 'packet.received');
         let dateAfterParse = Date.now();

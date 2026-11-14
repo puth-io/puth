@@ -1,10 +1,15 @@
 import { readFile } from 'node:fs/promises';
+import { zstdDecompressSync } from 'node:zlib';
 import { decode, ExtensionCodec } from '@msgpack/msgpack';
 
 const codec = new ExtensionCodec();
 codec.register({ type: 0, encode: () => null, decode: (data: Uint8Array) => new TextDecoder().decode(data) });
 
-export const decodeRecording = (data: Uint8Array) => decode(data, { extensionCodec: codec }) as any[];
+// Puth compresses recordings with zstd; files exported from the GUI are plain msgpack.
+const isZstd = (data: Uint8Array) => data.length >= 4 && data[0] === 0x28 && data[1] === 0xb5 && data[2] === 0x2f && data[3] === 0xfd;
+
+export const decodeRecording = (data: Uint8Array) =>
+    decode(isZstd(data) ? zstdDecompressSync(data) : data, { extensionCodec: codec }) as any[];
 
 export const readRecording = async (file: string) => decodeRecording(await readFile(file));
 

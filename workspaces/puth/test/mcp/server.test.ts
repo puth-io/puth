@@ -1,3 +1,4 @@
+import { zstdDecompressSync } from 'node:zlib';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
@@ -970,7 +971,7 @@ describe('puth_export', () => {
 
         const { text } = await tool('puth_export', { sessionId, format: 'snapshot' });
 
-        const packets = decode(readFileSync(text), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        const packets = decode(zstdDecompressSync(readFileSync(text)), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
         assert.strictEqual(packets[0].type, 'context');
     }, 20000);
 
@@ -982,7 +983,7 @@ describe('puth_export', () => {
         await tool('puth_export', { sessionId, format: 'laravel', name: 'Sees Puth' });
 
         const { text } = await tool('puth_export', { sessionId, format: 'snapshot' });
-        const packets = decode(readFileSync(text), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        const packets = decode(zstdDecompressSync(readFileSync(text)), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
         const annotations = packets.filter(({ type }) => type === 'annotation');
 
         assert.deepEqual(annotations.filter(({ kind }) => kind === 'tool').map(({ tool }) => tool), [

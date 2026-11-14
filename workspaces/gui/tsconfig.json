@@ -26,6 +26,7 @@
       "react/*": ["./node_modules/@types/react/*"],
       "react-dom": ["./node_modules/@types/react-dom"],
       "react-dom/*": ["./node_modules/@types/react-dom/*"],
+      "@puth/zstd": ["../zstd/src/zstd.ts"],
       "@/app/store/ContextStore": [
         "./src/app/store/ContextStore.ts"
       ],

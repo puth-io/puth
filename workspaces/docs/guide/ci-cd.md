@@ -96,6 +96,8 @@ If you install Puth with npm, cache the browser download directory between jobs.
 
 Snapshot files are written by the **Puth server**, so collect artifacts from the machine or container running it. The default location is `storage/snapshots` relative to the server’s working directory. In the Puth Docker image this is `/puth/storage/snapshots`. The [Compose example](./getting-started#docker-compose) mounts that directory to `./puth/snapshots` on the host.
 
+A `.puth` file is the recording encoded with msgpack and compressed with zstd. The GUI and the MCP server open it; the same data is available from a running instance at `/context/<id>/snapshot`.
+
 Configure your CI provider to upload the snapshot directory even when the test step fails. If you override the snapshot location, collect that directory instead.
 
 ## Keep the snapshot directory small
