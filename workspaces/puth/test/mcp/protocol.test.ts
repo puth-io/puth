@@ -11,8 +11,8 @@ const request = (method: string, params: unknown = {}, id: number = 1) => JSON.s
 describe('MCP protocol', () => {
     const { server } = createServer(config);
 
-    it('lists the schemas the MCP SDK listed', () => {
-        // Recorded from @modelcontextprotocol/sdk 1.32.2. Update it on purpose when a tool changes.
+    it('lists the recorded schemas', () => {
+        // First recorded from @modelcontextprotocol/sdk 1.32.2. Update it on purpose when a tool changes.
         const recorded = JSON.parse(readFileSync(new URL('./tools.json', import.meta.url), 'utf8'));
 
         assert.deepEqual(server.listTools(), recorded);

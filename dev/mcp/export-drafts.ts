@@ -2,8 +2,7 @@
 // with copies that contain a wrong assertion. docker/dev/test-mcp-drafts.sh runs them. See dev/TESTING.md.
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { McpClient, StdioTransport } from '../../workspaces/puth/test/mcp/client';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const fixtures = process.env.PUTH_FIXTURE_URL ?? 'http://127.0.0.1:8081';
@@ -13,16 +12,16 @@ const targets = {
     php: 'workspaces/clients/php/client/tests/Feature',
 };
 
-const client = new Client({ name: 'export-drafts', version: '1.0.0' });
-await client.connect(new StdioClientTransport({
+const client = new McpClient(new StdioTransport({
     command: process.execPath,
     args: ['--import', 'tsx', path.join(root, 'workspaces/mcp/src/cli.ts')],
     env: { ...process.env } as Record<string, string>,
     stderr: 'inherit',
 }));
+await client.connect();
 
 async function tool(name: string, args: Record<string, unknown>) {
-    const result: any = await client.callTool({ name, arguments: args });
+    const result: any = await client.callTool(name, args);
     if (result.isError) {
         throw new Error(`${name} failed: ${result.content[0].text}`);
     }

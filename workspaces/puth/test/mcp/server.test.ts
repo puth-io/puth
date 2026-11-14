@@ -5,14 +5,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decode } from '@msgpack/msgpack';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Context, RemotePuthClient } from '@puth/client';
 import { afterEach, assert, beforeEach, describe, it, vi } from 'vitest';
 import { fixtureAltUrl, fixtureUrl, makePuthServer } from '../helper';
 import { LiveViewSnapshotPlugin } from '../../src/plugins/LiveViewPlugin';
 import { PUTH_EXTENSION_CODEC } from '../../src/handlers/WebsocketHandler';
+import { HttpTransport, McpClient, StdioTransport } from './client';
 
 const cli = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../mcp/src/cli.ts');
 
@@ -88,13 +86,12 @@ async function connect(instanceUrl: string, environment: Record<string, string> 
     };
     const http = TRANSPORT === 'http' ? await startHttpServer(env) : undefined;
     const transport = http === undefined
-        ? new StdioClientTransport({ command: process.execPath, args: ['--import', 'tsx', cli], stderr: 'pipe', env })
-        : new StreamableHTTPClientTransport(http.url);
-    const client = new Client({ name: 'test', version: '1.0.0' });
-    const protocolErrors: Error[] = [];
-    client.onerror = (error) => protocolErrors.push(error);
+        ? new StdioTransport({ command: process.execPath, args: ['--import', 'tsx', cli], env })
+        : new HttpTransport(http.url);
+    const client = new McpClient(transport);
+    const protocolErrors = client.errors;
 
-    await client.connect(transport);
+    await client.connect();
 
     let closed = false;
     const close = async () => {
@@ -107,7 +104,7 @@ async function connect(instanceUrl: string, environment: Record<string, string> 
     cleanups.push(close);
 
     const tool = async (name: string, args: Record<string, unknown> = {}) => {
-        const result: any = await client.callTool({ name, arguments: args });
+        const result: any = await client.callTool(name, args);
 
         return { ...result, text: result.content.find(({ type }) => type === 'text')?.text ?? '' };
     };
@@ -138,7 +135,7 @@ describe('MCP protocol', () => {
     it('tells agents how to work with it', async () => {
         const { client } = await start();
 
-        assert.include(client.getInstructions(), 'handoff');
+        assert.include(client.instructions, 'handoff');
     }, 20000);
 
     it('keeps stdout to the protocol', async () => {
@@ -209,18 +206,16 @@ describe('Project configuration', () => {
         const { url } = await startInstance();
         const { command, args, env } = read({ PUTH_INSTANCE_URL: url, PUTH_ARTIFACT_DIR: directory });
 
-        const transport = new StdioClientTransport({
+        const client = new McpClient(new StdioTransport({
             command,
             args,
             cwd: root,
-            stderr: 'pipe',
             env: { PATH: process.env.PATH!, HOME: process.env.HOME ?? root, ...env },
-        });
-        const client = new Client({ name: 'test', version: '1.0.0' });
-        await client.connect(transport);
+        }));
+        await client.connect();
         cleanups.push(() => client.close());
 
-        const { content }: any = await client.callTool({ name: 'puth_status', arguments: {} });
+        const { content }: any = await client.callTool('puth_status');
 
         assert.include(content[0].text, `connected ${url}`);
         assert.include(content[0].text, 'app http://laravel:8080');
