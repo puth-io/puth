@@ -114,6 +114,28 @@ classifies its methods, so add new ones there.
 - Functions sent to the page must not contain named functions: `tsx` wraps them in
   a helper that only exists on the server, and Vitest does not catch this.
 
+## DOM recording
+
+With snapshots on, `utils/DomRecorder.ts` injects the recorder in
+`utils/DomRecorderSource.ts` into an isolated world of each page's top frame. The
+GUI rebuilds documents with `DomReplay` from `@puth/core`; the format is in
+`workspaces/core/src/Dom.ts`.
+
+- The recorder is a string, for the same reason as functions sent to the page.
+- Only the recorder takes keyframes, in the task that clears the observer's queue.
+  Batches carry current values, never the records' history. Keep both, or
+  replays drift from the page. `test/dom-recorder.test.ts` replays random changes
+  and compares; extend it with every new kind of change.
+- Each command flushes the recorder when it starts. The flush is also the round
+  trip page stability needs after an action, so it must not get slower.
+- A navigation sends its last batch on `beforeunload`; binding calls during
+  `pagehide` or `unload` never arrive. `document.open()`, used by `setContent`,
+  removes all listeners, so every flush adds them again.
+- The GUI's replay frame is controlled by `public/__replay/sw.js`, which answers all
+  of its requests from the recording. A frame it doesn't control is never built.
+  `DomReplay` neutralizes iframes, scripts, refreshes and link hints while it
+  creates elements; nothing recorded may load or navigate.
+
 ## Client code generation
 
 `@codegen` marks server-side remote APIs for generation. Add it immediately

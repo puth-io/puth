@@ -73,11 +73,16 @@ export class PageStability {
         this.actionUnflushed = true;
     }
 
+    // Another round trip to the page, like the DOM recorder's flush, received what the page announced before it.
+    flushed() {
+        this.actionUnflushed = false;
+    }
+
     // Stops waiting once the page finished or the timeout ran out. A slow page should fail on what the call expects.
     // A navigation that an action requested, like a submitted form, can be announced just after the action returned.
     // One round trip to the page receives it. Navigations started later, from a timer or after a request, need a wait or
-    // an assertion, or actionSettle milliseconds.
-    async settled(timeout: number, afterAction = false, actionSettle = 0): Promise<void> {
+    // an assertion, or actionSettle milliseconds. Returns whether the page was transitioning to another document.
+    async settled(timeout: number, afterAction = false, actionSettle = 0): Promise<boolean> {
         const deadline = Date.now() + timeout;
 
         if (afterAction && this.actionUnflushed) {
@@ -91,17 +96,20 @@ export class PageStability {
             await this.wait(remainingDelay);
         }
 
+        const transitioned = this.transitioning;
         while (this.transitioning) {
             const remaining = deadline - Date.now();
             if (remaining <= 0) {
                 this.logger?.warn('Page did not finish loading in time, continuing.');
                 this.loading = false;
                 this.requestedAt = undefined;
-                return;
+                return true;
             }
 
             await this.wait(this.loading ? remaining : Math.min(remaining, this.requestedRemaining));
         }
+
+        return transitioned;
     }
 
     private get requestedRemaining() {

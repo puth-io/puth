@@ -36,6 +36,7 @@ import { PageClosedError, isConnectionLost, isNavigationError, isPageClosed } fr
 import { CallAttempt, browserCallKind, runBrowserCall } from './utils/CallRetry';
 import { PageStability } from './utils/PageStability';
 import { PortalHandoff } from './utils/PortalHandoff';
+import { DomRecorder, type DomRecorderPacket } from './utils/DomRecorder';
 import { pruneSnapshots } from './utils/SnapshotRetention';
 
 const {writeFile, mkdtemp} = fsPromise;
@@ -59,6 +60,8 @@ type ContextEvents = {
 type ContextOptions = {
     debug: boolean|undefined;
     detour: boolean|undefined;
+    /** Records the DOM of each page for the GUI's Before/After views. On by default when snapshots are. */
+    dom: boolean|undefined;
     portal: boolean|undefined;
     snapshot: boolean|undefined;
     test: {
@@ -94,6 +97,10 @@ const DEFAULT_PAGE_LOAD_TIMEOUT = 30 * 1000;
 const DEFAULT_ACTION_SETTLE_TIMEOUT = 0;
 
 const PAGE_CLOSING_CALLS = ['close', 'quit'];
+
+// Bodies the DOM replay serves to the rebuilt documents. Larger ones are left out of the recording.
+const DOM_RESOURCE_TYPES = ['stylesheet', 'font', 'image'];
+const MAX_DOM_RESOURCE_SIZE = 10 * 1024 * 1024;
 
 // Calls on puppeteer objects that act on the page. Unlike the Browser shim they do not report when they did.
 const PAGE_ACTION = /^(click|drag|drop|focus|hover|press|select|tap|type)/;
@@ -261,6 +268,9 @@ class Context extends Generic {
             this.testSuccess();
         }
 
+        // The last command's After is the state the pages ended in.
+        await Promise.all([...this.domRecorders.values()].map(recorder => recorder.flush('end')));
+
         try {
             if (options?.save) {
                 await this.saveContextSnapshot(options.save);
@@ -425,6 +435,9 @@ class Context extends Generic {
         
         await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
         await this.trackPageStability(page);
+        if (this.isDomEnabled) {
+            await this.trackPageDom(page);
+        }
 
         this.registerEventListenerOn(page, 'close', () => {
             this.untrackPage(page)?.disposeAfter(PAGE_CLOSED_SETTLE_DELAY, 'Page closed while a call was pending.');
@@ -566,6 +579,55 @@ class Context extends Generic {
         return true;
     }
 
+    private async trackPageDom(page: Page) {
+        const cdp = await this.cdps(page);
+        const index = ++this.domPageCount;
+        const recorder = await DomRecorder.install(
+            cdp,
+            index,
+            (event, handler) => this.registerEventListenerOn(cdp, event, handler),
+            (message: DomRecorderPacket) => this.puth.snapshotHandler.pushToCache(this, {
+                id: v4(),
+                type: 'dom',
+                context: this.serialize(),
+                timestamp: Date.now(),
+                page: index,
+                ...message,
+            }),
+            this.puth.logger,
+        );
+        this.domRecorders.set(page, recorder);
+
+        this.registerEventListenerOn(page, 'response', async (response: HTTPResponse) => {
+            const request = response.request();
+            if (! DOM_RESOURCE_TYPES.includes(request.resourceType())) {
+                return;
+            }
+            const length = Number(response.headers()['content-length']);
+            if (length > MAX_DOM_RESOURCE_SIZE) {
+                return;
+            }
+            // Bodies are gone for responses that arrive while the page navigates away.
+            const content = await response.buffer().catch(() => undefined);
+            if (content === undefined || content.byteLength > MAX_DOM_RESOURCE_SIZE) {
+                return;
+            }
+
+            this.puth.snapshotHandler.pushToCache(this, {
+                id: v4(),
+                type: 'dom-resource',
+                context: this.serialize(),
+                timestamp: Date.now(),
+                // The document refers to the address it requested, which may have redirected.
+                urls: [...request.redirectChain().map(redirect => redirect.url()), response.url()],
+                url: response.url(),
+                status: response.status(),
+                contentType: response.headers()['content-type'] ?? '',
+                content,
+            });
+        });
+    }
+
     private async trackPageStability(page: Page) {
         const cdp = await this.cdps(page);
         const stability = await PageStability.track(
@@ -588,6 +650,8 @@ class Context extends Generic {
 
         this.pageStabilities.get(page)?.dispose();
         this.pageStabilities.delete(page);
+        this.domRecorders.get(page)?.dispose();
+        this.domRecorders.delete(page);
         this.callStacks.delete(page);
         this.pageCDPSessions.delete(page);
         this.caches.dialog.delete(page);
@@ -734,6 +798,10 @@ class Context extends Generic {
 
     public get isDetourEnabled(): boolean {
         return this.options.detour !== false;
+    }
+
+    public get isDomEnabled(): boolean {
+        return this.shouldSnapshot && this.options?.dom !== false;
     }
 
     public get isPortalEnabled(): boolean {
@@ -982,6 +1050,8 @@ class Context extends Generic {
     callStacks: Map<Page, CallStack> = new Map<Page, CallStack>();
     private trackedPages: WeakSet<Page> = new WeakSet<Page>();
     private pageStabilities: Map<Page, PageStability> = new Map<Page, PageStability>();
+    private domRecorders: Map<Page, DomRecorder> = new Map<Page, DomRecorder>();
+    private domPageCount = 0;
 
     public call(packet: any, response: PromiseWithResolvers<unknown>) {
         this.puth.logger.debug(packet, 'Context call');
@@ -1118,10 +1188,30 @@ class Context extends Generic {
         const retries = kind === 'read' || kind === 'assertion';
         const stability = call.stack === undefined ? undefined : this.pageStabilities.get(call.stack.page);
 
+        // A page behind a dialog runs no script, the recorder can't answer until the dialog closed.
+        const blocked = call.stack !== undefined && this.isPageBlockedByDialog(call.stack.page);
+        const recorder = call.command === undefined || call.stack === undefined || blocked
+            ? undefined
+            : this.domRecorders.get(call.stack.page);
+
+        // Where the page's DOM stands when the command starts. The GUI shows it as the command's Before, and as the
+        // After of the command before it. The flush is a round trip to the page, so it also receives a navigation the
+        // last action announced, and page stability doesn't need one of its own.
+        let before = await recorder?.flush(call.command!.id);
+        if (before !== undefined) {
+            stability?.flushed();
+        }
+
         // Runs after the call became active, a loading page might need it to reach the client through the portal.
-        if (stability !== undefined && ! PAGE_CLOSING_CALLS.includes(name) && ! this.isPageBlockedByDialog(call.stack!.page)) {
+        if (stability !== undefined && ! PAGE_CLOSING_CALLS.includes(name) && ! blocked) {
             // Calls that retry find out about a late navigation on their own.
-            await stability.settled(this.pageLoadTimeout, ! retries, this.actionSettleTimeout);
+            const transitioned = await stability.settled(this.pageLoadTimeout, ! retries, this.actionSettleTimeout);
+            if (transitioned && recorder !== undefined) {
+                before = await recorder.flush(call.command!.id);
+            }
+        }
+        if (before !== undefined) {
+            call.command!.dom = {before};
         }
 
         try {
