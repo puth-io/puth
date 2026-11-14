@@ -1,4 +1,4 @@
-import {type DomChange, type DomKeyframe, type DomNode, DomNodeType, DomOp, type DomProps, type DomScroll, type DomViewport} from './Dom';
+import {type DomChange, type DomKeyframe, DomNodeType, DomOp, type DomProps, type DomScroll, type DomString, type DomTokens, type DomViewport} from './Dom';
 
 const NAMESPACES = ['http://www.w3.org/1999/xhtml', 'http://www.w3.org/2000/svg', 'http://www.w3.org/1998/Math/MathML'];
 const XLINK = 'http://www.w3.org/1999/xlink';
@@ -22,6 +22,8 @@ export class DomReplay {
     private base: HTMLBaseElement;
     private own = new WeakSet<Node>();
     viewport: DomViewport = [0, 0, 1];
+    // The document's string table, from the keyframe and the batches applied since.
+    private strings: string[] = [];
     private scroll = new Map<number, [number, number]>();
 
     /**
@@ -34,8 +36,10 @@ export class DomReplay {
         this.own.add(this.base);
     }
 
-    build(keyframe: DomKeyframe) {
+    /** Rebuilds the document from a keyframe and the strings that came with it. */
+    build(keyframe: DomKeyframe, strings: string[] = []) {
         const doc = this.doc;
+        this.strings = strings.slice();
         this.nodes = [];
         this.nodes[keyframe.document] = doc;
         this.scroll.clear();
@@ -45,8 +49,10 @@ export class DomReplay {
         (doc.documentElement ?? doc).prepend(this.base);
 
         const children: Node[] = [];
-        for (const node of keyframe.root) {
-            const created = this.create(node);
+        const tokens = keyframe.root;
+        const cursor = {at: 1};
+        for (let i = 0; i < (tokens[0] as number); i++) {
+            const created = this.create(tokens, cursor);
             if (created !== null) {
                 children.push(created);
             }
@@ -73,7 +79,11 @@ export class DomReplay {
         }
     }
 
-    apply(changes: DomChange[]) {
+    /** Applies a batch of changes, with the strings it added to the table. */
+    apply(changes: DomChange[], strings: string[] = []) {
+        for (const string of strings) {
+            this.strings.push(string);
+        }
         for (const change of changes) {
             switch (change[0]) {
                 case DomOp.CHILDREN:
@@ -89,7 +99,7 @@ export class DomReplay {
                 case DomOp.TEXT: {
                     const node = this.nodes[change[1]];
                     if (node !== undefined && 'data' in node) {
-                        (node as CharacterData).data = change[2];
+                        (node as CharacterData).data = this.string(change[2]);
                     }
                     break;
                 }
@@ -158,13 +168,27 @@ export class DomReplay {
         return (this.doc.defaultView ?? globalThis) as typeof globalThis;
     }
 
-    private create(node: DomNode): Node|null {
+    private string(value: DomString): string {
+        return typeof value === 'number' ? this.strings[value] : value;
+    }
+
+    // Creates the node that starts at cursor.at and moves the cursor past it, its children included.
+    private create(tokens: DomTokens, cursor: {at: number}): Node|null {
         const doc = this.doc;
+        const id = tokens[cursor.at++] as number;
+        const type = tokens[cursor.at++] as number;
         let created: Node;
 
-        switch (node[1]) {
+        switch (type) {
             case DomNodeType.ELEMENT: {
-                const [, , tag, attributes, children, props, namespace] = node;
+                const tag = this.string(tokens[cursor.at++] as DomString);
+                const namespace = tokens[cursor.at++] as number;
+                const count = tokens[cursor.at++] as number;
+                const attributes = tokens.slice(cursor.at, cursor.at + count * 2) as DomString[];
+                cursor.at += count * 2;
+                const props = tokens[cursor.at++] as DomProps|0;
+                const children = tokens[cursor.at++] as number;
+
                 let element: Element;
                 try {
                     element = namespace ? doc.createElementNS(NAMESPACES[namespace], tag) : doc.createElement(tag);
@@ -173,12 +197,11 @@ export class DomReplay {
                     element = doc.createElement('puth-replay-unknown');
                 }
                 this.setAttributes(element, attributes);
-                if (namespace !== 0 || ! NO_CHILDREN.has(element.localName)) {
-                    for (const child of children) {
-                        const childNode = this.create(child);
-                        if (childNode !== null) {
-                            element.appendChild(childNode);
-                        }
+                // The recorder sends no children for these, the count is still read.
+                for (let i = 0; i < children; i++) {
+                    const child = this.create(tokens, cursor);
+                    if (child !== null && (namespace !== 0 || ! NO_CHILDREN.has(element.localName))) {
+                        element.appendChild(child);
                     }
                 }
                 if (props) {
@@ -188,21 +211,22 @@ export class DomReplay {
                 break;
             }
             case DomNodeType.TEXT:
-                created = doc.createTextNode(node[2]);
+                created = doc.createTextNode(this.string(tokens[cursor.at++] as DomString));
                 break;
             case DomNodeType.COMMENT:
-                created = doc.createComment(node[2]);
+                created = doc.createComment(this.string(tokens[cursor.at++] as DomString));
                 break;
             default:
                 // The replay document keeps its own doctype.
+                cursor.at += 3;
                 return null;
         }
 
-        this.nodes[node[0]] = created;
+        this.nodes[id] = created;
         return created;
     }
 
-    private setChildren(parentId: number, children: (number|DomNode)[]) {
+    private setChildren(parentId: number, children: DomTokens) {
         const parent = this.nodes[parentId];
         if (parent === undefined || (parent.nodeType === DomNodeType.ELEMENT && NO_CHILDREN.has((parent as Element).localName)
             && (parent as Element).namespaceURI === NAMESPACES[0])) {
@@ -210,8 +234,14 @@ export class DomReplay {
         }
 
         const wanted: Node[] = [];
-        for (const child of children) {
-            const node = typeof child === 'number' ? this.nodes[child] : this.create(child);
+        const reader = {at: 1};
+        for (let i = 0; i < (children[0] as number); i++) {
+            const token = children[reader.at];
+            // A negative id is a node the replay has already.
+            const node = typeof token === 'number' && token < 0 ? this.nodes[-token] : this.create(children, reader);
+            if (typeof token === 'number' && token < 0) {
+                reader.at++;
+            }
             if (node !== undefined && node !== null) {
                 wanted.push(node);
             }
@@ -253,10 +283,10 @@ export class DomReplay {
         }
     }
 
-    private setAttributes(element: Element, attributes: string[]) {
+    private setAttributes(element: Element, attributes: DomString[]) {
         const wanted = new Map<string, string>();
         for (let i = 0; i < attributes.length; i += 2) {
-            const [name, value] = this.rewrite(element, attributes[i], attributes[i + 1]);
+            const [name, value] = this.rewrite(element, this.string(attributes[i]), this.string(attributes[i + 1]));
             if (name !== null) {
                 wanted.set(name, value);
             }

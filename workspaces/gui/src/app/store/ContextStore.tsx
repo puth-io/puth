@@ -5,6 +5,8 @@ import {Connection, PUTH_EXTENSION_CODEC} from './ConnectionStore';
 import PreviewStore from '@/app/store/PreviewStore';
 import AppStore from './AppStore.tsx';
 
+const DOM_PACKETS = ['dom', 'dom-resource', 'dom-frame'];
+
 export default class ContextStore {
     readonly id: string;
     
@@ -240,7 +242,8 @@ export default class ContextStore {
         
         for (let i = 1; i < packets.length; i++) {
             let packet = packets[i];
-            packet.context = packets[0].context;
+            // DOM packets are many and small, they keep only the id of their context.
+            packet.context = DOM_PACKETS.includes(packet.type) ? {id: this.id} : packets[0].context;
             // unset context because it is a circular dependency and also holds the websocket instance
             packets[i] = structuredClone(toJS(packet));
             // re-set the context on the original

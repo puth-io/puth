@@ -191,12 +191,12 @@ export class ReplayView {
         const shown = this.shown;
         const forward = shown !== undefined && shown.doc === point.doc && shown.keyframe === keyframe.seq && shown.seq <= point.seq;
         if (! forward) {
-            this.replay.build(keyframe.data);
+            this.replay.build(keyframe.data, keyframe.strings);
             this.children.clear();
         }
         for (const packet of packets) {
             if (packet.kind === 'changes' && (! forward || packet.seq > shown!.seq)) {
-                this.replay.apply(packet.data);
+                this.replay.apply(packet.data, packet.strings);
             }
         }
         // Positions near the end of a page only fit into a frame of the recorded size. Nested frames have the size the

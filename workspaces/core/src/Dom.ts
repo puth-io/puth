@@ -4,14 +4,25 @@
  *
  * Applying batch n to the state after batch n - 1 gives the document as it was when batch n was flushed. Batches
  * carry current values, not the history of a change, so they never depend on how the page got there.
+ *
+ * For size, nodes are flat token lists and strings come from a table per document. A keyframe starts the table,
+ * every packet appends the strings it added (DomPacket.strings), in order.
  */
 
-/** A serialized node. Every node has an id that stays the same for as long as the node exists. */
-export type DomNode =
-    | [id: number, type: DomNodeType.ELEMENT, tag: string, attributes: string[], children: DomNode[], props: DomProps | 0, namespace: DomNamespace]
-    | [id: number, type: DomNodeType.TEXT, data: string]
-    | [id: number, type: DomNodeType.COMMENT, data: string]
-    | [id: number, type: DomNodeType.DOCTYPE, name: string, publicId: string, systemId: string];
+/** The index of a string in the document's table, or the string itself. */
+export type DomString = number | string;
+
+/**
+ * Nodes as flat tokens, in pre-order. Every node has an id that stays the same for as long as the node exists.
+ *
+ *     element:            id, 1, tag, namespace, attribute count, (name, value)..., props, child count, children...
+ *     text and comment:   id, 3 or 8, data
+ *     doctype:            id, 10, name, public id, system id
+ *
+ * A node list starts with the number of nodes in it. In the children of a CHILDREN change, a node the replay has
+ * already is its negative id.
+ */
+export type DomTokens = (number | string | DomProps | 0)[];
 
 export enum DomNodeType {
     ELEMENT = 1,
@@ -55,9 +66,9 @@ export enum DomOp {
 }
 
 export type DomChange =
-    | [op: DomOp.CHILDREN, parent: number, children: (number | DomNode)[]]
-    | [op: DomOp.ATTRIBUTES, element: number, attributes: string[]]
-    | [op: DomOp.TEXT, node: number, data: string]
+    | [op: DomOp.CHILDREN, parent: number, children: DomTokens]
+    | [op: DomOp.ATTRIBUTES, element: number, attributes: DomString[]]
+    | [op: DomOp.TEXT, node: number, data: DomString]
     | [op: DomOp.CONTROL, element: number, value: string | null, checked: boolean | null, selectedIndex: number | null, selected?: number[] | null]
     | [op: DomOp.CSS, element: number, css: string]
     | [op: DomOp.SCROLL, ...DomScroll]
@@ -69,7 +80,8 @@ export type DomKeyframe = {
     base: string;
     /** Id of the document node, the parent of the root children. */
     document: number;
-    root: DomNode[];
+    /** The document's children, as a node list. */
+    root: DomTokens;
     viewport: DomViewport;
     scroll: DomScroll[];
 };
@@ -93,6 +105,8 @@ export type IDomPacket = {
     page: number;
     doc: string;
     seq: number;
+    /** The strings this packet added to the document's table. */
+    strings?: string[];
 } & ({kind: 'keyframe', data: DomKeyframe} | {kind: 'changes', data: DomChange[]});
 
 /**
