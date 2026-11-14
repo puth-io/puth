@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 /**
  * The part of the Model Context Protocol this server uses: initialization, ping and tools, over any transport.

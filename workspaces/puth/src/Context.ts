@@ -187,6 +187,8 @@ class Context extends Generic {
     // }
 
     public async createBrowserRef(options: any = {}): Promise<BrowserRefContext> {
+        // The options are the parameters of the recorded call, so they stay as the client sent them.
+        options = { ...options };
         if (! options.executablePath && this.puth.installedBrowser?.executablePath) {
             options.executablePath = this.puth.installedBrowser.executablePath;
         }

@@ -1,8 +1,7 @@
-import { assert, inject } from 'vitest';
+import { assert, inject, test as testBase } from 'vitest';
 import { Puth } from '../src/Puth';
 import { PuthStandardPlugin } from '../src/plugins/PuthStandardPlugin';
 import { usableBrowserInstallations } from '../src/utils/Platform';
-import { test as testBase } from '@vitest/runner';
 import { RemotePuthClient } from '@puth/client';
 import { LocalPuthClient } from '../src/LocalPuthClient';
 

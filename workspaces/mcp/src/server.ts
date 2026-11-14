@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import packageJson from '../package.json' with { type: 'json' };
 import { type App, appOf, type Config } from './config';
 import { createDraft } from './drafts';

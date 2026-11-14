@@ -14,7 +14,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
  * Streamable HTTP without server-initiated messages: every request is answered with JSON, and there are no MCP sessions,
  * because browser sessions have ids of their own.
  */
-export function createMcpApp(config: Config) {
+export function createMcpApp(config: Config): ReturnType<typeof createServer> & { app: H3 } {
     const { server, sessions } = createServer(config);
     const app = new H3();
 

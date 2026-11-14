@@ -75,5 +75,10 @@ describe(`PuthStandardPlugin`, () => {
             await page.$('#actions-click button').click();
             assert.strictEqual(await page.$('#actions-click-verify').innerText(), 'clicked button');
         });
+
+        testLocal('should double click', async function ({ puth: { page } }) {
+            await page.$('#actions-click-double').doubleClick();
+            assert.strictEqual(await page.$('#actions-click-double-verify').innerText(), 'double clicked button');
+        });
     });
 });

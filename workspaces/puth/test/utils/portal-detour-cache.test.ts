@@ -59,7 +59,10 @@ describe('detour browser cache', () => {
             expect(new Set(detours).size).toBe(4);
         } finally {
             await page.close();
-            await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+            const closed = new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+            // Chrome opens connections ahead of requests it expects. close() would wait for those until they time out.
+            server.closeAllConnections();
+            await closed;
         }
     });
 });

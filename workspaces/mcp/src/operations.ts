@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { type Browser, type Context } from '@puth/client';
 import { ToolError } from './errors';
 

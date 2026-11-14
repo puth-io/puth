@@ -2,7 +2,7 @@ import path from 'path';
 import {homedir} from 'os';
 import {select} from '@inquirer/prompts';
 import fs from 'fs';
-import {canDownload, detectBrowserPlatform, install, Browser} from '@puppeteer/browsers';
+import {canDownload, computeExecutablePath, detectBrowserPlatform, install, Browser} from '@puppeteer/browsers';
 import {makeLogger} from '../utils/Logger';
 // @ts-ignore
 import { PUPPETEER_REVISIONS } from 'puppeteer-core';
@@ -29,10 +29,13 @@ const CI = (process.argv[2] ?? null) === 'ci';
     });
 
     const checkInstallDirectory = path.join(cache, channel, `${platform}-${buildId}`);
-    if (fs.existsSync(checkInstallDirectory)) {
-        logger.info(`Aborting browser install. Folder exists ${checkInstallDirectory}.`);
+    const executable = computeExecutablePath({ browser: channel, platform: platform!, buildId, cacheDir: cache });
+    if (fs.existsSync(executable)) {
+        logger.info(`Aborting browser install. Browser exists ${executable}.`);
         return;
     }
+    // A failed install leaves its folder behind, which would otherwise count as installed.
+    fs.rmSync(checkInstallDirectory, { recursive: true, force: true });
 
     const installOptions = {
         browser: channel,

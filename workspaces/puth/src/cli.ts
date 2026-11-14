@@ -3,7 +3,7 @@ import path from 'node:path';
 import { homedir } from 'node:os';
 import meow from 'meow';
 import * as prompts from '@inquirer/prompts';
-import { detectBrowserPlatform, canDownload, install, Browser } from '@puppeteer/browsers';
+import { detectBrowserPlatform, canDownload, install, Browser, computeExecutablePath } from '@puppeteer/browsers';
 import pkg from '../package.json';
 import { Puth } from './Puth';
 import { PuthStandardPlugin } from './plugins/PuthStandardPlugin';
@@ -173,10 +173,13 @@ async function browserInstaller(cache?: string) {
     }
 
     const checkInstallDirectory = path.join(cache, channel, `${platform}-${buildId}`);
-    if (fs.existsSync(checkInstallDirectory)) {
-        logger.info(`Aborting browser install. Folder exists ${checkInstallDirectory}.`);
+    const executable = computeExecutablePath({ browser: channel, platform: platform!, buildId, cacheDir: cache });
+    if (fs.existsSync(executable)) {
+        logger.info(`Aborting browser install. Browser exists ${executable}.`);
         return;
     }
+    // A failed install leaves its folder behind, which would otherwise count as installed.
+    fs.rmSync(checkInstallDirectory, { recursive: true, force: true });
     if (flags.cleanupOtherInstalls) {
         if (fs.existsSync(cache)) {
             logger.info(`Removing existing cache directory ${cache}`);

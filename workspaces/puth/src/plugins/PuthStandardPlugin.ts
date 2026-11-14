@@ -105,7 +105,7 @@ export class PuthStandardPlugin extends PuthContextPlugin {
                 value: PuthStandardPlugin.value,
                 click: this.click,
                 type: type,
-                doubleClick: (el, options) => el.click({ ...options, clickCount: 2 }),
+                doubleClick: (el, options) => el.click({ ...options, count: 2 }),
                 leftClick: (el, options) => el.click(options),
                 middleClick: (el, options) => el.click({ ...options, button: 'middle' }),
                 rightClick: (el, options) => el.click({ ...options, button: 'right' }),

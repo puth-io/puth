@@ -49,6 +49,8 @@ export class BrowserHandler extends BaseHandler implements IBrowserHandler {
     }
 
     async launch(options: any = {}, context: Context): Promise<BrowserRefContext> {
+        // Puppeteer adds to the options it launches with, so it gets a copy.
+        options = { ...options };
         let optionsHash = objectHash(options);
 
         let ref = this.findBrowserRefForOptionsHash(optionsHash);

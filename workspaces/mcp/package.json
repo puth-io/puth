@@ -29,9 +29,9 @@
     "dist/"
   ],
   "dependencies": {
-    "@msgpack/msgpack": "^3.1.2",
+    "@msgpack/msgpack": "^3.1.3",
     "@puth/client": "^0.1.0",
-    "h3": "^2.0.0-beta.4",
-    "zod": "^3.25.76"
+    "h3": "^2.0.8",
+    "zod": "^4.6.7"
   }
 }
