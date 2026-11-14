@@ -1,7 +1,6 @@
 {
   "name": "@puth/zstd",
   "version": "0.0.0",
-  "private": true,
   "description": "zstd's decoder built to WebAssembly from the official release, with a checked TypeScript wrapper.",
   "type": "module",
   "repository": {
@@ -10,11 +9,23 @@
     "directory": "workspaces/zstd"
   },
   "license": "SEE LICENSE IN README.md",
+  "types": "./dist/zstd.d.mts",
+  "module": "./dist/zstd.mjs",
   "exports": {
-    ".": "./src/zstd.ts",
+    ".": {
+      "types": "./dist/zstd.d.mts",
+      "default": "./dist/zstd.mjs"
+    },
     "./zstd-decoder.wasm": "./zstd-decoder.wasm"
   },
   "scripts": {
+    "build": "pkgroll --clean-dist",
+    "prepublishOnly": "node ../../bin/check-dist.mjs",
     "test": "node --test test/*.test.ts"
-  }
+  },
+  "files": [
+    "dist/",
+    "zstd-decoder.wasm",
+    "LICENSE-zstd"
+  ]
 }
