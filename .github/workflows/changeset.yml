@@ -31,10 +31,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Version 2 of the action belongs to @changesets/cli 3: it reads what was published from the file in
+      # CHANGESETS_OUTPUT and pushes those tags. Tags pushed with the default token would not start tag.yml.
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          publish: npm run release
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPO_SCOPED_TOKEN }}
+          publish-script: npm run release
+          github-token: ${{ secrets.REPO_SCOPED_TOKEN }}
