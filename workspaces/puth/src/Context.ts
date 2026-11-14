@@ -36,7 +36,7 @@ import { PageClosedError, isConnectionLost, isNavigationError, isPageClosed } fr
 import { CallAttempt, browserCallKind, runBrowserCall } from './utils/CallRetry';
 import { PageStability } from './utils/PageStability';
 import { PortalHandoff } from './utils/PortalHandoff';
-import { DomRecorder, type DomRecorderPacket } from './utils/DomRecorder';
+import { DomRecorder, type DomFrameLink, type DomRecorderPacket } from './utils/DomRecorder';
 import { pruneSnapshots } from './utils/SnapshotRetention';
 
 const {writeFile, mkdtemp} = fsPromise;
@@ -588,7 +588,7 @@ class Context extends Generic {
         const recorder = await DomRecorder.install(
             cdp,
             index,
-            (event, handler) => this.registerEventListenerOn(cdp, event, handler),
+            (object, event, handler) => this.registerEventListenerOn(object, event, handler),
             (message: DomRecorderPacket) => this.puth.snapshotHandler.pushToCache(this, {
                 id: v4(),
                 type: 'dom',
@@ -596,6 +596,14 @@ class Context extends Generic {
                 timestamp: Date.now(),
                 page: index,
                 ...message,
+            }),
+            (link: DomFrameLink) => this.puth.snapshotHandler.pushToCache(this, {
+                id: v4(),
+                type: 'dom-frame',
+                context: this.serialize(),
+                timestamp: Date.now(),
+                page: index,
+                ...link,
             }),
             this.puth.logger,
         );

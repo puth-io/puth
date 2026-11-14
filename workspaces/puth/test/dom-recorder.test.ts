@@ -246,6 +246,81 @@ describe('DOM recording', () => {
         assert.isDefined(resources.find((resource) => resource.url === origin + '/image.svg'));
     }, 30000);
 
+    it('records frames of every origin, nested, and links them to their elements', async () => {
+        // 127.0.0.1 and localhost are different sites, so the cross frame runs in a process of its own, and the
+        // deep frame in it in another one.
+        const server = http.createServer((request, response) => {
+            const port = (server.address() as any).port;
+            const pages = {
+                '/top': `<h1>top</h1><iframe id="same" src="/same"></iframe><iframe id="cross" src="http://localhost:${port}/cross"></iframe>`
+                    + `<iframe id="blank"></iframe><script>document.getElementById('blank').contentDocument.body.innerHTML = '<b>blank content</b>'</script>`,
+                '/same': `<p id="p">same</p><script>setTimeout(() => document.getElementById('p').textContent = 'same changed', 50)</script>`,
+                '/cross': `<p>cross</p><input id="card"><iframe id="deep" src="http://127.0.0.1:${port}/deep"></iframe>`,
+                '/deep': `<p>deep</p>`,
+            };
+            response.writeHead(200, { 'content-type': 'text/html' }).end(pages[request.url] ?? '');
+        });
+        await new Promise<void>((resolve) => server.listen(0, '0.0.0.0', resolve));
+        cleanups.push(() => new Promise((resolve) => server.close(resolve)));
+        const port = (server.address() as any).port;
+
+        const { browser, context, packets, domPackets, replayed } = await record();
+        await browser.visit(`http://127.0.0.1:${port}/top`);
+        // The frames' own script and loads settle, then a command takes a point.
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const page = [...context.callStacks.keys()][0];
+        await browser.evaluate('1');
+
+        const point = packets().filter((packet) => packet.type === 'command').at(-1).dom.before;
+        const keyframeOf = (doc: string) => domPackets().find((packet) => packet.doc === doc && packet.kind === 'keyframe');
+        const urlOf = (doc: string) => keyframeOf(doc).data.url;
+
+        // Every frame document, compared with the frame's own DOM.
+        const docs = Object.keys(point.frames ?? {});
+        const paths = docs.map((doc) => new URL(urlOf(doc)).pathname).sort();
+        assert.deepEqual(paths, ['/cross', '/deep', '/same', 'blank']);
+        for (const doc of docs) {
+            const url = urlOf(doc);
+            const frame = page.frames().find((candidate) => candidate.url() === url);
+            const expected = await frame.evaluate(`(${NORMALIZE})(document)`);
+            assert.strictEqual(await replayed({ doc, seq: point.frames[doc] }), expected, url);
+        }
+
+        // Each frame document is linked to the iframe element in its parent that shows it.
+        const links = packets().filter((packet) => packet.type === 'dom-frame');
+        const element = (parentDoc: string, owner: number) => {
+            const find = (nodes: any[]): any => {
+                for (const node of nodes) {
+                    if (typeof node !== 'object' || node === null) continue;
+                    if (node[0] === owner && node[1] === 1) return node;
+                    const found = node[1] === 1 ? find(node[4]) : undefined;
+                    if (found) return found;
+                }
+            };
+            for (const packet of domPackets().filter((candidate) => candidate.doc === parentDoc)) {
+                const found = packet.kind === 'keyframe' ? find(packet.data.root) : find(packet.data.flatMap((change) => change[0] === 1 ? change[2] : []));
+                if (found) return found;
+            }
+        };
+        const linkOf = (path: string) => links.find((link) => urlOf(link.doc).endsWith(path));
+        for (const [path, id, parentPath] of [['/same', 'same', '/top'], ['/cross', 'cross', '/top'], ['/deep', 'deep', '/cross'], ['blank', 'blank', '/top']]) {
+            const link = linkOf(path);
+            assert.isDefined(link, path);
+            assert.isTrue(urlOf(link.parentDoc).endsWith(parentPath), path);
+            const attributes = element(link.parentDoc, link.owner)[3];
+            assert.strictEqual(attributes[attributes.indexOf('id') + 1], id, path);
+        }
+
+        // Typed values of a frame from another origin never leave it.
+        const cross = page.frames().find((frame) => frame.url().endsWith('/cross'));
+        await cross.evaluate(() => { (document.getElementById('card') as HTMLInputElement).value = '4242 4242'; });
+        await browser.evaluate('1');
+        assert.notInclude(JSON.stringify(domPackets().map((packet) => packet.data)), '4242');
+        const crossDoc = linkOf('/cross').doc;
+        const masked = packets().filter((packet) => packet.type === 'command').at(-1).dom.before.frames[crossDoc];
+        assert.include(await replayed({ doc: crossDoc, seq: masked }), 'value="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"');
+    }, 30000);
+
     it('records nothing with dom set to false', async () => {
         const { browser, domPackets, packets } = await record({ dom: false });
         await browser.visit(fixtureUrl('/plain.txt'));

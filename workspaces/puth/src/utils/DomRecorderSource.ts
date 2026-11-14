@@ -1,5 +1,5 @@
 /**
- * Records the DOM of a document, injected at document start into an isolated world of the top frame. The isolated
+ * Records the DOM of a document, injected at document start into an isolated world of every frame. The isolated
  * world shares the DOM with the page but none of its globals, so the page can neither see nor break the recorder,
  * and the recorder reads only native DOM properties.
  *
@@ -14,7 +14,7 @@
  */
 export const DOM_RECORDER_SOURCE = String.raw`(() => {
     const send = globalThis.__puthDom;
-    if (globalThis.__puthRecorder || typeof send !== 'function' || window !== window.top) {
+    if (globalThis.__puthRecorder || typeof send !== 'function') {
         return;
     }
 
@@ -52,8 +52,20 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         return id;
     };
 
-    const masked = (element) => element.localName === 'input' && (element.type === 'password'
-        || /(^|\s)cc-/.test(element.getAttribute('autocomplete') || ''));
+    // Frames of another origin than a page above them, like payment fields, have every typed value masked.
+    const crossOrigin = (() => {
+        const ancestors = location.ancestorOrigins || [];
+        for (let i = 0; i < ancestors.length; i++) {
+            if (ancestors[i] !== location.origin) {
+                return true;
+            }
+        }
+        return false;
+    })();
+    const UNTYPED = new Set(['checkbox', 'radio', 'submit', 'button', 'reset', 'hidden', 'image', 'file', 'color', 'range']);
+    const masked = (element) => element.localName === 'input'
+        ? element.type === 'password' || /(^|\s)cc-/.test(element.getAttribute('autocomplete') || '') || (crossOrigin && ! UNTYPED.has(element.type))
+        : crossOrigin && element.localName === 'textarea';
 
     const controlState = (element) => {
         const value = element.value;
@@ -380,7 +392,9 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             keyframe('resync');
             return {doc: docId, seq: seq};
         },
-        idOf: (node) => ids.get(node),
+        doc: docId,
+        // Ids for nodes Puth asks about, like the iframe a frame is shown in. Nodes not recorded yet keep it.
+        idOf: idOf,
     };
 
     if (doc.readyState === 'loading') {

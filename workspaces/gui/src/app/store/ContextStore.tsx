@@ -18,7 +18,10 @@ export default class ContextStore {
     /** The DOM recording, in the order it arrived. */
     dom: any[] = [];
     domResources: any[] = [];
+    /** Which iframe element shows which recorded document. */
+    domFrames: any[] = [];
     private domByDoc = new Map<string, any[]>();
+    private domFramesByParent = new Map<string, any[]>();
     unspecific: any[] = [];
     renderedEvents: any[] = [];
     private responseContentByPacketId = new Map<string, Uint8Array>();
@@ -83,6 +86,7 @@ export default class ContextStore {
             // Recordings get large, the packets themselves never change.
             dom: observableShallow,
             domResources: observableShallow,
+            domFrames: observableShallow,
             unspecific: observable,
             group: observable,
             test: observable,
@@ -168,6 +172,14 @@ export default class ContextStore {
             list.push(packet);
         } else if (packet.type === 'dom-resource') {
             this.domResources.push(packet);
+        } else if (packet.type === 'dom-frame') {
+            this.domFrames.push(packet);
+            let list = this.domFramesByParent.get(packet.parentDoc);
+            if (list === undefined) {
+                list = [];
+                this.domFramesByParent.set(packet.parentDoc, list);
+            }
+            list.push(packet);
         } else {
             console.log('unhandled event packet', packet);
             this.unspecific.push(packet);
@@ -222,6 +234,7 @@ export default class ContextStore {
             ...this.screencasts,
             ...this.dom,
             ...this.domResources,
+            ...this.domFrames,
             ...this.unspecific,
         ];
         
@@ -250,6 +263,11 @@ export default class ContextStore {
     /** The keyframes and batches of one recorded document, in order. */
     domPacketsOf(doc: string): any[] {
         return this.domByDoc.get(doc) ?? [];
+    }
+
+    /** The links of the iframe elements of one recorded document to the documents they show. */
+    domFramesOf(parentDoc: string): any[] {
+        return this.domFramesByParent.get(parentDoc) ?? [];
     }
 
     /** Where the DOM recording of a page, or of any page, ends. */

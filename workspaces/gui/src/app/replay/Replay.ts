@@ -1,4 +1,4 @@
-import {DomReplay, domPacketsUntil, type DomPoint} from '@puth/core';
+import {DomReplay, domFrameDocument, domPacketsUntil, type DomPoint, domSeqAt} from '@puth/core';
 import type ContextStore from '@/app/store/ContextStore';
 
 const SCOPE = '/__replay/';
@@ -120,22 +120,32 @@ function ask(worker: ServiceWorker, message: any): Promise<unknown> {
 /**
  * Shows points of a context's DOM recording in one replay frame. Moving forward within a document applies only the
  * new batches, anything else rebuilds from the last keyframe before the point.
+ *
+ * Recorded iframes become replay frames of their own, absolute on the GUI's origin because the rebuilt document's
+ * base points at the recorded page. Each shows the document linked to it, nested as deep as the recording goes.
  */
 export class ReplayView {
     private replay: DomReplay;
+    private readonly doc: Document;
     private shown?: {doc: string, keyframe: number, seq: number};
+    private children = new Map<number, ReplayView>();
     private pending?: {context: ContextStore, point: DomPoint};
     private running?: Promise<void>;
 
-    constructor(private readonly frame: HTMLIFrameElement, private readonly onShown: (viewport: [number, number]) => void) {
-        const doc = frame.contentDocument!;
-        this.replay = new DomReplay(doc);
+    constructor(
+        private readonly frame: HTMLIFrameElement,
+        private readonly onShown: (viewport: [number, number]) => void,
+        private readonly depth = 0,
+    ) {
+        this.doc = frame.contentDocument!;
+        // Chrome doesn't load a frame whose address its ancestors have twice already, so each level has its own.
+        this.replay = new DomReplay(this.doc, {frameSrc: new URL(`${FRAME_URL}?depth=${depth + 1}`, location.origin).href});
 
         // Nothing recorded may navigate the frame away.
         const stop = (event: Event) => event.preventDefault();
-        doc.addEventListener('click', stop, true);
-        doc.addEventListener('auxclick', stop, true);
-        doc.addEventListener('submit', stop, true);
+        this.doc.addEventListener('click', stop, true);
+        this.doc.addEventListener('auxclick', stop, true);
+        this.doc.addEventListener('submit', stop, true);
     }
 
     static controlled(frame: HTMLIFrameElement): boolean {
@@ -166,12 +176,14 @@ export class ReplayView {
             return;
         }
         const keyframe = packets[0];
-        await replayWorker.prepare(context, packets[packets.length - 1].timestamp);
+        const time = packets[packets.length - 1].timestamp;
+        await replayWorker.prepare(context, time);
 
         const shown = this.shown;
         const forward = shown !== undefined && shown.doc === point.doc && shown.keyframe === keyframe.seq && shown.seq <= point.seq;
         if (! forward) {
             this.replay.build(keyframe.data);
+            this.children.clear();
         }
         for (const packet of packets) {
             if (packet.kind === 'changes' && (! forward || packet.seq > shown!.seq)) {
@@ -180,10 +192,65 @@ export class ReplayView {
         }
         this.replay.restoreScroll();
         this.shown = {doc: point.doc, keyframe: keyframe.seq, seq: point.seq};
-        // Tells tests and tools which point the frame shows, once it does.
-        this.frame.setAttribute('data-shown', point.doc + ':' + point.seq);
 
+        await this.renderFrames(context, point, time);
+
+        // Tells tests and tools which point the frame shows, once it does, frames included.
+        this.frame.setAttribute('data-shown', point.doc + ':' + point.seq);
         const [width, height] = this.replay.viewport;
         this.onShown([width, height]);
     }
+
+    private async renderFrames(context: ContextStore, point: DomPoint, time: number) {
+        const links = context.domFramesOf(point.doc);
+        if (links.length === 0) {
+            return;
+        }
+
+        await Promise.all(this.replay.frames().map(async ([owner, element]) => {
+            const doc = domFrameDocument(links, owner, point.frames, time);
+            if (doc === undefined) {
+                return;
+            }
+            const seq = point.frames?.[doc] ?? domSeqAt(context.domPacketsOf(doc), time);
+            if (seq === undefined) {
+                return;
+            }
+
+            // Moving an iframe reloads it, which takes the document built into it along.
+            let child = this.children.get(owner);
+            if (child === undefined || child.frame !== element || child.doc !== element.contentDocument) {
+                this.children.delete(owner);
+                if (! await loaded(element) || ! ReplayView.controlled(element)) {
+                    return;
+                }
+                child = new ReplayView(element, () => {}, this.depth + 1);
+                this.children.set(owner, child);
+            }
+            await child.render(context, {page: point.page, doc, seq, frames: point.frames});
+        }));
+    }
+}
+
+// A replay frame is ready once the replay page loaded in it, not its initial empty document.
+function loaded(frame: HTMLIFrameElement): Promise<boolean> {
+    const page = new URL(FRAME_URL, location.origin).href;
+    const ready = () => {
+        try {
+            const doc = frame.contentDocument;
+            return doc !== null && doc.URL.startsWith(page) && doc.readyState === 'complete';
+        } catch {
+            return false;
+        }
+    };
+    if (ready()) {
+        return Promise.resolve(true);
+    }
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(ready()), 5000);
+        frame.addEventListener('load', () => {
+            clearTimeout(timer);
+            resolve(ready());
+        }, {once: true});
+    });
 }
