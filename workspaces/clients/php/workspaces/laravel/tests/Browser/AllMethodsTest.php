@@ -5,7 +5,7 @@ namespace Tests\Browser;
 use PHPUnit\Framework\Assert;
 use Illuminate\Support\Carbon;
 use Puth\Laravel\Browser;
-use Tests\Browser\Pages\Playground;
+use Tests\Browser\Pages\Fixture;
 use Tests\PuthTestCase;
 
 class AllMethodsTest extends PuthTestCase
@@ -15,7 +15,11 @@ class AllMethodsTest extends PuthTestCase
     function test_querying_elements()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            $browser->setContent(<<<'HTML'
+<div id="querying-get">Div with id querying-get</div>
+<div class="querying-get">Div with class querying-get</div>
+<div class="querying-get">Div with class querying-get</div>
+HTML);
 
             Assert::assertCount(2, $browser->elements('.querying-get'));
             Assert::assertCount(1, $browser->elements('#querying-get'));
@@ -25,9 +29,13 @@ class AllMethodsTest extends PuthTestCase
     function test_press()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent(<<<'HTML'
+<button onclick="document.querySelector('#verify').innerText = 'clicked button'">click me</button>
+<p id="verify"></p>
+<button onclick="this.disabled = true; setTimeout(() => this.disabled = false, 2000)">click and wait</button>
+HTML)
                 ->press('click me')
-                ->assertSeeIn('#actions-click-verify', 'clicked button')
+                ->assertSeeIn('#verify', 'clicked button')
                 ->pressAndWaitFor('click and wait')
                 ->assertButtonEnabled('click and wait');
         });
@@ -36,18 +44,31 @@ class AllMethodsTest extends PuthTestCase
     function test_select()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->select('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
-                ->select('#actions-select-multiple', 'orange')
-                ->assertSelected('#actions-select-multiple', 'orange')
-                ->assertSelected('#actions-select', '')
-                ->select('#actions-select', 'orange')
-                ->assertSelected('#actions-select', 'orange');
+            $page = <<<'HTML'
+<select id="single">
+  <option value="" selected disabled>-- Select Value --</option>
+  <option value="apple">Apple</option>
+  <option value="orange">Orange</option>
+</select>
+<select id="multiple" multiple>
+  <option value="apple">Apple</option>
+  <option value="orange">Orange</option>
+</select>
+HTML;
 
-            $browser->visit(new Playground)
-                ->select('#actions-select-multiple');
-            Assert::assertNotEmpty($browser->element('#actions-select-multiple')->value);
+            $browser->setContent($page)
+                ->select('#multiple', ['apple', 'orange'])
+                ->assertSelected('#multiple', ['apple', 'orange'])
+                ->select('#multiple', 'orange')
+                ->assertSelected('#multiple', 'orange')
+                ->assertSelected('#single', '')
+                ->select('#single', 'orange')
+                ->assertSelected('#single', 'orange');
+
+            // Without a value, a random option gets selected
+            $browser->setContent($page)
+                ->select('#multiple');
+            Assert::assertNotEmpty($browser->element('#multiple')->value);
         });
     }
 
@@ -55,14 +76,14 @@ class AllMethodsTest extends PuthTestCase
     {
         $this->browse(function (Browser $browser) {
             $next = config('puth.alt');
-            $playground = config('puth.playground');
+            $fixture = config('puth.fixture');
 
-            $browser->visit($playground)
-                ->assertUrlIs($playground)
+            $browser->visit($fixture)
+                ->assertUrlIs($fixture)
                 ->visit($next)
                 ->assertUrlIs($next)
                 ->back()
-                ->assertUrlIs($playground)
+                ->assertUrlIs($fixture)
                 ->forward()
                 ->assertUrlIs($next)
                 ->refresh()
@@ -73,7 +94,7 @@ class AllMethodsTest extends PuthTestCase
     function test_resize()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            $browser->setContent('<p>Resize me</p>');
 
             $browser->resize(300, 400);
             $viewport = $browser->viewport();
@@ -96,18 +117,56 @@ class AllMethodsTest extends PuthTestCase
     function test_interacts_with_cookies()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            // Cookies need an HTTP origin
+            $browser->visit(new Fixture)
                 ->cookie('encrypted', '1234', Carbon::tomorrow())
                 ->assertCookieValue('encrypted', '1234');
         });
     }
 
+    /**
+     * A page for the assertions of MakesAssertions.
+     */
+    private function assertionsPage(): string
+    {
+        $alt = config('puth.alt');
+
+        return <<<HTML
+<!doctype html>
+<html>
+<head><title>Assertions | Puth</title></head>
+<body>
+  <nav class="navbar"><a href="{$alt}">Alternate origin</a></nav>
+  <p>A page for assertions</p>
+  <div class="example">
+    <div class="querying-get">Div with class querying-get</div>
+  </div>
+  <input type="text" id="value" value="input with value">
+  <input type="text" id="type">
+  <div id="attributes" data-test="1234" aria-rowspan="5678">div with data and aria attribute</div>
+  <input type="checkbox" id="checkbox" value="test-1234" name="checkbox">
+  <input type="radio" id="radio-apple" value="apple" name="radio">
+  <input type="radio" id="radio-orange" value="orange" name="radio">
+  <select id="select-multiple" multiple>
+    <option value="apple">Apple</option>
+    <option value="orange">Orange</option>
+  </select>
+  <input type="text" id="focus">
+  <button id="disabled" disabled>disabled</button>
+  <button id="enabled">double click</button>
+</body>
+</html>
+HTML;
+    }
+
     function test_concern_makes_assertions()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->assertTitle('Playground | Puth')
-                ->assertTitleContains('Playground')
+            // Cookies need an HTTP origin, setContent keeps it
+            $browser->visit(new Fixture)
+                ->setContent($this->assertionsPage())
+                ->assertTitle('Assertions | Puth')
+                ->assertTitleContains('Assertions')
                 ->assertPlainCookieValue('non-existing', '')
                 ->plainCookie('plain', '1234')
                 ->assertCookieValue('plain', '1234', false)
@@ -120,13 +179,13 @@ class AllMethodsTest extends PuthTestCase
                 ->assertCookieValue('test', '5678')
                 ->deleteCookie('test')
                 ->assertCookieMissing('test')
-                ->assertSee('playground')
+                ->assertSee('page for assertions')
                 ->assertSeeIn('.querying-get', 'Div')
                 ->assertSeeIn('.example', 'Div')
                 ->assertDontSee('This text does not exists')
                 ->assertDontSeeIn('.querying-get', 'This text does not exists')
                 ->assertScript('1+1', 2)
-                ->assertSourceHas('<title>Playground | Puth</title>')
+                ->assertSourceHas('<title>Assertions | Puth</title>')
                 ->assertSourceMissing('<div>__not in dom__</div>')
                 ->assertSeeLink(config('puth.alt'))
                 ->assertDontSeeLink('https://notalink.io')
@@ -134,37 +193,37 @@ class AllMethodsTest extends PuthTestCase
                 ->assertPresent('.navbar')
                 ->assertNotPresent('#not-existing-element')
                 ->assertMissing('missingelement')
-                ->assertInputValue('#properties-value input', 'input with value')
-                ->assertInputValueIsNot('#properties-value input', 'not the correct value')
-                ->check('#action-checkbox')
-                ->assertChecked('#action-checkbox')
-                ->uncheck('#action-checkbox', 'test-1234')
-                ->assertNotChecked('#action-checkbox')
-                ->radio('action-radio', 'orange')
-                ->assertRadioSelected('action-radio', 'orange')
-                ->assertRadioNotSelected('action-radio', 'apple')
-                ->select('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelected('#actions-select-multiple', ['apple', 'orange'])
-                ->assertNotSelected('#actions-select-multiple', 'not-selected')
-                ->assertSelectHasOptions('#actions-select-multiple', ['apple', 'orange'])
-                ->assertSelectMissingOptions('#actions-select-multiple', ['not-an-options'])
-                ->assertSelectHasOption('#actions-select-multiple', 'orange')
-                ->assertSelectMissingOption('#actions-select-multiple', 'not-an-options')
-                ->type('#actions-type input', 'test-1234')
-                ->assertValue('#actions-type input', 'test-1234')
-                ->append('#actions-type input', '-')
-                ->assertValueIsNot('#actions-type input', 'test-1234')
-                ->assertAttribute('#actions-type input', 'type', 'text')
-                ->assertDataAttribute('#properties-attributes', 'test', '1234')
-                ->assertAriaAttribute('#properties-attributes', 'rowspan', '5678')
-                ->assertEnabled('#actions-focus')
-                ->assertDisabled('#actions-click-disabled')
-                ->assertButtonDisabled('#actions-click-disabled')
-                ->assertButtonEnabled('#actions-click-double')
+                ->assertInputValue('#value', 'input with value')
+                ->assertInputValueIsNot('#value', 'not the correct value')
+                ->check('#checkbox')
+                ->assertChecked('#checkbox')
+                ->uncheck('#checkbox', 'test-1234')
+                ->assertNotChecked('#checkbox')
+                ->radio('radio', 'orange')
+                ->assertRadioSelected('radio', 'orange')
+                ->assertRadioNotSelected('radio', 'apple')
+                ->select('#select-multiple', ['apple', 'orange'])
+                ->assertSelected('#select-multiple', ['apple', 'orange'])
+                ->assertNotSelected('#select-multiple', 'not-selected')
+                ->assertSelectHasOptions('#select-multiple', ['apple', 'orange'])
+                ->assertSelectMissingOptions('#select-multiple', ['not-an-options'])
+                ->assertSelectHasOption('#select-multiple', 'orange')
+                ->assertSelectMissingOption('#select-multiple', 'not-an-options')
+                ->type('#type', 'test-1234')
+                ->assertValue('#type', 'test-1234')
+                ->append('#type', '-')
+                ->assertValueIsNot('#type', 'test-1234')
+                ->assertAttribute('#type', 'type', 'text')
+                ->assertDataAttribute('#attributes', 'test', '1234')
+                ->assertAriaAttribute('#attributes', 'rowspan', '5678')
+                ->assertEnabled('#focus')
+                ->assertDisabled('#disabled')
+                ->assertButtonDisabled('#disabled')
+                ->assertButtonEnabled('#enabled')
                 ->assertButtonEnabled('double click')
-                ->click('#actions-focus')
-                ->assertFocused('#actions-focus')
-                ->assertNotFocused('#actions-type input')
+                ->click('#focus')
+                ->assertFocused('#focus')
+                ->assertNotFocused('#type')
             ;
         });
     }
@@ -184,7 +243,7 @@ class AllMethodsTest extends PuthTestCase
                 }
             };
 
-            $browser->visit(new Playground);
+            $browser->setContent($this->assertionsPage());
             $browser->timeout = 500;
             $browser->timeoutMultiplier = 1;
 
@@ -192,7 +251,7 @@ class AllMethodsTest extends PuthTestCase
             $inverse('Saw unexpected text [Div] within element [.querying-get]', fn() => $browser->assertDontSeeIn('.querying-get', 'Div'));
             $inverse('JavaScript expression [1+1] mismatched', fn() => $browser->assertScript('1+1', 3));
             $inverse('Did not find expected source code [<div>__not in dom__</div>]', fn() => $browser->assertSourceHas('<div>__not in dom__</div>'));
-            $inverse('Found unexpected source code [<title>Playground | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Playground | Puth</title>'));
+            $inverse('Found unexpected source code [<title>Assertions | Puth</title>]', fn() => $browser->assertSourceMissing('<title>Assertions | Puth</title>'));
 
             $inverse("Waited 500ms for selector [body a[href='https://notalink.io/']]", fn() => $browser->assertSeeLink('https://notalink.io/'));
             $inverse('Waited 500ms for selector [body #not-existing-element]', fn() => $browser->assertVisible('body #not-existing-element'));
@@ -202,20 +261,20 @@ class AllMethodsTest extends PuthTestCase
     function test_assert_see_anything_exception()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            $browser->setContent('<div id="empty"></div>');
 
             $this->expectException('PHPUnit\Framework\ExpectationFailedException');
-            $browser->assertSeeAnythingIn('#querying-empty-div');
+            $browser->assertSeeAnythingIn('#empty');
         });
     }
 
     function test_concern_makes_url_assertions()
     {
         $this->browse(function (Browser $browser) {
-            $fixture = parse_url(config('puth.playground'));
+            $fixture = parse_url(config('puth.fixture'));
 
-            $browser->visit(config('puth.playground').'first/second?param1=abc#starts-1234')
-                ->assertUrlIs(config('puth.playground').'first/second?param1=abc#starts-1234')
+            $browser->visit(config('puth.fixture').'first/second?param1=abc#starts-1234')
+                ->assertUrlIs(config('puth.fixture').'first/second?param1=abc#starts-1234')
                 ->assertSchemeIs($fixture['scheme'])
                 ->assertSchemeIsNot('ftp')
                 ->assertHostIs($fixture['host'])
@@ -239,7 +298,7 @@ class AllMethodsTest extends PuthTestCase
     function test_wip()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(config('puth.playground').'first/second?param1=abc#starts-1234')
+            $browser->visit(config('puth.fixture').'first/second?param1=abc#starts-1234')
                 ->evaluate('setTimeout(_ => window.location.href = "'.config('puth.alt').'", 250)');
             $browser->assertUrlIs(config('puth.alt'));
         });
@@ -248,30 +307,34 @@ class AllMethodsTest extends PuthTestCase
     function test_concerns_interacts_with_elements_values()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->value('#actions-type input', 'test-1234')
-                ->assertValue('#actions-type input', 'test-1234')
-                ->assertAttribute('#actions-focus', 'type', 'text')
-                ->assertAttributeMissing('#actions-focus', 'missing-attribute')
-                ->assertAttributeContains('#actions-focus', 'type', 'xt')
-                ->assertAttributeDoesntContain('#actions-focus', 'type', 'wrong-value');
+            $browser->setContent(<<<'HTML'
+<div id="text">Div with id text</div>
+<input type="text" id="value">
+<input type="text" id="type">
+HTML)
+                ->value('#value', 'test-1234')
+                ->assertValue('#value', 'test-1234')
+                ->assertAttribute('#type', 'type', 'text')
+                ->assertAttributeMissing('#type', 'missing-attribute')
+                ->assertAttributeContains('#type', 'type', 'xt')
+                ->assertAttributeDoesntContain('#type', 'type', 'wrong-value');
 
-            static::assertEquals('test-1234', $browser->value('#actions-type input'));
-            static::assertEquals('Div with id querying-get', $browser->text('#querying-get'));
-            static::assertEquals('text', $browser->attribute('#actions-focus', 'type'));
+            static::assertEquals('test-1234', $browser->value('#value'));
+            static::assertEquals('Div with id text', $browser->text('#text'));
+            static::assertEquals('text', $browser->attribute('#type', 'type'));
 
-            $browser->type('#actions-focus', '12')
-                ->assertValue('#actions-focus', '12')
-                ->type('#actions-focus', '34')
-                ->assertValue('#actions-focus', '34')
-                ->typeSlowly('#actions-focus', '56')
-                ->assertValue('#actions-focus', '56')
-                ->append('#actions-focus', '78')
-                ->assertValue('#actions-focus', '5678')
-                ->appendSlowly('#actions-focus', '90')
-                ->assertValue('#actions-focus', '567890')
-                ->clear('#actions-focus')
-                ->assertValue('#actions-focus', '');
+            $browser->type('#type', '12')
+                ->assertValue('#type', '12')
+                ->type('#type', '34')
+                ->assertValue('#type', '34')
+                ->typeSlowly('#type', '56')
+                ->assertValue('#type', '56')
+                ->append('#type', '78')
+                ->assertValue('#type', '5678')
+                ->appendSlowly('#type', '90')
+                ->assertValue('#type', '567890')
+                ->clear('#type')
+                ->assertValue('#type', '');
         });
     }
 }

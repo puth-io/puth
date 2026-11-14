@@ -17,8 +17,8 @@ public class ContextTest {
 
         try {
             Browser browser = context.createBrowserShim();
-            browser.visit(BaseTest.playground());
-            assertEquals("Playground | Puth", browser.title());
+            browser.visit(BaseTest.fixture());
+            assertEquals("Puth fixture", browser.title());
         } finally {
             context.destroy();
         }
@@ -30,10 +30,10 @@ public class ContextTest {
 
         try {
             Browser browser = context.createBrowserShim();
-            browser.visit(BaseTest.playground());
+            browser.setContent("<title>Counting | Puth</title>");
             assertEquals(0, context.getAssertionCount());
 
-            browser.assertTitle("Playground | Puth").assertTitleContains("Playground");
+            browser.assertTitle("Counting | Puth").assertTitleContains("Counting");
             assertEquals(2, context.getAssertionCount());
 
             assertThrows(AssertionFailedError.class, () -> browser.setTimeout(100).assertTitle("Not the title"));

@@ -40,10 +40,12 @@ public class BaseTest {
         return PUTH_INSTANCE_URL;
     }
 
-    static String playground() {
+    /** The primary fixture origin, which serves a small page titled "Puth fixture" for any path. */
+    static String fixture() {
         return withTrailingSlash(PUTH_FIXTURE_URL);
     }
 
+    /** The alternate fixture origin, titled "Puth fixture | Alternate origin". */
     static String alt() {
         return withTrailingSlash(PUTH_FIXTURE_ALT_URL);
     }

@@ -118,6 +118,12 @@ async function connect(instanceUrl: string, environment: Record<string, string> 
     return { client, tool, session, run, close, protocolErrors };
 }
 
+// Sessions open pages by URL, so a test's own HTML comes from the fixture origin.
+const served = (body: string) => fixtureUrl(`/html?body=${encodeURIComponent(body)}`);
+const clickPage = `<title>Clicks</title><button id="go" onclick="document.querySelector('#verify').innerText = 'clicked button'">click me</button><p id="verify"></p>`;
+// More than one outline window of elements, of several kinds.
+const longPage = `<title>Long</title><h1>Long page</h1>${Array.from({ length: 12 }, (_, index) => `<h2>Part ${index}</h2><button>Button ${index}</button><a href="#part-${index}">Link ${index}</a>`).join('')}`;
+
 const start = async (environment = {}) => ({ ...await startInstance().then(async (started) => ({ ...started, ...await connect(started.url, environment) })) });
 
 describe('MCP protocol', () => {
@@ -432,35 +438,35 @@ describe('Sessions', () => {
 describe('puth_run', () => {
     it('runs steps in one call and reports only what changed', async () => {
         const { session, run } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served('<title>Form</title><input id="name">') });
 
         const { text, isError } = await run(
             sessionId,
-            { op: 'type', selector: '#actions-focus', text: 'hello' },
-            { op: 'value', selector: '#actions-focus', value: 'hello' },
+            { op: 'type', selector: '#name', text: 'hello' },
+            { op: 'value', selector: '#name', value: 'hello' },
         );
 
         assert.notOk(isError);
         assert.match(text, /^ok 2/);
         assert.include(text, '=\\"hello\\"'.replace(/\\/g, ''));
-        assert.notInclude(text, 'Playground | Puth');
+        assert.notInclude(text, 'Form');
         assert.isBelow(text.split('\n').length, 5);
     }, 20000);
 
     it('reports text that appeared', async () => {
         const { session, run } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served(clickPage) });
 
-        const { text } = await run(sessionId, { op: 'click', selector: '#actions-click-button' });
+        const { text } = await run(sessionId, { op: 'click', selector: '#go' });
 
-        assert.include(text, '+ "clicked button" in #actions-click-verify');
+        assert.include(text, '+ "clicked button" in #verify');
     }, 20000);
 
     it('shows the start of a new page and how to read on', async () => {
         const { session, run } = await start();
         const sessionId = await session({ url: fixtureAltUrl() });
 
-        const { text } = await run(sessionId, { op: 'visit', url: fixtureUrl() });
+        const { text } = await run(sessionId, { op: 'visit', url: served(longPage) });
 
         assert.notInclude(text, '+ ');
         assert.match(text, /… \d+ more, puth_inspect cursor=15\nkinds: .*button/);
@@ -468,26 +474,26 @@ describe('puth_run', () => {
 
     it('checks exact text', async () => {
         const { session, run } = await start();
-        const sessionId = await session();
-        await run(sessionId, { op: 'click', selector: '#actions-click-button' });
+        const sessionId = await session({ url: served(clickPage) });
+        await run(sessionId, { op: 'click', selector: '#go' });
 
-        assert.notOk((await run(sessionId, { op: 'textIs', selector: '#actions-click-verify', text: 'clicked button' })).isError);
-        assert.match((await run(sessionId, { op: 'textIs', selector: '#actions-click-verify', text: 'clicked', timeout: 100 })).text, /^ERR ASSERTION_FAILED: .*but found \[clicked button\]/);
+        assert.notOk((await run(sessionId, { op: 'textIs', selector: '#verify', text: 'clicked button' })).isError);
+        assert.match((await run(sessionId, { op: 'textIs', selector: '#verify', text: 'clicked', timeout: 100 })).text, /^ERR ASSERTION_FAILED: .*but found \[clicked button\]/);
     }, 20000);
 
     it('stops at the first failure and says where', async () => {
         const { session, run, tool } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served(clickPage) });
 
         const { isError, text } = await run(
             sessionId,
-            { op: 'title', text: 'Playground | Puth' },
+            { op: 'title', text: 'Clicks' },
             { op: 'title', text: 'Wrong', timeout: 100 },
-            { op: 'click', selector: '#actions-click-button' },
+            { op: 'click', selector: '#go' },
         );
 
         assert.isTrue(isError);
-        assert.match(text, /^ERR ASSERTION_FAILED: .*Playground \| Puth/);
+        assert.match(text, /^ERR ASSERTION_FAILED: .*Clicks/);
         assert.include(text, 'at step 1 title, 1 passed');
         assert.lengthOf((await tool('puth_export', { sessionId, format: 'steps' })).text.split('\n'), 3);
     }, 20000);
@@ -498,20 +504,20 @@ describe('puth_run', () => {
 
         const { text } = await run(sessionId, { op: 'visit', url: '/first?page=1' }, { op: 'visit', url: fixtureAltUrl() });
 
-        assert.include(text, `at ${fixtureAltUrl()} "Puth Fixtures | Alternate origin"`);
+        assert.include(text, `at ${fixtureAltUrl()} "Puth fixture | Alternate origin"`);
     }, 20000);
 
     it('finds things by their visible text', async () => {
         const { session, run } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served(clickPage) });
 
         const { isError } = await run(
             sessionId,
             { op: 'press', text: 'click me' },
-            { op: 'seeIn', selector: '#actions-click-verify', text: 'clicked button' },
+            { op: 'seeIn', selector: '#verify', text: 'clicked button' },
             { op: 'visit', url: fixtureAltUrl() },
-            { op: 'clickLink', text: 'Playground' },
-            { op: 'title', text: 'Playground | Puth' },
+            { op: 'clickLink', text: 'Primary origin' },
+            { op: 'title', text: 'Puth fixture' },
         );
 
         assert.notOk(isError);
@@ -525,7 +531,7 @@ describe('puth_run', () => {
             sessionId,
             { op: 'visit', url: fixtureAltUrl() },
             { op: 'back' },
-            { op: 'title', text: 'Playground | Puth' },
+            { op: 'title', text: 'Puth fixture' },
             { op: 'forward' },
             { op: 'reload' },
             { op: 'see', text: 'Alternate origin' },
@@ -540,7 +546,7 @@ describe('puth_run', () => {
 
         const { text } = await run(sessionId, { op: 'evaluate', script: `({ title: document.title, sum: 1 + 1 })` });
 
-        assert.include(text, '= {"title":"Playground | Puth","sum":2}');
+        assert.include(text, '= {"title":"Puth fixture","sum":2}');
     }, 20000);
 
     it('uploads files', async () => {
@@ -567,14 +573,14 @@ describe('puth_run', () => {
 
     it('handles dialogs', async () => {
         const { session, run } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served(`<button id="confirm" onclick="confirm('Sure?')">Delete</button>`) });
 
-        const opened = await run(sessionId, { op: 'click', selector: '#dialog-confirm' });
+        const opened = await run(sessionId, { op: 'click', selector: '#confirm' });
         assert.include(opened.text, 'a dialog is open');
 
         assert.match((await run(sessionId, { op: 'see', text: 'anything' })).text, /^ERR DIALOG_OPEN/);
         assert.notOk((await run(sessionId, { op: 'dialog', response: 'accept' })).isError);
-        assert.notOk((await run(sessionId, { op: 'see', text: 'Puth' })).isError);
+        assert.notOk((await run(sessionId, { op: 'see', text: 'Delete' })).isError);
     }, 20000);
 });
 
@@ -618,7 +624,7 @@ describe('puth_inspect', () => {
 
     it('bounds its output and says how to continue', async () => {
         const { tool, session } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served(longPage) });
 
         const first = await tool('puth_inspect', { sessionId, limit: 5 });
         const next = Number(first.text.match(/cursor=(\d+)/)![1]);
@@ -698,8 +704,8 @@ describe('puth_inspect', () => {
 describe('Other browser tools', () => {
     it('select pages', async () => {
         const { tool, session, run } = await start();
-        const sessionId = await session();
-        await run(sessionId, { op: 'click', selector: `a[href="${fixtureAltUrl()}"]` });
+        const sessionId = await session({ url: served(`<a href="${fixtureAltUrl()}" target="_blank">Second origin</a>`) });
+        await run(sessionId, { op: 'click', selector: 'a' });
 
         await vi.waitFor(async () => assert.lengthOf((await tool('puth_pages', { sessionId })).text.split('\n'), 2), { timeout: 3000 });
         const { text } = await tool('puth_pages', { sessionId, select: 1 });
@@ -710,10 +716,10 @@ describe('Other browser tools', () => {
 
     it('return screenshots as images and artifacts', async () => {
         const { tool, session } = await start();
-        const sessionId = await session();
+        const sessionId = await session({ url: served('<h1>Screenshot</h1><p>A page with more than the input.</p><input id="name">') });
 
         const { content, text } = await tool('puth_screenshot', { sessionId });
-        const element = await tool('puth_screenshot', { sessionId, selector: '#actions-focus' });
+        const element = await tool('puth_screenshot', { sessionId, selector: '#name' });
 
         assert.strictEqual(content[0].type, 'image');
         assert.strictEqual(content[0].mimeType, 'image/jpeg');

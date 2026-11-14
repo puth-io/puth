@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 // Local, dependency-free fixture origins for browser tests.
 //
-// Two origins are served so tests can cover navigation, cookies, redirects and
-// cross-origin behaviour without touching public websites:
-//   primary - the playground page (fixtures/playground) plus helper routes
+// Tests that only interact with a page set their own HTML with setContent. These
+// origins are for what needs real HTTP: URLs, navigation, redirects, slow
+// responses, cookies and cross-origin behaviour, without public websites:
+//   primary - a minimal page (fixtures/primary) plus helper routes
 //   alt     - a minimal second origin (fixtures/alt)
+//
+// setContent keeps the URL, so a test can visit a fixture page first and then
+// set its own content on that origin.
 //
 // Configuration (environment):
 //   PUTH_FIXTURE_URL      browser-reachable primary URL (default http://127.0.0.1:8081)
@@ -24,10 +28,6 @@ export const DEFAULT_ALT_URL = 'http://localhost:8082';
 
 const TYPES = {
     '.html': 'text/html; charset=utf-8',
-    '.css': 'text/css; charset=utf-8',
-    '.js': 'text/javascript; charset=utf-8',
-    '.png': 'image/png',
-    '.ico': 'image/x-icon',
     '.txt': 'text/plain; charset=utf-8',
 };
 
@@ -80,6 +80,16 @@ function createOrigin(root, urls, extraRoutes = {}) {
 
 function helperRoutes(urls) {
     return {
+        // Browsers ask for it on every page, and a 404 would show up as a failed request in recordings.
+        '/favicon.ico': (req, res) => {
+            res.writeHead(204).end();
+        },
+        // /html?body=<html> answers with the given HTML, for tests that can only open pages by URL, like MCP sessions.
+        // The page belongs to the test, the server only delivers it.
+        '/html': (req, res, url) => {
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+                .end(url.searchParams.get('body') ?? '');
+        },
         // /redirect?to=<url>&status=302
         '/redirect': (req, res, url) => {
             const to = url.searchParams.get('to') ?? '/';
@@ -150,7 +160,7 @@ export async function startFixtures({
     host = process.env.PUTH_FIXTURE_HOST ?? '0.0.0.0',
 } = {}) {
     const urls = { primary: primaryUrl.replace(/\/$/, ''), alt: altUrl.replace(/\/$/, '') };
-    const primary = createOrigin(path.join(here, 'playground'), urls, helperRoutes(urls));
+    const primary = createOrigin(path.join(here, 'primary'), urls, helperRoutes(urls));
     const alt = createOrigin(path.join(here, 'alt'), urls, helperRoutes(urls));
 
     const listen = (server, port) =>

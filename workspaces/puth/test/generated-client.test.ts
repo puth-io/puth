@@ -26,15 +26,17 @@ describe('Generated client', () => {
     });
 
     it('chains calls', async () => {
-        assert.strictEqual(await browser.setTimeout(100).visit(fixtureUrl()).assertTitle('Playground | Puth'), browser);
+        assert.strictEqual(await browser.setTimeout(100).visit(fixtureUrl()).assertTitle('Puth fixture'), browser);
     });
 
     it('ends a chain with a value', async () => {
-        assert.strictEqual(await browser.visit(fixtureUrl()).title(), 'Playground | Puth');
+        assert.strictEqual(await browser.visit(fixtureUrl()).title(), 'Puth fixture');
     });
 
     it('chains into generated objects', async () => {
-        await browser.withinIframe('#iframe-example').assertUrlIs(fixtureUrl());
+        await browser.setContent(`<iframe id="frame" src="${fixtureUrl()}"></iframe>`);
+
+        await browser.withinIframe('#frame').assertUrlIs(fixtureUrl());
     });
 
     it('stops a chain at the first failure', async () => {
@@ -60,33 +62,37 @@ describe('Generated client', () => {
         const created = Context.create(instance.http.url.replace(/\/$/, ''));
 
         try {
-            await created.createBrowserShim().visit(fixtureUrl()).assertTitle('Playground | Puth');
+            await created.createBrowserShim().visit(fixtureUrl()).assertTitle('Puth fixture');
         } finally {
             await (await created).destroy({ immediately: true });
         }
     });
 
     it('returns values', async () => {
-        assert.strictEqual(await browser.title(), 'Playground | Puth');
+        assert.strictEqual(await browser.title(), 'Puth fixture');
         assert.strictEqual(await browser.evaluate('1 + 1'), 2);
     });
 
     it('applies the defaults of the server', async () => {
-        await browser.click('#actions-focus');
+        await browser.setContent('<input id="focus">');
+
+        await browser.click('#focus');
 
         assert.strictEqual(await browser.url(), fixtureUrl());
     });
 
     it('returns generated objects for known types', async () => {
-        const frame = await browser.withinIframe('#iframe-example');
+        await browser.setContent(`<iframe id="frame" src="${fixtureUrl()}"></iframe>`);
+        const frame = await browser.withinIframe('#frame');
 
         await frame.assertUrlIs(fixtureUrl());
     });
 
     it('returns dynamic handles for puppeteer objects', async () => {
-        const element = await browser.firstOrFail('#actions-focus');
+        await browser.setContent('<input id="focus">');
+        const element = await browser.firstOrFail('#focus');
 
-        assert.strictEqual(await element.evaluate('(element) => element.id'), 'actions-focus');
+        assert.strictEqual(await element.evaluate('(element) => element.id'), 'focus');
     });
 
     it('passes generated objects as references', () => {
@@ -115,7 +121,7 @@ describe('Generated client', () => {
         try {
             const shim = await fromUrl.createBrowserShim();
             await shim.visit(fixtureUrl());
-            assert.strictEqual(await shim.title(), 'Playground | Puth');
+            assert.strictEqual(await shim.title(), 'Puth fixture');
         } finally {
             await fromUrl.destroy({ immediately: true });
         }

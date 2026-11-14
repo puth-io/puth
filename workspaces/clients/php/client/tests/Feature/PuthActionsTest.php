@@ -2,38 +2,46 @@
 
 namespace Tests\Feature;
 
-use Puth\Traits\PuthAssertions;
+use Puth\PuthTestCase;
 
-class PuthActionsTest extends PlaygroundTestCase
+class PuthActionsTest extends PuthTestCase
 {
-    use PuthAssertions;
-    
     function testType()
     {
-        $input = $this->page->get('#actions-type input')->type('puth test verify');
+        $this->page->setContent('<input type="text">');
+
+        $input = $this->page->get('input')->type('puth test verify');
         $this->assertEquals('puth test verify', $input->value());
     }
     
     function testFocus()
     {
+        $this->page->setContent('<input type="text" id="actions-focus">');
+
         $input = $this->page->get('#actions-focus')->focus();
         $this->assertElementEquals($input, $this->page->focused());
     }
     
     function testFocusSelector()
     {
+        $this->page->setContent('<input type="text" id="actions-focus">');
+
         $this->page->focus('#actions-focus');
         $this->assertElementEquals($this->page->get('#actions-focus'), $this->page->focused());
     }
     
     function testBlur()
     {
+        $this->page->setContent('<input type="text" id="actions-focus">');
+
         $this->page->get('#actions-focus')->focus()->blur();
         $this->assertElementEquals($this->page->get('body'), $this->page->focused());
     }
     
     function testBlurSelector()
     {
+        $this->page->setContent('<input type="text" id="actions-focus">');
+
         $this->page->focus('#actions-focus');
         $this->page->blur('#actions-focus');
         
@@ -43,7 +51,9 @@ class PuthActionsTest extends PlaygroundTestCase
     
     function testClear()
     {
-        $input = $this->page->get('#actions-type input')
+        $this->page->setContent('<input type="text">');
+
+        $input = $this->page->get('input')
             ->type('puth test verify')
             ->clear();
         $this->assertEquals('', $input->value());
@@ -51,50 +61,76 @@ class PuthActionsTest extends PlaygroundTestCase
     
     function testClick()
     {
-        $this->page->get('#actions-click button')->click();
-        $this->assertEquals('clicked button', $this->page->get('#actions-click-verify')->getProperty('innerText')->jsonValue());
+        $this->page->setContent(<<<'HTML'
+<button onclick="document.querySelector('#verify').innerText = 'clicked button'">click me</button>
+<p id="verify"></p>
+HTML);
+
+        $this->page->get('button')->click();
+        $this->assertEquals('clicked button', $this->page->get('#verify')->getProperty('innerText')->jsonValue());
     }
     
     function testDoubleClick()
     {
-        $this->page->get('#actions-click-double')->doubleClick();
-        $this->assertEquals('double clicked button', $this->page->get('#actions-click-double-verify')->getProperty('innerText')->jsonValue());
+        $this->page->setContent(<<<'HTML'
+<button ondblclick="document.querySelector('#verify').innerText = 'double clicked button'">double click</button>
+<p id="verify"></p>
+HTML);
+
+        $this->page->get('button')->doubleClick();
+        $this->assertEquals('double clicked button', $this->page->get('#verify')->getProperty('innerText')->jsonValue());
+    }
+
+    private function setMousedownPage(): void
+    {
+        $this->page->setContent(<<<'HTML'
+<button onmousedown="document.querySelector('#verify').innerText = 'mousedown: ' + event.which">mousedown event</button>
+<p id="verify"></p>
+HTML);
     }
     
     function testMiddleClick()
     {
-        $this->page->get('#actions-click-mousedown')->middleClick();
-        $this->assertEquals('mousedown: ' . 2, $this->page->get('#actions-click-mousedown-verify')->getProperty('innerText')->jsonValue());
+        $this->setMousedownPage();
+
+        $this->page->get('button')->middleClick();
+        $this->assertEquals('mousedown: ' . 2, $this->page->get('#verify')->getProperty('innerText')->jsonValue());
     }
     
     function testRightClick()
     {
-        $this->page->get('#actions-click-mousedown')->rightClick();
-        $this->assertEquals('mousedown: ' . 3, $this->page->get('#actions-click-mousedown-verify')->getProperty('innerText')->jsonValue());
+        $this->setMousedownPage();
+
+        $this->page->get('button')->rightClick();
+        $this->assertEquals('mousedown: ' . 3, $this->page->get('#verify')->getProperty('innerText')->jsonValue());
     }
     
     function testSelect()
     {
-        $select = $this->page->get('#actions-select');
+        $this->page->setContent(<<<'HTML'
+<select>
+  <option value="" selected disabled>-- Select Value --</option>
+  <option value="apple">Apple</option>
+  <option value="orange">Orange</option>
+</select>
+HTML);
+
+        $select = $this->page->get('select');
         $select->select('apple');
         $this->assertEquals('apple', $select->value());
     }
     
     function testSelectMultiple()
     {
-        $select = $this->page->get('#actions-select-multiple');
+        $this->page->setContent(<<<'HTML'
+<select multiple>
+  <option value="apple">Apple</option>
+  <option value="orange">Orange</option>
+</select>
+HTML);
+
+        $select = $this->page->get('select');
         $select->select('apple', 'orange');
         $this->assertEquals(['apple', 'orange'], $select->selected());
     }
-    
-    // TODO works but needs assertion
-    // function testScrollIntoView() {
-    //     $this->page->get('#actions-scrollIntoView')->scrollIntoView();
-    // }
-    
-    // TODO works but needs assertion
-    // function testScrollTo() {
-    //     $this->page->get('#actions-scrollIntoView')->scrollIntoView();
-    //     $this->page->get('#actions-scrollTo')->scrollTo(0, 100);
-    // }
 }

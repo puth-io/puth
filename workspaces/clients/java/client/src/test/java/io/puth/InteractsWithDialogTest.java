@@ -5,7 +5,13 @@ import org.junit.jupiter.api.Test;
 public class InteractsWithDialogTest extends BaseTest {
     @Test
     void test_dialogs() {
-        browser.visit(playground())
+        browser.setContent("""
+                        <button id="dialog-alert" onclick="alert('alert')">Open Alert</button>
+                        <button id="dialog-prompt" onclick="document.querySelector('#prompt-result').innerText = prompt('prompt for input')">Open Prompt</button>
+                        <button id="dialog-confirm" onclick="document.querySelector('#confirm-result').innerText = confirm('confirm this') ? 'true' : 'false'">Open Confirm</button>
+                        <div>Prompt text: <span id="prompt-result"></span></div>
+                        <div>confirm value: <span id="confirm-result"></span></div>
+                        """)
                 .click("#dialog-alert")
                 .waitForDialog()
                 .acceptDialog()

@@ -5,7 +5,7 @@ namespace Tests\Browser;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser;
-use Tests\Browser\Pages\Playground;
+use Tests\Browser\Pages\Fixture;
 use Tests\PuthTestCase;
 
 class WaitsForElementsTest extends PuthTestCase
@@ -15,7 +15,7 @@ class WaitsForElementsTest extends PuthTestCase
     function test_wait_until_script()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent('<p>Counting</p>')
                 ->waitUntil('(window.count === undefined ? window.count = 1 : true) && window.count++ && window.count >= 3');
         });
     }
@@ -31,38 +31,40 @@ class WaitsForElementsTest extends PuthTestCase
 
     function test_wait_for_route()
     {
-        $playground = new Playground;
+        $fixture = new Fixture;
 
         URL::shouldReceive('route')
             ->once()
-            ->andReturn($playground->url());
+            ->andReturn($fixture->url());
 
-        $this->browse(function (Browser $browser) use ($playground) {
-            $browser->evaluate("window.location = '{$playground->url()}'");
+        $this->browse(function (Browser $browser) use ($fixture) {
+            $browser->evaluate("window.location = '{$fixture->url()}'");
             $browser->waitForRoute('mocked return')
-                ->assertUrlIs($playground->url());
+                ->assertUrlIs($fixture->url());
         });
     }
 
     function test_wait_for_reload()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->visit(new Fixture)
                 ->waitForReload(function (Browser $browser) {
                     $browser->refresh();
                 });
 
-            (new Playground)->assert($browser);
+            (new Fixture)->assert($browser);
         });
     }
 
     function test_click_and_wait_for_reload()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->clickAndWaitForReload('#actions-click-reload');
+            // A reload needs a URL, setContent keeps the one of the fixture page
+            $browser->visit(new Fixture)
+                ->setContent('<title>Reload</title><button id="reload" onclick="location.reload()">click for reload</button>')
+                ->clickAndWaitForReload('#reload');
 
-            (new Playground)->assert($browser);
+            (new Fixture)->assert($browser);
         });
     }
 
@@ -77,16 +79,16 @@ class WaitsForElementsTest extends PuthTestCase
     function test_wait_for_link()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent('<a href="'.config('puth.alt').'">Alternate origin</a><input type="text" name="name">')
                 ->waitForLink(config('puth.alt'))
-                ->waitForInput('properties-value-input');
+                ->waitForInput('name');
         });
     }
 
     function test_wait_for_event()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            $browser->setContent('<button id="wait-for-event-element">event target</button>');
             $browser->evaluate("setTimeout(() => document.dispatchEvent(new Event('test-event')), 1000)");
             $browser->waitForEvent('test-event', 'document');
             $browser->evaluate("setTimeout(() => document.querySelector('#wait-for-event-element').dispatchEvent(new Event('test-event')), 1000)");
@@ -99,7 +101,7 @@ class WaitsForElementsTest extends PuthTestCase
         $this->expectException(\PHPUnit\Framework\ExpectationFailedException::class);
 
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            $browser->setContent('<button id="wait-for-event-element">event target</button>');
             $browser->timeoutMultiplier = 1;
 
             $first = now();
@@ -110,7 +112,13 @@ class WaitsForElementsTest extends PuthTestCase
     function test_when_available()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent(<<<'HTML'
+<h1>Puth</h1>
+<div id="querying-contains">
+  <div>Text containing apple</div>
+  <div>Text containing apple</div>
+</div>
+HTML)
                 ->whenAvailable('#querying-contains', function (Browser $browser) {
                     $browser->assertMissing('Puth');
 

@@ -78,9 +78,15 @@ does this whenever the Compose environment starts.
 
 ## Browser fixtures
 
-Browser suites use the local origins in `dev/fixtures`, not public websites. The
-`fixtures` service starts with `puth` and serves the playground page and a second
-origin for navigation, cookie, redirect, and cross-origin scenarios.
+A test that only interacts with a page sets its own small HTML with `setContent`.
+The local origins in `dev/fixtures` are for what needs real HTTP: URLs,
+navigation, redirects, slow responses, cookies and a second origin. The
+`fixtures` service starts with `puth` and serves a minimal page on each origin,
+plus helper routes such as `/redirect`, `/cookies/set` and `/slow`, described in
+`dev/fixtures/server.mjs`. `setContent` keeps the URL, so a test can visit a
+fixture page first and then set its own content on that origin. Tests that can
+only open pages by URL, like MCP sessions, pass their HTML to `/html?body=`.
+Keep fixture pages plain, without stylesheets, scripts or other assets.
 
 | Variable | Compose | Direct runs |
 | --- | --- | --- |
@@ -92,7 +98,7 @@ Puth runs Chrome. The origins use different hostnames because cookies are not
 isolated by port. For direct PHP, Laravel, or Java runs, start them with
 `node dev/fixtures/server.mjs`. The Node suite starts its own origins unless both
 variables are set. `test/fixtures.test.ts` fails if a suite references the public
-playground or Puth websites again.
+Puth websites.
 
 ## MCP drafts
 

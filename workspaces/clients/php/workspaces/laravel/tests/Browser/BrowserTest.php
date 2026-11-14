@@ -8,7 +8,7 @@ use PHPUnit\Framework\Assert;
 use Puth\Exceptions\UnreachableActionException;
 use Puth\Laravel\Browser;
 use Puth\Proxies\FileChooser;
-use Tests\Browser\Pages\Playground;
+use Tests\Browser\Pages\Fixture;
 use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
@@ -85,9 +85,11 @@ class BrowserTest extends PuthTestCase
     function test_within_iframe()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            // The frame loads the fixture page from the origin of the main page
+            $browser->visit(new Fixture)
+                ->setContent('<iframe id="iframe-example" src="/" style="width: 100%; height: 300px"></iframe>')
                 ->withinFrame('#iframe-example', function (Browser $iframe) {
-                    $iframe->assertUrlIs(config('puth.playground'))
+                    $iframe->assertUrlIs(config('puth.fixture'))
                         ->evaluate("document.body.insertAdjacentHTML('beforeend', '<div id=\'random-test-237654\'>bla</div>')")
                         ->assertVisible('#random-test-237654');
                 })
@@ -127,7 +129,7 @@ class BrowserTest extends PuthTestCase
 //    function test_file_chooser_multiple()
 //    {
 //        $this->browse(function (Browser $browser) {
-//            $browser->visit(new Playground)
+//            $browser->setContent('<input type="file" id="file-test-input" multiple><div id="file-attach-preview"></div>')
 //                ->all(fn($site) => [
 //                    $site->waitForFileChooser(),
 //                    $site->click('#file-test-input'),

@@ -18,13 +18,14 @@ public class InteractsWithElementsTest extends BaseTest {
                 .assertSee("clicked");
     }
 
-//    TODO implement attach functions
+//    TODO implement attach functions. FILE_PAGE needs an <input type="file" name="file-test-input" multiple>
+//    whose change listener reads the files into #file-attach-preview.
 //    @Test
 //    void test_attach() throws Exception {
 //        Path file = Paths.get("files", "test.txt");
 //        String content = Files.readString(file);
 //
-//        browser.visit(playground())
+//        browser.setContent(FILE_PAGE)
 //                .attach("file-test-input", file.toString())
 //                .assertSeeIn("#file-attach-preview", content);
 //    }
@@ -36,34 +37,34 @@ public class InteractsWithElementsTest extends BaseTest {
 //
 //        String expected = Files.readString(file1) + Files.readString(file2);
 //
-//        browser.visit(playground())
+//        browser.setContent(FILE_PAGE)
 //                .attach("file-test-input", new String[]{file1.toString(), file2.toString()})
 //                .assertSeeIn("#file-attach-preview", expected);
 //    }
 
     @Test
     void test_type_keys() {
-        browser.visit(playground())
-                .type("#actions-type input", "test-1234")
-                .append("#actions-type input", "{Ctrl}{a}{Delete}")
-                .assertValue("#actions-type input", "")
-                .type("#actions-type input", "test-1234")
-                .append("#actions-type input", "{Shift}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}")
-                .append("#actions-type input", "5")
-                .assertValue("#actions-type input", "test-5")
-                .append("#actions-type input", "{Control}{a}{Delete}")
-                .assertValue("#actions-type input", "")
-                .keys("#actions-type input", new String[]{"a", "b", "c"})
-                .assertValue("#actions-type input", "abc")
-                .keys("#actions-type input", "{Backspace}")
-                .assertValue("#actions-type input", "ab")
-                .keys("#actions-type input", new String[]{"{Backspace}", "d", "e"})
-                .assertValue("#actions-type input", "ade")
-                .keys("#actions-type input", new String[]{"d", "e", "{Control}{a}{Delete}"})
-                .assertValue("#actions-type input", "");
+        browser.setContent("<input id=\"actions-type\" type=\"text\">")
+                .type("#actions-type", "test-1234")
+                .append("#actions-type", "{Ctrl}{a}{Delete}")
+                .assertValue("#actions-type", "")
+                .type("#actions-type", "test-1234")
+                .append("#actions-type", "{Shift}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}")
+                .append("#actions-type", "5")
+                .assertValue("#actions-type", "test-5")
+                .append("#actions-type", "{Control}{a}{Delete}")
+                .assertValue("#actions-type", "")
+                .keys("#actions-type", new String[]{"a", "b", "c"})
+                .assertValue("#actions-type", "abc")
+                .keys("#actions-type", "{Backspace}")
+                .assertValue("#actions-type", "ab")
+                .keys("#actions-type", new String[]{"{Backspace}", "d", "e"})
+                .assertValue("#actions-type", "ade")
+                .keys("#actions-type", new String[]{"d", "e", "{Control}{a}{Delete}"})
+                .assertValue("#actions-type", "");
         // TODO pptr bug https://github.com/puppeteer/puppeteer/issues/9770
-        // browser.type("#actions-type input", "{Shift}test")
-        //        .assertValue("#actions-type input", "t");
+        // browser.type("#actions-type", "{Shift}test")
+        //        .assertValue("#actions-type", "t");
     }
 
     @Test

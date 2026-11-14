@@ -20,25 +20,28 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe('Fixture origins', () => {
-    it('serves the playground for unknown paths and 404s for unknown assets', async () => {
+    it('serves its page for unknown paths and 404s for unknown files', async () => {
         const page = await fetch(fixtureUrl('/first/second?param1=abc'));
         assert.strictEqual(page.status, 200);
-        assert.include(await page.text(), "Puth's playground");
+        assert.include(await page.text(), '<title>Puth fixture</title>');
 
         assert.strictEqual((await fetch(fixtureUrl('/missing.css'))).status, 404);
     });
 
-    it('links the playground to the alternate origin', async () => {
+    it('links the primary origin to the alternate origin', async () => {
         const html = await (await fetch(fixtureUrl())).text();
 
         assert.include(html, `href="${fixtureAltUrl()}"`);
         assert.notInclude(html, '__ALT_URL__');
     });
 
-    it('does not load anything from another host', async () => {
-        const html = await (await fetch(fixtureUrl())).text();
+    it('loads nothing besides the page', async () => {
+        for (const url of [fixtureUrl(), fixtureAltUrl()]) {
+            assert.notMatch(await (await fetch(url)).text(), /<(?:script|link|img|iframe)\b/i);
+        }
 
-        assert.notMatch(html, /<(?:script|link|img|iframe)\b[^>]*\b(?:src|href)=["'](?:https?:)?\/\//i);
+        // Browsers ask for it anyway; a 404 would show up as a failed request in recordings.
+        assert.strictEqual((await fetch(fixtureUrl('/favicon.ico'))).status, 204);
     });
 
     it('keeps routine suites off the public websites', () => {

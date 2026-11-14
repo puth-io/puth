@@ -36,17 +36,17 @@ await tool('puth_run', {
     sessionId,
     steps: [
         { op: 'title', text: 'laravel puth testbed' },
-        { op: 'visit', url: `${fixtures}/` },
-        { op: 'title', text: 'Playground | Puth' },
-        { op: 'waitFor', selector: '#actions-click-button' },
-        { op: 'click', selector: '#actions-click-button' },
-        { op: 'seeIn', selector: '#actions-click-verify', text: 'clicked button' },
-        { op: 'textIs', selector: '#actions-click-verify', text: 'clicked button' },
-        { op: 'type', selector: '#actions-focus', text: "it's typed" },
-        { op: 'value', selector: '#actions-focus', value: "it's typed" },
-        { op: 'keys', selector: '#actions-clear', keys: ['a', 'b'] },
-        { op: 'select', selector: '#actions-select', value: 'orange' },
-        { op: 'value', selector: '#actions-select', value: 'orange' },
+        { op: 'visit', url: `${fixtures}/actions.html` },
+        { op: 'title', text: 'Actions | Puth' },
+        { op: 'waitFor', selector: '#click' },
+        { op: 'click', selector: '#click' },
+        { op: 'seeIn', selector: '#clicked', text: 'clicked button' },
+        { op: 'textIs', selector: '#clicked', text: 'clicked button' },
+        { op: 'type', selector: '#name', text: "it's typed" },
+        { op: 'value', selector: '#name', value: "it's typed" },
+        { op: 'keys', selector: '#keys', keys: ['a', 'b'] },
+        { op: 'select', selector: '#fruit', value: 'orange' },
+        { op: 'value', selector: '#fruit', value: 'orange' },
     ],
 });
 
@@ -59,8 +59,8 @@ for (const [format, directory] of Object.entries(targets)) {
 
     const broken = code
         .replace(className, 'McpBrokenDraftTest')
-        .replace("assertTitle('Playground | Puth')", "assertTitle('Intentionally wrong')");
-    if (broken.includes("assertTitle('Playground | Puth')")) {
+        .replace("assertTitle('Actions | Puth')", "assertTitle('Intentionally wrong')");
+    if (broken.includes("assertTitle('Actions | Puth')")) {
         throw new Error('Could not break the draft.');
     }
 

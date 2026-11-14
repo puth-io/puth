@@ -10,12 +10,12 @@ public class InteractsWithJavascriptTest extends BaseTest {
 
     @Test
     void test_script() {
-        Object[] response = browser.visit(playground())
+        Object[] response = browser.visit(fixture())
                 .evaluate(new String[]{
                         "1 + 1",
                         "window.document.location.href"
                 });
 
-        assertArrayEquals(new Object[]{2, playground()}, response);
+        assertArrayEquals(new Object[]{2, fixture()}, response);
     }
 }

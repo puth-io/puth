@@ -3,7 +3,6 @@
 namespace tests\Browser;
 
 use Puth\Laravel\Browser;
-use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithMouseTest extends PuthTestCase
@@ -13,7 +12,7 @@ class InteractsWithMouseTest extends PuthTestCase
     function test_mouse_control_click()
     {
         $this->browse(function (Browser $browser) {
-            $browser->setContent('<html><body><a href="'.config('puth.playground').'" onclick="event.preventDefault(); document.querySelector(\'#result\').innerHTML = event.ctrlKey ? \'1\' : \'0\';">playground</a><div id="result"></div></body></html>');
+            $browser->setContent('<html><body><a href="'.config('puth.fixture').'" onclick="event.preventDefault(); document.querySelector(\'#result\').innerHTML = event.ctrlKey ? \'1\' : \'0\';">fixture</a><div id="result"></div></body></html>');
             $browser->controlClick('a')
                 ->assertSeeIn('#result', '1');
         });
@@ -39,7 +38,14 @@ class InteractsWithMouseTest extends PuthTestCase
     function test_mouse_click_at_point()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            // The button is below the viewport, so it has to be scrolled into view first
+            $browser->setContent(<<<'HTML'
+<div style="height: 2000px"></div>
+<div id="actions-click">
+  <button onclick="document.querySelector('#verify').innerText = 'clicked button'">click me</button>
+  <p id="verify"></p>
+</div>
+HTML);
 
             $element = $browser->_firstOrFail('#actions-click > button');
             $element->scrollIntoView();
@@ -57,7 +63,7 @@ class InteractsWithMouseTest extends PuthTestCase
             $browser->timeout = 250;
             $browser->timeoutMultiplier = 1;
 
-            $browser->visit(new Playground)
+            $browser->setContent('<button>an element</button>')
                 ->click('not-an-element');
         });
     }
@@ -65,7 +71,19 @@ class InteractsWithMouseTest extends PuthTestCase
     function test_concern_interacts_with_mouse()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $page = <<<'HTML'
+<div id="actions-click">
+  <button onclick="document.querySelector('#actions-click-verify').innerText = 'clicked button'">click me</button>
+  <p id="actions-click-verify"></p>
+  <button id="actions-click-double" ondblclick="document.querySelector('#actions-click-double-verify').innerText = 'double clicked button'">double click</button>
+  <p id="actions-click-double-verify"></p>
+  <button id="actions-click-mousedown" onmousedown="document.querySelector('#actions-click-mousedown-verify').innerText = 'mousedown: ' + event.which">mousedown event</button>
+  <p id="actions-click-mousedown-verify"></p>
+</div>
+<div id="actions-hover" style="height: 2rem" onmouseover="this.innerText = 'hovering'" onmouseleave="this.innerText = ''"></div>
+HTML;
+
+            $browser->setContent($page)
                 ->click('#actions-click > button')
                 ->assertSeeIn('#actions-click-verify', 'clicked button')
                 ->doubleClick('#actions-click-double')
@@ -75,7 +93,7 @@ class InteractsWithMouseTest extends PuthTestCase
                 ->mouseover('#actions-hover')
                 ->assertSeeIn('#actions-hover', 'hovering');
 
-            $browser->visit(new Playground)
+            $browser->setContent($page)
                 ->clickAtXPath('//*[@id="actions-click"]/*')
                 ->assertSeeIn('#actions-click', 'clicked button');
             

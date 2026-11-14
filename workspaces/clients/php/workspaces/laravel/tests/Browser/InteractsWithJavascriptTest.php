@@ -4,7 +4,7 @@ namespace Tests\Browser;
 
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser;
-use Tests\Browser\Pages\Playground;
+use Tests\Browser\Pages\Fixture;
 use Tests\PuthTestCase;
 
 class InteractsWithJavascriptTest extends PuthTestCase
@@ -14,13 +14,13 @@ class InteractsWithJavascriptTest extends PuthTestCase
     function test_script()
     {
         $this->browse(function (Browser $browser) {
-            $response = $browser->visit(new Playground)
+            $response = $browser->visit(new Fixture)
                 ->script([
                     '1 + 1',
                     'window.document.location.href',
                 ]);
             
-            Assert::assertEquals([2, (new Playground)->url()], $response);
+            Assert::assertEquals([2, (new Fixture)->url()], $response);
         });
     }
 

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Assert;
 use Puth\Laravel\Browser;
-use Tests\Browser\Pages\Playground;
+use Tests\Browser\Pages\Fixture;
 use Tests\PuthTestCase;
 
 class BrowserTest extends PuthTestCase
@@ -30,7 +30,7 @@ class BrowserTest extends PuthTestCase
         $this->expectException(Exception::class);
         
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground);
+            $browser->setContent('<p>Failing test</p>');
             
             throw new Exception();
         });
@@ -43,7 +43,7 @@ class BrowserTest extends PuthTestCase
         $this->expectException(Exception::class);
         
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent('<p>Stored source</p>')
                 ->storeSource(Str::random());
             
             throw new Exception();
@@ -68,7 +68,14 @@ class BrowserTest extends PuthTestCase
     function test_elsewhere()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent(<<<'HTML'
+<h1>Puth</h1>
+<div id="querying-contains">
+  <div>Text containing apple</div>
+  <div>Text containing apple</div>
+</div>
+<div id="properties-innerhtml"><div>child div</div> with this innerhtml</div>
+HTML)
                 ->within('#querying-contains', function (Browser $browser) {
                     $browser->assertSee('Text containing apple')
                         ->assertDontSee('Puth')
@@ -94,7 +101,7 @@ class BrowserTest extends PuthTestCase
     function test_scroll_to()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent('<div style="height: 2000px"></div><button id="actions-click-button">click me</button>')
                 ->scrollTo('#actions-click-button');
 
             Assert::assertTrue(
@@ -106,8 +113,8 @@ class BrowserTest extends PuthTestCase
     function test_blank()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
-                ->assertUrlIs((new Playground)->url())
+            $browser->visit(new Fixture)
+                ->assertUrlIs((new Fixture)->url())
                 ->blank();
             
             Assert::assertEquals('about:blank', $browser->url());
@@ -116,15 +123,15 @@ class BrowserTest extends PuthTestCase
     
     function test_visit_route()
     {
-        $playground = new Playground;
+        $fixture = new Fixture;
         
         URL::shouldReceive('route')
             ->once()
-            ->andReturn($playground->url());
+            ->andReturn($fixture->url());
         
-        $this->browse(function (Browser $browser) use ($playground) {
-            $browser->visitRoute('playground')
-                ->assertUrlIs($playground->url());
+        $this->browse(function (Browser $browser) use ($fixture) {
+            $browser->visitRoute('fixture')
+                ->assertUrlIs($fixture->url());
         });
     }
 //

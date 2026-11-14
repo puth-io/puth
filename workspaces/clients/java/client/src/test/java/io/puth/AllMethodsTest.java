@@ -10,9 +10,53 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AllMethodsTest extends BaseTest {
+    private static final String SELECT_PAGE = """
+            <select id="actions-select">
+              <option value="" selected disabled>-- Select Value --</option>
+              <option value="apple">Apple</option>
+              <option value="orange">Orange</option>
+            </select>
+            <select id="actions-select-multiple" multiple>
+              <option value="apple">Apple</option>
+              <option value="orange">Orange</option>
+            </select>
+            """;
+
+    /** Everything test_concern_makes_assertions and its inverse look at. */
+    private static final String ASSERTIONS_PAGE = """
+            <!doctype html>
+            <html>
+            <head><title>Assertions | Puth</title></head>
+            <body>
+              <nav class="navbar"><a href="%s">Alternate origin</a></nav>
+              <h1>The assertions page</h1>
+              <div class="example">
+                <div id="querying-get">Div with id querying-get</div>
+                <div class="querying-get">Div with class querying-get</div>
+              </div>
+              <div id="properties-value"><input type="text" name="properties-value-input" value="input with value"></div>
+              <div id="properties-attributes" data-test="1234" aria-rowspan="5678">div with data and aria attribute</div>
+              <div id="actions-type"><input type="text"></div>
+              <input id="actions-focus" type="text">
+              <button id="actions-click-double">double click</button>
+              <button id="actions-click-disabled" disabled>disabled</button>
+              <input type="checkbox" id="action-checkbox" name="action-checkbox" value="test-1234">
+              <input type="radio" id="action-radio-apple" name="action-radio" value="apple">
+              <input type="radio" id="action-radio-orange" name="action-radio" value="orange">
+              <select id="actions-select-multiple" multiple>
+                <option value="apple">Apple</option>
+                <option value="orange">Orange</option>
+              </select>
+            </body>
+            </html>
+            """.formatted(alt());
     @Test
     void test_querying_elements() {
-        browser.visit(playground());
+        browser.setContent("""
+                <div id="querying-get">Div with id querying-get</div>
+                <div class="querying-get">Div with class querying-get</div>
+                <div class="querying-get">Div with class querying-get</div>
+                """);
 
         RemoteObject[] els = browser.findAll(".querying-get");
         assertEquals(2, els.length, "Expected 2 elements with class .querying-get");
@@ -23,16 +67,20 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_press() {
-        browser.visit(playground())
+        browser.setContent("""
+                        <button onclick="document.querySelector('#verify').innerText = 'clicked button'">click me</button>
+                        <p id="verify"></p>
+                        <button onclick="this.disabled = true; setTimeout(() => this.disabled = false, 1000)">click and wait</button>
+                        """)
                 .press("click me")
-                .assertSeeIn("#actions-click-verify", "clicked button")
+                .assertSeeIn("#verify", "clicked button")
                 .pressAndWaitFor("click and wait")
                 .assertButtonEnabled("click and wait");
     }
 
     @Test
     void test_select() {
-        browser.visit(playground())
+        browser.setContent(SELECT_PAGE)
                 .select("#actions-select-multiple", new String[]{"apple", "orange"})
                 .assertSelected("#actions-select-multiple", new String[]{"apple", "orange"})
                 .select("#actions-select-multiple", "orange")
@@ -41,7 +89,7 @@ public class AllMethodsTest extends BaseTest {
                 .select("#actions-select", "orange")
                 .assertSelected("#actions-select", "orange");
 
-        browser.visit(playground())
+        browser.setContent(SELECT_PAGE)
                 .select("#actions-select-multiple");
         Object val = browser.value("#actions-select-multiple");
         assertNotNull(val);
@@ -51,7 +99,7 @@ public class AllMethodsTest extends BaseTest {
     @Test
     void test_navigation() {
         String next = alt();
-        String play = playground();
+        String play = fixture();
 
         browser.visit(play)
                 .assertUrlIs(play)
@@ -67,7 +115,7 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_resize() {
-        browser.visit(playground());
+        browser.setContent("<p>Resize me</p>");
 
         browser.resize(300, 400);
         var vp1 = browser.viewport();
@@ -82,7 +130,8 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_interacts_with_cookies() {
-        browser.visit(playground());
+        // Cookies need a real origin
+        browser.visit(fixture());
 
         // Set a cookie and assert value. The cookie shape is { name, value, (optional) expires }
         long tomorrowEpoch = Instant.now().plusSeconds(86400).getEpochSecond();
@@ -93,9 +142,11 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_concern_makes_assertions() {
-        browser.visit(playground())
-                .assertTitle("Playground | Puth")
-                .assertTitleContains("Playground")
+        // Cookies need a real origin, so set the page on the fixture origin
+        browser.visit(fixture())
+                .setContent(ASSERTIONS_PAGE)
+                .assertTitle("Assertions | Puth")
+                .assertTitleContains("Assertions")
                 // Cookie assertions
                 .assertCookieValue("non-existing", "")
                 // Plain cookie round trip
@@ -111,14 +162,14 @@ public class AllMethodsTest extends BaseTest {
                 .deleteCookie("test")
                 .assertCookieMissing("test")
                 // Visibility / text assertions
-                .assertSee("playground")
+                .assertSee("assertions page")
                 .assertSeeIn(".querying-get", "Div")
                 .assertSeeIn(".example", "Div")
                 .assertDontSee("This text does not exists")
                 .assertDontSeeIn(".querying-get", "This text does not exists")
                 // JS and source assertions
                 .assertScript("1+1", 2)
-                .assertSourceHas("<title>Playground | Puth</title>")
+                .assertSourceHas("<title>Assertions | Puth</title>")
                 .assertSourceMissing("<div>__not in dom__</div>")
                 // Link assertions
                 .assertSeeLink(alt())
@@ -170,7 +221,7 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_concern_makes_assertions_inverse() {
-        browser.visit(playground());
+        browser.setContent(ASSERTIONS_PAGE);
         browser.setTimeout(500);
 
         expectFailContains("Did not see expected text [This text does not exists] within element [.querying-get]",
@@ -181,8 +232,8 @@ public class AllMethodsTest extends BaseTest {
                 () -> browser.assertScript("1+1", 3));
         expectFailContains("Did not find expected source code [<div>__not in dom__</div>]",
                 () -> browser.assertSourceHas("<div>__not in dom__</div>"));
-        expectFailContains("Found unexpected source code [<title>Playground | Puth</title>]",
-                () -> browser.assertSourceMissing("<title>Playground | Puth</title>"));
+        expectFailContains("Found unexpected source code [<title>Assertions | Puth</title>]",
+                () -> browser.assertSourceMissing("<title>Assertions | Puth</title>"));
 
         expectFailContains("Waited 500ms for selector [body a[href='https://notalink.io/']]",
                 () -> browser.assertSeeLink("https://notalink.io/"));
@@ -192,16 +243,16 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_assert_see_anything_exception() {
-        browser.visit(playground());
+        browser.setContent("<div id=\"querying-empty-div\"></div>");
         assertThrows(AssertionFailedError.class, () -> browser.assertSeeAnythingIn("#querying-empty-div"));
     }
 
     @Test
     void test_concern_makes_url_assertions() {
-        var fixture = java.net.URI.create(playground());
+        var fixture = java.net.URI.create(fixture());
 
-        browser.visit(playground() + "first/second?param1=abc#starts-1234")
-                .assertUrlIs(playground() + "first/second")
+        browser.visit(fixture() + "first/second?param1=abc#starts-1234")
+                .assertUrlIs(fixture() + "first/second")
                 .assertSchemeIs(fixture.getScheme())
                 .assertSchemeIsNot("ftp")
                 .assertHostIs(fixture.getHost())
@@ -223,19 +274,23 @@ public class AllMethodsTest extends BaseTest {
 
     @Test
     void test_wait_for_function_target_change() {
-        var first = playground() + "first/second?param1=abc#starts-1234";
-        var second = playground();
+        var first = fixture() + "first/second?param1=abc#starts-1234";
+        var second = fixture();
 
         browser.visit(first)
                 .assertUrlIs(first)
                 .evaluate(String.format("setTimeout(_ => window.location.href = '%s', 250)", second));
         browser.assertUrlIs(second)
-                .assertSee("Puth's playground");
+                .assertSee("Puth fixture");
     }
 
     @Test
     void test_concerns_interacts_with_elements_values() {
-        browser.visit(playground())
+        browser.setContent("""
+                        <div id="querying-get">Div with id querying-get</div>
+                        <div id="actions-type"><input type="text"></div>
+                        <input id="actions-focus" type="text">
+                        """)
                 .value("#actions-type input", "test-1234")
                 .assertValue("#actions-type input", "test-1234")
                 .assertAttribute("#actions-focus", "type", "text")

@@ -7,10 +7,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WaitsForElementsTest extends BaseTest {
+    /** Buttons that dispatch "test-event" on the document or on themselves one second after a click. */
+    private static final String EVENT_PAGE = """
+            <button id="wait-for-event-document" onclick="setTimeout(() => document.dispatchEvent(new Event('test-event')), 1000)">document event</button>
+            <button id="wait-for-event-element" onclick="setTimeout(() => this.dispatchEvent(new Event('test-event')), 1000)">element event</button>
+            """;
 
     @Test
     void test_wait_until_script() {
-        browser.visit(playground())
+        browser.setContent("<p>Counting</p>")
                 .waitUntil("(window.count === undefined ? window.count = 1 : true) && window.count++ && window.count >= 3");
     }
 
@@ -28,14 +33,14 @@ public class WaitsForElementsTest extends BaseTest {
 
     @Test
     void test_wait_for_link() {
-        browser.visit(playground())
+        browser.setContent("<a href=\"" + alt() + "\">Alternate origin</a><input name=\"properties-value-input\">")
                 .waitForLink(alt())
                 .waitForInput("properties-value-input");
     }
 
     @Test
     void test_wait_for_event() {
-        browser.visit(playground())
+        browser.setContent(EVENT_PAGE)
                 .click("#wait-for-event-document")
                 .waitForEvent("test-event", "document")
                 .click("#wait-for-event-element")
@@ -44,7 +49,7 @@ public class WaitsForElementsTest extends BaseTest {
 
     @Test
     void test_wait_for_event_timeout() {
-        browser.visit(playground());
+        browser.setContent(EVENT_PAGE);
         browser.setTimeoutMultiplier(1);
 
         long firstStart = System.currentTimeMillis();
@@ -55,7 +60,7 @@ public class WaitsForElementsTest extends BaseTest {
 
 //    @Test
 //    void test_when_available() {
-//        browser.visit(playground())
+//        browser.setContent("<div id=\"querying-contains\"><div>Text containing apple</div><div>Text containing apple</div></div>")
 //                .whenAvailable("#querying-contains", b -> {
 //                    b.assertMissing("Puth");
 //                    List<?> divs = b.elements("div");

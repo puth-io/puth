@@ -38,7 +38,7 @@ describe('HTTP interfaces', () => {
 
         assert.strictEqual(response.status, 200);
         assert.strictEqual(packets[0].type, 'context');
-        assert.strictEqual(await browser.title(), 'Playground | Puth');
+        assert.strictEqual(await browser.title(), 'Puth fixture');
         await context.destroy({ immediately: true });
     });
 

@@ -3,7 +3,6 @@
 namespace Tests\Browser;
 
 use Puth\Laravel\Browser;
-use Tests\Browser\Pages\Playground;
 use Tests\PuthTestCase;
 
 class InteractsWithDialogTest extends PuthTestCase
@@ -13,7 +12,13 @@ class InteractsWithDialogTest extends PuthTestCase
     function test_dialogs()
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit(new Playground)
+            $browser->setContent(<<<'HTML'
+<button id="dialog-alert" onclick="alert('alert')">Open Alert</button>
+<button id="dialog-prompt" onclick="document.querySelector('#prompt-result').innerText = prompt('prompt for input')">Open Prompt</button>
+<button id="dialog-confirm" onclick="document.querySelector('#confirm-result').innerText = confirm('confirm this') ? 'true' : 'false'">Open Confirm</button>
+<div>Prompt text: <span id="prompt-result"></span></div>
+<div>confirm value: <span id="confirm-result"></span></div>
+HTML)
                 // alert
                 ->click('#dialog-alert')
                 ->waitForDialog()

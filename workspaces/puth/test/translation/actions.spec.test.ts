@@ -1,5 +1,5 @@
-import { describe, assert, beforeEach } from 'vitest';
-import { fixtureUrl, testLocal } from '../helper';
+import { describe, assert } from 'vitest';
+import { testLocal } from '../helper';
 
 // Following code is substantially copied from
 // https://github.com/cypress-io/cypress-example-kitchensink/blob/master/cypress/integration/2-advanced-examples/actions.spec.js
@@ -15,13 +15,10 @@ import { fixtureUrl, testLocal } from '../helper';
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 describe('Actions', function () {
-    beforeEach(async ({ puth: { page } }) => {
-        await page.goto(fixtureUrl());
-    });
-
     // https://on.cypress.io/interacting-with-elements
     testLocal('.type() - type into a DOM element', async function ({ puth: { page } }) {
         // https://on.cypress.io/type
+        await page.setContent('<div id="actions-type"><input></div>');
         await page
             .type('#actions-type input', 'fake@email.com')
             .get('#actions-type input')
@@ -52,6 +49,7 @@ describe('Actions', function () {
     
     testLocal('.focus() - focus on a DOM element', async function ({ puth: { page, assertHandleEquals } }) {
         // https://on.cypress.io/focus
+        await page.setContent('<input id="actions-focus">');
         let el = await page.get('#actions-focus');
         await el.focus();
         await assertHandleEquals(await page.focused(), el);
