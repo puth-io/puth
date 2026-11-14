@@ -417,6 +417,7 @@ const StepRow = observer(function StepRow({context, step, index, count, open, on
                 <button
                     type={'button'}
                     {...{puth: 'step'}}
+                    data-command={command.id}
                     data-active={active ? 'true' : undefined}
                     data-failed={failed ? 'true' : undefined}
                     aria-pressed={active}

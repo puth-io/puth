@@ -7,6 +7,9 @@ import { afterEach, assert, beforeEach, describe, it } from 'vitest';
 import { fixtureUrl, makePuthServer } from '../helper';
 import { LiveViewSnapshotPlugin } from '../../src/plugins/LiveViewPlugin';
 import { PUTH_EXTENSION_CODEC } from '../../src/handlers/WebsocketHandler';
+import { SNAPSHOT_VERSION } from '@puth/core';
+import http from 'node:http';
+import { NORMALIZE } from '../dom-normalize';
 
 // Puth tests its own GUI: an instance records and serves the GUI, which the generated client drives over HTTP.
 
@@ -111,6 +114,7 @@ async function exportActiveContext(gui: Browser): Promise<Uint8Array> {
 const contextPacket = (extra = {}) => ({
     id: 'context-1',
     type: 'context',
+    snapshotVersion: SNAPSHOT_VERSION,
     context: { id: 'context-1', type: 'Context', test: { name: 'crafted run', status: 'pending' }, group: '' },
     test: { name: 'crafted run', status: 'pending' },
     group: '',
@@ -158,6 +162,9 @@ describe('Snapshot replay', () => {
 
         await gui.click('[puth="step"][data-failed]');
         await gui.assertVisible('[puth="step"][data-failed][data-active]');
+        // The recorded DOM is the default view, frames remain one click away.
+        await gui.assertVisible('[puth="replay-frame"]');
+        await gui.click('[puth="view-frame"]');
         await gui.assertVisible('img[src^="blob:"], img[src^="data:"]');
     }, 40000);
 
@@ -179,15 +186,6 @@ describe('Snapshot replay', () => {
         assert.deepEqual(Array.from(packet('first').content), Array.from(body));
         assert.strictEqual(packet('second').contentReference, 'first');
         assert.isUndefined(packet('second').content);
-    }, 30000);
-
-    it('imports snapshots from before versions existed', async () => {
-        const instance = await startInstance();
-        const gui = await openGui(instance);
-
-        await importFile(gui, 'legacy.puth', encode([contextPacket()]));
-
-        await gui.waitForText('crafted run');
     }, 30000);
 
     it('shows where a truncated recording ends', async () => {
@@ -319,6 +317,7 @@ describe('Snapshot import errors', () => {
         ['an empty list', encode([]), 'does not contain any packets'],
         ['no leading context packet', encode([{ type: 'log' }]), 'does not start with a context packet'],
         ['a newer version', encode([contextPacket({ snapshotVersion: 99 })]), 'Snapshot version 99 is not supported'],
+        ['a file of version 1', encode([contextPacket({ snapshotVersion: undefined })]), 'Snapshot version 1 is not supported'],
         ['a broken version', encode([contextPacket({ snapshotVersion: 'one' })]), 'Snapshot version one is not supported'],
         [
             'a reference to missing content',
@@ -361,4 +360,139 @@ describe('Snapshot import errors', () => {
         await gui.waitFor('[puth="import-errors"]');
         await gui.assertSeeIn('[puth="import-errors"]', 'already imported');
     }, 30000);
+});
+
+// Serves a page with a stylesheet and an image, so a replay can show whether it got them from the recording.
+async function startAssetServer() {
+    const server = http.createServer((request, response) => {
+        if (request.url === '/style.css') {
+            response.writeHead(200, { 'content-type': 'text/css' }).end('p { color: rgb(1, 2, 3) } .box { background-image: url(/dot.svg) }');
+        } else if (request.url === '/dot.svg') {
+            response.writeHead(200, { 'content-type': 'image/svg+xml' }).end('<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8"/></svg>');
+        } else {
+            response.writeHead(200, { 'content-type': 'text/html' }).end(
+                '<!doctype html><html><head><title>Shop</title><link rel="stylesheet" href="/style.css"></head>'
+                + '<body><p id="greeting">hello</p><img id="logo" src="/dot.svg"><div class="box"></div><ul id="list"></ul></body></html>',
+            );
+        }
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const close = () => new Promise((resolve) => server.close(resolve));
+    cleanups.push(close);
+
+    return { origin: `http://127.0.0.1:${(server.address() as any).port}`, close };
+}
+
+// The GUI's replay frame once it shows the point it was given.
+const replayShown = `(() => {
+    const frame = document.querySelector('[puth="replay-frame"]');
+    return frame !== null && frame.dataset.seq !== undefined && frame.dataset.shown === frame.dataset.doc + ':' + frame.dataset.seq;
+})()`;
+const inReplay = (expression: string) => `((doc) => ${expression})(document.querySelector('[puth="replay-frame"]').contentDocument)`;
+
+describe('DOM replay', () => {
+    async function recordShop(instance, origin: string) {
+        const context = await createContext(instance, { snapshot: true, test: { name: 'shop run' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(origin + '/');
+        await browser.evaluate(`(() => {
+            document.getElementById('greeting').textContent = 'hello again';
+            for (const item of ['one', 'two']) document.getElementById('list').append(Object.assign(document.createElement('li'), { textContent: item }));
+        })()`);
+        // Reads the page and changes nothing, so its Before is the page this returns.
+        const expected = await browser.evaluate(`(${NORMALIZE})(document)`);
+        await browser.evaluate(`document.getElementById('list').remove()`);
+        await context.destroy({ immediately: true });
+
+        return expected;
+    }
+
+    async function showStep(gui: Browser, index: number, state: 'before'|'after') {
+        await gui.click(`[puth="step"]:nth-of-type(1)`).catch(() => {});
+        const steps = await gui.evaluate(`[...document.querySelectorAll('[puth="step"]')].map((step) => step.dataset.command)`);
+        await gui.click(`[puth="step"][data-command="${steps.at(index)}"]`);
+        await gui.click(`[puth="state-${state}"]`);
+        await gui.waitUntil(replayShown);
+    }
+
+    it('rebuilds the recorded DOM of a step with its stylesheets and images', async () => {
+        const instance = await startInstance();
+        const { origin } = await startAssetServer();
+        const expected = await recordShop(instance, origin);
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('shop run');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+
+        // The step that read the page, before it ran.
+        await showStep(gui, -2, 'before');
+        assert.strictEqual(await gui.evaluate(inReplay(`(${NORMALIZE})(doc)`)), expected);
+
+        // It changed nothing, so its After, the Before of the next step, is the same page.
+        await gui.click('[puth="state-after"]');
+        await gui.waitUntil(replayShown);
+        assert.strictEqual(await gui.evaluate(inReplay(`(${NORMALIZE})(doc)`)), expected);
+
+        // The last step removed the list; its After is where the recording ends.
+        await showStep(gui, -1, 'after');
+        await gui.waitUntil(inReplay(`doc.getElementById('list') === null && doc.getElementById('greeting') !== null`));
+
+        // Served by the replay worker from the recording.
+        await gui.waitUntil(inReplay(`getComputedStyle(doc.getElementById('greeting')).color === 'rgb(1, 2, 3)'`));
+        await gui.waitUntil(inReplay(`doc.getElementById('logo').naturalWidth === 8`));
+        const escaped = await gui.evaluate(inReplay(`JSON.stringify(doc.defaultView.performance.getEntriesByType('resource')
+            .filter((entry) => ! (entry.workerStart > 0)).map((entry) => entry.name))`));
+        assert.deepEqual(JSON.parse(escaped), []);
+    }, 60000);
+
+    it('replays an imported snapshot after the application is gone', async () => {
+        const instance = await startInstance();
+        const { origin, close } = await startAssetServer();
+        const expected = await recordShop(instance, origin);
+
+        const live = await openGui(instance);
+        await connect(live, instance);
+        await live.waitForText('shop run');
+        await live.click('[puth="history-item"]');
+        await live.waitFor('[puth="step"]');
+        const snapshot = await exportActiveContext(live);
+        await close();
+
+        const gui = await openGui(instance);
+        await importFile(gui, 'shop.puth', snapshot);
+        await gui.waitForText('shop run');
+        await showStep(gui, -2, 'before');
+
+        assert.strictEqual(await gui.evaluate(inReplay(`(${NORMALIZE})(doc)`)), expected);
+        await gui.waitUntil(inReplay(`getComputedStyle(doc.getElementById('greeting')).color === 'rgb(1, 2, 3)'`));
+        await gui.waitUntil(inReplay(`doc.getElementById('logo').naturalWidth === 8`));
+    }, 60000);
+
+    it('runs no script and follows no link of the recorded page', async () => {
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'script run' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<a id="away" href="${fixtureUrl('/html?body=away')}">away</a>
+            <button id="button" onclick="document.body.dataset.ran = 'handler'">button</button>
+            <script>document.body.dataset.ran = 'script'</script>`);
+        await browser.evaluate('1');
+        await context.destroy({ immediately: true });
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('script run');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+        await showStep(gui, -1, 'before');
+
+        // The recorded page's script did run there, the replay shows its result but runs nothing itself.
+        assert.strictEqual(await gui.evaluate(inReplay(`doc.body.dataset.ran`)), 'script');
+        await gui.evaluate(inReplay(`(doc.body.dataset.ran = 'replay', doc.getElementById('button').click(), doc.getElementById('away').click())`));
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        assert.strictEqual(await gui.evaluate(inReplay(`doc.body.dataset.ran`)), 'replay');
+        assert.include(await gui.evaluate(`document.querySelector('[puth="replay-frame"]').contentWindow.location.pathname`), '/__replay/frame.html');
+    }, 60000);
 });

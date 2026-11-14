@@ -1,6 +1,6 @@
 import {observer} from 'mobx-react-lite';
 import {useContext} from 'react';
-import {SnapshotState} from '@puth/core';
+import {SnapshotMode, SnapshotState} from '@puth/core';
 import {AppContext} from '../../shared/Contexts.tsx';
 import {cn} from '../../lib/utils';
 import {displayType, groupEvents} from './Context.tsx';
@@ -14,7 +14,10 @@ export const MainTop = observer(function MainTop() {
     const {app} = useContext(AppContext);
     const preview = app.previewStore;
     const state = preview?.visibleHighlightState ?? preview?.state;
-    const page = preview?.visibleScreencast?.page;
+    const page = preview?.visiblePage;
+    const mode = preview?.showsDom ? SnapshotMode.DOM : SnapshotMode.FRAME;
+    // The recorded DOM is the default; frames stay available, also for pages whose content the DOM can't show.
+    const canSwitch = preview !== undefined && preview !== null && preview.hasDom && ! preview.replayUnavailable && preview.context.screencasts.length > 0;
 
     const setState = (state: SnapshotState) => {
         if (preview) {
@@ -25,9 +28,15 @@ export const MainTop = observer(function MainTop() {
     return (
         <div className={'flex flex-none flex-wrap items-center gap-2.5 border-b border-shell-line bg-shell-bar px-3 py-2.5'}>
             <div role={'group'} aria-label={'Snapshot'} className={'flex h-8 rounded-lg border border-shell-control bg-shell-main p-0.5'}>
-                <button type={'button'} aria-pressed={state === SnapshotState.BEFORE} className={segment(state === SnapshotState.BEFORE)} onClick={() => setState(SnapshotState.BEFORE)}>Before</button>
-                <button type={'button'} aria-pressed={state === SnapshotState.AFTER} className={segment(state === SnapshotState.AFTER)} onClick={() => setState(SnapshotState.AFTER)}>After</button>
+                <button type={'button'} {...{puth: 'state-before'}} aria-pressed={state === SnapshotState.BEFORE} className={segment(state === SnapshotState.BEFORE)} onClick={() => setState(SnapshotState.BEFORE)}>Before</button>
+                <button type={'button'} {...{puth: 'state-after'}} aria-pressed={state === SnapshotState.AFTER} className={segment(state === SnapshotState.AFTER)} onClick={() => setState(SnapshotState.AFTER)}>After</button>
             </div>
+            {canSwitch && (
+                <div role={'group'} aria-label={'View'} className={'flex h-8 rounded-lg border border-shell-control bg-shell-main p-0.5'}>
+                    <button type={'button'} {...{puth: 'view-dom'}} aria-pressed={mode === SnapshotMode.DOM} className={segment(mode === SnapshotMode.DOM)} onClick={() => preview.mode = SnapshotMode.DOM}>DOM</button>
+                    <button type={'button'} {...{puth: 'view-frame'}} aria-pressed={mode === SnapshotMode.FRAME} className={segment(mode === SnapshotMode.FRAME)} onClick={() => preview.mode = SnapshotMode.FRAME}>Frame</button>
+                </div>
+            )}
             <div className={'flex h-8 min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-white/12 bg-shell-main px-3 font-mono text-xs text-ink-body'}>
                 <svg aria-hidden={true} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a3a3a3" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
                 <span className={'truncate'} aria-label={'Page URL'}>{page?.url ?? ''}</span>

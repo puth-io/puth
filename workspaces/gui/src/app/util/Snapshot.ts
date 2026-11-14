@@ -24,10 +24,11 @@ export function parseSnapshot(data: ArrayBuffer): any[] {
         throw new SnapshotImportError('This snapshot does not start with a context packet.');
     }
     
+    // Files without a version are from version 1.
     const version = first.snapshotVersion ?? 1;
-    if (! Number.isInteger(version) || version < 1 || version > SNAPSHOT_VERSION) {
+    if (version !== SNAPSHOT_VERSION) {
         throw new SnapshotImportError(
-            `Snapshot version ${version} is not supported. This GUI reads versions up to ${SNAPSHOT_VERSION}.`,
+            `Snapshot version ${version} is not supported. This GUI reads version ${SNAPSHOT_VERSION}.`,
         );
     }
     

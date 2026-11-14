@@ -73,4 +73,18 @@ Open the local GUI at `http://localhost:7345` and drop a `.puth` file into it to
 
 Imported snapshots are listed under **Local snapshots** in the side rail, apart from the tests of a connected instance. The GUI needs no connection to open them.
 
+### The recorded DOM
+
+With snapshots enabled, Puth records the DOM of each page: a full copy when a document loads, then the changes, sent by the page at the start of every command. Selecting a step shows its page rebuilt from that recording, **Before** as it was when the step started and **After** as it was when the next step on the same page started. Unlike a screenshot this is exact, because it does not depend on when the browser painted. Use **Frame** to switch to the recorded frames.
+
+The rebuilt page runs no scripts and loads nothing from the network: stylesheets, fonts and images are served from the recording, also when the application is gone, so an imported snapshot looks the same on any machine. Values in password fields and card number fields (`autocomplete="cc-…"`) are masked before they leave the page.
+
+Some content is not part of the recording and shows up empty or unstyled: `<canvas>` drawings, video frames, the contents of iframes and shadow roots, and stylesheets that scripts construct (`adoptedStyleSheets`). Media queries follow the browser the GUI runs in. Use **Frame** for such pages.
+
+To record frames only, create the context with `dom` set to `false`:
+
+```ts
+const context = await Context.create('http://127.0.0.1:7345', { snapshot: true, dom: false });
+```
+
 See [CI/CD and snapshots](./ci-cd) to save failed test snapshots and collect them as artifacts. In the examples above, screenshot files are saved by the test process; `.puth` snapshots are saved by the Puth server, which may run on a different machine.
