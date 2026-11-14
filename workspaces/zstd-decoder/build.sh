@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds zstd's decoder to WebAssembly from the official zstd release, with clang, lld and wasi-libc from
-# Debian. Runs inside a debian:trixie container, see README.md; it installs packages and is not meant for a
-# development machine.
+# Debian, and the allocator in alloc.c instead of wasi-libc's. Runs inside a debian:trixie container next to the
+# release tarball and alloc.c, see README.md; it installs packages and is not meant for a development machine.
 #
 # This exact script, with Debian trixie's clang 19.1.7, produced the committed zstd-decoder.wasm.
 set -eu
@@ -22,7 +22,7 @@ EXPORTS="ZSTD_isError ZSTD_getErrorName ZSTD_getFrameContentSize ZSTD_decompress
 clang --target=wasm32-wasi --sysroot=/usr -O3 -flto -DNDEBUG -mbulk-memory \
     -nostartfiles -Wl,--no-entry -Wl,--strip-all -Wl,--gc-sections \
     $(for name in $EXPORTS; do printf -- '-Wl,--export=%s ' $name; done) \
-    -o /w/zstd-decoder.wasm zstddeclib.c
+    -o /w/zstd-decoder.wasm zstddeclib.c /w/alloc.c
 wasm-opt -O3 --enable-bulk-memory /w/zstd-decoder.wasm -o /w/zstd-decoder.wasm
 
 cd /w
