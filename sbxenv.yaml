@@ -19,8 +19,7 @@ lifecycle:
     # project specific
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.io
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.io"
-    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" puth.dev
-    - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" "*.puth.dev"
+    # php builds
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" deb.debian.org:80
     - command: sbx policy allow network --sandbox "$SBX_SANDBOX_NAME" pecl.php.net
