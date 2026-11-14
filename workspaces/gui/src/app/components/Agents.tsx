@@ -35,8 +35,8 @@ const AgentItem = observer(function AgentItem({context, now}: {context: ContextS
                 aria-current={active}
                 onClick={() => app.setActive(context)}
                 className={cn(
-                    'flex w-full items-start gap-2.5 rounded-lg border px-2.5 py-2 text-left hover:bg-white/[0.04]',
-                    active ? 'border-accent-blue/45 bg-blue-600/[0.12]' : 'border-transparent',
+                    'flex w-full items-start gap-2.5 rounded-lg border px-2.5 py-2 text-left hover:bg-white/4',
+                    active ? 'border-accent-blue/45 bg-blue-600/12' : 'border-transparent',
                 )}
             >
                 <span

@@ -281,7 +281,7 @@ export const EventRow = ({event}: {event: any}) => {
     
     return (
         <li {...{puth: log ? 'console-message' : 'network-request'}} data-level={log ? event.messageType : undefined}>
-            <HoverDetail content={() => eventDetail(event)} className={'flex min-h-[24px] items-center gap-2 rounded px-1 font-mono text-[11.5px] hover:bg-white/[0.04]'}>
+            <HoverDetail content={() => eventDetail(event)} className={'flex min-h-[24px] items-center gap-2 rounded px-1 font-mono text-[11.5px] hover:bg-white/4'}>
                 <span className={cn('flex-none', isProblem(event) ? 'text-amber-300' : 'text-ink-muted')}>
                     {log ? `console.${event.messageType}` : event.resourceType ?? 'request'}
                 </span>
@@ -318,7 +318,7 @@ export const EventGroup = ({events, open, onToggle, label}: {events: any[], open
                 aria-label={`${open ? 'Hide' : 'Show'} ${countLabel(events)} ${label}`}
                 onClick={onToggle}
                 className={cn(
-                    'flex min-h-[22px] w-full items-center gap-1 rounded px-1 text-left font-mono text-[11px] hover:bg-white/[0.04]',
+                    'flex min-h-[22px] w-full items-center gap-1 rounded px-1 text-left font-mono text-[11px] hover:bg-white/4',
                     problem ? 'text-amber-300' : 'text-ink-muted',
                 )}
             >
@@ -422,7 +422,7 @@ const StepRow = observer(function StepRow({context, step, index, count, open, on
                     aria-pressed={active}
                     className={cn(
                         'flex h-[34px] w-full items-center gap-2.5 rounded-lg border px-3 text-left',
-                        active ? 'border-accent-blue/45 bg-blue-600/[0.12]' : 'border-transparent hover:bg-white/[0.04]',
+                        active ? 'border-accent-blue/45 bg-blue-600/12' : 'border-transparent hover:bg-white/4',
                     )}
                     onClick={() => preview?.toggleCommand(command)}
                 >
@@ -480,7 +480,7 @@ const ClassSwitcher = observer(function ClassSwitcher({context}: {context: Conte
                 <Icon name={'expand_more'} size={'0.7rem'} className={cn('transition-transform', open && 'rotate-180')}/>
             </button>
             {open && (
-                <ul aria-label={`Tests in ${context.group}`} className={'mt-2 flex flex-col gap-0.5 rounded-lg border border-white/[0.08] bg-shell-main p-1'}>
+                <ul aria-label={`Tests in ${context.group}`} className={'mt-2 flex flex-col gap-0.5 rounded-lg border border-white/8 bg-shell-main p-1'}>
                     {siblings.map(item => (
                         <li key={item.id}>
                             <button
@@ -488,8 +488,8 @@ const ClassSwitcher = observer(function ClassSwitcher({context}: {context: Conte
                                 aria-current={item === context}
                                 onClick={() => app.setActive(item)}
                                 className={cn(
-                                    'flex min-h-[36px] w-full items-center gap-2.5 rounded-md border px-2.5 text-left text-[13px] hover:bg-white/[0.04]',
-                                    item === context ? 'border-accent-blue/45 bg-blue-600/[0.12]' : 'border-transparent',
+                                    'flex min-h-[36px] w-full items-center gap-2.5 rounded-md border px-2.5 text-left text-[13px] hover:bg-white/4',
+                                    item === context ? 'border-accent-blue/45 bg-blue-600/12' : 'border-transparent',
                                 )}
                             >
                                 <StatusIcon status={item.test.status} size={'0.8rem'}/>
@@ -563,7 +563,7 @@ const DraftCard = ({draft}: {draft: any}) => {
     };
     
     return (
-        <div className={'mx-1 my-1 rounded-lg border border-white/[0.12] bg-shell-main'} {...{puth: 'draft'}}>
+        <div className={'mx-1 my-1 rounded-lg border border-white/12 bg-shell-main'} {...{puth: 'draft'}}>
             <HoverDetail
                 className={'flex h-[34px] items-center gap-2 pl-3 pr-1.5 font-mono text-[11.5px]'}
                 content={() => (
@@ -580,7 +580,7 @@ const DraftCard = ({draft}: {draft: any}) => {
                 <span className={'flex-none text-indigo-300'}>Draft</span>
                 <span className={'min-w-0 flex-1 truncate text-ink-body'}>{draft.format} · {draft.name}</span>
                 <span className={'flex-none rounded bg-amber-500/[0.14] px-1.5 text-[10.5px] text-amber-300'}>unverified</span>
-                <button type={'button'} onClick={copy} className={'min-h-[26px] flex-none rounded-md border border-white/20 px-2 text-ink-body hover:bg-white/[0.08]'}>
+                <button type={'button'} onClick={copy} className={'min-h-[26px] flex-none rounded-md border border-white/20 px-2 text-ink-body hover:bg-white/8'}>
                     {copied ? 'Copied' : 'Copy'}
                 </button>
             </HoverDetail>
@@ -695,12 +695,12 @@ const TestRun = observer(function TestRun({context}: {context: ContextStore}) {
             </div>
             
             <div className={'px-4 pb-3 pt-3.5'}>
-                <div className={'break-words text-[17px] font-medium tracking-[-0.01em]'}>{context.test.name}</div>
+                <div className={'wrap-break-word text-[17px] font-medium tracking-[-0.01em]'}>{context.test.name}</div>
                 {agent ? <div className={'mt-1 font-mono text-xs text-ink-muted'}>Agent session</div> : <ClassSwitcher context={context}/>}
             </div>
             
             {handoff && (
-                <div className={'mx-3 mb-3 flex items-center gap-2.5 rounded-[10px] border border-indigo-300/25 bg-indigo-500/[0.08] px-3 py-2 text-[12.5px]'} {...{puth: 'handoff'}}>
+                <div className={'mx-3 mb-3 flex items-center gap-2.5 rounded-[10px] border border-indigo-300/25 bg-indigo-500/8 px-3 py-2 text-[12.5px]'} {...{puth: 'handoff'}}>
                     <span aria-hidden={true} className={cn('h-[7px] w-[7px] flex-none rounded-full', handoff.state === 'claimed' ? 'animate-pulse bg-indigo-300' : 'bg-indigo-300/50')}/>
                     <span className={'min-w-0 flex-1 text-ink-body'}>
                         {HANDOFF_TEXT[handoff.state]}{handoff.name && <span className={'font-mono text-ink-muted'}> · {handoff.name}</span>}
@@ -718,7 +718,7 @@ const TestRun = observer(function TestRun({context}: {context: ContextStore}) {
                         <button
                             type={'button'}
                             onClick={showFailure}
-                            className={'min-h-[28px] flex-none rounded-md border border-white/20 px-2.5 text-ink-body hover:bg-white/[0.08]'}
+                            className={'min-h-[28px] flex-none rounded-md border border-white/20 px-2.5 text-ink-body hover:bg-white/8'}
                         >Show step</button>
                     </div>
                     <div className={'px-3 py-2.5 text-[13px] leading-relaxed text-neutral-200'}>

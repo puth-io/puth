@@ -12,7 +12,7 @@ export const Preview = observer(function ScreencastPreview() {
 
     return (
         <div
-            className={'relative w-full overflow-hidden rounded-lg border border-white/[0.18] shadow-[0_24px_60px_rgba(0,0,0,0.5)]'}
+            className={'relative w-full overflow-hidden rounded-lg border border-white/18 shadow-[0_24px_60px_rgba(0,0,0,0.5)]'}
             style={{maxWidth: `${app.previewStore?.visibleScreencast.page.viewport.width}px`}}
         >
             <img

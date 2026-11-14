@@ -15,7 +15,7 @@ declare global {
 }
 
 const app = new AppStore();
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.DEV) {
     app.connectionSuggestions = ['ws://127.0.0.1:7345/websocket', ...app.connectionSuggestions];
 }
 Events.on('command:active', _ => {

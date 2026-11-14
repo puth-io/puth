@@ -39,8 +39,8 @@ export const HistoryItem = observer(function HistoryItem({context}: {context: Co
                 {...{puth: 'history-item'}}
                 aria-current={active}
                 className={cn(
-                    'flex w-full items-start gap-2.5 rounded-lg border px-2.5 py-2 text-left hover:bg-white/[0.04]',
-                    active ? 'border-accent-blue/45 bg-blue-600/[0.12]' : 'border-transparent',
+                    'flex w-full items-start gap-2.5 rounded-lg border px-2.5 py-2 text-left hover:bg-white/4',
+                    active ? 'border-accent-blue/45 bg-blue-600/12' : 'border-transparent',
                 )}
                 onClick={() => app.setActive(context)}
             >
@@ -49,7 +49,7 @@ export const HistoryItem = observer(function HistoryItem({context}: {context: Co
                     <span className={'flex items-center gap-1.5'}>
                         <span className={'truncate text-sm text-ink'}>{context.test.name}</span>
                         {(context.handoff?.state === 'waiting' || context.handoff?.state === 'claimed') && (
-                            <span className={'flex-none rounded bg-indigo-500/[0.16] px-1.5 font-mono text-[10.5px] text-indigo-200'}>
+                            <span className={'flex-none rounded bg-indigo-500/16 px-1.5 font-mono text-[10.5px] text-indigo-200'}>
                                 {context.handoff.state === 'claimed' ? 'agent' : 'handoff'}
                             </span>
                         )}
@@ -116,7 +116,7 @@ export const History = observer(function History() {
                                 placeholder={'Filter tests'}
                                 value={search}
                                 onChange={event => setSearch(event.target.value)}
-                                className={'min-w-0 flex-1 border-0 bg-transparent text-[13px] text-ink outline-none'}
+                                className={'min-w-0 flex-1 border-0 bg-transparent text-[13px] text-ink outline-hidden'}
                             />
                         </label>
                         <div role={'group'} aria-label={'Status'} className={'flex h-[34px] rounded-lg border border-shell-control bg-shell-main p-0.5'}>

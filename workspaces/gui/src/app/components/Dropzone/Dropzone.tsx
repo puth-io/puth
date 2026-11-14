@@ -59,7 +59,8 @@ const Dropzone = observer(() => {
     };
     
     const {getRootProps, getInputProps} = useDropzone({
-        accept: '.puth',
+        // Snapshots have no MIME type of their own, so their extension matches.
+        accept: { 'application/octet-stream': ['.puth'] },
         onDropAccepted,
         noDragEventsBubbling: true,
     });
@@ -91,13 +92,13 @@ const Dropzone = observer(() => {
                 </div>
             </div>
             {app.importErrors.length > 0 && (
-                <div className={'fixed left-1/2 top-4 z-[110] w-[min(520px,calc(100%-32px))] -translate-x-1/2'}>
+                <div className={'fixed left-1/2 top-4 z-110 w-[min(520px,calc(100%-32px))] -translate-x-1/2'}>
                     <button
                         type={'button'}
                         {...{puth: 'import-errors'}}
                         role={'alert'}
                         aria-label={'Import failed, click to dismiss'}
-                        className={'flex w-full flex-col overflow-hidden rounded-[10px] border border-red-400/35 bg-gradient-to-b from-[#2a1414] to-[#1c1010] text-left shadow-[0_20px_50px_rgba(0,0,0,0.6)]'}
+                        className={'flex w-full flex-col overflow-hidden rounded-[10px] border border-red-400/35 bg-linear-to-b from-[#2a1414] to-[#1c1010] text-left shadow-[0_20px_50px_rgba(0,0,0,0.6)]'}
                         onClick={() => runInAction(() => (app.importErrors = []))}
                     >
                         <span className={'flex w-full justify-between border-b border-dashed border-red-400/25 px-3.5 py-2.5 font-mono text-xs'}>

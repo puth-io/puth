@@ -15,8 +15,8 @@ export function HoverDetail({content, children, className}: {
     className?: string,
 }) {
     const [open, setOpen] = useState(false);
-    const rest = useRef<number>();
-    const leave = useRef<number>();
+    const rest = useRef<number>(undefined);
+    const leave = useRef<number>(undefined);
 
     useEffect(() => () => {
         window.clearTimeout(rest.current);
@@ -58,7 +58,7 @@ export function HoverDetail({content, children, className}: {
                     onOpenAutoFocus={event => event.preventDefault()}
                     onCloseAutoFocus={event => event.preventDefault()}
                     {...{puth: 'detail'}}
-                    className={'z-50 w-[440px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[10px] border border-white/[0.16] bg-[#151515] text-ink shadow-[0_20px_50px_rgba(0,0,0,0.6)] outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0'}
+                    className={'z-50 w-[440px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[10px] border border-white/16 bg-[#151515] text-ink shadow-[0_20px_50px_rgba(0,0,0,0.6)] outline-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0'}
                 >
                     {content()}
                 </PopoverPrimitive.Content>
@@ -77,6 +77,6 @@ export const DetailHeader = ({children}: {children: ReactNode}) => (
 export const DetailBlock = ({label, children}: {label?: string, children: ReactNode}) => (
     <div className={'px-3.5 py-2.5'}>
         {label && <div className={'mb-1.5 font-mono text-[11px] text-ink-muted'}>{label}</div>}
-        <div className={'max-h-[280px] overflow-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-ink-body [overflow-wrap:anywhere]'}>{children}</div>
+        <div className={'max-h-[280px] overflow-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-ink-body wrap-anywhere'}>{children}</div>
     </div>
 );

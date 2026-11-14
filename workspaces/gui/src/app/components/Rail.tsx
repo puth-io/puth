@@ -28,7 +28,7 @@ const RailButton = ({label, active, onClick, children, badge}: {
         onClick={onClick}
         className={cn(
             'relative flex h-10 w-10 items-center justify-center rounded-[10px] border',
-            active ? 'border-accent-blue/35 bg-blue-600/[0.16] text-accent-sky' : 'border-transparent text-ink-muted hover:bg-white/[0.05] hover:text-ink',
+            active ? 'border-accent-blue/35 bg-blue-600/16 text-accent-sky' : 'border-transparent text-ink-muted hover:bg-white/5 hover:text-ink',
         )}
     >
         {children}
@@ -39,7 +39,7 @@ const RailButton = ({label, active, onClick, children, badge}: {
 );
 
 const Toggle = ({id, label, checked, onChange}: {id: string, label: string, checked: boolean, onChange: (value: boolean) => void}) => (
-    <label htmlFor={id} className={'flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-md px-2 text-sm text-ink-body hover:bg-white/[0.04]'}>
+    <label htmlFor={id} className={'flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-md px-2 text-sm text-ink-body hover:bg-white/4'}>
         <input
             id={id}
             type={'checkbox'}
@@ -61,7 +61,7 @@ export const Settings = observer(function Settings() {
                     type={'button'}
                     aria-label={'Settings'}
                     title={'Settings'}
-                    className={'flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent text-ink-muted hover:bg-white/[0.05] hover:text-ink data-[state=open]:border-accent-blue/35 data-[state=open]:bg-blue-600/[0.16] data-[state=open]:text-accent-sky'}
+                    className={'flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent text-ink-muted hover:bg-white/5 hover:text-ink data-[state=open]:border-accent-blue/35 data-[state=open]:bg-blue-600/16 data-[state=open]:text-accent-sky'}
                 >
                     <RailIcon d={'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12'}/>
                 </button>
@@ -70,7 +70,7 @@ export const Settings = observer(function Settings() {
                 side={'right'}
                 align={'end'}
                 sideOffset={10}
-                className={'w-[260px] overflow-hidden rounded-[10px] border-white/[0.16] bg-[#151515] p-0 text-ink shadow-[0_20px_50px_rgba(0,0,0,0.6)]'}
+                className={'w-[260px] overflow-hidden rounded-[10px] border-white/16 bg-[#151515] p-0 text-ink shadow-[0_20px_50px_rgba(0,0,0,0.6)]'}
             >
                 <div className={'border-b border-dashed border-neutral-800 px-3.5 py-2.5 font-mono text-[11.5px] text-accent-blue'}>Settings</div>
                 <div className={'flex flex-col p-1.5'}>
@@ -115,7 +115,7 @@ export const Rail = observer(function Rail() {
                 aria-label={'Documentation, opens puth.io'}
                 title={'Documentation'}
                 {...{puth: 'docs'}}
-                className={'flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent text-ink-muted hover:bg-white/[0.05] hover:text-ink'}
+                className={'flex h-10 w-10 items-center justify-center rounded-[10px] border border-transparent text-ink-muted hover:bg-white/5 hover:text-ink'}
             >
                 <RailIcon d={'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5'}/>
             </a>

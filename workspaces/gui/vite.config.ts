@@ -10,11 +10,14 @@ export default defineConfig({
         allowedHosts: ['gui'],
     },
     resolve: {
+        // The docs keep React 18 at the root for vitepress, which hoisted libraries like Radix would resolve. One copy
+        // of React must serve the whole GUI.
+        dedupe: ['react', 'react-dom'],
         alias: {
-            "@puth/core": path.resolve(__dirname, "../core/src/index.ts"),
-            "@/app/store/ContextStore": path.resolve(__dirname, "./src/app/store/ContextStore"),
-            "@/app/store/AppStore": path.resolve(__dirname, "./src/app/store/AppStore"),
-            "@/app/store/PreviewStore": path.resolve(__dirname, "./src/app/store/PreviewStore"),
+            "@puth/core": path.resolve(import.meta.dirname, "../core/src/index.ts"),
+            "@/app/store/ContextStore": path.resolve(import.meta.dirname, "./src/app/store/ContextStore"),
+            "@/app/store/AppStore": path.resolve(import.meta.dirname, "./src/app/store/AppStore"),
+            "@/app/store/PreviewStore": path.resolve(import.meta.dirname, "./src/app/store/PreviewStore"),
         },
     },
 });

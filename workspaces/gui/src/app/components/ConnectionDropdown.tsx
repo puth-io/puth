@@ -33,7 +33,7 @@ export const ConnectPanel = observer(function ConnectPanel({onConnected}: {onCon
             <label className={'flex flex-col gap-1.5'}>
                 <span className={'font-mono text-[11.5px] text-ink-muted'}>Address</span>
                 <input
-                    className={'h-10 w-full rounded-lg border border-shell-control bg-shell-main px-3 font-mono text-[13px] text-ink outline-none focus:border-accent-blue/50'}
+                    className={'h-10 w-full rounded-lg border border-shell-control bg-shell-main px-3 font-mono text-[13px] text-ink outline-hidden focus:border-accent-blue/50'}
                     placeholder={'ws://host:7345/websocket'}
                     onChange={event => setInput(event.target.value)}
                     onKeyDown={event => event.key === 'Enter' && input !== '' && connect(input)}
@@ -42,7 +42,7 @@ export const ConnectPanel = observer(function ConnectPanel({onConnected}: {onCon
             </label>
 
             {error && (
-                <div role={'alert'} className={'flex gap-2.5 rounded-lg border border-red-400/30 bg-red-500/[0.08] px-3 py-2.5'}>
+                <div role={'alert'} className={'flex gap-2.5 rounded-lg border border-red-400/30 bg-red-500/8 px-3 py-2.5'}>
                     <Icon name={'bolt'} className={'mt-0.5 flex-none text-red-300'}/>
                     <span className={'font-mono text-xs text-red-300'}>{error?.reason ?? 'Unknown error'}</span>
                 </div>
@@ -56,7 +56,7 @@ export const ConnectPanel = observer(function ConnectPanel({onConnected}: {onCon
                             type={'button'}
                             key={idx}
                             disabled={connecting}
-                            className={'flex min-h-[44px] w-full items-center rounded-lg border border-white/[0.12] bg-shell-main px-3 text-left font-mono text-[12.5px] text-ink hover:border-accent-blue/45 hover:bg-blue-600/10'}
+                            className={'flex min-h-[44px] w-full items-center rounded-lg border border-white/12 bg-shell-main px-3 text-left font-mono text-[12.5px] text-ink hover:border-accent-blue/45 hover:bg-blue-600/10'}
                             onClick={() => connect(suggestion)}
                         >{suggestion}</button>
                     ))}
@@ -112,7 +112,7 @@ export const ConnectionButton = observer(function ConnectionButton() {
                     title={connection ? `${label} · ${connection.uri}` : label}
                     className={cn(
                         'flex h-10 w-10 items-center justify-center rounded-[10px] border',
-                        open ? 'border-accent-blue/35 bg-blue-600/[0.16]' : 'border-transparent hover:bg-white/[0.05]',
+                        open ? 'border-accent-blue/35 bg-blue-600/16' : 'border-transparent hover:bg-white/5',
                     )}
                 >
                     <span
@@ -130,7 +130,7 @@ export const ConnectionButton = observer(function ConnectionButton() {
                 side={'right'}
                 align={'end'}
                 sideOffset={10}
-                className={'w-[420px] max-w-[calc(100vw-80px)] overflow-hidden rounded-xl border-white/[0.16] bg-[#151515] p-0 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.65)]'}
+                className={'w-[420px] max-w-[calc(100vw-80px)] overflow-hidden rounded-xl border-white/16 bg-[#151515] p-0 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.65)]'}
             >
                 <div className={'flex justify-between border-b border-dashed border-neutral-800 px-[18px] py-3 font-mono text-xs'}>
                     <span className={'text-accent-blue'}>Connection</span>
@@ -138,14 +138,14 @@ export const ConnectionButton = observer(function ConnectionButton() {
                 </div>
                 <div className={'flex flex-col gap-3.5 p-[18px]'}>
                     {connection && (
-                        <div className={'flex items-center gap-3 rounded-lg border border-white/[0.12] bg-shell-main px-3 py-2.5'}>
+                        <div className={'flex items-center gap-3 rounded-lg border border-white/12 bg-shell-main px-3 py-2.5'}>
                             <span className={'min-w-0 flex-1 truncate font-mono text-[12.5px] text-ink-body'}>{connection.uri}</span>
                             {state === 'closed' && (
                                 <button
                                     type={'button'}
                                     onClick={retry}
                                     disabled={retrying}
-                                    className={'flex min-h-[30px] items-center gap-1.5 rounded-md border border-white/20 px-2.5 text-xs text-ink-body hover:bg-white/[0.08]'}
+                                    className={'flex min-h-[30px] items-center gap-1.5 rounded-md border border-white/20 px-2.5 text-xs text-ink-body hover:bg-white/8'}
                                 >
                                     <Icon name={'refresh'} className={retrying ? 'animate-spin' : ''}/> Reconnect
                                 </button>

@@ -63,7 +63,7 @@ export default function Code({
   highlight = '',
   file = '',
 }) {
-  let ref: any = useRef();
+  let ref: any = useRef(null);
 
   if (!language) {
     language = guessLanguageOnFilename(file);

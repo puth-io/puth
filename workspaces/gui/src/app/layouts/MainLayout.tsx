@@ -12,7 +12,7 @@ import {ConnectPanel} from '../components/ConnectionDropdown';
 const DOCS = 'https://puth.io/guide';
 
 const Card = ({label, labelClass, children, link}: {label: string, labelClass: string, children: ReactNode, link?: [string, string]}) => (
-    <section className={'overflow-hidden rounded-xl border border-white/[0.12] bg-gradient-to-b from-[#191919] to-[#141414] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'}>
+    <section className={'overflow-hidden rounded-xl border border-white/12 bg-linear-to-b from-[#191919] to-[#141414] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'}>
         <div className={'border-b border-dashed border-neutral-800 px-5 py-3 font-mono text-xs'}>
             <span className={labelClass}>{label}</span>
         </div>
@@ -59,7 +59,7 @@ const ConnectState = () => (
                     </Card>
                     <Card label={'Replay from CI'} labelClass={'text-indigo-300'} link={['Snapshots in CI', `${DOCS}/ci-cd`]}>
                         <p className={'text-sm leading-relaxed text-ink-muted'}>
-                            Drag a <code className={'rounded bg-white/[0.12] px-1.5 py-px font-mono text-[12.5px] text-ink'}>.puth</code> snapshot anywhere into this window to step through a recorded test.
+                            Drag a <code className={'rounded bg-white/12 px-1.5 py-px font-mono text-[12.5px] text-ink'}>.puth</code> snapshot anywhere into this window to step through a recorded test.
                         </p>
                     </Card>
                 </div>
@@ -92,7 +92,7 @@ export const AppLayout = observer(function AppLayout() {
                 <main className={'flex min-w-0 flex-1 flex-col'}><ConnectState/></main>
             ) : (
                 <div className={'flex min-w-0 flex-1'}>
-                    <aside aria-label={'Test'} className={'flex w-[440px] min-w-[320px] flex-shrink flex-col border-r border-shell-line bg-shell-side'}>
+                    <aside aria-label={'Test'} className={'flex w-[440px] min-w-[320px] shrink flex-col border-r border-shell-line bg-shell-side'}>
                         <Context/>
                         {app.view === 'agents' ? <AgentList/> : <History/>}
                     </aside>

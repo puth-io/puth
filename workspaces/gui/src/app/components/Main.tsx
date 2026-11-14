@@ -28,7 +28,7 @@ export const MainTop = observer(function MainTop() {
                 <button type={'button'} aria-pressed={state === SnapshotState.BEFORE} className={segment(state === SnapshotState.BEFORE)} onClick={() => setState(SnapshotState.BEFORE)}>Before</button>
                 <button type={'button'} aria-pressed={state === SnapshotState.AFTER} className={segment(state === SnapshotState.AFTER)} onClick={() => setState(SnapshotState.AFTER)}>After</button>
             </div>
-            <div className={'flex h-8 min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-white/[0.12] bg-shell-main px-3 font-mono text-xs text-ink-body'}>
+            <div className={'flex h-8 min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-white/12 bg-shell-main px-3 font-mono text-xs text-ink-body'}>
                 <svg aria-hidden={true} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a3a3a3" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
                 <span className={'truncate'} aria-label={'Page URL'}>{page?.url ?? ''}</span>
             </div>
