@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { decode, encode } from '@msgpack/msgpack';
@@ -310,6 +310,67 @@ describe('Steps', () => {
         const order = JSON.parse(await gui.evaluate(`JSON.stringify([...document.querySelectorAll('[puth="page-divider"], [puth="step"]')].map((element) => element.matches('[puth="page-divider"]') ? 'page' : element.innerText.split(/\\s+/)[1]))`));
         assert.deepEqual(order, ['page', 'visit', 'click', 'page', 'assertSee', 'page', 'setContent', 'assertSee']);
     }, 30000);
+});
+
+describe('Compressed recordings', () => {
+    // Counts the websocket messages the GUI gets compressed with zstd, from now on.
+    const countCompressed = (gui: Browser) => gui.evaluate(`(() => {
+        window.zstdMessages = 0;
+        const Original = window.WebSocket;
+        window.WebSocket = class extends Original {
+            constructor(...args) {
+                super(...args);
+                this.addEventListener('message', (event) => {
+                    const bytes = new Uint8Array(event.data);
+                    if (bytes[0] === 0x28 && bytes[1] === 0xb5 && bytes[2] === 0x2f && bytes[3] === 0xfd) window.zstdMessages++;
+                });
+            }
+        };
+    })()`);
+
+    it('opens a file Puth saved', async () => {
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'saved run' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl());
+        await browser.evaluate('1');
+        await context.destroy({ immediately: true, save: { to: 'file', location: path.relative(process.cwd(), directory) } });
+
+        const [file] = readdirSync(directory);
+        const saved = readFileSync(path.join(directory, file));
+        assert.deepEqual(Array.from(saved.subarray(0, 4)), [0x28, 0xb5, 0x2f, 0xfd]);
+
+        const gui = await openGui(instance);
+        await importFile(gui, 'saved.puth', saved);
+        await gui.waitForText('saved run');
+        await gui.waitFor('[puth="step"]');
+    }, 30000);
+
+    it('come compressed over the websocket, the recordings at first and large packets later', async () => {
+        const instance = await startInstance();
+        const gui = await openGui(instance);
+        await countCompressed(gui);
+        await connect(gui, instance);
+        await gui.waitUntil('window.zstdMessages === 1');
+
+        // A page large enough that its keyframe is compressed on the way.
+        const context = await createContext(instance, { snapshot: true, test: { name: 'large page' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<ul>${Array.from({ length: 2000 }, (_, i) => `<li>Entry ${i}</li>`).join('')}</ul><p id="last">the end</p>`);
+        await browser.evaluate('1');
+        await context.destroy({ immediately: true });
+
+        await gui.waitForText('large page');
+        await gui.waitUntil('window.zstdMessages > 1');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+        await gui.click('[puth="state-before"]');
+        await gui.waitUntil(`(() => {
+            const frame = document.querySelector('[puth="replay-frame"]');
+            return frame?.contentDocument?.getElementById('last')?.textContent === 'the end';
+        })()`);
+    }, 40000);
 });
 
 describe('Snapshot import errors', () => {

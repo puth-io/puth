@@ -1,19 +1,21 @@
 import {decode} from '@msgpack/msgpack';
 import {SNAPSHOT_VERSION} from '@puth/core';
 import {PUTH_EXTENSION_CODEC} from '../store/ConnectionStore.ts';
+import {decompressRecording} from './Zstd';
 
 export class SnapshotImportError extends Error {}
 
-function decodeSnapshot(data: ArrayBuffer): unknown {
+// Files Puth saved are msgpack compressed with zstd, files the GUI exported are plain msgpack.
+async function decodeSnapshot(data: ArrayBuffer): Promise<unknown> {
     try {
-        return decode(data, {extensionCodec: PUTH_EXTENSION_CODEC});
+        return decode(await decompressRecording(new Uint8Array(data)), {extensionCodec: PUTH_EXTENSION_CODEC});
     } catch {
         throw new SnapshotImportError('This file is not a Puth snapshot or it is damaged.');
     }
 }
 
-export function parseSnapshot(data: ArrayBuffer): any[] {
-    const packets = decodeSnapshot(data);
+export async function parseSnapshot(data: ArrayBuffer): Promise<any[]> {
+    const packets = await decodeSnapshot(data);
     
     if (! Array.isArray(packets) || packets.length === 0) {
         throw new SnapshotImportError('This snapshot does not contain any packets.');

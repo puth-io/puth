@@ -2,9 +2,11 @@
 
 This is a Bun/Node monorepo. The server is `workspaces/puth`; shared code is in
 `workspaces/core`; the GUI is `workspaces/gui`; client libraries live in
-`workspaces/clients/`. `workspaces/zstd` is zstd's decoder built to WebAssembly,
-committed as a binary; its README documents how it was built. Don't rebuild or
-replace `zstd-decoder.wasm` as a side effect of other work.
+`workspaces/clients/`. `workspaces/zstd` (`@puth/zstd`) is zstd's decoder built to
+WebAssembly, committed as a binary; its README documents how it was built. Don't
+rebuild or replace `zstd-decoder.wasm` as a side effect of other work. Recordings
+are msgpack compressed with zstd wherever they leave Puth: `.puth` files, the
+snapshot interface and the websocket. The GUI decodes them with `@puth/zstd`.
 
 - Use the root workspace commands and target a package with `npm -w <package> run <script>`.
 - `npm run build` builds the primary published packages. Use `npm run dev:server`,

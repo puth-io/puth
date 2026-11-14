@@ -13,11 +13,13 @@ export default defineConfig({
         // The docs keep React 18 at the root for vitepress, which hoisted libraries like Radix would resolve. One copy
         // of React must serve the whole GUI.
         dedupe: ['react', 'react-dom'],
-        alias: {
-            "@puth/core": path.resolve(import.meta.dirname, "../core/src/index.ts"),
-            "@/app/store/ContextStore": path.resolve(import.meta.dirname, "./src/app/store/ContextStore"),
-            "@/app/store/AppStore": path.resolve(import.meta.dirname, "./src/app/store/AppStore"),
-            "@/app/store/PreviewStore": path.resolve(import.meta.dirname, "./src/app/store/PreviewStore"),
-        },
+        alias: [
+            {find: "@puth/core", replacement: path.resolve(import.meta.dirname, "../core/src/index.ts")},
+            // Only the module itself: its zstd-decoder.wasm comes from the package, like for any other dependency.
+            {find: /^@puth\/zstd$/, replacement: path.resolve(import.meta.dirname, "../zstd/src/zstd.ts")},
+            {find: "@/app/store/ContextStore", replacement: path.resolve(import.meta.dirname, "./src/app/store/ContextStore")},
+            {find: "@/app/store/AppStore", replacement: path.resolve(import.meta.dirname, "./src/app/store/AppStore")},
+            {find: "@/app/store/PreviewStore", replacement: path.resolve(import.meta.dirname, "./src/app/store/PreviewStore")},
+        ],
     },
 });

@@ -1,3 +1,4 @@
+import { zstdDecompressSync } from 'node:zlib';
 import { readdirSync, rmSync, mkdtempSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -44,7 +45,10 @@ describe('Recording budgets', () => {
         await remote.destroy({ immediately: true, save: { to: 'file', location: path.relative(process.cwd(), directory) } });
 
         const [file] = readdirSync(directory);
-        const packets = decode(readFileSync(path.join(directory, file)), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        const saved = readFileSync(path.join(directory, file));
+        // Saved files are msgpack compressed with zstd.
+        assert.deepEqual(Array.from(saved.subarray(0, 4)), [0x28, 0xb5, 0x2f, 0xfd]);
+        const packets = decode(zstdDecompressSync(saved), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
         assert.strictEqual(packets[0].type, 'context');
         assert.lengthOf(packets.filter((packet) => packet.truncation !== undefined), 1);
         assert.strictEqual(packets.at(-1).type, 'test');

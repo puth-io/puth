@@ -15,7 +15,7 @@ const Dropzone = observer(() => {
     const [importing, setImporting] = useState(false);
     
     const importFile = async (file: File) => {
-        const packets = parseSnapshot(await file.arrayBuffer());
+        const packets = await parseSnapshot(await file.arrayBuffer());
         debugPacket(packets);
         
         if (app.dragAndDropped.contexts.some(item => item.id === packets[0].context.id)) {

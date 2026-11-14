@@ -1,3 +1,4 @@
+import { zstdDecompressSync } from 'node:zlib';
 import { decode } from '@msgpack/msgpack';
 import { Context, RemotePuthClient } from '@puth/client';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,7 +35,10 @@ describe('HTTP interfaces', () => {
 
         const { id } = context.getRepresentation();
         const response = await fetch(url(`context/${id}/snapshot`));
-        const packets = decode(await response.arrayBuffer(), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
+        // The same as a saved file: msgpack compressed with zstd.
+        const body = new Uint8Array(await response.arrayBuffer());
+        assert.deepEqual(Array.from(body.subarray(0, 4)), [0x28, 0xb5, 0x2f, 0xfd]);
+        const packets = decode(zstdDecompressSync(body), { extensionCodec: PUTH_EXTENSION_CODEC }) as any[];
 
         assert.strictEqual(response.status, 200);
         assert.strictEqual(packets[0].type, 'context');

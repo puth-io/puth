@@ -38,6 +38,7 @@ import { PageStability } from './utils/PageStability';
 import { PortalHandoff } from './utils/PortalHandoff';
 import { DomRecorder, type DomFrameLink, type DomRecorderPacket } from './utils/DomRecorder';
 import { pruneSnapshots } from './utils/SnapshotRetention';
+import { compress } from './utils/Compression';
 
 const {writeFile, mkdtemp} = fsPromise;
 
@@ -1028,9 +1029,10 @@ class Context extends Generic {
 
             storagePath = path.join(process.cwd(), ...location, `snapshot-${this.createdAt}-${this.id}.puth`);
 
+            // msgpack compressed with zstd, which the GUI and the MCP server read.
             await writeFile(
                 storagePath,
-                encode(this.puth.snapshotHandler.getAllCachedItemsFrom(this), {extensionCodec: PUTH_EXTENSION_CODEC}),
+                await compress(encode(this.puth.snapshotHandler.getAllCachedItemsFrom(this), {extensionCodec: PUTH_EXTENSION_CODEC})),
             );
 
             const retention = this.puth.snapshotRetention;
