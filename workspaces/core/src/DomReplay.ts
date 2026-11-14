@@ -1,0 +1,335 @@
+import {type DomChange, type DomKeyframe, type DomNode, DomNodeType, DomOp, type DomProps, type DomScroll, type DomViewport} from './Dom';
+
+const NAMESPACES = ['http://www.w3.org/1999/xhtml', 'http://www.w3.org/2000/svg', 'http://www.w3.org/1998/Math/MathML'];
+const XLINK = 'http://www.w3.org/1999/xlink';
+
+// Attributes the replay never applies as they are, because they would load, navigate or run something.
+const REWRITTEN_PREFIX = 'data-puth-replay-';
+const NO_CHILDREN = new Set(['script', 'noscript', 'template', 'iframe', 'frame', 'object', 'embed']);
+const STRIPPED_RELS = /(^|\s)(preconnect|dns-prefetch|prerender|prefetch|modulepreload)(\s|$)/i;
+
+/**
+ * Rebuilds a recorded document inside another document, like the GUI's replay frame. Uses only DOM APIs, so it runs
+ * wherever a document exists.
+ *
+ * Nothing recorded may load or navigate on its own: iframes, scripts, plugins, refreshes and link hints are
+ * neutralized while elements are created, before they are inserted.
+ */
+export class DomReplay {
+    readonly doc: Document;
+    private nodes: (Node|undefined)[] = [];
+    private base: HTMLBaseElement;
+    private own = new WeakSet<Node>();
+    viewport: DomViewport = [0, 0, 1];
+    private scroll = new Map<number, [number, number]>();
+
+    constructor(doc: Document) {
+        this.doc = doc;
+        this.base = doc.createElement('base');
+        this.own.add(this.base);
+    }
+
+    build(keyframe: DomKeyframe) {
+        const doc = this.doc;
+        this.nodes = [];
+        this.nodes[keyframe.document] = doc;
+        this.scroll.clear();
+
+        // Images resolve their address when it is set, so the base must be live before the tree is created.
+        this.base.href = keyframe.base;
+        (doc.documentElement ?? doc).prepend(this.base);
+
+        const children: Node[] = [];
+        for (const node of keyframe.root) {
+            const created = this.create(node);
+            if (created !== null) {
+                children.push(created);
+            }
+        }
+
+        for (const child of [...doc.childNodes]) {
+            if (child.nodeType !== DomNodeType.DOCTYPE) {
+                doc.removeChild(child);
+            }
+        }
+        // Move the base into the new tree before it is inserted, so stylesheets resolve against it as well.
+        const html = children.find(node => node.nodeType === DomNodeType.ELEMENT);
+        if (html !== undefined) {
+            (html as Element).prepend(this.base);
+        }
+        for (const child of children) {
+            doc.appendChild(child);
+        }
+        this.keepBase();
+
+        this.viewport = keyframe.viewport;
+        for (const [id, x, y] of keyframe.scroll) {
+            this.scroll.set(id, [x, y]);
+        }
+    }
+
+    apply(changes: DomChange[]) {
+        for (const change of changes) {
+            switch (change[0]) {
+                case DomOp.CHILDREN:
+                    this.setChildren(change[1], change[2]);
+                    break;
+                case DomOp.ATTRIBUTES: {
+                    const element = this.nodes[change[1]];
+                    if (element instanceof this.windowOf().Element) {
+                        this.setAttributes(element, change[2]);
+                    }
+                    break;
+                }
+                case DomOp.TEXT: {
+                    const node = this.nodes[change[1]];
+                    if (node !== undefined && 'data' in node) {
+                        (node as CharacterData).data = change[2];
+                    }
+                    break;
+                }
+                case DomOp.CONTROL: {
+                    const element = this.nodes[change[1]];
+                    if (element !== undefined) {
+                        this.setProps(element as Element, {
+                            value: change[2] ?? undefined,
+                            checked: change[3] ?? undefined,
+                            selectedIndex: change[4] ?? undefined,
+                        });
+                    }
+                    break;
+                }
+                case DomOp.CSS: {
+                    const element = this.nodes[change[1]];
+                    if (element !== undefined) {
+                        element.textContent = change[2];
+                    }
+                    break;
+                }
+                case DomOp.SCROLL:
+                    this.scroll.set(change[1], [change[2], change[3]]);
+                    break;
+                case DomOp.VIEWPORT:
+                    this.viewport = [change[1], change[2], change[3]];
+                    break;
+            }
+        }
+    }
+
+    /** Scroll positions need layout, so they are restored once, after all changes are applied. */
+    restoreScroll() {
+        const window = this.doc.defaultView;
+        for (const [id, [x, y]] of this.scroll) {
+            if (id === 0) {
+                window?.scrollTo(x, y);
+                continue;
+            }
+            const element = this.nodes[id] as Element|undefined;
+            if (element?.isConnected) {
+                element.scrollLeft = x;
+                element.scrollTop = y;
+            }
+        }
+    }
+
+    /** The node a recorded id stands for, like the target of a command. */
+    nodeOf(id: number): Node|undefined {
+        return this.nodes[id];
+    }
+
+    private windowOf(): typeof globalThis {
+        return (this.doc.defaultView ?? globalThis) as typeof globalThis;
+    }
+
+    private create(node: DomNode): Node|null {
+        const doc = this.doc;
+        let created: Node;
+
+        switch (node[1]) {
+            case DomNodeType.ELEMENT: {
+                const [, , tag, attributes, children, props, namespace] = node;
+                let element: Element;
+                try {
+                    element = namespace ? doc.createElementNS(NAMESPACES[namespace], tag) : doc.createElement(tag);
+                } catch {
+                    // Names the parser accepts but createElement doesn't.
+                    element = doc.createElement('puth-replay-unknown');
+                }
+                this.setAttributes(element, attributes);
+                if (namespace !== 0 || ! NO_CHILDREN.has(element.localName)) {
+                    for (const child of children) {
+                        const childNode = this.create(child);
+                        if (childNode !== null) {
+                            element.appendChild(childNode);
+                        }
+                    }
+                }
+                if (props) {
+                    this.setProps(element, props);
+                }
+                created = element;
+                break;
+            }
+            case DomNodeType.TEXT:
+                created = doc.createTextNode(node[2]);
+                break;
+            case DomNodeType.COMMENT:
+                created = doc.createComment(node[2]);
+                break;
+            default:
+                // The replay document keeps its own doctype.
+                return null;
+        }
+
+        this.nodes[node[0]] = created;
+        return created;
+    }
+
+    private setChildren(parentId: number, children: (number|DomNode)[]) {
+        const parent = this.nodes[parentId];
+        if (parent === undefined || (parent.nodeType === DomNodeType.ELEMENT && NO_CHILDREN.has((parent as Element).localName)
+            && (parent as Element).namespaceURI === NAMESPACES[0])) {
+            return;
+        }
+
+        const wanted: Node[] = [];
+        for (const child of children) {
+            const node = typeof child === 'number' ? this.nodes[child] : this.create(child);
+            if (node !== undefined && node !== null) {
+                wanted.push(node);
+            }
+        }
+
+        // Only what the recording knows is moved or removed; the replay's own nodes stay where they are.
+        const keep = new Set(wanted);
+        for (const child of [...parent.childNodes]) {
+            if (! this.own.has(child) && ! keep.has(child) && child.nodeType !== DomNodeType.DOCTYPE) {
+                parent.removeChild(child);
+            }
+        }
+        let cursor = this.nextRecorded(parent.firstChild);
+        for (const node of wanted) {
+            if (node === cursor) {
+                cursor = this.nextRecorded(cursor.nextSibling);
+            } else {
+                parent.insertBefore(node, cursor);
+            }
+        }
+
+        if (parent === this.doc || parent === this.doc.documentElement) {
+            this.keepBase();
+        }
+    }
+
+    private nextRecorded(node: Node|null): Node|null {
+        while (node !== null && (this.own.has(node) || node.nodeType === DomNodeType.DOCTYPE)) {
+            node = node.nextSibling;
+        }
+        return node;
+    }
+
+    // The base must be the first in tree order, also after the recording replaced the root element.
+    private keepBase() {
+        const root = this.doc.documentElement;
+        if (root !== null && root.firstChild !== this.base) {
+            root.prepend(this.base);
+        }
+    }
+
+    private setAttributes(element: Element, attributes: string[]) {
+        const wanted = new Map<string, string>();
+        for (let i = 0; i < attributes.length; i += 2) {
+            const [name, value] = this.rewrite(element, attributes[i], attributes[i + 1]);
+            if (name !== null) {
+                wanted.set(name, value);
+            }
+        }
+
+        for (const attribute of [...element.attributes]) {
+            if (! wanted.has(attribute.name)) {
+                element.removeAttributeNode(attribute);
+            }
+        }
+        for (const [name, value] of wanted) {
+            if (element.getAttribute(name) === value) {
+                continue;
+            }
+            try {
+                if (name.startsWith('xlink:')) {
+                    element.setAttributeNS(XLINK, name, value);
+                } else {
+                    element.setAttribute(name, value);
+                }
+            } catch {
+                // Names like Alpine's @click are valid in HTML but not for setAttribute. They don't change how a page looks.
+            }
+        }
+    }
+
+    // Returns the attribute to set instead, or null to leave it out.
+    private rewrite(element: Element, name: string, value: string): [string|null, string] {
+        const tag = element.localName;
+        const lower = name.toLowerCase();
+
+        if (lower.startsWith('on')) {
+            return [null, value];
+        }
+        if ((tag === 'iframe' || tag === 'frame') && (lower === 'src' || lower === 'srcdoc')) {
+            return [REWRITTEN_PREFIX + lower, value];
+        }
+        if ((tag === 'script' || tag === 'embed') && lower === 'src') {
+            return [REWRITTEN_PREFIX + lower, value];
+        }
+        if (tag === 'object' && lower === 'data') {
+            return [REWRITTEN_PREFIX + lower, value];
+        }
+        if (tag === 'base' && (lower === 'href' || lower === 'target')) {
+            return [REWRITTEN_PREFIX + lower, value];
+        }
+        if (tag === 'meta' && lower === 'http-equiv' && value.toLowerCase() === 'refresh') {
+            return [REWRITTEN_PREFIX + lower, value];
+        }
+        if (tag === 'link' && lower === 'rel' && STRIPPED_RELS.test(value)) {
+            return [REWRITTEN_PREFIX + lower, value];
+        }
+
+        return [name, value];
+    }
+
+    private setProps(element: Element, props: DomProps) {
+        const control = element as HTMLInputElement & HTMLSelectElement;
+        if (props.value !== undefined && 'value' in control && control.value !== props.value) {
+            control.value = props.value;
+        }
+        if (props.checked !== undefined && 'checked' in control) {
+            control.checked = props.checked;
+        }
+        if (props.selectedIndex !== undefined && 'selectedIndex' in control) {
+            control.selectedIndex = props.selectedIndex;
+        }
+        if (props.css !== undefined) {
+            element.textContent = props.css;
+        }
+    }
+}
+
+/** The keyframe and batches of one document, up to and including seq, starting from the last keyframe before it. */
+export function domPacketsUntil<T extends {kind: string, seq: number}>(packets: T[], seq: number): T[] {
+    let start = -1;
+    for (let i = 0; i < packets.length && packets[i].seq <= seq; i++) {
+        if (packets[i].kind === 'keyframe') {
+            start = i;
+        }
+    }
+    if (start === -1) {
+        return [];
+    }
+
+    const until: T[] = [];
+    for (let i = start; i < packets.length && packets[i].seq <= seq; i++) {
+        until.push(packets[i]);
+    }
+    return until;
+}
+
+export type {DomScroll};

@@ -1,3 +1,5 @@
+import type {DomPoint} from './Dom';
+
 export type IPacket = {
     id: string;
     type: string;
@@ -32,6 +34,10 @@ export type ICommand = IPacket & {
         elapsed: number;
         took?: number;
         finished: number;
+    };
+    /** Where the DOM recording of the command's page stood when the command started. */
+    dom?: {
+        before?: DomPoint;
     };
 };
 
