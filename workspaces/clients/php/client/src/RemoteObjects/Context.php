@@ -39,6 +39,33 @@ class Context extends RemoteObject
     }
 
     /**
+     * Records the frames Chrome paints from now on, in addition to the DOM. Useful for what the recorded DOM
+     * can't show, like canvas drawings or video.
+     * @codegen
+     * 
+     * @debug-gen-original-name "enableFrames"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     */
+    public function enableFrames(): void
+    {
+        $this->callFunc('enableFrames');
+    }
+
+    /**
+     * Stops recording frames.
+     * @codegen
+     * 
+     * @debug-gen-original-name "disableFrames"
+     * @debug-gen-original-is-async false
+     * @debug-gen-original-returns ["void"]
+     */
+    public function disableFrames(): void
+    {
+        $this->callFunc('disableFrames');
+    }
+
+    /**
      * Blocks until another client claimed this context and released it again, or until options.timeout. Until then
      * this test keeps answering portal requests, so that client can use what the test set up.
      * @codegen

@@ -5,7 +5,6 @@ import PuthInstancePlugin from "../PuthInstancePlugin";
 import { Puth } from '../Puth';
 import PuthContextPlugin from "../PuthContextPlugin";
 import { Constructors } from '@puth/core';
-import sharp from "sharp";
 import {setWindowBounds} from './Std/PuthBrowserExtensions';
 
 export class LiveViewContextPlugin extends PuthContextPlugin {
@@ -36,12 +35,17 @@ type ScreencastSession = {
 };
 
 type ContextRecording = {
-    pageCounter: number;
+    pages: Map<Page, number>;
     sessions: Map<Page, ScreencastSession>;
     onPageCreated: (event: any) => void;
     onPageClosed: (event: {page: Page}) => void;
+    onFramesChanged: (event: {enabled: boolean}) => void;
 };
 
+/**
+ * Records the frames Chrome paints, for contexts that turn frames on (the context option `frames`, or
+ * Context.enableFrames()). Frames are stored as Chrome sends them; the GUI crops them to the viewport.
+ */
 export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
     private recordings = new Map<Context, ContextRecording>();
     
@@ -63,15 +67,34 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         }
 
         const recording: ContextRecording = {
-            pageCounter: 0,
+            pages: new Map(),
             sessions: new Map(),
-            onPageCreated: ({page}) => void this.attachScreencastEvents(context, recording, page),
-            onPageClosed: ({page}) => this.detachScreencastEvents(recording, page),
+            onPageCreated: ({page}) => {
+                recording.pages.set(page, recording.pages.size + 1);
+                if (context.isFramesEnabled) {
+                    void this.attachScreencastEvents(context, recording, page);
+                }
+            },
+            onPageClosed: ({page}) => {
+                recording.pages.delete(page);
+                this.detachScreencastEvents(recording, page);
+            },
+            // Tests can turn frames on and off while they run.
+            onFramesChanged: ({enabled}) => {
+                for (const page of recording.pages.keys()) {
+                    if (enabled) {
+                        void this.attachScreencastEvents(context, recording, page);
+                    } else {
+                        this.detachScreencastEvents(recording, page);
+                    }
+                }
+            },
         };
         
         this.recordings.set(context, recording);
         context.on('page:created', recording.onPageCreated);
         context.on('page:closed', recording.onPageClosed);
+        context.on('frames:changed', recording.onFramesChanged);
     }
     
     private handleContextDestroyed(context: Context) {
@@ -83,11 +106,15 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
         this.recordings.delete(context);
         context.off('page:created', recording.onPageCreated);
         context.off('page:closed', recording.onPageClosed);
+        context.off('frames:changed', recording.onFramesChanged);
         [...recording.sessions.keys()].forEach(page => this.detachScreencastEvents(recording, page));
     }
     
     private async attachScreencastEvents(context: Context, recording: ContextRecording, page: Page) {
-        const pageIdx = ++recording.pageCounter;
+        const pageIdx = recording.pages.get(page) ?? 0;
+        if (recording.sessions.has(page)) {
+            return;
+        }
         
         let client: CDPSession;
         try {
@@ -97,57 +124,36 @@ export class LiveViewSnapshotPlugin extends PuthInstancePlugin {
             return;
         }
         
-        if (this.recordings.get(context) !== recording || page.isClosed()) {
+        // Frames may have been turned off, or the page closed, while the session was created.
+        if (this.recordings.get(context) !== recording || page.isClosed() || ! context.isFramesEnabled || recording.sessions.has(page)) {
             client.detach().catch(() => {});
             return;
         }
         
         const handler = async ({data, metadata, sessionId}) => {
-            const serializedContext = context.serialize();
-            const url = page.url();
-            const viewport = page.viewport();
-            
-            let frame = Buffer.from(data, 'base64');
-            
             client.send('Page.screencastFrameAck', {
                 sessionId,
             }).catch(err => {
                 // TODO handle target closed
             });
             
-            try {
-                if (viewport) {
-                    frame = await sharp(frame)
-                        .jpeg()
-                        .resize({
-                            height: viewport.height,
-                            width: viewport.width,
-                            fit: 'cover',
-                            position: 'top',
-                        })
-                        .toBuffer();
-                }
-            } catch (error) {
-                this.puth?.logger.warn({error}, 'Could not process screencast frame');
-                return;
-            }
-            
             this.puth.snapshotHandler.pushToCache(context as TODO, {
                 id: v4(),
                 type: 'screencasts',
                 version: 1,
-                context: serializedContext,
+                context: context.serialize(),
                 timestamp: metadata.timestamp * 1000,
                 page: {
                     index: pageIdx,
-                    url,
-                    viewport,
+                    url: page.url(),
+                    viewport: page.viewport(),
                 },
                 browser: {
                     // index: browserIdx,
                     index: 0,
                 },
-                frame,
+                // A frame can be larger than the viewport, the GUI shows the viewport from the top.
+                frame: Buffer.from(data, 'base64'),
                 initiator: 'lvp_psfa',
             });
         };

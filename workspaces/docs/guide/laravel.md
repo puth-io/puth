@@ -87,6 +87,22 @@ class ExampleBrowserTest extends PuthTestCase
 
 Options returned by `$this->getContextOptions()` can override these settings individually. See [portal and detours](./portal) for details.
 
+## Recorded frames
+
+Puth records the DOM of every page for the GUI. Frames, the pictures Chrome paints, are off by default; they show what the DOM can't, like canvas drawings or video. Turn them on for every test of a class with the `PuthEnableFrames` trait:
+
+```php
+use Puth\Laravel\PuthEnableFrames;
+use Tests\PuthTestCase;
+
+class ChartTest extends PuthTestCase
+{
+    use PuthEnableFrames;
+}
+```
+
+Or for a part of one test with `$this->context->enableFrames()` and `$this->context->disableFrames()`.
+
 ## Moving from Dusk
 
 You can keep Dusk and Puth installed while moving tests to a separate test directory. Follow [migrating from Dusk](./migration-from-dusk) for the server lifecycle, keyboard and dialog differences. The [Browser reference](/api/browser) distinguishes server method names from Laravel wrappers.

@@ -43,7 +43,8 @@ const round = (value: number) => Math.round(value * 100) / 100;
 const mib = (bytes: number) => round(bytes / 1024 / 1024);
 
 async function runContext(client, url: string, count: number, latencies: number[], dom: boolean) {
-    const context = await client.contextCreate({ snapshot: true, dom });
+    // Frames stay on, so runs remain comparable with sources that always recorded them.
+    const context = await client.contextCreate({ snapshot: true, frames: true, dom });
     const browser = await context.createBrowser();
     const page = (await browser.pages())[0];
     await page.goto(url);

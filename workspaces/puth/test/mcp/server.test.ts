@@ -760,6 +760,7 @@ describe('Reading other contexts', () => {
     async function failedTest(url: string) {
         const context = await Context.create(new RemotePuthClient(url), {
             snapshot: true,
+            frames: true,
             test: { name: 'checkout fails', group: 'Tests\\Browser\\CheckoutFlowTest' },
         });
         const browser = await context.createBrowserShim();
@@ -1056,7 +1057,7 @@ describe('puth_export', () => {
 describe('Next to a test runner', () => {
     it('shares the instance without disturbing the context of the runner', async () => {
         const { instance, url, tool, session } = await start();
-        const runner = await Context.create(new RemotePuthClient(url), { snapshot: true });
+        const runner = await Context.create(new RemotePuthClient(url), { snapshot: true, frames: true });
         const browser = await runner.createBrowserShim();
         await browser.visit(fixtureUrl());
 

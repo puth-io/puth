@@ -514,7 +514,7 @@ export function createServer(config: Config) {
             if (frame !== undefined) {
                 const found = frameOf(recording, frame === -1 ? undefined : frame);
                 if (found === undefined) {
-                    return reply('no frames recorded');
+                    return reply('no frames recorded: tests record them with the context option frames, Context.enableFrames() or the Laravel trait PuthEnableFrames');
                 }
 
                 return { content: [{ type: 'image' as const, data: Buffer.from(found.frame).toString('base64'), mimeType: 'image/jpeg' }] };
