@@ -97,7 +97,7 @@ jobs:
           path: /root/.cache/composer/files
       - name: setup php & composer
         uses: shivammathur/setup-php@v2
-        with:
+        wito ltth:
           php-version: ${{ matrix.php }}
           extensions: curl, libxml, mbstring, intl, zip, pdo_sqlite
           tools: composer:v2
@@ -126,7 +126,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The client depends on Spring Boot 3, which requires Java 17.
+          # The client depends on Spring Boot 4, which requires Java 17.
           - name: java-client | Temurin | JDK 17
             client_dir: workspaces/clients/java/client
             java-version: '17'
@@ -160,11 +160,17 @@ jobs:
             client_dir: workspaces/clients/java/client
             java-version: '21'
             distribution: zulu
-          - name: java-spring
+          - name: java-spring | JDK 17
             client_dir: workspaces/clients/java/workspaces/spring
             java-version: '17'
             distribution: temurin
             # The example depends on the client from this checkout.
+            install_client: true
+          # The newest Java that Spring Boot 4.1 supports and an LTS line.
+          - name: java-spring | JDK 25
+            client_dir: workspaces/clients/java/workspaces/spring
+            java-version: '25'
+            distribution: temurin
             install_client: true
     steps:
       - uses: actions/checkout@v4

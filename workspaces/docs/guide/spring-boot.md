@@ -1,6 +1,6 @@
 ---
 title: Spring Boot integration
-description: Run browser tests against your Spring Boot application with JUnit 5 and MockMvc.
+description: Run browser tests against your Spring Boot application with JUnit and MockMvc.
 ---
 
 # Spring Boot integration
@@ -9,7 +9,7 @@ description: Run browser tests against your Spring Boot application with JUnit 5
 The Spring Boot integration is tested in CI, but its API may still change.
 :::
 
-`PuthPortalExtension` is a JUnit 5 extension from the Java client. For every test it creates a Puth context, passes a `Browser` to the test method, and destroys the context afterwards. The browser's requests to your application go through [portal](./portal) to the test, which answers them with MockMvc, so the test needs no running server.
+`PuthPortalExtension` is a JUnit Jupiter extension from the Java client. For every test it creates a Puth context, passes a `Browser` to the test method, and destroys the context afterwards. The browser's requests to your application go through [portal](./portal) to the test, which answers them with MockMvc, so the test needs no running server.
 
 <div class="steps">
 
@@ -33,6 +33,8 @@ Then add it to your project's test dependencies:
 </dependency>
 ```
 
+The client needs Spring Boot 4 and Java 17 or newer. For `@AutoConfigureMockMvc`, also add `spring-boot-starter-webmvc-test` to the test dependencies.
+
 ## Start the server
 
 Run a Puth server as described in [Getting started](./getting-started#start-the-server). The examples connect to `http://127.0.0.1:7345`.
@@ -47,7 +49,7 @@ import io.puth.client.remote.Browser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
