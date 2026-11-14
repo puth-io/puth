@@ -388,7 +388,7 @@ async function startAssetServer() {
 // The GUI's replay frame once it shows the point it was given.
 const replayShown = `(() => {
     const frame = document.querySelector('[puth="replay-frame"]');
-    return frame !== null && frame.dataset.seq !== undefined && frame.dataset.shown === frame.dataset.doc + ':' + frame.dataset.seq;
+    return frame !== null && frame.dataset.point !== undefined && frame.dataset.shown === frame.dataset.point;
 })()`;
 const inReplay = (expression: string) => `((doc) => ${expression})(document.querySelector('[puth="replay-frame"]').contentDocument)`;
 
@@ -516,6 +516,45 @@ describe('DOM replay', () => {
             const escaped = await gui.evaluate(inReplay(`JSON.stringify(${frame(path)}.defaultView.performance.getEntriesByType('resource').filter((entry) => entry.workerStart === 0).map((entry) => entry.name))`));
             assert.deepEqual(JSON.parse(escaped), [], path);
         }
+    }, 60000);
+
+    it('follows a frame that navigates while the page around it stays the same', async () => {
+        const server = http.createServer((request, response) => {
+            const pages = {
+                '/top': `<h1>top</h1><iframe id="inner" src="/one"></iframe>`,
+                '/one': '<p>page one</p>',
+                '/two': '<p>page two</p>',
+            };
+            response.writeHead(200, { 'content-type': 'text/html' }).end(pages[request.url] ?? '');
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        cleanups.push(() => new Promise((resolve) => server.close(resolve)));
+
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'frame navigation' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(`http://127.0.0.1:${(server.address() as any).port}/top`);
+        await browser.evaluate(`new Promise((resolve) => setTimeout(resolve, 200))`);
+        // Navigates from inside the frame, so the page around it doesn't change at all.
+        await browser.evaluate(`(document.getElementById('inner').contentWindow.location.href = '/two', new Promise((resolve) => setTimeout(resolve, 300)))`);
+        await browser.evaluate('1');
+        await context.destroy({ immediately: true });
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('frame navigation');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+
+        const inner = inReplay(`doc.getElementById('inner').contentDocument.body.innerText`);
+        await showStep(gui, -1, 'before');
+        assert.strictEqual(await gui.evaluate(inner), 'page two');
+        await showStep(gui, -2, 'before');
+        assert.strictEqual(await gui.evaluate(inner), 'page one');
+        // The step's After differs from its Before in the frame only.
+        await gui.click('[puth="state-after"]');
+        await gui.waitUntil(replayShown);
+        assert.strictEqual(await gui.evaluate(inner), 'page two');
     }, 60000);
 
     it('runs no script and follows no link of the recorded page', async () => {
