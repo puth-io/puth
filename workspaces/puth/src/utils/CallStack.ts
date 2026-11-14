@@ -67,6 +67,35 @@ function resolvePortalFailure({ error, status, body }: PortalResponse): PortalFa
     }
 }
 
+/**
+ * The body of a paused request as base64, or undefined if CDP cannot provide all of it. Chrome reports the bytes of
+ * each part in postDataEntries. postData is decoded text, which loses every byte that is not UTF-8, so it is only
+ * used when there are no entries. A part without bytes is a file from disk, which only a detour receives.
+ */
+function readableBody(request: Protocol.Network.Request): string|undefined {
+    if (! request.hasPostData) {
+        return '';
+    }
+
+    const entries = request.postDataEntries;
+    if (entries !== undefined && entries.length > 0) {
+        if (entries.some(entry => entry.bytes === undefined)) {
+            return undefined;
+        }
+
+        return Buffer.concat(entries.map(entry => Buffer.from(entry.bytes!, 'base64'))).toString('base64');
+    }
+
+    // Without entries, a multipart body may lack its files.
+    const multipart = Object.entries(request.headers)
+        .some(([name, value]) => name.toLowerCase() === 'content-type' && value.trim().startsWith('multipart/'));
+    if (request.postData === undefined || multipart) {
+        return undefined;
+    }
+
+    return Buffer.from(request.postData, 'utf8').toString('base64');
+}
+
 export class CallStack {
     private context: Context;
     readonly page: Page;
@@ -213,30 +242,19 @@ export class CallStack {
         path: string,
         cdp: CDPSession,
     ) {
-        let postData = event.request.postData;
-        if (event.request.hasPostData) {
-            if (postData === undefined) {
-                if (this.context.isDetourEnabled) {
-                    this.logger.debug('[Portal][Detour too large] ' + event.request.url);
-                    return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
-                }
-                if (event.networkId === undefined) {
-                    throw new Error('Portal request body is unavailable and detour handling is disabled.');
-                }
-
-                postData = (await cdp.send('Network.getRequestPostData', { requestId: event.networkId })).postData;
-            }
-
-            let contentType = '';
-            for (let key of Object.keys(event.request.headers)) {
-                if (key.toLowerCase() === 'content-type') {
-                    contentType = event.request.headers[key].trim();
-                }
-            }
-            if (contentType.startsWith('multipart/') && this.context.isDetourEnabled) {
-                this.logger.debug('[Portal][Detour multipart] ' + event.request.url);
+        let data = readableBody(event.request);
+        if (event.request.hasPostData && data === undefined) {
+            if (this.context.isDetourEnabled) {
+                this.logger.debug('[Portal][Detour unreadable body] ' + event.request.url);
                 return this.context.portalRequestDetourToCatcher(psuri, event, path, cdp);
             }
+            if (event.networkId === undefined) {
+                throw new Error('Portal request body is unavailable and detour handling is disabled.');
+            }
+
+            // Only text, files of multipart bodies are left out. The detour is the way to get them.
+            const { postData } = await cdp.send('Network.getRequestPostData', { requestId: event.networkId });
+            data = Buffer.from(postData, 'utf8').toString('base64');
         }
 
         this.context.setPsuriHandler(
@@ -274,7 +292,7 @@ export class CallStack {
             url: event.request.url,
             path,
             headers: event.request.headers,
-            data: Buffer.from(postData ?? '', 'utf8').toString('base64'),
+            data: data ?? '',
             method: event.request.method.toUpperCase(),
         });
     }

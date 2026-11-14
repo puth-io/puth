@@ -71,8 +71,10 @@ handled, while all other paused requests continue normally.
   `false` to disable portal interception entirely; no CDP Fetch interception is
   installed for that context.
 - `detour` is a per-context boolean option, also enabled by default. It is the
-  fallback for portal requests whose POST body cannot be read directly (for
-  example, oversized or multipart requests). Set it to `false` to keep normal
+  fallback for portal requests whose POST body cannot be read directly. CDP
+  reports the bytes of each body part in `postDataEntries`, except for files
+  from disk; such bodies, and bodies without entries, take the detour. Never
+  read `postData`: it is decoded text and loses bytes. Set it to `false` to keep normal
   portal handling but prevent that request from being rerouted through
   `/portal/detour`.
 - Detours go to their own listener on an ephemeral `127.0.0.1` port, which serves

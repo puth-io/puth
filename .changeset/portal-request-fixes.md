@@ -11,3 +11,4 @@ Portal fixes:
 - Laravel sets `QUERY_STRING`, so `getQueryString()` and `fullUrl()` keep the query.
 - Laravel passes the cookies of the browser to the application, parsed without changing their names. Cookies set by the test take precedence.
 - Multipart names are nested like PHP does for `$_POST` and `$_FILES`, for example `files[0]` and `meta[a][b]`, and a subclass can override `parseMultipart()`.
+- Binary request bodies reach the client byte for byte. They were read as text, which lost every byte that is not UTF-8. Multipart bodies with files from memory no longer need a detour; files from disk still take it.
