@@ -10,6 +10,13 @@
  * between them. Batches carry the current state of what changed, not the records' history, because records arrive
  * after the fact.
  *
+ * Shadow roots: open ones are recorded with their host and observed like the document. Nothing reports attaching a
+ * shadow root later, so on every flush custom elements without one and elements that changed are checked for one.
+ * Closed roots can't be seen from here and stay empty. Adopted stylesheets are recorded once per sheet, because
+ * libraries like Lit adopt the same sheet into every instance.
+ *
+ * Top layer: whether a dialog is modal and a popover open shows in no attribute, so it is compared on every flush.
+ *
  * Size: nodes are flat token lists, and strings go into a table of the document once they repeat, which every
  * message extends with what it added. Tag and attribute names go in right away, there are few of them.
  *
@@ -46,6 +53,13 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     // Form controls and <style> elements whose state can change without a mutation record.
     const controls = new Map();
     const styles = new Map();
+    // The document and its open shadow roots, with the adopted sheets sent last; and the adopted sheets themselves.
+    const roots = new Map();
+    const sheets = new Map();
+    // Custom elements without a shadow root, which may attach one later.
+    const hostless = new Map();
+    // Dialogs and popovers, with the top layer state sent last.
+    const layered = new Map();
     // Elements that scrolled once, and what was sent last. Scroll and resize events only fire with the next frame,
     // so positions and the viewport are compared on every flush instead.
     const scrollers = new Map();
@@ -134,13 +148,14 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         ];
     };
 
-    const rules = (element) => {
+    const sheetRules = (sheet) => {
         try {
-            return element.sheet ? element.sheet.cssRules : null;
+            return sheet ? sheet.cssRules : null;
         } catch (error) {
             return null;
         }
     };
+    const rules = (element) => sheetRules(element.sheet);
     // A sheet whose rules a script changed has another count, or another first or last rule.
     const sheetKey = (list) => list === null || list.length === 0
         ? '0'
@@ -153,6 +168,17 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         return css;
     };
 
+    // 1 for a modal dialog, 2 for an open popover, 0 otherwise.
+    const topState = (element) => {
+        try {
+            if (element.localName === 'dialog' && element.matches(':modal')) return 1;
+            if (element.matches(':popover-open')) return 2;
+        } catch (error) {
+            // Selectors this browser doesn't know.
+        }
+        return 0;
+    };
+
     // Pairs of name and value; a masked input never shows its value attribute either.
     const attributesOf = (element, out) => {
         const attributes = element.attributes;
@@ -160,6 +186,22 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         for (let i = 0; i < attributes.length; i++) {
             const attribute = attributes[i];
             out.push(name(attribute.name), hide && attribute.name === 'value' ? '\u2022'.repeat(attribute.value.length) : string(attribute.value));
+        }
+        return out;
+    };
+
+    // Records a shadow root found on host: its id and its children as a node list.
+    const shadowOf = (root, fresh) => {
+        fresh && fresh.add(root);
+        const id = idOf(root);
+        roots.set(id, [root, '']);
+        observer.observe(root, OBSERVED);
+        listenOn(root);
+        const out = [id, 0];
+        for (let child = root.firstChild; child !== null; child = child.nextSibling) {
+            if (serialize(child, fresh, out)) {
+                out[1]++;
+            }
         }
         return out;
     };
@@ -209,6 +251,21 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
                 props = {css: cssOf(list)};
             }
         }
+        if (tag === 'dialog' || node.hasAttribute('popover')) {
+            const top = topState(node);
+            layered.set(id, [node, top]);
+            if (top !== 0) {
+                props = props || {};
+                props.top = top;
+            }
+        }
+        if (node.shadowRoot) {
+            hostless.delete(id);
+            props = props || {};
+            props.shadow = shadowOf(node.shadowRoot, fresh);
+        } else if (tag.indexOf('-') !== -1) {
+            hostless.set(id, node);
+        }
         out.push(props);
 
         const countAt = out.length;
@@ -249,6 +306,46 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         return changed;
     };
 
+    // Sheets whose rules changed, then the roots whose adopted sheets changed, as SHEET and ADOPT changes. A root
+    // recorded anew has none sent yet.
+    const adoptions = () => {
+        const sheetOps = [];
+        const adoptOps = [];
+        for (const [id, entry] of roots) {
+            const root = entry[0];
+            if (root !== doc && ! root.host.isConnected) {
+                roots.delete(id);
+                continue;
+            }
+            const adopted = [];
+            const list = root.adoptedStyleSheets || [];
+            for (let i = 0; i < list.length; i++) {
+                const sheet = list[i];
+                const sheetId = idOf(sheet);
+                adopted.push(sheetId);
+                if (! sheets.has(sheetId)) {
+                    const rulesOf = sheetRules(sheet);
+                    sheets.set(sheetId, [sheet, sheetKey(rulesOf)]);
+                    sheetOps.push([10, sheetId, rulesOf ? cssOf(rulesOf) : '']);
+                }
+            }
+            const key = adopted.join(',');
+            if (key !== entry[1]) {
+                entry[1] = key;
+                adoptOps.push([11, id, adopted]);
+            }
+        }
+        for (const [id, entry] of sheets) {
+            const list = sheetRules(entry[0]);
+            const key = sheetKey(list);
+            if (key !== entry[1]) {
+                entry[1] = key;
+                sheetOps.push([10, id, list ? cssOf(list) : '']);
+            }
+        }
+        return sheetOps.concat(adoptOps);
+    };
+
     const post = (kind, data) => {
         seq++;
         const packet = {kind: kind, doc: docId, seq: seq, data: data};
@@ -272,7 +369,12 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         overflow = false;
         controls.clear();
         styles.clear();
+        roots.clear();
+        sheets.clear();
+        hostless.clear();
+        layered.clear();
         resetTable();
+        roots.set(idOf(doc), [doc, '']);
 
         // A list of nodes: their count, then the nodes.
         const root = [0];
@@ -286,14 +388,20 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         const size = viewport();
         viewportSent = size.join(',');
 
-        post('keyframe', {
+        const data = {
             url: location.href,
             base: doc.baseURI,
             document: idOf(doc),
             root: root,
             viewport: size,
             scroll: scroll,
-        });
+        };
+        const sheetChanges = adoptions();
+        if (sheetChanges.length > 0) {
+            data.sheets = sheetChanges.filter((op) => op[0] === 10).map((op) => [op[1], op[2]]);
+            data.adopted = sheetChanges.filter((op) => op[0] === 11 && op[2].length > 0).map((op) => [op[1], op[2]]);
+        }
+        post('keyframe', data);
     };
 
     const inDocumentOrder = (a, b) => a === b ? 0 : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
@@ -352,6 +460,31 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             }
         }
 
+        // Shadow roots attached since the host was recorded.
+        const attached = (host) => {
+            if (host.shadowRoot && ! ids.has(host.shadowRoot) && known(host)) {
+                hostless.delete(ids.get(host));
+                ops.push([9, ids.get(host), shadowOf(host.shadowRoot, fresh)]);
+            }
+        };
+        for (const [id, host] of hostless) {
+            if (! host.isConnected) {
+                hostless.delete(id);
+            } else {
+                attached(host);
+            }
+        }
+        for (const node of parents) {
+            if (node.nodeType === 1) attached(node);
+        }
+        for (const element of attributes) {
+            attached(element);
+            // An element that became a popover.
+            if (known(element) && ! layered.has(ids.get(element)) && element.hasAttribute('popover')) {
+                layered.set(ids.get(element), [element, 0]);
+            }
+        }
+
         // Values typed or set from code, and CSSOM rules, change without a mutation record.
         for (const [id, entry] of controls) {
             const element = entry[0];
@@ -384,6 +517,24 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             }
         }
 
+        for (const [id, entry] of layered) {
+            const element = entry[0];
+            if (! element.isConnected) {
+                layered.delete(id);
+                continue;
+            }
+            const top = topState(element);
+            if (top !== entry[1]) {
+                entry[1] = top;
+                if (! fresh.has(element)) {
+                    ops.push([12, id, top]);
+                }
+            }
+        }
+        for (const op of adoptions()) {
+            ops.push(op);
+        }
+
         for (const [id, x, y] of scrollChanges(false)) {
             ops.push([7, id, x, y]);
         }
@@ -401,7 +552,7 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
             return false;
         }
         started = true;
-        observer.observe(doc, {childList: true, attributes: true, characterData: true, subtree: true});
+        observer.observe(doc, OBSERVED);
         keyframe();
         return true;
     };
@@ -434,6 +585,7 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
         }
     };
 
+    const OBSERVED = {childList: true, attributes: true, characterData: true, subtree: true};
     const observer = new MutationObserver((list) => {
         if (overflow) {
             return;
@@ -462,6 +614,11 @@ export const DOM_RECORDER_SOURCE = String.raw`(() => {
     const onLeave = () => flush();
     // document.open(), which Puppeteer's setContent uses, removes every listener of the window. Adding the same
     // listener again does nothing, so each flush adds them back.
+    // Scroll and change events don't leave a shadow root, so every root gets listeners of its own.
+    const listenOn = (root) => {
+        root.addEventListener('scroll', onScroll, {capture: true, passive: true});
+        root.addEventListener('change', schedule, {capture: true});
+    };
     const listen = () => {
         addEventListener('scroll', onScroll, {capture: true, passive: true});
         addEventListener('resize', onResize);

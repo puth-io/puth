@@ -537,6 +537,39 @@ describe('DOM replay', () => {
         await gui.waitUntil(inReplay(`doc.getElementById('logo').naturalWidth === 8`));
     }, 60000);
 
+    it('rebuilds shadow roots, adopted stylesheets and the top layer', async () => {
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'components run' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl(`/html?body=${encodeURIComponent(`<x-card><span slot="title">light</span></x-card>
+            <dialog id="modal"><p>modal</p></dialog><div id="pop" popover>popover</div>
+            <script>
+                const sheet = new CSSStyleSheet();
+                sheet.replaceSync('b { color: rgb(4, 5, 6) }');
+                customElements.define('x-card', class extends HTMLElement {
+                    constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<b id="bold">shadow</b><slot name="title"></slot>'; this.shadowRoot.adoptedStyleSheets = [sheet]; }
+                });
+            </script>`)}`));
+        await browser.evaluate(`(document.getElementById('modal').showModal(), document.getElementById('pop').showPopover())`);
+        // Reads the page and changes nothing, so its Before is the page this returns.
+        const expected = await browser.evaluate(`(${NORMALIZE})(document)`);
+        await context.destroy({ immediately: true });
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('components run');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+        await showStep(gui, -1, 'before');
+
+        assert.strictEqual(await gui.evaluate(inReplay(`(${NORMALIZE})(doc)`)), expected);
+        assert.include(expected, '#shadow-root');
+        assert.include(expected, 'modal=true');
+        assert.include(expected, 'popover-open=true');
+        // The adopted sheet applies inside the sandboxed replay frame.
+        assert.strictEqual(await gui.evaluate(inReplay(`getComputedStyle(doc.querySelector('x-card').shadowRoot.getElementById('bold')).color`)), 'rgb(4, 5, 6)');
+    }, 60000);
+
     it('rebuilds frames of other sites, nested', async () => {
         // 127.0.0.1 and localhost are different sites, so cross and deep run in processes of their own.
         const server = http.createServer((request, response) => {
