@@ -384,6 +384,9 @@ export class DomReplay {
                     if (this.recordedOpen.get(dialog)) dialog.setAttribute('open', '');
                 }
             } else if (state !== DomTopLayer.MODAL && modal) {
+                // Removing open, as the recorded attributes do when the page closed it, leaves a modal dialog in the
+                // top layer, and close() ignores a dialog without it.
+                dialog.setAttribute('open', '');
                 dialog.close();
                 if (this.recordedOpen.get(dialog)) {
                     dialog.setAttribute('open', '');

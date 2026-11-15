@@ -611,6 +611,10 @@ describe('DOM recording of', () => {
 
         await browser.evaluate(`(document.getElementById('modal').close(), document.getElementById('plain').close(), document.getElementById('plain').showModal())`);
         await check();
+
+        // Closed while modal: the attribute goes in the same batch.
+        await browser.evaluate(`document.getElementById('plain').close()`);
+        await check();
     }, 30000);
 
     it('SVG, MathML, comments and the title', async () => {
