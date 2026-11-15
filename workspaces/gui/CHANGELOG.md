@@ -1,5 +1,16 @@
 # @puth/gui
 
+## 0.4.0
+
+### Minor Changes
+
+- 9dcb07c: The DOM recording includes iframes, also of other sites and nested in each other, and the GUI shows them in place. Typed values in frames of another origin than a page above them are masked, like payment fields.
+- 720449a: Snapshots record the DOM of each page, and the GUI shows a step's Before and After rebuilt from it instead of the nearest frame: exact to the command, with the page's stylesheets, fonts and images served from the recording, without running scripts or loading anything from the network. Frames stay available through **Frame**. Set the context option `dom` to `false` to record frames only. Password and card number fields are masked.
+  
+  The snapshot format is version 2. The GUI no longer opens snapshots saved by earlier versions.
+- 78ecfc2: Recorded frames are off by default, since the GUI shows the recorded DOM. Turn them on with the context option `frames`, with `Context.enableFrames()` and `disableFrames()` while a test runs, or in Laravel with the `PuthEnableFrames` trait. MCP sessions keep recording them, and `puth_context` takes the last address from the recorded navigations. Frames are stored as Chrome sends them and the GUI crops them to the viewport, so Puth no longer depends on `sharp`.
+- 409b86e: Recordings are compressed with zstd: `.puth` files, the snapshot interface and the websocket, which sends the recordings a GUI connects to compressed and large packets like DOM keyframes when that saves space. A recording without frames shrinks about six times. The GUI decodes them with the new `@puth/zstd-decoder` package, zstd's own decoder built to WebAssembly, and compresses the snapshots it exports with the new `@puth/zstd-encoder` package, which it loads only when something is exported. Uncompressed snapshots still open in the GUI and the MCP server.
+
 ## 0.3.0
 
 ### Minor Changes
