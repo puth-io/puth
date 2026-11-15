@@ -70,6 +70,8 @@ async function actionabilityProblem(
 // }
 
 export type int = number;
+/** Where a mouse action presses: at an offset from the element's border box, or with true where Puppeteer would. */
+type Pointer = boolean|{x: number, y: number}|undefined;
 
 const isEqualTo    = (actual: any, expected: any) => expected == actual;
 const isNotEqualTo = (actual: any, expected: any) => expected != actual;
@@ -288,10 +290,12 @@ export class Browser {
     }
 
     // Resolves the target of an action again until it can be acted on, which a page in transition or a re-render needs.
+    // The element it returns is the action's target, which the DOM recording keeps; pointer says where a mouse action
+    // presses, at an offset or, with true, where Puppeteer would.
     private async actionable(
         resolve: () => Promise<ElementHandle>,
         label: string|string[],
-        { editable = false, force = false } = {},
+        { editable = false, force = false, pointer = undefined as Pointer, target = true } = {},
     ): Promise<ElementHandle> {
         const deadline = Date.now() + this.resolveTimeout();
 
@@ -299,7 +303,7 @@ export class Browser {
             const element = await resolve();
 
             if (force || ! this.options.actionability) {
-                return element;
+                return target ? this.target(element, pointer) : element;
             }
 
             const problem = await element.evaluate(
@@ -309,7 +313,7 @@ export class Browser {
                 ANIMATION_DISTANCE_THRESHOLD,
             );
             if (problem === null) {
-                return element;
+                return target ? this.target(element, pointer) : element;
             }
             if (Date.now() >= deadline) {
                 throw new ExpectationFailed(
@@ -319,6 +323,13 @@ export class Browser {
 
             await new Promise(next => setTimeout(next, ACTIONABILITY_RETRY_DELAY));
         }
+    }
+
+    // Recording the target never makes the action fail.
+    private async target(element: ElementHandle, pointer: Pointer): Promise<ElementHandle> {
+        await this.attempt?.target?.(element, pointer).catch(() => {});
+
+        return element;
     }
 
     // From here on the call acted on the page, so it must not run again.
@@ -332,7 +343,7 @@ export class Browser {
         resolve: () => Promise<ElementHandle>,
         label: string|string[],
         action: (element: ElementHandle) => Promise<T>,
-        options: { editable?: boolean, force?: boolean } = {},
+        options: { editable?: boolean, force?: boolean, pointer?: Pointer } = {},
     ): Promise<T> {
         const element = await this.actionable(resolve, label, options);
         this.dispatched();
@@ -355,7 +366,7 @@ export class Browser {
 
         const { force, ...clickOptions } = options ?? {};
 
-        return this.act(() => this.firstOrFail(selector), selector, (element) => element.click(clickOptions), { force })
+        return this.act(() => this.firstOrFail(selector), selector, (element) => element.click(clickOptions), { force, pointer: clickOptions.offset ?? true })
             .then(this.self);
     }
 
@@ -364,11 +375,13 @@ export class Browser {
 
         const selector = `xpath////${element}[normalize-space(.) = ${text}]`;
 
-        return this.act(() => this.firstOrFail(selector), linkText, (element) => element.click())
+        return this.act(() => this.firstOrFail(selector), linkText, (element) => element.click(), { pointer: true })
             .then(this.self);
     }
 
     public clickAtPoint(x: int, y: int): Promise<this> {
+        this.attempt?.point?.(x, y);
+        this.dispatched();
         return this.page.mouse.click(x, y).then(this.self);
     }
 
@@ -376,13 +389,13 @@ export class Browser {
         // Only a location path can be made relative, "(//a)[last()]" is a complete expression already.
         const selector = `xpath//${expression.startsWith('/') ? '.' + expression : expression}`;
 
-        return this.act(() => this.firstOrFail(selector), expression, (element) => element.click())
+        return this.act(() => this.firstOrFail(selector), expression, (element) => element.click(), { pointer: true })
             .then(this.self);
     }
 
     public async clickAndHold(selector: string | null = null): Promise<this> {
         if (selector !== null) {
-            let element = await this.actionable(() => this.firstOrFail(selector), selector);
+            let element = await this.actionable(() => this.firstOrFail(selector), selector, { pointer: true });
             await element.scrollIntoView();
             let point = await element.clickablePoint();
             await this.page.mouse.move(point.x, point.y);
@@ -395,7 +408,7 @@ export class Browser {
 
     public async doubleClick(selector: string | null = null): Promise<this> {
         if (selector !== null) {
-            await this.act(() => this.firstOrFail(selector), selector, (element) => element.click({ count: 2 }));
+            await this.act(() => this.firstOrFail(selector), selector, (element) => element.click({ count: 2 }), { pointer: true });
         } else {
             this.dispatched();
             await this.page.mouse.down();
@@ -409,7 +422,7 @@ export class Browser {
 
     public async rightClick(selector: string | null = null): Promise<this> {
         if (selector !== null) {
-            await this.act(() => this.firstOrFail(selector), selector, (element) => element.click({ button: 'right' }));
+            await this.act(() => this.firstOrFail(selector), selector, (element) => element.click({ button: 'right' }), { pointer: true });
         } else {
             this.dispatched();
             await this.page.mouse.down({ button: 'right' });
@@ -793,12 +806,12 @@ export class Browser {
     }
 
     public radio(selector: string, value: string): Promise<this> {
-        return this.act(() => this.resolveForRadioSelection(selector, value), selector, element => element.click())
+        return this.act(() => this.resolveForRadioSelection(selector, value), selector, element => element.click(), { pointer: true })
             .then(this.self);
     }
 
     public async _check(shouldBeChecked: boolean, selector: string, value: string|null = null): Promise<this> {
-        let element = await this.actionable(() => this.resolveForChecking(selector, value), selector ?? '');
+        let element = await this.actionable(() => this.resolveForChecking(selector, value), selector ?? '', { pointer: true });
         if (shouldBeChecked !== await PuthStandardPlugin.its(element, 'checked')) {
             this.dispatched();
             await element.click();
@@ -816,8 +829,8 @@ export class Browser {
     }
 
     public async drag(from: string, to: string): Promise<this> {
-        let first = await this.actionable(() => this._waitFor(this.resolver(from)) as Promise<ElementHandle>, from);
-        let second = await this.actionable(() => this._waitFor(this.resolver(to)) as Promise<ElementHandle>, to);
+        let first = await this.actionable(() => this._waitFor(this.resolver(from)) as Promise<ElementHandle>, from, { pointer: true });
+        let second = await this.actionable(() => this._waitFor(this.resolver(to)) as Promise<ElementHandle>, to, { target: false });
         this.dispatched();
         // @ts-ignore
         await second.drop(first);
@@ -826,7 +839,7 @@ export class Browser {
     }
 
     public dragOffset(selector: string, x: int, y: int): Promise<this> {
-        return this.act(() => this.firstOrFail(selector), selector, element => element.drag({x, y}))
+        return this.act(() => this.firstOrFail(selector), selector, element => element.drag({x, y}), { pointer: true })
             .then(this.self);
     }
 
@@ -1127,7 +1140,7 @@ export class Browser {
 
     // Press the button with the given text or name.
     public press(button: string): Promise<this> {
-        return this.act(() => this.resolveForButtonPress(button), button, (element) => element.click())
+        return this.act(() => this.resolveForButtonPress(button), button, (element) => element.click(), { pointer: true })
             .then(this.self);
     }
 
@@ -1144,6 +1157,7 @@ export class Browser {
                         `Expected element [${button}] to be enabled, but it wasn't.`,
                     ),
                 ),
+            { pointer: true },
         )
             .then(this.self);
     }
@@ -2268,7 +2282,7 @@ export class Browser {
 
     //// MOUSE /////////////////////////////////////////////////////////////////////////////////////////////////////////
     public mouseover(selector: string): Promise<this> {
-        return this.act(() => this.firstOrFail(selector), selector, (element) => element.hover())
+        return this.act(() => this.firstOrFail(selector), selector, (element) => element.hover(), { pointer: true })
             .then(this.self);
     }
 

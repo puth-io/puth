@@ -1251,6 +1251,21 @@ class Context extends Generic {
         }
         if (before !== undefined) {
             call.command!.dom = {before};
+
+            // What an action acts on, for the GUI to highlight in the replay.
+            const dom = call.command!.dom;
+            attempt.target = async (element, pointer) => {
+                const target = await recorder!.targetOf(element, pointer);
+                if (target !== undefined) {
+                    dom.target = target;
+                }
+            };
+            attempt.point = (x, y) => {
+                const target = recorder!.pointTarget(x, y);
+                if (target !== undefined) {
+                    dom.target = target;
+                }
+            };
         }
 
         try {

@@ -1,4 +1,4 @@
-import {DomReplay, domFrameDocument, domPacketsUntil, type DomPoint, domSeqAt} from '@puth/core';
+import {DomReplay, domFrameDocument, domPacketsUntil, type DomPoint, domSeqAt, type DomTarget} from '@puth/core';
 import type ContextStore from '@/app/store/ContextStore';
 
 const SCOPE = '/__replay/';
@@ -14,6 +14,12 @@ export function domPointKey(point: DomPoint): string {
     const frames = Object.entries(point.frames ?? {}).sort(([a], [b]) => a < b ? -1 : 1).map(([doc, seq]) => doc + ':' + seq);
     return [point.doc + ':' + point.seq, ...frames].join(' ');
 }
+
+/**
+ * Where an action's target and press point are in the top replay frame's viewport: the element's border box and the
+ * point, as far as the shown point has them.
+ */
+export type ReplayHighlight = {box?: [x: number, y: number, width: number, height: number], point?: [x: number, y: number]};
 
 type ResourceMap = Record<string, [hash: string, status: number, contentType: string]>;
 
@@ -138,12 +144,12 @@ export class ReplayView {
     private readonly doc: Document;
     private shown?: {doc: string, keyframe: number, seq: number};
     private children = new Map<number, ReplayView>();
-    private pending?: {context: ContextStore, point: DomPoint};
+    private pending?: {context: ContextStore, point: DomPoint, target?: DomTarget};
     private running?: Promise<void>;
 
     constructor(
         private readonly frame: HTMLIFrameElement,
-        private readonly onShown: (viewport: [number, number]) => void,
+        private readonly onShown: (viewport: [number, number], highlight: ReplayHighlight|null) => void,
         private readonly depth = 0,
     ) {
         this.doc = frame.contentDocument!;
@@ -166,20 +172,20 @@ export class ReplayView {
     }
 
     /** Only the latest point counts, so moving the mouse over many steps doesn't queue up rebuilds. */
-    show(context: ContextStore, point: DomPoint) {
-        this.pending = {context, point};
+    show(context: ContextStore, point: DomPoint, target?: DomTarget) {
+        this.pending = {context, point, target};
         this.running ??= this.run().finally(() => this.running = undefined);
     }
 
     private async run() {
         while (this.pending !== undefined) {
-            const {context, point} = this.pending;
+            const {context, point, target} = this.pending;
             this.pending = undefined;
-            await this.render(context, point);
+            await this.render(context, point, target);
         }
     }
 
-    private async render(context: ContextStore, point: DomPoint) {
+    private async render(context: ContextStore, point: DomPoint, target?: DomTarget) {
         const packets = domPacketsUntil(context.domPacketsOf(point.doc), point.seq);
         if (packets.length === 0) {
             return;
@@ -214,7 +220,41 @@ export class ReplayView {
         // Tells tests and tools which point the frame shows, once it does, frames included.
         this.frame.setAttribute('data-shown', domPointKey(point));
         const [width, height] = this.replay.viewport;
-        this.onShown([width, height]);
+        this.onShown([width, height], target === undefined ? null : this.locate(target));
+    }
+
+    /** Finds the target in this document or in a frame in it, in this frame's viewport. */
+    private locate(target: DomTarget): ReplayHighlight|null {
+        if (this.shown?.doc === target.doc) {
+            let box: ReplayHighlight['box'];
+            if (target.node !== undefined) {
+                // A node created after the shown point isn't in it.
+                const node = this.replay.nodeOf(target.node) as Element|undefined;
+                if (node === undefined || node.nodeType !== Node.ELEMENT_NODE || ! node.isConnected) {
+                    return null;
+                }
+                const rect = node.getBoundingClientRect();
+                box = [rect.left, rect.top, rect.width, rect.height];
+            }
+            const point: ReplayHighlight['point'] = target.point === undefined
+                ? undefined
+                : [target.point[0] + (box?.[0] ?? 0), target.point[1] + (box?.[1] ?? 0)];
+            return {box, point};
+        }
+
+        for (const child of this.children.values()) {
+            const found = child.locate(target);
+            if (found !== null) {
+                const rect = child.frame.getBoundingClientRect();
+                const x = rect.left + child.frame.clientLeft;
+                const y = rect.top + child.frame.clientTop;
+                return {
+                    box: found.box && [found.box[0] + x, found.box[1] + y, found.box[2], found.box[3]],
+                    point: found.point && [found.point[0] + x, found.point[1] + y],
+                };
+            }
+        }
+        return null;
     }
 
     private async renderFrames(context: ContextStore, point: DomPoint, time: number) {

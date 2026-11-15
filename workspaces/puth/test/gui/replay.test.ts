@@ -570,6 +570,38 @@ describe('DOM replay', () => {
         assert.strictEqual(await gui.evaluate(inReplay(`getComputedStyle(doc.querySelector('x-card').shadowRoot.getElementById('bold')).color`)), 'rgb(4, 5, 6)');
     }, 60000);
 
+    it('highlights what a step acted on and where it pressed', async () => {
+        const instance = await startInstance();
+        const context = await createContext(instance, { snapshot: true, test: { name: 'click run' } });
+        const browser = await context.createBrowserShim();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<style>body { margin: 0 } #go { position: absolute; left: 40px; top: 30px; width: 100px; height: 20px }</style>
+            <button id="go" onclick="this.textContent = 'clicked'">go</button>`);
+        await browser.click('#go', { offset: { x: 10, y: 5 } });
+        await browser.assertSee('clicked');
+        await context.destroy({ immediately: true });
+
+        const gui = await openGui(instance);
+        await connect(gui, instance);
+        await gui.waitForText('click run');
+        await gui.click('[puth="history-item"]');
+        await gui.waitFor('[puth="step"]');
+
+        // The click, before it ran: its button, and the dot where it pressed.
+        await showStep(gui, -2, 'before');
+        await gui.waitFor('[puth="replay-target"]');
+        const overlay = (selector: string) => gui.evaluate(`(() => {
+            const style = document.querySelector('${selector}').style;
+            return [style.left, style.top, style.width, style.height].filter(Boolean).map(parseFloat);
+        })()`);
+        assert.deepEqual(await overlay('[puth="replay-target"]'), [40, 30, 100, 20]);
+        assert.deepEqual(await overlay('[puth="replay-point"]'), [50, 35]);
+
+        // An assertion acts on nothing.
+        await showStep(gui, -1, 'before');
+        await gui.waitUntil(`document.querySelector('[puth="replay-target"]') === null`);
+    }, 60000);
+
     it('rebuilds frames of other sites, nested', async () => {
         // 127.0.0.1 and localhost are different sites, so cross and deep run in processes of their own.
         const server = http.createServer((request, response) => {

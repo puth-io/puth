@@ -1,4 +1,5 @@
 import { type Browser, ExpectationFailed } from '../shims/Browser';
+import type { ElementHandle } from 'puppeteer-core';
 import { PageClosedError, isPageClosed, isTargetChange } from './TargetErrors';
 
 const RETRY_DELAY = 50;
@@ -60,6 +61,7 @@ const ACTIONS = [
     'clear',
     'click',
     'clickAndHold',
+    'clickAtPoint',
     'clickAtXPath',
     'clickLink',
     'controlClick',
@@ -103,6 +105,10 @@ export class CallAttempt {
     deadline?: number;
     retried = false;
     dispatched = false;
+    /** Records what an action is about to act on, set when the page's DOM is recorded. */
+    target?: (element: ElementHandle, pointer?: boolean|{x: number, y: number}) => Promise<void>;
+    /** Records the viewport point a mouse action without an element presses at. */
+    point?: (x: number, y: number) => void;
 
     // The first attempt keeps the exact timeout of the call, because messages report it.
     timeout(resolved: number): number {
