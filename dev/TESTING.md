@@ -119,6 +119,8 @@ between machines:
 ```sh
 docker compose run --rm --no-deps node-test npm -w puth run benchmark
 mkdir .benchmark-base && git archive master workspaces/puth/src | tar -x -C .benchmark-base
+# The copy resolves Puth's dependencies from the workspace's node_modules.
+ln -s ../../../workspaces/puth/node_modules .benchmark-base/workspaces/puth/node_modules
 docker compose run --rm --no-deps node-test npm -w puth run benchmark -- --src ../../.benchmark-base/workspaces/puth/src
 rm -r .benchmark-base
 ```
