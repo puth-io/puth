@@ -1,4 +1,4 @@
-import type {DomPoint} from './Dom';
+import type {DomPoint, DomTarget} from './Dom';
 
 export type IPacket = {
     id: string;
@@ -35,9 +35,10 @@ export type ICommand = IPacket & {
         took?: number;
         finished: number;
     };
-    /** Where the DOM recording of the command's page stood when the command started. */
+    /** Where the DOM recording of the command's page stood when the command started, and what an action acted on. */
     dom?: {
         before?: DomPoint;
+        target?: DomTarget;
     };
 };
 

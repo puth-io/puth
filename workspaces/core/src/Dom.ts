@@ -116,6 +116,16 @@ export type DomKeyframe = {
 };
 
 /**
+ * What an action acted on: element node of document doc, and where a mouse action pressed, relative to the element's
+ * border box. Without a node, point is in the viewport of doc.
+ */
+export type DomTarget = {
+    doc: string;
+    node?: number;
+    point?: [x: number, y: number];
+};
+
+/**
  * A point in a page's DOM recording: the state after batch seq of the top document doc, and of the documents in
  * its frames after the batches in frames.
  */

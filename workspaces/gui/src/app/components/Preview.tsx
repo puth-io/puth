@@ -2,7 +2,7 @@ import {observer} from 'mobx-react-lite';
 import {runInAction} from 'mobx';
 import {useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {AppContext} from '../../shared/Contexts.tsx';
-import {domPointKey, FRAME_URL, ReplayView, replayWorker} from '../replay/Replay.ts';
+import {domPointKey, FRAME_URL, type ReplayHighlight, ReplayView, replayWorker} from '../replay/Replay.ts';
 import type PreviewStore from '@/app/store/PreviewStore';
 
 export const Preview = observer(function Preview() {
@@ -54,8 +54,11 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
     const [loaded, setLoaded] = useState(false);
     const [viewport, setViewport] = useState<[number, number]>([1280, 720]);
     const [width, setWidth] = useState(0);
+    const [highlight, setHighlight] = useState<ReplayHighlight|null>(null);
     const point = preview.domPoint;
     const pointKey = point === null ? null : domPointKey(point);
+    const target = preview.domTarget;
+    const targetKey = target === null ? null : JSON.stringify(target);
 
     // The worker has to control the frame from its first request, so the frame loads once it is active.
     const [src, setSrc] = useState<string|undefined>(undefined);
@@ -83,15 +86,18 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
             runInAction(() => preview.replayUnavailable = true);
             return;
         }
-        view.current = new ReplayView(element, setViewport);
+        view.current = new ReplayView(element, (shown, found) => {
+            setViewport(shown);
+            setHighlight(found);
+        });
         setLoaded(true);
     };
 
     useEffect(() => {
         if (loaded && point !== null) {
-            view.current?.show(preview.context, point);
+            view.current?.show(preview.context, point, target ?? undefined);
         }
-    }, [loaded, pointKey, preview.context]);
+    }, [loaded, pointKey, targetKey, preview.context]);
 
     useLayoutEffect(() => {
         const element = container.current;
@@ -126,6 +132,28 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
                 />
                 {darken && (
                     <div className={'pointer-events-none absolute inset-0 bg-black/50'}/>
+                )}
+                {highlight !== null && (
+                    // In the replay frame's own coordinates, scaled with it.
+                    <div
+                        className={'pointer-events-none absolute left-0 top-0 origin-top-left'}
+                        style={{width: `${viewportWidth}px`, height: `${viewportHeight}px`, transform: `scale(${scale})`}}
+                    >
+                        {highlight.box && (
+                            <div
+                                {...{puth: 'replay-target'}}
+                                className={'absolute rounded-[2px] border-2 border-accent-blue bg-accent-blue/15'}
+                                style={{left: `${highlight.box[0]}px`, top: `${highlight.box[1]}px`, width: `${highlight.box[2]}px`, height: `${highlight.box[3]}px`}}
+                            />
+                        )}
+                        {highlight.point && (
+                            <div
+                                {...{puth: 'replay-point'}}
+                                className={'absolute size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-accent-blue shadow-[0_0_0_1px_rgba(0,0,0,0.4)]'}
+                                style={{left: `${highlight.point[0]}px`, top: `${highlight.point[1]}px`}}
+                            />
+                        )}
+                    </div>
                 )}
             </div>
         </div>
