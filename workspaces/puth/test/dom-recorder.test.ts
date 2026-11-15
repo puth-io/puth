@@ -617,6 +617,51 @@ describe('DOM recording of', () => {
         await check();
     }, 30000);
 
+    it('the target of actions and where mouse actions press', async () => {
+        const { browser, packets, replayedState } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<style>body { margin: 0 } button { position: absolute; left: 40px; top: 30px; width: 100px; height: 20px }
+            input { position: absolute; left: 40px; top: 80px }</style><button id="go">go</button><input id="field">`);
+
+        const commandOf = (func: string) => packets().filter((packet) => packet.type === 'command' && packet.func === func).at(-1);
+        // The recorded node of a target, looked up in the replay of the command's Before.
+        const idAt = (command: any) => replayedState(command.dom.before, `replay.nodeOf(${command.dom.target.node})?.id ?? null`);
+
+        await browser.click('#go');
+        let command = commandOf('click');
+        assert.strictEqual(await idAt(command), 'go');
+        assert.deepEqual(command.dom.target.point, [50, 10]);
+        assert.strictEqual(command.dom.target.doc, command.dom.before.doc);
+
+        await browser.click('#go', { offset: { x: 5, y: 6 } });
+        assert.deepEqual(commandOf('click').dom.target.point, [5, 6]);
+
+        // Typing has a target, but presses nowhere.
+        await browser.type('#field', 'x');
+        command = commandOf('type');
+        assert.strictEqual(await idAt(command), 'field');
+        assert.isUndefined(command.dom.target.point);
+
+        // A point without an element is in the viewport.
+        await browser.clickAtPoint(12, 34);
+        command = commandOf('clickAtPoint');
+        assert.isUndefined(command.dom.target.node);
+        assert.deepEqual(command.dom.target.point, [12, 34]);
+
+        // An element created after the command's Before isn't in it, but in later points.
+        await browser.evaluate(`setTimeout(() => document.body.append(Object.assign(document.createElement('button'), { id: 'late', textContent: 'late' })), 50)`);
+        await browser.click('#late');
+        command = commandOf('click');
+        assert.isNumber(command.dom.target.node);
+        await browser.evaluate('1');
+        const after = commandOf('evaluate').dom.before;
+        assert.strictEqual(await replayedState(after, `replay.nodeOf(${command.dom.target.node})?.id ?? null`), 'late');
+
+        // Reads have none.
+        await browser.assertSee('go');
+        assert.isUndefined(commandOf('assertSee').dom.target);
+    }, 30000);
+
     it('SVG, MathML, comments and the title', async () => {
         const { browser, check } = await record();
         await browser.visit(fixtureUrl('/plain.txt'));

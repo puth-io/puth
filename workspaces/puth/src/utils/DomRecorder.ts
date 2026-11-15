@@ -1,10 +1,31 @@
-import type {CDPSession, Protocol} from 'puppeteer-core';
-import type {DomPoint} from '@puth/core';
+import type {CDPSession, ElementHandle, Protocol} from 'puppeteer-core';
+import type {DomPoint, DomTarget} from '@puth/core';
 import {DOM_RECORDER_SOURCE} from './DomRecorderSource';
 
 export const DOM_RECORDER_WORLD = 'puth-recorder';
 const BINDING = '__puthDom';
 const FLUSH_TIMEOUT = 1000;
+
+// Runs on the target in the recorder's world: its document and id, and where a mouse action presses, relative to its
+// border box. Puppeteer presses at the given offset, or else at the center of the element's visible part.
+const TARGET = `function (pointer) {
+    const recorder = globalThis.__puthRecorder;
+    if (! recorder) return null;
+    let point;
+    if (pointer) {
+        const box = this.getBoundingClientRect();
+        if (typeof pointer === 'object') {
+            point = [pointer.x, pointer.y];
+        } else {
+            const left = Math.max(box.left, 0), top = Math.max(box.top, 0);
+            const right = Math.min(box.right, innerWidth), bottom = Math.min(box.bottom, innerHeight);
+            point = right > left && bottom > top
+                ? [(left + right) / 2 - box.left, (top + bottom) / 2 - box.top]
+                : [box.width / 2, box.height / 2];
+        }
+    }
+    return [recorder.doc, recorder.idOf(this), point];
+}`;
 
 type Logger = { debug: (...args: any[]) => void, warn: (...args: any[]) => void };
 type Register = (object: any, event: string, handler: (event: any) => void) => void;
@@ -233,6 +254,41 @@ export class DomRecorder {
         }
     }
 
+    /**
+     * The recorded node of an element an action is about to act on, and the point a mouse action presses at. An
+     * element created since the last flush gets its id now, so it is found in later points.
+     */
+    async targetOf(element: ElementHandle, pointer?: boolean|{x: number, y: number}): Promise<DomTarget|undefined> {
+        const frame = this.frames.get((element.frame as any)._id);
+        if (this.disposed || frame?.session === undefined || frame.contextId === undefined) {
+            return undefined;
+        }
+        const {session, contextId} = frame;
+
+        return this.bounded((async () => {
+            const backendNodeId = await element.backendNodeId();
+            const {object} = await session.send('DOM.resolveNode', {backendNodeId, executionContextId: contextId});
+            try {
+                const {result} = await session.send('Runtime.callFunctionOn', {
+                    objectId: object.objectId!,
+                    functionDeclaration: TARGET,
+                    arguments: [{value: pointer ?? null}],
+                    returnByValue: true,
+                });
+                const [doc, node, point] = result.value ?? [];
+                return doc === undefined ? undefined : {doc, node, ...(point ? {point: point.map((value: number) => Math.round(value * 100) / 100)} : {})};
+            } finally {
+                void session.send('Runtime.releaseObject', {objectId: object.objectId!}).catch(() => {});
+            }
+        })());
+    }
+
+    /** A point in the viewport of the top document, for mouse actions without an element. */
+    pointTarget(x: number, y: number): DomTarget|undefined {
+        const doc = this.frames.get(this.mainFrameId)?.doc;
+        return doc === undefined ? undefined : {doc, point: [x, y]};
+    }
+
     private async resync(doc: string, session: CDPSession, contextId: number) {
         if (this.resyncing.has(doc)) {
             return;
@@ -275,16 +331,19 @@ export class DomRecorder {
     }
 
     private async evaluate(session: CDPSession, contextId: number, expression: string) {
+        return this.bounded(session.send('Runtime.evaluate', {expression, contextId, returnByValue: true}).then(({result}) => result.value));
+    }
+
+    // A dialog that opens meanwhile stops the page's scripts; the command must not wait for it. A document that went
+    // away during the call flushed before it unloaded.
+    private async bounded<T>(promise: Promise<T>): Promise<T|undefined> {
         let timer: ReturnType<typeof setTimeout>|undefined;
         try {
-            // A dialog that opens meanwhile stops the page's scripts; the command must not wait for it.
-            const {result} = await Promise.race([
-                session.send('Runtime.evaluate', {expression, contextId, returnByValue: true}),
+            return await Promise.race([
+                promise,
                 new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('DOM recorder did not answer')), FLUSH_TIMEOUT); }),
             ]);
-            return result.value;
         } catch (error) {
-            // The document went away during the call, its recorder flushed before it unloaded.
             this.logger?.debug({error}, 'Could not reach the DOM recorder');
             return undefined;
         } finally {

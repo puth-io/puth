@@ -1,6 +1,6 @@
 import {action, computed, makeObservable, observable} from 'mobx';
 import Events from '../Events';
-import {type DomPoint, ICommand, SnapshotMode, SnapshotState} from '@puth/core';
+import {type DomPoint, type DomTarget, ICommand, SnapshotMode, SnapshotState} from '@puth/core';
 import ContextStore from '@/app/store/ContextStore';
 
 class PreviewStore {
@@ -74,6 +74,7 @@ class PreviewStore {
             hasDom: computed,
             showsDom: computed,
             domPoint: computed,
+            domTarget: computed,
             visiblePage: computed,
         });
         
@@ -124,6 +125,11 @@ class PreviewStore {
             }
         }
         return this.context.latestDomPoint(page);
+    }
+
+    /** What the visible command acted on, which the preview highlights in its Before and After. */
+    get domTarget(): DomTarget|null {
+        return (this.visibleCommand as any)?.dom?.target ?? null;
     }
 
     /** Address and size of the page the preview shows. */
