@@ -79,7 +79,9 @@ With snapshots enabled, Puth records the DOM of each page and of every frame in 
 
 The rebuilt page runs no scripts and loads nothing from the network: stylesheets, fonts and images are served from the recording, also when the application is gone, so an imported snapshot looks the same on any machine. Values in password fields and card number fields (`autocomplete="cc-…"`) are masked before they leave the page, and so is every typed value in a frame whose origin differs from a page above it, like a payment form.
 
-Some content is not part of the recording and shows up empty or unstyled: `<canvas>` drawings, video frames, the contents of shadow roots, and stylesheets that scripts construct (`adoptedStyleSheets`). Media queries follow the browser the GUI runs in. Record frames for such pages.
+Web components are recorded with their open shadow roots and the stylesheets they adopt, and modal dialogs and open popovers show in the top layer as they did on the page.
+
+Some content is not part of the recording and shows up empty or unstyled: `<canvas>` drawings, video frames, and closed shadow roots. A shadow root that an element other than a custom element attaches after it was recorded is only seen once something else about that element changes. Media queries follow the browser the GUI runs in. Record frames for such pages.
 
 ### Recorded frames
 
