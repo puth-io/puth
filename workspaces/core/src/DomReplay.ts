@@ -1,4 +1,4 @@
-import {type DomChange, type DomKeyframe, DomNodeType, DomOp, type DomProps, type DomScroll, type DomString, type DomTokens, type DomViewport} from './Dom';
+import {type DomChange, type DomKeyframe, DomNodeType, DomOp, type DomProps, type DomScroll, type DomString, type DomTokens, DomTopLayer, type DomViewport} from './Dom';
 
 const NAMESPACES = ['http://www.w3.org/1999/xhtml', 'http://www.w3.org/2000/svg', 'http://www.w3.org/1998/Math/MathML'];
 const XLINK = 'http://www.w3.org/1999/xlink';
@@ -25,6 +25,12 @@ export class DomReplay {
     // The document's string table, from the keyframe and the batches applied since.
     private strings: string[] = [];
     private scroll = new Map<number, [number, number]>();
+    // Adopted stylesheets by recorded id, constructed in the replay's window, as adoptedStyleSheets requires.
+    private sheets = new Map<number, CSSStyleSheet>();
+    // The top layer needs connected elements, so it is applied once they are inserted.
+    private pendingTop: [Element, DomTopLayer][] = [];
+    // Whether a dialog's recorded attributes include open, which closing a modal dialog removes.
+    private recordedOpen = new WeakMap<Element, boolean>();
 
     /**
      * frameSrc is the page recorded iframes load instead of their own, so a caller can build the documents they
@@ -43,6 +49,9 @@ export class DomReplay {
         this.nodes = [];
         this.nodes[keyframe.document] = doc;
         this.scroll.clear();
+        this.sheets.clear();
+        this.pendingTop = [];
+        doc.adoptedStyleSheets = [];
 
         // Images resolve their address when it is set, so the base must be live before the tree is created.
         this.base.href = keyframe.base;
@@ -72,6 +81,14 @@ export class DomReplay {
             doc.appendChild(child);
         }
         this.keepBase();
+
+        for (const [id, css] of keyframe.sheets ?? []) {
+            this.setSheet(id, css);
+        }
+        for (const [root, sheets] of keyframe.adopted ?? []) {
+            this.adopt(root, sheets);
+        }
+        this.applyTop();
 
         this.viewport = keyframe.viewport;
         for (const [id, x, y] of keyframe.scroll) {
@@ -128,8 +145,29 @@ export class DomReplay {
                 case DomOp.VIEWPORT:
                     this.viewport = [change[1], change[2], change[3]];
                     break;
+                case DomOp.SHADOW: {
+                    const host = this.nodes[change[1]];
+                    if (host instanceof this.windowOf().Element) {
+                        this.attachShadow(host, change[2]);
+                    }
+                    break;
+                }
+                case DomOp.SHEET:
+                    this.setSheet(change[1], change[2]);
+                    break;
+                case DomOp.ADOPT:
+                    this.adopt(change[1], change[2]);
+                    break;
+                case DomOp.TOP_LAYER: {
+                    const element = this.nodes[change[1]];
+                    if (element instanceof this.windowOf().Element) {
+                        this.pendingTop.push([element, change[2]]);
+                    }
+                    break;
+                }
             }
         }
+        this.applyTop();
     }
 
     /** Scroll positions need layout, so they are restored once, after all changes are applied. */
@@ -206,6 +244,12 @@ export class DomReplay {
                 }
                 if (props) {
                     this.setProps(element, props);
+                    if (props.shadow !== undefined) {
+                        this.attachShadow(element, props.shadow);
+                    }
+                    if (props.top) {
+                        this.pendingTop.push([element, props.top]);
+                    }
                 }
                 created = element;
                 break;
@@ -268,6 +312,97 @@ export class DomReplay {
         }
     }
 
+    // Gives host the recorded shadow root, or replaces the children of the one it has.
+    private attachShadow(host: Element, tokens: DomTokens) {
+        let root = host.shadowRoot;
+        if (root === null) {
+            try {
+                root = host.attachShadow({mode: 'open'});
+            } catch {
+                // An element that can't host one here; its recorded children aren't built either.
+                return;
+            }
+        }
+        const children: Node[] = [];
+        const cursor = {at: 2};
+        for (let i = 0; i < (tokens[1] as number); i++) {
+            const child = this.create(tokens, cursor);
+            if (child !== null) {
+                children.push(child);
+            }
+        }
+        root.replaceChildren(...children);
+        this.nodes[tokens[0] as number] = root;
+    }
+
+    private setSheet(id: number, css: string) {
+        let sheet = this.sheets.get(id);
+        if (sheet === undefined) {
+            sheet = new (this.windowOf().CSSStyleSheet)({baseURL: this.base.href});
+            this.sheets.set(id, sheet);
+        }
+        try {
+            sheet.replaceSync(css);
+        } catch {
+            // Rules the GUI's browser can't parse.
+        }
+    }
+
+    private adopt(rootId: number, ids: number[]) {
+        const root = this.nodes[rootId] as Document|ShadowRoot|undefined;
+        if (root !== undefined && 'adoptedStyleSheets' in root) {
+            root.adoptedStyleSheets = ids.map(id => this.sheets.get(id)).filter(sheet => sheet !== undefined);
+        }
+    }
+
+    private applyTop() {
+        for (const [element, state] of this.pendingTop.splice(0)) {
+            if (element.isConnected) {
+                this.setTop(element, state);
+            }
+        }
+    }
+
+    // Opens a dialog as modal or a popover the way the page did, or closes them, keeping the recorded attributes.
+    private setTop(element: Element, state: DomTopLayer) {
+        const matches = (selector: string) => {
+            try {
+                return element.matches(selector);
+            } catch {
+                return false;
+            }
+        };
+        if (element.localName === 'dialog') {
+            const dialog = element as HTMLDialogElement;
+            const modal = matches(':modal');
+            if (state === DomTopLayer.MODAL && ! modal) {
+                // showModal() refuses a dialog that is open already.
+                dialog.removeAttribute('open');
+                try {
+                    dialog.showModal();
+                } catch {
+                    if (this.recordedOpen.get(dialog)) dialog.setAttribute('open', '');
+                }
+            } else if (state !== DomTopLayer.MODAL && modal) {
+                dialog.close();
+                if (this.recordedOpen.get(dialog)) {
+                    dialog.setAttribute('open', '');
+                }
+            }
+        }
+        const popover = element as HTMLElement;
+        const open = matches(':popover-open');
+        try {
+            if (state === DomTopLayer.POPOVER && ! open) {
+                popover.showPopover();
+            } else if (state !== DomTopLayer.POPOVER && open) {
+                popover.hidePopover();
+            }
+        } catch {
+            // Not a valid popover in the replay.
+        }
+    }
+
     private nextRecorded(node: Node|null): Node|null {
         while (node !== null && (this.own.has(node) || node.nodeType === DomNodeType.DOCTYPE)) {
             node = node.nextSibling;
@@ -297,6 +432,10 @@ export class DomReplay {
             wanted.delete('src');
             wanted.set('sandbox', 'allow-same-origin');
             wanted.set('src', this.options.frameSrc);
+        }
+
+        if (element.localName === 'dialog') {
+            this.recordedOpen.set(element, wanted.has('open'));
         }
 
         for (const attribute of [...element.attributes]) {

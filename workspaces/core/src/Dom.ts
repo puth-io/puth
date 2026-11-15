@@ -19,6 +19,8 @@ export type DomString = number | string;
  *     text and comment:   id, 3 or 8, data
  *     doctype:            id, 10, name, public id, system id
  *
+ * An element's open shadow root is in its props: the root's id, then its children as a node list.
+ *
  * A node list starts with the number of nodes in it. In the children of a CHILDREN change, a node the replay has
  * already is its negative id.
  */
@@ -46,7 +48,19 @@ export type DomProps = {
     selected?: number[];
     /** Rules a script added to a <style> element through the CSSOM, like CSS-in-JS libraries do. */
     css?: string;
+    /** The element's open shadow root: its id, then its children as a node list. */
+    shadow?: DomTokens;
+    /** Whether the element is in the top layer, if it is. */
+    top?: DomTopLayer;
 };
+
+export enum DomTopLayer {
+    NONE = 0,
+    /** A dialog opened with showModal(). */
+    MODAL = 1,
+    /** A popover that is open. */
+    POPOVER = 2,
+}
 
 export type DomViewport = [width: number, height: number, devicePixelRatio: number];
 
@@ -63,6 +77,13 @@ export enum DomOp {
     CSS = 6,
     SCROLL = 7,
     VIEWPORT = 8,
+    /** A shadow root attached to an element recorded before: the root's id, then its children as a node list. */
+    SHADOW = 9,
+    /** The rules of an adopted stylesheet, the first time it is adopted and whenever they change. */
+    SHEET = 10,
+    /** The complete current adopted stylesheets of the document or of a shadow root, by sheet id. */
+    ADOPT = 11,
+    TOP_LAYER = 12,
 }
 
 export type DomChange =
@@ -72,7 +93,11 @@ export type DomChange =
     | [op: DomOp.CONTROL, element: number, value: string | null, checked: boolean | null, selectedIndex: number | null, selected?: number[] | null]
     | [op: DomOp.CSS, element: number, css: string]
     | [op: DomOp.SCROLL, ...DomScroll]
-    | [op: DomOp.VIEWPORT, ...DomViewport];
+    | [op: DomOp.VIEWPORT, ...DomViewport]
+    | [op: DomOp.SHADOW, host: number, root: DomTokens]
+    | [op: DomOp.SHEET, sheet: number, css: string]
+    | [op: DomOp.ADOPT, root: number, sheets: number[]]
+    | [op: DomOp.TOP_LAYER, element: number, state: DomTopLayer];
 
 export type DomKeyframe = {
     url: string;
@@ -84,6 +109,10 @@ export type DomKeyframe = {
     root: DomTokens;
     viewport: DomViewport;
     scroll: DomScroll[];
+    /** The adopted stylesheets, as sheet id and rules. */
+    sheets?: [sheet: number, css: string][];
+    /** The document and shadow roots that adopted stylesheets, with their sheet ids. */
+    adopted?: [root: number, sheets: number[]][];
 };
 
 /**

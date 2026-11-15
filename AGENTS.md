@@ -136,6 +136,10 @@ GUI rebuilds documents with `DomReplay` from `@puth/core`; the format is in
   Batches carry current values, never the records' history. Keep both, or
   replays drift from the page. `test/dom-recorder.test.ts` replays random changes
   and compares; extend it with every new kind of change.
+- State no mutation reports is compared on every flush instead: form values, CSSOM
+  rules, adopted stylesheets, scroll positions, the viewport and the top layer.
+  The isolated world can't wrap the page's `attachShadow`, so each flush looks for
+  new open shadow roots on custom elements and on elements that changed.
 - Each command flushes the recorder when it starts. The flush is also the round
   trip page stability needs after an action, so it must not get slower.
 - A navigation sends its last batch on `beforeunload`; binding calls during

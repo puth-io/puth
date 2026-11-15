@@ -184,12 +184,16 @@ describe('DOM recording', () => {
                 const random = () => { state = (state * 1103515245 + 12345) % 2147483648; return state / 2147483648; };
                 const pick = (list) => list[Math.floor(random() * list.length)];
                 const root = document.getElementById('root');
-                const elements = () => [...root.querySelectorAll('*')];
-                const anywhere = () => pick([root, ...elements()].filter((element) => ! ['input', 'svg', 'circle'].includes(element.localName)));
+                // Elements of the light DOM and of every open shadow root in it.
+                const within = (node) => [...node.querySelectorAll('*')].flatMap((element) => element.shadowRoot ? [element, ...within(element.shadowRoot)] : [element]);
+                const elements = () => within(root);
+                const roots = () => elements().filter((element) => element.shadowRoot).map((element) => element.shadowRoot);
+                const anywhere = () => pick([root, ...roots(), ...elements()].filter((element) => ! ['input', 'svg', 'circle'].includes(element.localName)));
                 const make = () => {
-                    const tag = pick(['div', 'span', 'p', 'b', 'input', 'svg']);
-                    const element = tag === 'svg' ? document.createElementNS('http://www.w3.org/2000/svg', 'svg') : document.createElement(tag);
+                    const tag = pick(['div', 'span', 'p', 'b', 'input', 'svg', 'host']);
+                    const element = tag === 'svg' ? document.createElementNS('http://www.w3.org/2000/svg', 'svg') : document.createElement(tag === 'host' ? 'section' : tag);
                     if (tag === 'svg') element.append(document.createElementNS('http://www.w3.org/2000/svg', 'circle'));
+                    else if (tag === 'host') element.attachShadow({ mode: 'open' }).append('shadow ' + Math.floor(random() * 100), document.createElement('slot'));
                     else if (tag !== 'input') element.append('t' + Math.floor(random() * 100));
                     if (random() < 0.5) element.setAttribute('data-x', String(Math.floor(random() * 10)));
                     return element;
@@ -200,11 +204,12 @@ describe('DOM recording', () => {
                     switch (Math.floor(random() * 9)) {
                         case 0: anywhere().append(make()); break;
                         case 1: if (element !== root) element.remove(); break;
-                        case 2: { const parent = anywhere(); if (element !== root && ! element.contains(parent)) parent.prepend(element); break; }
+                        // Moving a host into its own shadow tree throws, which changes nothing.
+                        case 2: { const parent = anywhere(); if (element !== root) try { parent.prepend(element); } catch {} break; }
                         case 3: element.setAttribute('class', 'c' + Math.floor(random() * 5)); break;
                         case 4: element.removeAttribute('data-x'); break;
-                        case 5: { const text = [...root.querySelectorAll('*')].flatMap((e) => [...e.childNodes]).find((n) => n.nodeType === 3); if (text) text.data += '!'; break; }
-                        case 6: { const input = root.querySelector('input'); if (input) input.value = 'v' + Math.floor(random() * 100); break; }
+                        case 5: { const text = pick([...roots(), ...elements()].flatMap((e) => [...e.childNodes]).filter((n) => n.nodeType === 3)); if (text) text.data += '!'; break; }
+                        case 6: { const input = pick(elements().filter((e) => e.localName === 'input')); if (input) input.value = 'v' + Math.floor(random() * 100); break; }
                         case 7: if (element !== root) { element.remove(); detached.push(element); } break;
                         case 8: { const node = detached.pop(); if (node) { node.setAttribute('data-detached', '1'); node.append(make()); anywhere().append(node); } break; }
                     }
@@ -375,6 +380,7 @@ describe('DOM recording', () => {
 });
 
 describe('DOM recording of', () => {
+    const page = (body: string) => fixtureUrl(`/html?body=${encodeURIComponent(body)}`);
     // Scroll positions of a window and its document, for the recorded page and the replay alike.
     const scroll = (win: string, doc: string) => `((win, doc) => JSON.stringify([win.scrollX, win.scrollY,
         doc.getElementById('box').scrollLeft, doc.getElementById('box').scrollTop]))(${win}, ${doc})`;
@@ -485,6 +491,125 @@ describe('DOM recording of', () => {
         await check();
 
         await browser.evaluate(`document.getElementById('text').textContent = 'p { color: blue }'`);
+        await check();
+    }, 30000);
+
+    it('shadow roots, nested, attached late, and what changes inside them', async () => {
+        const { browser, check, state, replayedState } = await record();
+        // Custom elements written by setContent's document.write never upgrade, so the page comes from the server.
+        await browser.visit(page(`<x-card id="card"><span slot="title">light title</span></x-card>
+            <x-late id="late">late light</x-late><div id="plain">plain</div>
+            <script>
+                customElements.define('x-card', class extends HTMLElement {
+                    constructor() {
+                        super();
+                        this.attachShadow({ mode: 'open' }).innerHTML = '<style>p { color: rgb(1, 2, 3) }</style><h2><slot name="title"></slot></h2>'
+                            + '<p id="text">shadow text</p><input id="field"><x-inner></x-inner>';
+                    }
+                });
+                customElements.define('x-inner', class extends HTMLElement {
+                    constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<b>nested</b>'; }
+                });
+                document.body.append(Object.assign(document.createElement('div'), { id: 'closed' }));
+                document.getElementById('closed').attachShadow({ mode: 'closed' }).innerHTML = '<b>never seen</b>';
+            </script>`));
+        await check();
+
+        // Changes inside the roots, and a value set from code.
+        await browser.evaluate(`(() => {
+            const shadow = document.getElementById('card').shadowRoot;
+            shadow.getElementById('text').textContent = 'changed in the shadow';
+            shadow.getElementById('text').setAttribute('class', 'x');
+            shadow.querySelector('x-inner').shadowRoot.append(document.createElement('i'));
+            shadow.getElementById('field').value = 'typed in the shadow';
+            shadow.querySelector('style').sheet.insertRule('h2 { margin: 0 }');
+        })()`);
+        await check();
+
+        // A custom element defined after it was recorded attaches its root without a mutation.
+        await browser.evaluate(`customElements.define('x-late', class extends HTMLElement {
+            constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<em>attached late</em><slot></slot>'; }
+        })`);
+        await check();
+
+        // A plain element that attaches one together with another change.
+        await browser.evaluate(`(() => {
+            const plain = document.getElementById('plain');
+            plain.attachShadow({ mode: 'open' }).innerHTML = '<u>plain shadow</u>';
+            plain.setAttribute('data-changed', '1');
+        })()`);
+        await check();
+
+        // A host moved elsewhere keeps its root.
+        await browser.evaluate(`document.body.prepend(document.getElementById('card'))`);
+        await check();
+
+        // Scroll events stay inside a shadow root.
+        await browser.evaluate(`(() => {
+            const shadow = document.getElementById('card').shadowRoot;
+            shadow.append(Object.assign(document.createElement('div'), { id: 'box', innerHTML: '<div style="height: 500px">tall</div>' }));
+            shadow.getElementById('box').style.cssText = 'height: 50px; overflow: auto';
+        })()`);
+        await browser.evaluate(`(document.getElementById('card').shadowRoot.getElementById('box').scrollTop = 120, ${frame})`);
+        const box = (doc: string) => `${doc}.getElementById('card').shadowRoot.getElementById('box').scrollTop`;
+        const { expected, point } = await state(box('document'));
+        assert.strictEqual(expected, 120);
+        assert.strictEqual(await replayedState(point, box('doc')), expected);
+    }, 30000);
+
+    it('adopted stylesheets, shared between roots, changed and dropped', async () => {
+        const { browser, check, domPackets } = await record();
+        // Custom elements written by setContent's document.write never upgrade, so the page comes from the server.
+        await browser.visit(page(`<p>document</p><x-styled></x-styled><x-styled></x-styled>
+            <script>
+                window.shared = new CSSStyleSheet();
+                shared.replaceSync('b { color: rgb(4, 5, 6) }');
+                window.page = new CSSStyleSheet();
+                page.replaceSync('p { color: rgb(7, 8, 9) }');
+                document.adoptedStyleSheets = [page];
+                customElements.define('x-styled', class extends HTMLElement {
+                    constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<b>styled</b>'; this.shadowRoot.adoptedStyleSheets = [shared]; }
+                });
+            </script>`));
+        await check();
+        // Like Lit, every instance adopts the same sheet, which is sent once.
+        const sent = JSON.stringify(domPackets().map((packet) => packet.data));
+        assert.strictEqual(sent.split('rgb(4, 5, 6)').length - 1, 1);
+
+        await browser.evaluate(`(shared.insertRule('i { margin: 1px }'), page.replaceSync('p { color: rgb(9, 9, 9) }'))`);
+        await check();
+
+        await browser.evaluate(`(() => {
+            document.body.append(document.createElement('x-styled'));
+            document.adoptedStyleSheets = [page, shared];
+            document.querySelector('x-styled').shadowRoot.adoptedStyleSheets = [];
+        })()`);
+        await check();
+    }, 30000);
+
+    it('the top layer of dialogs and popovers', async () => {
+        const { browser, check } = await record();
+        await browser.visit(fixtureUrl('/plain.txt'));
+        await browser.setContent(`<dialog id="modal"><p>modal</p></dialog><dialog id="plain"><p>plain</p></dialog>
+            <div id="pop" popover>popover</div><div id="later">becomes a popover</div>`);
+        await check();
+
+        await browser.evaluate(`(document.getElementById('modal').showModal(), document.getElementById('plain').show(), document.getElementById('pop').showPopover())`);
+        await check();
+
+        await browser.evaluate(`(() => {
+            const later = document.getElementById('later');
+            later.setAttribute('popover', 'manual');
+            later.showPopover();
+            document.getElementById('pop').hidePopover();
+            // From modal to open without being modal.
+            const modal = document.getElementById('modal');
+            modal.close();
+            modal.show();
+        })()`);
+        await check();
+
+        await browser.evaluate(`(document.getElementById('modal').close(), document.getElementById('plain').close(), document.getElementById('plain').showModal())`);
         await check();
     }, 30000);
 
