@@ -230,7 +230,8 @@ export class ReplayView {
             if (target.node !== undefined) {
                 // A node created after the shown point isn't in it.
                 const node = this.replay.nodeOf(target.node) as Element|undefined;
-                if (node === undefined || node.nodeType !== Node.ELEMENT_NODE || ! node.isConnected) {
+                // Nor is one that isn't rendered there, like a button in a dialog that closed.
+                if (node === undefined || node.nodeType !== Node.ELEMENT_NODE || ! node.isConnected || node.getClientRects().length === 0) {
                     return null;
                 }
                 const rect = node.getBoundingClientRect();
