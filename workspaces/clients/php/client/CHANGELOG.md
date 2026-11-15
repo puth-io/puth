@@ -1,5 +1,11 @@
 # @puth/client-php
 
+## 0.13.0
+
+### Minor Changes
+
+- 78ecfc2: Recorded frames are off by default, since the GUI shows the recorded DOM. Turn them on with the context option `frames`, with `Context.enableFrames()` and `disableFrames()` while a test runs, or in Laravel with the `PuthEnableFrames` trait. MCP sessions keep recording them, and `puth_context` takes the last address from the recorded navigations. Frames are stored as Chrome sends them and the GUI crops them to the viewport, so Puth no longer depends on `sharp`.
+
 ## 0.12.0
 
 ### Minor Changes

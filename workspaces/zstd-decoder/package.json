@@ -1,6 +1,6 @@
 {
   "name": "@puth/zstd-decoder",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "zstd's decoder built to WebAssembly from the official release, with a checked TypeScript wrapper.",
   "type": "module",
   "repository": {
