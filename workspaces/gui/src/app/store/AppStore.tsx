@@ -36,10 +36,13 @@ export default class AppStore {
     settings: {
         preview: {
             darken: boolean,
+            /** Marks what the shown step acted on. */
+            highlight: boolean,
         },
     } = {
         preview: {
             darken: false,
+            highlight: true,
         },
     };
     
@@ -53,6 +56,7 @@ export default class AppStore {
     
     constructor() {
         this.settings.preview.darken = this.readLocalStorageBoolean('previewStore.darken');
+        this.settings.preview.highlight = this.readLocalStorageBoolean('previewStore.highlight', true);
         
         makeObservable(this, {
             name: observable,
@@ -76,6 +80,7 @@ export default class AppStore {
             setActive: action,
             setView: action,
             setDarkenPreview: action,
+            setHighlightPreview: action,
             
             history: computed,
             activeContext: computed,
@@ -188,8 +193,14 @@ export default class AppStore {
         this.writeLocalStorageBoolean('previewStore.darken', value);
     }
     
-    readLocalStorageBoolean(key: string) {
-        return localStorage.getItem(key) === 'true';
+    setHighlightPreview(value: boolean) {
+        this.settings.preview.highlight = value;
+        this.writeLocalStorageBoolean('previewStore.highlight', value);
+    }
+    
+    readLocalStorageBoolean(key: string, fallback = false) {
+        const value = localStorage.getItem(key);
+        return value === null ? fallback : value === 'true';
     }
     
     writeLocalStorageBoolean(key: string, value: boolean) {
