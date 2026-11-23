@@ -1,5 +1,14 @@
 # @puth/mcp
 
+## 0.2.1
+
+### Patch Changes
+
+- 78ecfc2: Recorded frames are off by default, since the GUI shows the recorded DOM. Turn them on with the context option `frames`, with `Context.enableFrames()` and `disableFrames()` while a test runs, or in Laravel with the `PuthEnableFrames` trait. MCP sessions keep recording them, and `puth_context` takes the last address from the recorded navigations. Frames are stored as Chrome sends them and the GUI crops them to the viewport, so Puth no longer depends on `sharp`.
+- 409b86e: Recordings are compressed with zstd: `.puth` files, the snapshot interface and the websocket, which sends the recordings a GUI connects to compressed and large packets like DOM keyframes when that saves space. A recording without frames shrinks about six times. The GUI decodes them with the new `@puth/zstd-decoder` package, zstd's own decoder built to WebAssembly, and compresses the snapshots it exports with the new `@puth/zstd-encoder` package, which it loads only when something is exported. Uncompressed snapshots still open in the GUI and the MCP server.
+- Updated dependencies [78ecfc2]
+  - @puth/client@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

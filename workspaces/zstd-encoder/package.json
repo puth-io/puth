@@ -1,6 +1,6 @@
 {
   "name": "@puth/zstd-encoder",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "zstd's encoder built to WebAssembly from the official release, small, with every compression level.",
   "type": "module",
   "repository": {
