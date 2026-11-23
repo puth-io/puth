@@ -10,7 +10,7 @@ export const Preview = observer(function Preview() {
     const preview = app.previewStore;
 
     if (preview?.showsDom) {
-        return <DomPreview preview={preview} darken={app.settings.preview.darken}/>;
+        return <DomPreview preview={preview} darken={app.settings.preview.darken} marks={app.settings.preview.highlight}/>;
     }
     return <FramePreview/>;
 });
@@ -47,7 +47,7 @@ const FramePreview = observer(function FramePreview() {
  * The recorded DOM, rebuilt in a sandboxed frame without scripts. The replay worker answers all of its requests
  * from the recording; a frame it doesn't control is never built, and the preview falls back to frames.
  */
-const DomPreview = observer(function DomPreview({preview, darken}: {preview: PreviewStore, darken: boolean}) {
+const DomPreview = observer(function DomPreview({preview, darken, marks}: {preview: PreviewStore, darken: boolean, marks: boolean}) {
     const container = useRef<HTMLDivElement>(null);
     const frame = useRef<HTMLIFrameElement>(null);
     const view = useRef<ReplayView|null>(null);
@@ -133,7 +133,7 @@ const DomPreview = observer(function DomPreview({preview, darken}: {preview: Pre
                 {darken && (
                     <div className={'pointer-events-none absolute inset-0 bg-black/50'}/>
                 )}
-                {highlight !== null && (
+                {marks && highlight !== null && (
                     // In the replay frame's own coordinates, scaled with it.
                     <div
                         className={'pointer-events-none absolute left-0 top-0 origin-top-left'}

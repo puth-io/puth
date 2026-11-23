@@ -597,6 +597,13 @@ describe('DOM replay', () => {
         assert.deepEqual(await overlay('[puth="replay-target"]'), [40, 30, 100, 20]);
         assert.deepEqual(await overlay('[puth="replay-point"]'), [50, 35]);
 
+        // The toggle hides the marks and is remembered.
+        await gui.click('[puth="toggle-highlight"]');
+        await gui.waitUntil(`document.querySelector('[puth="replay-target"]') === null && document.querySelector('[puth="replay-point"]') === null`);
+        assert.strictEqual(await gui.evaluate(`localStorage.getItem('previewStore.highlight')`), 'false');
+        await gui.click('[puth="toggle-highlight"]');
+        await gui.waitFor('[puth="replay-target"]');
+
         // An assertion acts on nothing.
         await showStep(gui, -1, 'before');
         await gui.waitUntil(`document.querySelector('[puth="replay-target"]') === null`);

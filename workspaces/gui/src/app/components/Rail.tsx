@@ -52,8 +52,6 @@ const Toggle = ({id, label, checked, onChange}: {id: string, label: string, chec
 );
 
 export const Settings = observer(function Settings() {
-    const {app} = useContext(AppContext);
-
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -74,7 +72,6 @@ export const Settings = observer(function Settings() {
             >
                 <div className={'border-b border-dashed border-neutral-800 px-3.5 py-2.5 font-mono text-[11.5px] text-accent-blue'}>Settings</div>
                 <div className={'flex flex-col p-1.5'}>
-                    <Toggle id={'darken-preview'} label={'Darken preview'} checked={app.settings.preview.darken} onChange={value => app.setDarkenPreview(value)}/>
                     <Toggle id={'debug-mode'} label={'Debug mode'} checked={DevStore.debug} onChange={value => DevStore.debug = value}/>
                 </div>
             </PopoverContent>
